@@ -1,0 +1,60 @@
+name: Commando Training Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  train-commandos:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        pip install kaggle
+
+    - name: Configure Kaggle API credentials
+      run: |
+        mkdir -p ~/.kaggle
+        echo "{\"username\":\"${{ secrets.KAGGLE_USERNAME }}\",\"key\":\"${{ secrets.KAGGLE_KEY }}\"}" > ~/.kaggle/kaggle.json
+        chmod 600 ~/.kaggle/kaggle.json
+
+    - name: (Optional) Grant execution permissions to training script
+      if: runner.os == 'Linux'
+      run: chmod +x scripts/train_commandos.sh
+
+    - name: Run Nethical model training
+      run: |
+        # CI uses a slightly more permissive ECE gate than the script default
+        python training/train_any_model.py \
+          --model-type all \
+          --epochs 70 \
+          --batch-size 64 \
+          --num-samples 20000 \
+          --enable-audit \
+          --promotion-min-accuracy 0.85 \
+          --promotion-max-ece 0.15 \
+          --enable-governance \
+          --enable-drift-tracking
+
+    - name: Archive trained models
+      run: |
+        tar -czf models-current.tar.gz models/current/
+
+    - name: Upload trained model artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: trained-models
+        path: models-current.tar.gz

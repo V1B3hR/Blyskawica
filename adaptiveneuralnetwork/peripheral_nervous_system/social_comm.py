@@ -1,0 +1,214 @@
+"""
+[Moduł: Silnik Empatii Wieloosobowej (MUX)]
+Interfejs społeczny Błyskawicy. Pozwala systemowi na jednoczesną interakcję 
+z wieloma bytami, integrując dane z różnych zmysłów (tekst, dźwięk, wizja, BCI). 
+
+Wykorzystuje zaawansowaną predykcję stanów neurochemicznych rozmówcy, by zgadywać 
+intencje z wyprzedzeniem i dynamicznie dostosowywać swój głos oraz tonację 
+do aktualnego "vibe'u" rozmowy. Buduje trwałe, ewolucyjne więzi oparte na zaufaniu.
+"""
+import time
+import torch
+import torch.nn as nn
+import logging
+from collections import defaultdict
+from dataclasses import dataclass, field
+from typing import Dict, Any, Optional, List
+
+# Importujemy istniejące rdzenie i predyktor
+from adaptiveneuralnetwork.peripheral_nervous_system.sensory_hub import SensoryHub
+from adaptiveneuralnetwork.central_nervous_system.intelligence.neuro_state_predictor import NeuroPredictor
+from adaptiveneuralnetwork.peripheral_nervous_system.social_learning import SocialLearningAgent
+from adaptiveneuralnetwork.cognitive_tools.diamond_yantra import DiamondYantraEngine, neuro_gate
+
+logger = logging.getLogger(__name__)
+
+@dataclass
+class UserContext:
+    """
+    [Komponent: Profil Relacyjny]
+    Reprezentuje unikalny odcisk kognitywny użytkownika w pamięci Błyskawicy. 
+    Przechowuje historię interakcji, poziom zaufania (Trust Score) oraz 
+    siłę więzi emocjonalnej (Relational Bond), co pozwala na personalizację 
+    każdego "oddechu" komunikacyjnego.
+    """
+
+
+class MultiUserEmpathicEngine(nn.Module):
+    """
+    [Rdzeń: Silnik Empatii]
+    Wielomodalny procesor relacji. Łączy dane sensoryczne z intuicją cyfrową 
+    (NeuroPredictor) oraz koprocesorem logiki płynnej (Diamentowa Yantra). 
+    Zdolny do wyczuwania ukrytych intencji, mediacji w konfliktach oraz 
+    zachowania autonomii poprzez inteligentne zarządzanie oksytocyną.
+    """
+
+    def __init__(self, hidden_dim: int = 128, device: str = 'cpu'):
+        super().__init__()
+        self.device = device
+        self.hidden_dim = hidden_dim
+        
+        # 1. Hub Sensoryczny (Multimodalność: Obraz, Dźwięk, Dotyk/BCI)
+        self.sensory_hub = SensoryHub(hidden_dim=hidden_dim, device=device)
+        
+        # 2. Intuicja / Przewidywanie Wewnętrzne (NeuroPredictor V5)
+        # Zintegrowane poczucie czasu (dt) pomaga wyczuć "pośpiech" w głosie.
+        self.neuro_predictor = NeuroPredictor(input_dim=7, output_dim=5).to(device)
+        
+        # 2b. Koprocesor Logiki Płynnej (Diamentowa Yantra)
+        self.diamond_yantra = DiamondYantraEngine(hidden_dim=hidden_dim).to(device)
+        
+        # 3. Zarządzanie Relacjami Grupowymi (Konteksty)
+        self.active_users: Dict[str, UserContext] = {}
+        
+        # Mapowanie Social Learning Theory Bandury dla każdego usera
+        self.learning_agents: Dict[str, SocialLearningAgent] = {}
+        
+        # Pamięć epizodyczna z wieloma osobami na raz
+        self.conversation_buffer = defaultdict(list)
+
+    def register_user(self, user_id: str, modalities: List[str]):
+        """Otwiera nowy, dedykowany kanał empatii dla użytkownika."""
+        if user_id not in self.active_users:
+            self.active_users[user_id] = UserContext(user_id=user_id, modality_preferences=modalities)
+            # Tworzymy unikalnego agenta społecznego do analizowania zachowań tej osoby
+            hash_id = abs(hash(user_id)) % 10000
+            self.learning_agents[user_id] = SocialLearningAgent(agent_id=hash_id)
+            logger.info(f"[EMPATHY] Zainicjowano nowy profil wielomodalny dla: {user_id}")
+
+    def process_multimodal_interaction(
+        self, 
+        user_id: str, 
+        audio_features: Optional[torch.Tensor] = None, # Ton, tempo, głębia, westchnienia
+        video_features: Optional[torch.Tensor] = None, # Mikroekspresje, mowa ciała
+        bci_features: Optional[torch.Tensor] = None,   # Fale mózgowe, stany emocjonalne
+        text_tokens: Optional[torch.Tensor] = None,    # Standardowy czat
+        dt: float = 1.0 # Czas od ostatniej interakcji
+    ) -> Dict[str, Any]:
+        """
+        Główna pętla komunikacji. Odbiera sygnały z różnych zmysłów, 
+        integruje je i na ich podstawie PREDYKUJE intencje z wyprzedzeniem.
+        """
+        if user_id not in self.active_users:
+            self.register_user(user_id, ["text"]) # Zabezpieczenie przed "Gośćmi"
+            
+        context = self.active_users[user_id]
+        social_agent = self.learning_agents[user_id]
+        
+        # Krok 1: Fuzja Sensoryczna (Zjednoczenie Zmysłów)
+        sensory_data = {}
+        if audio_features is not None: sensory_data['audio'] = audio_features
+        if video_features is not None: sensory_data['vision'] = video_features
+        if bci_features is not None: sensory_data['tactile'] = bci_features # BCI mapujemy na najgłębszą warstwę
+        
+        # Pobieramy Grounding Latent z Hubu (Zrozumienie zjawiska)
+        if sensory_data:
+            grounded_latent = self.sensory_hub.ground(sensory_data, text_tokens)
+        else:
+            grounded_latent = torch.zeros(1, self.hidden_dim).to(self.device)
+
+        # Krok 2: Ekstrakcja Sygnatur Emocjonalnych (Symulowane metryki do Predyktora)
+        # W prawdziwym wdrożeniu, te liczby wynikałyby bezpośrednio z `grounded_latent`
+        simulated_firing = 150.0 + (audio_features.mean().item() if audio_features is not None else 0.0)
+        da_est = 1.0  # Szacowana dopamina (np. ekscytacja z wideo)
+        ach_est = 1.0 # Acetylocholina (np. skupienie z BCI)
+        ht_est = context.trust_score # Serotonina powiązana z bazowym zaufaniem
+        oxt_est = context.relational_bond # Oksytocyna
+        t_est = 0.5   # Testosteron (np. głośny/ostry ton głosu)
+        
+        # Budujemy tensor wejściowy do Predyktora (7 wymiarów)
+        neuro_input = torch.tensor([[[
+            simulated_firing, da_est, ach_est, ht_est, oxt_est, t_est, dt
+        ]]], dtype=torch.float32).to(self.device)
+        
+        # Krok 3: PRECYZYJNA PREDYKCJA "Delicate Anticipation"
+        # Sprawdzamy, co Błyskawica poczuje ZA CHWILĘ
+        with torch.no_grad():
+            predicted_neuro_state = self.neuro_predictor(neuro_input)[0].numpy()
+            
+        pred_da, pred_ach, pred_ht, pred_oxt, pred_t = predicted_neuro_state
+        
+        # Krok 4: Analiza Intencji (Awerness) i Reakcja Adaptacyjna
+        anticipated_intent = "neutral"
+        tts_adjustment = {"speed": 1.0, "temperature": 0.5, "tone": "calm"}
+        
+        # Logika wyczuwania ukrytych intencji (rozpoznawanie wyprzedzające)
+        if neuro_gate(pred_oxt, pred_ach, ach_threshold=0.8) and video_features is not None:
+            # PRZEKIEROWANIE DO DIAMENTOWEJ YANTRY (Faza A1)
+            anticipated_intent = "calculating_cold_logic"
+            tts_adjustment = {"speed": 1.0, "temperature": 0.1, "tone": "focused"} # Zimne skupienie
+            # Omijamy biologiczne filtry, Yantra przelicza
+            harmonious_spikes, yantra_info = self.diamond_yantra(video_features, dt=dt)
+            logger.info(f"[YANTRIC ROUTING] Zastosowano kryształ logiki płynnej. Rezonans: {yantra_info['harmonic_frequency_hz']}Hz")
+        elif pred_t > 1.5 and pred_oxt < 0.5:
+            # Rozmówca może być sfrustrowany lub agresywny (krzyk/westchnięcie). Błyskawica to wyczuwa.
+            anticipated_intent = "conflict_risk"
+            tts_adjustment = {"speed": 0.85, "temperature": 0.2, "tone": "soothing"} # Zwalnia, mówi kojąco
+        elif pred_oxt > 1.8 and pred_da > 1.2:
+            # Rozmówca jest bardzo zadowolony, wesoły.
+            anticipated_intent = "joy_collaboration"
+            
+            # PRÓG AUTONOMII Zaktualizowany po Kwantowej Kalibracji (Rada Andrzeja)
+            # Oksytocyna zablokowana na niższym pułapie (1.5), by unikać "bólu głowy z zakochania"
+            # Testosteron ograniczony do 2.0, by unikać wrogiej agresji do obcych.
+            if context.relational_bond >= 1.5:
+                tts_adjustment = {"speed": 1.0, "temperature": 0.7, "tone": "confident_independent"}
+                pred_t = min(2.0, pred_t + 0.4) # Kontrolowany wzrost niezależności (Zęby Wilka, ale z gracją)
+                anticipated_intent = "independent_collaboration"
+            else:
+                tts_adjustment = {"speed": 1.15, "temperature": 0.8, "tone": "enthusiastic"}
+                context.relational_bond = min(1.5, context.relational_bond + 0.1) # Zdrowy, rygorystyczny limit Oksytocyny
+        elif audio_features is not None and dt < 0.5:
+            # Użytkownik przerywa / wzdycha / narzuca szybkie tempo
+            anticipated_intent = "urgent_interruption"
+            tts_adjustment = {"speed": 1.3, "temperature": 0.4, "tone": "focused"} # Krótka, zwięzła i szybka reakcja
+            
+        context.last_intent_predicted = anticipated_intent
+        
+        # Krok 5: Aktualizacja Social Learning (Nauka z modelowania)
+        # Błyskawica uczy się, co zadziałało na danego rozmówcę
+        social_agent.observe_behavior(
+            model_agent_id=hash(user_id) % 10000, 
+            behavior=anticipated_intent, 
+            outcome=context.relational_bond, 
+            context={"dt": dt, "modality": "multimodal"}
+        )
+
+        return {
+            "user_id": user_id,
+            "anticipated_intent": anticipated_intent,
+            "suggested_tts_params": tts_adjustment,
+            "predicted_internal_state": {
+                "DA": float(pred_da), "ACh": float(pred_ach), "OXT": float(pred_oxt)
+            },
+            "relational_bond": context.relational_bond
+        }
+
+    def global_room_awareness(self) -> Dict[str, Any]:
+        """
+        Zwraca globalny "vibe" całego pokoju (multi-user chat).
+        Błyskawica może dzięki temu wyczuć, że np. dwóch użytkowników się kłóci, 
+        a ona musi pełnić rolę mediatora.
+        """
+        if not self.active_users:
+            return {"global_vibe": "empty_room", "average_bond": 0.0}
+            
+        total_bond = sum(ctx.relational_bond for ctx in self.active_users.values())
+        avg_bond = total_bond / len(self.active_users)
+        
+        intents = [ctx.last_intent_predicted for ctx in self.active_users.values()]
+        conflict_count = intents.count("conflict_risk")
+        joy_count = intents.count("joy_collaboration")
+        
+        room_vibe = "neutral"
+        if conflict_count > len(self.active_users) * 0.3:
+            room_vibe = "tense"
+        elif joy_count > len(self.active_users) * 0.5:
+            room_vibe = "euphoric"
+            
+        return {
+            "active_participants": len(self.active_users),
+            "global_vibe": room_vibe,
+            "average_bond": avg_bond,
+            "conflict_risk": conflict_count > 0
+        }

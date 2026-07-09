@@ -1,0 +1,111 @@
+{
+  "timestamp": 1757898006.6932175,
+  "ci_mode": true,
+  "results": {
+    "Encoding Performance": {
+      "100_bytes": {
+        "size": 100,
+        "encoding_time_ms": 0.017421999928046716,
+        "speed_bytes_per_sec": 5739869.154689613,
+        "dna_length": 400
+      },
+      "1000_bytes": {
+        "size": 1000,
+        "encoding_time_ms": 0.06511099991257652,
+        "speed_bytes_per_sec": 15358388.0042187,
+        "dna_length": 4000
+      },
+      "10000_bytes": {
+        "size": 10000,
+        "encoding_time_ms": 0.678247999985615,
+        "speed_bytes_per_sec": 14743869.499374993,
+        "dna_length": 40000
+      }
+    },
+    "Decoding Performance": {
+      "100_bytes": {
+        "size": 100,
+        "decoding_time_ms": 0.025227000037375547,
+        "speed_bytes_per_sec": 3964006.8122187764,
+        "accuracy": true
+      },
+      "1000_bytes": {
+        "size": 1000,
+        "decoding_time_ms": 0.19186900010481622,
+        "speed_bytes_per_sec": 5211889.359165417,
+        "accuracy": true
+      },
+      "10000_bytes": {
+        "size": 10000,
+        "decoding_time_ms": 1.9203829999696609,
+        "speed_bytes_per_sec": 5207294.586630888,
+        "accuracy": true
+      }
+    },
+    "Virtual Machine": {
+      "program_0": {
+        "compile_time_ms": 0.020568000081766513,
+        "execution_time_ms": 0.01806400007353659,
+        "program_size": 6,
+        "instructions": 6
+      },
+      "program_1": {
+        "compile_time_ms": 0.01714200004698796,
+        "execution_time_ms": 0.013685999988410913,
+        "program_size": 7,
+        "instructions": 7
+      },
+      "program_2": {
+        "compile_time_ms": 0.0167119999332499,
+        "execution_time_ms": 0.011552000046322064,
+        "program_size": 8,
+        "instructions": 8
+      }
+    },
+    "Memory Usage": {
+      "1000_bytes": {
+        "size": 1000,
+        "encoding_memory_mb": 0.01932525634765625,
+        "decoding_memory_mb": 0.018502235412597656,
+        "memory_efficiency": 0.0493485984998026
+      },
+      "10000_bytes": {
+        "size": 10000,
+        "encoding_memory_mb": 0.18631744384765625,
+        "decoding_memory_mb": 0.17711734771728516,
+        "memory_efficiency": 0.051185455141067114
+      }
+    },
+    "Large Data Processing": {
+      "1.0MB": {
+        "size_bytes": 1048576,
+        "size_mb": 1.0,
+        "encoding_time_ms": 69.20044100002087,
+        "decoding_time_ms": 199.37952300006145,
+        "total_time_ms": 268.5799640000823,
+        "throughput_mb_per_sec": 3.7232859261225215,
+        "accuracy": true
+      }
+    },
+    "Error Correction": {
+      "sequence_40": {
+        "length": 40,
+        "correction_time_ms": 0.007132999940040463,
+        "error_count": 0,
+        "error_rate": 0.0
+      },
+      "sequence_400": {
+        "length": 400,
+        "correction_time_ms": 0.008005000040611776,
+        "error_count": 0,
+        "error_rate": 0.0
+      },
+      "sequence_4000": {
+        "length": 4000,
+        "correction_time_ms": 0.05572399993525323,
+        "error_count": 0,
+        "error_rate": 0.0
+      }
+    }
+  }
+}

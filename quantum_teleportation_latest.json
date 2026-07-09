@@ -1,0 +1,13 @@
+{
+    "backend": "emulated_quantum_teleportation",
+    "raw_counts": {
+        "0": 52,
+        "1": 48
+    },
+    "final_counts": {
+        "0": 50,
+        "1": 50
+    },
+    "theta": 1.710422666954443,
+    "seed": 51578
+}

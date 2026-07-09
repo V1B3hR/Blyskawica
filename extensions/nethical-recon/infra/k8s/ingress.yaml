@@ -1,0 +1,45 @@
+# Ingress configuration for external access
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nethical-ingress
+  namespace: nethical-recon
+  labels:
+    app.kubernetes.io/name: nethical-recon
+    app.kubernetes.io/component: ingress
+  annotations:
+    # NGINX Ingress Controller annotations
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    # Rate limiting
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    # Timeouts for long-running scans
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    # Body size for large uploads
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+    # Enable CORS if needed
+    # nginx.ingress.kubernetes.io/enable-cors: "true"
+    # nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    
+    # Cert-manager annotation for automatic TLS (if using cert-manager)
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx  # Adjust based on your ingress controller
+  # TLS configuration (uncomment and configure for production)
+  # tls:
+  #   - hosts:
+  #       - nethical.example.com
+  #     secretName: nethical-tls-cert
+  rules:
+    - host: nethical.example.com  # Change to your domain
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nethical-api
+                port:
+                  number: 8000

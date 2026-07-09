@@ -1,0 +1,20 @@
+apiVersion: v2
+name: nethical-recon
+description: A Helm chart for Nethical Recon - Advanced Cybersecurity Reconnaissance Platform
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - security
+  - reconnaissance
+  - threat-hunting
+  - cybersecurity
+  - pentesting
+home: https://github.com/V1B3hR/nethical-recon
+sources:
+  - https://github.com/V1B3hR/nethical-recon
+maintainers:
+  - name: V1B3hR
+    email: ""
+icon: ""
+dependencies: []

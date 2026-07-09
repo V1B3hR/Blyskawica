@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  # The Python backend service
+  backend:
+    build:
+      context: ..
+      dockerfile: .devcontainer/backend.Dockerfile
+    volumes:
+      # Mount our entire project folder into the container
+      - ..:/workspace:cached
+    # Keep the container running
+    command: sleep infinity
+
+  # The React frontend service (we won't connect to it directly, but we need it for npm)
+  # Note: We will run the frontend dev server manually from the backend's terminal.

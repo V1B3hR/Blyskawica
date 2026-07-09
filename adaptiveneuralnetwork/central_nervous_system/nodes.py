@@ -1,0 +1,189 @@
+"""
+Vectorized node state management for adaptive neural networks.
+
+This module provides tensor-based node state abstractions that enable
+efficient batch processing during training.
+"""
+
+from dataclasses import dataclass
+
+import torch
+
+
+@dataclass
+class NodeConfig:
+    """Configuration for adaptive neural network nodes."""
+
+    num_nodes: int = 100
+    hidden_dim: int = 64
+    energy_dim: int = 1
+    activity_dim: int = 1
+    spatial_dim: int = 2
+    device: str = "cpu"
+    dtype: torch.dtype = torch.float32
+
+    # Node dynamics parameters
+    energy_decay: float = 0.01
+    activity_threshold: float = 0.5
+    connection_radius: float = 1.0
+
+    # Learning parameters
+    learning_rate: float = 0.001
+    adaptation_rate: float = 0.1
+    
+    # Personality Traits (Tier 2/Phase 7.1)
+    # Bravery: resilience to anxiety inhibition (0.0-1.0)
+    bravery: float = 0.5
+    # Emotional Stability: anxiety fluctuation dampening (0.0-1.0)
+    emotional_stability: float = 0.5
+
+
+class NodeState:
+    """Vectorized state representation for multiple adaptive nodes."""
+
+    def __init__(self, config: NodeConfig):
+        self.config = config
+        self.device = torch.device(config.device)
+
+        # Core state tensors [batch_size, num_nodes, dim]
+        self.hidden_state = torch.zeros(
+            1, config.num_nodes, config.hidden_dim, dtype=config.dtype, device=self.device
+        )
+
+        self.energy = (
+            torch.ones(
+                1, config.num_nodes, config.energy_dim, dtype=config.dtype, device=self.device
+            )
+            * 10.0
+        )  # Initial energy
+
+        self.activity = torch.zeros(
+            1, config.num_nodes, config.activity_dim, dtype=config.dtype, device=self.device
+        )
+
+        self.position = torch.randn(
+            1, config.num_nodes, config.spatial_dim, dtype=config.dtype, device=self.device
+        )
+
+        self.anxiety = torch.zeros(
+            1, config.num_nodes, 1, dtype=config.dtype, device=self.device
+        )
+
+        # Phase-specific state (will be set by PhaseScheduler)
+        self.phase_mask = torch.zeros(1, config.num_nodes, 1, dtype=torch.bool, device=self.device)
+        self.prediction_error = torch.zeros(1, config.num_nodes, 1, dtype=config.dtype, device=self.device)
+        
+        # Identity and Personality (Self-Awareness)
+        self.self_context = torch.zeros(1, config.num_nodes, config.hidden_dim, dtype=config.dtype, device=self.device)
+        self.bravery = torch.ones(1, config.num_nodes, 1, dtype=config.dtype, device=self.device) * config.bravery
+        self.emotional_stability = torch.ones(1, config.num_nodes, 1, dtype=config.dtype, device=self.device) * config.emotional_stability
+
+    def clamp_energy(self, min_val: float = 0.0, max_val: float = 50.0) -> None:
+        """Clamp energy values to valid range."""
+        self.energy = torch.clamp(self.energy, min_val, max_val)
+
+    def clamp_activity(self, min_val: float = 0.0, max_val: float = 1.0) -> None:
+        """Clamp activity values to valid range."""
+        self.activity = torch.clamp(self.activity, min_val, max_val)
+
+    def get_active_nodes(self) -> torch.Tensor:
+        """Get mask of currently active nodes."""
+        return (self.energy > 1.0) & (self.activity > self.config.activity_threshold)
+
+    def update_energy(self, delta: torch.Tensor) -> None:
+        """Update energy with decay and external changes."""
+        # Apply energy decay
+        self.energy = self.energy * (1.0 - self.config.energy_decay)
+        # Add external energy changes
+        self.energy = self.energy + delta
+        self.clamp_energy()
+
+    def update_activity(self, input_stimulation: torch.Tensor) -> None:
+        """Update activity based on input and current state."""
+        # Simple activity update - can be made more complex later
+        self.activity = torch.sigmoid(
+            input_stimulation + self.hidden_state.mean(dim=-1, keepdim=True)
+        )
+        self.clamp_activity()
+
+    def get_batch_size(self) -> int:
+        """Get current batch size."""
+        return self.hidden_state.shape[0]
+
+    def expand_batch(self, new_batch_size: int) -> None:
+        """Expand or contract state tensors to accommodate different batch size."""
+        current_batch_size = self.get_batch_size()
+        if new_batch_size == current_batch_size:
+            return
+
+        if new_batch_size > current_batch_size:
+            # Expand by repeating the first sample for additional batch entries
+            num_repeats = new_batch_size - current_batch_size
+
+            # Take the first sample and repeat it
+            extra_hidden = self.hidden_state[:1].expand(num_repeats, -1, -1)
+            extra_energy = self.energy[:1].expand(num_repeats, -1, -1)
+            extra_activity = self.activity[:1].expand(num_repeats, -1, -1)
+            extra_position = self.position[:1].expand(num_repeats, -1, -1)
+            extra_phase_mask = self.phase_mask[:1].expand(num_repeats, -1, -1)
+            extra_anxiety = self.anxiety[:1].expand(num_repeats, -1, -1)
+            extra_prediction_error = self.prediction_error[:1].expand(num_repeats, -1, -1)
+            extra_self_context = self.self_context[:1].expand(num_repeats, -1, -1)
+            extra_bravery = self.bravery[:1].expand(num_repeats, -1, -1)
+            extra_stability = self.emotional_stability[:1].expand(num_repeats, -1, -1)
+
+            # Concatenate with existing tensors
+            self.hidden_state = torch.cat([self.hidden_state, extra_hidden], dim=0).contiguous()
+            self.energy = torch.cat([self.energy, extra_energy], dim=0).contiguous()
+            self.activity = torch.cat([self.activity, extra_activity], dim=0).contiguous()
+            self.position = torch.cat([self.position, extra_position], dim=0).contiguous()
+            self.phase_mask = torch.cat([self.phase_mask, extra_phase_mask], dim=0).contiguous()
+            self.anxiety = torch.cat([self.anxiety, extra_anxiety], dim=0).contiguous()
+            self.prediction_error = torch.cat([self.prediction_error, extra_prediction_error], dim=0).contiguous()
+            self.self_context = torch.cat([self.self_context, extra_self_context], dim=0).contiguous()
+            self.bravery = torch.cat([self.bravery, extra_bravery], dim=0).contiguous()
+            self.emotional_stability = torch.cat([self.emotional_stability, extra_stability], dim=0).contiguous()
+        else:
+            # Contract to smaller batch size by taking first n entries
+            self.hidden_state = self.hidden_state[:new_batch_size].contiguous()
+            self.energy = self.energy[:new_batch_size].contiguous()
+            self.activity = self.activity[:new_batch_size].contiguous()
+            self.position = self.position[:new_batch_size].contiguous()
+            self.phase_mask = self.phase_mask[:new_batch_size].contiguous()
+            self.anxiety = self.anxiety[:new_batch_size].contiguous()
+            self.prediction_error = self.prediction_error[:new_batch_size].contiguous()
+            self.self_context = self.self_context[:new_batch_size].contiguous()
+            self.bravery = self.bravery[:new_batch_size].contiguous()
+            self.emotional_stability = self.emotional_stability[:new_batch_size].contiguous()
+
+    def to(self, device: torch.device) -> "NodeState":
+        """Move state to specified device."""
+        self.device = device
+        self.hidden_state = self.hidden_state.to(device)
+        self.energy = self.energy.to(device)
+        self.activity = self.activity.to(device)
+        self.position = self.position.to(device)
+        self.phase_mask = self.phase_mask.to(device)
+        self.anxiety = self.anxiety.to(device)
+        self.self_context = self.self_context.to(device)
+        self.bravery = self.bravery.to(device)
+        self.emotional_stability = self.emotional_stability.to(device)
+        return self
+
+    def detach(self) -> "NodeState":
+        """Detach state tensors from computational graph.
+        
+        This is important for training to avoid keeping the full computational
+        graph across batches, which would cause memory issues and prevent
+        proper gradient computation.
+        """
+        self.hidden_state = self.hidden_state.detach()
+        self.energy = self.energy.detach()
+        self.activity = self.activity.detach()
+        self.position = self.position.detach()
+        self.phase_mask = self.phase_mask.detach()
+        self.anxiety = self.anxiety.detach()
+        self.self_context = self.self_context.detach()
+        self.bravery = self.bravery.detach()
+        self.emotional_stability = self.emotional_stability.detach()
+        return self

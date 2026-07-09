@@ -1,0 +1,29 @@
+# Infrastructure as Code for deploying the GCS on Render
+
+services:
+  # --- The Python/FastAPI Backend Service ---
+  - type: web
+    name: gcs-backend
+    env: python
+    # Tell Render where the backend code is
+    rootDir: ./backend
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn main:app --host 0.0.0.0 --port $PORT"
+    # Render has a free instance type
+    plan: free
+
+  # --- The React Frontend Service ---
+  - type: static
+    name: gcs-frontend
+    # Tell Render where the frontend code is
+    rootDir: ./frontend
+    buildCommand: "npm install && npm run build"
+    # The folder where the built static files are
+    publishPath: ./build
+    # Rewrite rule for Single Page Applications like React
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    # Render has a free static site plan
+    plan: free

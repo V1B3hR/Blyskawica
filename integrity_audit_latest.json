@@ -1,0 +1,26 @@
+{
+    "snapshot": {
+        "timestamp": 1780123430.3979266,
+        "backend": "simulated_fallback",
+        "job_id": "sim-1780123430",
+        "expectation_vector": [
+            0.01626680148780295,
+            0.02079011048170797,
+            0.015151901148194497,
+            0.017669776510621907
+        ],
+        "fingerprint": "bcc4574542f65f86",
+        "defcon_level": 1,
+        "anomaly_detected": false,
+        "drift_sigma": 0.0
+    },
+    "report": {
+        "status": "healthy",
+        "defcon": 1,
+        "last_audit": 1780123430.3979266,
+        "last_backend": "simulated_fallback",
+        "last_fingerprint": "bcc4574542f65f86",
+        "drift_sigma": 0.0,
+        "total_audits": 1
+    }
+}

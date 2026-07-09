@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+psutil
+pydrive2
+numpy
+python-multipart
+pathlib
+asyncio
+requests
+python-dotenv

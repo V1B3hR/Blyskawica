@@ -1,0 +1,39 @@
+version: 0.2
+schema_version: "1.0"
+domain: healthcare
+
+profiles:
+  US:
+    compliance: [HIPAA, SOC2]
+    locales: [en_US]
+    data_residency_required: true
+    export_controls_required: false
+    default_geofencing_policy: OPEN
+    last_reviewed_at: "2025-10-14"
+
+  UK:
+    compliance: [UK_GDPR, DPA_2018, NHS_DSPT]
+    locales: [en_GB]
+    data_residency_required: true
+    export_controls_required: false
+    default_geofencing_policy: OPEN
+    last_reviewed_at: "2025-10-14"
+
+  EU:
+    compliance: [EU_GDPR, NIS2]
+    locales: [en_GB, de_DE, fr_FR, es_ES, it_IT]
+    data_residency_required: true
+    export_controls_required: false
+    default_geofencing_policy: OPEN
+    last_reviewed_at: "2025-10-14"
+
+  NATO:
+    compliance: [NATO_STANAG_HOOKS]
+    locales: [en_GB]
+    data_residency_required: false
+    export_controls_required: true
+    default_geofencing_policy: OPEN
+    last_reviewed_at: "2025-10-14"
+
+notes:
+  NATO: "NATO profile enables hooks only; healthcare defaults keep defense features inert unless explicitly configured."

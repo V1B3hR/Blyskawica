@@ -1,0 +1,22 @@
+# PersistentVolumeClaim for evidence and reports storage
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nethical-evidence-pvc
+  namespace: nethical-recon
+  labels:
+    app.kubernetes.io/name: nethical-recon
+    app.kubernetes.io/component: storage
+spec:
+  accessModes:
+    - ReadWriteMany  # Multiple pods need access (API and Workers)
+  resources:
+    requests:
+      storage: 50Gi
+  # storageClassName: standard  # Adjust based on your cluster
+  # For production, consider using:
+  # - AWS EFS (with efs-csi driver)
+  # - Azure Files (with azurefile-csi driver)
+  # - GCP Filestore (with filestore-csi driver)
+  # - NFS
+  # - MinIO/S3 (via S3 CSI driver)

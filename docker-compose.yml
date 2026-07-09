@@ -1,0 +1,18 @@
+services:
+  blyskawica:
+    build: .
+    container_name: blyskawica_agent
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./blyskawica_app/memory:/app/blyskawica_app/memory
+      - ./blyskawica_app/media_storage:/app/blyskawica_app/media_storage
+      - ./checkpoints:/app/checkpoints
+    restart: always
+    environment:
+      - PYTHONUNBUFFERED=1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/system_status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

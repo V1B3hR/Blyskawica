@@ -1,0 +1,37 @@
+{
+    "Graphene_Layer": {
+        "thermal_conductivity_W_mK": 5000.0,
+        "density_kg_m3": 2267.0,
+        "specific_heat_J_kgK": 700.0,
+        "elastic_modulus_GPa": 1050.0,
+        "crystal_structure": "Hexagonal 2D"
+    },
+    "Diamond_Yarn_MesoPhone": {
+        "thermal_conductivity_W_mK": 2200.0,
+        "density_kg_m3": 3515.0,
+        "specific_heat_J_kgK": 502.0,
+        "elastic_modulus_GPa": 1220.0,
+        "crystal_structure": "Cubic Diamond (Nanothread)"
+    },
+    "Silicon_Crystalline": {
+        "thermal_conductivity_W_mK": 150.0,
+        "density_kg_m3": 2329.0,
+        "specific_heat_J_kgK": 700.0,
+        "elastic_modulus_GPa": 150.0,
+        "crystal_structure": "Diamond Cubic"
+    },
+    "Copper_OFHC": {
+        "thermal_conductivity_W_mK": 401.0,
+        "density_kg_m3": 8960.0,
+        "specific_heat_J_kgK": 385.0,
+        "elastic_modulus_GPa": 117.0,
+        "crystal_structure": "FCC"
+    },
+    "Stainless_Steel_316": {
+        "thermal_conductivity_W_mK": 16.2,
+        "density_kg_m3": 8000.0,
+        "specific_heat_J_kgK": 500.0,
+        "elastic_modulus_GPa": 193.0,
+        "crystal_structure": "Austenitic"
+    }
+}

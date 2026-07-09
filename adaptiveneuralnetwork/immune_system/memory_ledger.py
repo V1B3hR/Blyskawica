@@ -1,0 +1,110 @@
+import hashlib
+import time
+import math
+import logging
+from typing import Dict, Any, List
+
+logger = logging.getLogger(__name__)
+
+class MemoryLedgerEntry:
+    def __init__(self, index: int, timestamp: float, vector_id: int, text: str, prev_hash: str, signature: str = ""):
+        self.index = index
+        self.timestamp = timestamp
+        self.vector_id = vector_id
+        self.text = text
+        self.prev_hash = prev_hash
+        self.signature = signature
+        self.hash = self.calculate_hash()
+
+    def calculate_hash(self) -> str:
+        data = f"{self.index}{self.timestamp}{self.vector_id}{self.text}{self.prev_hash}{self.signature}"
+        return hashlib.sha256(data.encode('utf-8')).hexdigest()
+
+    def to_dict(self) -> dict:
+        return {
+            "index": self.index,
+            "timestamp": self.timestamp,
+            "vector_id": self.vector_id,
+            "text": self.text,
+            "prev_hash": self.prev_hash,
+            "signature": self.signature,
+            "hash": self.hash
+        }
+
+class MemoryLedger:
+    def __init__(self, drift_threshold: float = 0.65):
+        self.chain: List[MemoryLedgerEntry] = []
+        self.drift_threshold = drift_threshold
+        # Genesis block
+        self._create_genesis_block()
+
+    def _create_genesis_block(self):
+        genesis = MemoryLedgerEntry(
+            index=0,
+            timestamp=time.time(),
+            vector_id=0,
+            text="Genesis Core Knowledge",
+            prev_hash="0" * 64,
+            signature="SYSTEM_INIT_SIG"
+        )
+        self.chain.append(genesis)
+
+    def verify_chain_integrity(self) -> bool:
+        """Weryfikuje poprawność całego łańcucha skrótów kryptograficznych."""
+        for i in range(1, len(self.chain)):
+            current = self.chain[i]
+            prev = self.chain[i-1]
+            if current.prev_hash != prev.hash:
+                logger.error(f"[MEMORY LEDGER] Łańcuch przerwany na indeksie {i}: niezgodność prev_hash!")
+                return False
+            if current.hash != current.calculate_hash():
+                logger.error(f"[MEMORY LEDGER] Łańcuch przerwany na indeksie {i}: naruszenie integralności bloku!")
+                return False
+        return True
+
+    def validate_and_append(self, vector_id: int, text: str, vector: List[float], historical_vectors: List[List[float]], signature: str = "") -> bool:
+        """
+        Waliduje wektor wejściowy, sprawdza dryf semantyczny (dystans cosinusowy) i dodaje wpis do rejestru.
+        """
+        # 1. Obliczenie dystansu cosinusowego (pure Python)
+        if historical_vectors:
+            def dot_product(v1, v2):
+                return sum(a * b for a, b in zip(v1, v2))
+
+            def magnitude(v):
+                return math.sqrt(sum(a * a for a in v))
+
+            max_similarity = -1.0
+            for hist_vec in historical_vectors:
+                mag_a = magnitude(vector)
+                mag_b = magnitude(hist_vec)
+                if mag_a == 0 or mag_b == 0:
+                    similarity = 0.0
+                else:
+                    similarity = dot_product(vector, hist_vec) / (mag_a * mag_b)
+                
+                if similarity > max_similarity:
+                    max_similarity = similarity
+            
+            cosine_distance = 1.0 - max_similarity
+            
+            if cosine_distance > self.drift_threshold:
+                logger.warning(
+                    f"[MEMORY LEDGER] 🚨 Zablokowano konsolidację z powodu dryfu semantycznego! "
+                    f"Dystans: {cosine_distance:.4f} > próg: {self.drift_threshold:.4f}. Wektor skierowany do kwarantanny."
+                )
+                return False
+
+        # 2. Rejestracja w blockchain-style ledger
+        prev_hash = self.chain[-1].hash
+        new_entry = MemoryLedgerEntry(
+            index=len(self.chain),
+            timestamp=time.time(),
+            vector_id=vector_id,
+            text=text,
+            prev_hash=prev_hash,
+            signature=signature
+        )
+        self.chain.append(new_entry)
+        logger.info(f"[MEMORY LEDGER] Dodano wpis: ID={vector_id}, Hash={new_entry.hash[:8]}")
+        return True

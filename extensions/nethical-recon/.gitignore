@@ -1,0 +1,97 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+/tmp/
+*.tmp
+
+# Scan results (from nethical_recon.py)
+*_*/nmap_results.txt
+*_*/nikto_results.txt
+*_*/dirb_results.txt
+*_*/sublist3r_results.txt
+*_*/AI_Security_Report_*.md
+
+# Sensor logs
+/zeek_logs/
+
+# Database files (Fala 6)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Testing and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# Pre-commit
+.pre-commit-config.yaml.bak
+
+# MyPy cache
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Security scanning reports
+bandit-report.json
+*.sarif
+
+# Secrets and environment files
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+/secrets/
+/credentials/
+
+# Except for our secrets management source code
+!src/nethical_recon/secrets/
+
+# Database files
+*.db
+*.db-shm
+*.db-wal

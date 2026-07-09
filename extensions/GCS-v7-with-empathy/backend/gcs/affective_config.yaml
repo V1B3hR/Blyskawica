@@ -1,0 +1,140 @@
+# Affective State Classification Configuration
+# Production-ready multimodal emotion recognition settings
+
+seed: 42
+cortical_nodes: 68
+physio_features: 24
+voice_features: 128
+text_features: 768
+
+modalities:
+  eeg: true
+  physio: true
+  voice: true
+  text: false
+
+paths:
+  deap: data/deap_dataset.npz
+  wesad: data/wesad/
+  ravdess: data/ravdess/
+  graph: data/graph_scaffold.npz
+  output_dir: models/affective
+  checkpoints_dir: models/affective/checkpoints
+
+training:
+  batch_size: 32
+  epochs: 20
+  learning_rate: 0.0003
+  early_stopping_patience: 5
+  loss_weights:
+    valence: 1.0
+    arousal: 1.0
+    categorical: 1.0
+  validation_split: 0.2
+  save_best_only: true
+  tensorboard_log_dir: logs/affective
+  
+model:
+  # Encoder configurations
+  eeg_encoder:
+    temporal_filters: [64, 128, 128]
+    kernel_sizes: [7, 5, 3]
+    embedding_dim: 256
+    dropout: 0.3
+    use_graph: true
+    
+  physio_encoder:
+    hidden_dims: [64, 128]
+    embedding_dim: 128
+    dropout: 0.2
+    
+  voice_encoder:
+    hidden_dims: [256, 256]
+    embedding_dim: 256
+    dropout: 0.2
+    use_pretrained: false
+    
+  text_encoder:
+    hidden_dims: [512, 256]
+    embedding_dim: 256
+    dropout: 0.2
+    
+  # Fusion configuration
+  fusion:
+    type: attention  # 'concat' or 'attention'
+    attention_heads: 4
+    hidden_dim: 512
+    mc_dropout: true
+    mc_samples: 15
+    dropout: 0.3
+    
+  # Output heads
+  heads:
+    valence:
+      hidden_dims: [256, 128]
+      activation: tanh  # output in [-1, 1]
+    arousal:
+      hidden_dims: [256, 128]
+      activation: sigmoid  # output in [0, 1]
+    categorical:
+      hidden_dims: [512, 256]
+      num_classes: 28  # EmotionalState taxonomy
+    temperature_scaling: true
+    
+  # Personalization
+  personalization:
+    enabled: true
+    user_embedding_dim: 64
+    cultural_embedding_dim: 32
+    adaptation_method: film  # 'film' or 'adapter'
+
+serving:
+  websocket_host: 0.0.0.0
+  websocket_port: 8000
+  push_hz: 3
+  buffer_size: 30  # samples to buffer for smoothing
+  smoothing: ema  # 'ema' or 'median'
+  ema_alpha: 0.3
+  
+empathy:
+  enabled: true
+  ethics:
+    crisis_detection_enabled: true
+    crisis_thresholds:
+      arousal: 0.9
+      negative_valence: -0.7
+      high_stress_duration_sec: 300
+    crisis_cooldown_sec: 600
+  privacy:
+    encryption_enabled: true
+    pii_logging: false
+    data_retention_days: 30
+    consent_required: true
+  personalization:
+    baseline_calibration_samples: 50
+    adaptation_rate: 0.01
+    cultural_contexts:
+      - individualistic
+      - collectivistic
+      - neutral
+
+uncertainty:
+  mc_dropout_samples: 15
+  temperature_scaling: true
+  confidence_threshold: 0.6
+
+observability:
+  prometheus:
+    enabled: true
+    port: 9109
+  logging:
+    level: INFO
+    structured: true
+    user_id_hashing: true
+
+# Simulation fallbacks when hardware unavailable
+simulation:
+  enable_fallback: true
+  synthetic_sample_rate: 250
+  synthetic_eeg_channels: 8
+  noise_level: 0.1

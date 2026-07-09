@@ -1,0 +1,94 @@
+{{- if .Values.scheduler.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "nethical-recon.fullname" . }}-scheduler
+  labels:
+    {{- include "nethical-recon.labels" . | nindent 4 }}
+    app.kubernetes.io/component: scheduler
+spec:
+  replicas: {{ .Values.scheduler.replicaCount }}
+  strategy:
+    type: Recreate  # Ensure only one scheduler runs at a time
+  selector:
+    matchLabels:
+      {{- include "nethical-recon.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: scheduler
+  template:
+    metadata:
+      labels:
+        {{- include "nethical-recon.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: scheduler
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secrets: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "nethical-recon.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: scheduler
+          image: {{ include "nethical-recon.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - celery
+            - -A
+            - nethical_recon.worker.celery_app
+            - beat
+            - --loglevel=info
+            - --pidfile=/tmp/celerybeat.pid
+            - --schedule=/tmp/celerybeat-schedule
+          env:
+            - name: DATABASE_URL
+              value: {{ include "nethical-recon.databaseUrl" . | quote }}
+            - name: BROKER_URL
+              value: {{ printf "%s/0" (include "nethical-recon.redisUrl" .) | quote }}
+            - name: RESULT_BACKEND
+              value: {{ printf "%s/1" (include "nethical-recon.redisUrl" .) | quote }}
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "nethical-recon.fullname" . }}-config
+                  key: LOG_LEVEL
+            - name: JSON_LOGS
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "nethical-recon.fullname" . }}-config
+                  key: JSON_LOGS
+          volumeMounts:
+            - name: scheduler-data
+              mountPath: /tmp
+          livenessProbe:
+            exec:
+              command:
+                - pgrep
+                - -f
+                - "celery.*beat"
+            initialDelaySeconds: 60
+            periodSeconds: 60
+            timeoutSeconds: 10
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.scheduler.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+      volumes:
+        - name: scheduler-data
+          emptyDir: {}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

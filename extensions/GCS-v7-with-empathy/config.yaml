@@ -1,0 +1,97 @@
+affective_model:
+  output_model_path: "models/affective_state_classifier.h5"
+  deap_dataset_path: "data/deap_dataset.npz"
+  physio_branch_units: 64
+  voice_branch_units: 64
+  fusion_units: 128
+  dropout_rate: 0.3
+  # NEW: Centralized, auditable emotion mapping
+  emotion_mapping:
+    # The order here MUST match the model's softmax output
+    class_order: ["ANXIETY", "DEPRESSION", "JOY", "ANGER"]
+    anchors:
+      ANXIETY:    { valence: -0.5, arousal: 8.0 }
+      DEPRESSION: { valence: -0.8, arousal: 3.0 }
+      JOY:        { valence:  0.8, arousal: 6.0 }
+      ANGER:      { valence: -0.6, arousal: 9.0 }
+
+# PHASE 7: Empathy Module Configuration
+empathy:
+  enabled: true
+  # Empathy Response Generation
+  response_generation:
+    confidence_threshold: 0.75  # Minimum confidence for empathy responses
+    cultural_adaptation_enabled: true
+    personalization_enabled: true
+    therapeutic_alignment_required: true
+  
+  # Privacy and Security
+  privacy:
+    encryption_enabled: true
+    access_logging: true
+    data_retention_days: 90  # Emotional data retention period
+    anonymization_threshold_days: 30  # When to anonymize data
+  
+  # Ethical Guidelines
+  ethics:
+    crisis_detection_enabled: true
+    professional_referral_mandatory: true
+    manipulation_prevention: true
+    autonomy_preservation: true
+    informed_consent_required: true
+  
+  # Effectiveness Measurement
+  measurement:
+    user_feedback_collection: true
+    emotional_improvement_tracking: true
+    longitudinal_analysis_enabled: true
+    effectiveness_reporting_interval_days: 7
+  
+  # Cultural Sensitivity
+  cultural_adaptation:
+    default_context: "individualistic"
+    adaptation_models_enabled: true
+    cross_cultural_validation: true
+  
+  # Therapeutic Integration
+  therapeutic:
+    evidence_based_interventions: true
+    therapeutic_goal_tracking: true
+    professional_collaboration_enabled: true
+    intervention_safety_protocols: true
+
+# Real data paths configuration
+real_data_paths:
+  eeg_data_dir: "data/real_eeg"  # Directory containing real EEG data files (.npz, .npy)
+  # Example structure:
+  # data/real_eeg/
+  #   ├── subject_01.npz  # Contains 'eeg' and 'labels' arrays
+  #   ├── subject_02.npz
+  #   └── ...
+  
+  # Alternative: individual file paths
+  # eeg_files:
+  #   - "data/subject1_motor_imagery.npz"
+  #   - "data/subject2_motor_imagery.npz"
+
+# Core model configuration
+cortical_nodes: 68
+timesteps: 250
+physio_features: 2
+batch_size: 32
+epochs: 10
+output_model_dir: "models"
+graph_scaffold_path: "data/graph_scaffold.npz"
+online_learning_rate: 0.0001
+train_subjects: 10
+eeg_channels: 64
+use_physio_input: false
+
+# Neuromodulation configuration
+neuromodulation:
+  enabled: true
+  default_target_nerve: "vagus"
+  available_modalities: ["ultrasound", "electrical"]
+  ultrasound_params:
+    duration_s: 1.0
+    intensity: 0.5

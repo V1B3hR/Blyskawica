@@ -1,0 +1,153 @@
+name: 🐛 Bug Report
+description: Report a bug or unexpected behavior
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to report a bug! Please fill out the information below to help us diagnose and fix the issue.
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Prerequisites
+      description: Please confirm the following before submitting
+      options:
+        - label: I have searched existing issues to ensure this bug hasn't been reported
+          required: true
+        - label: I am using the latest version of Nethical Recon
+          required: true
+        - label: I have read the documentation
+          required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: What version of Nethical Recon are you using?
+      placeholder: "e.g., 6.0.0, 5.2.1"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: How severe is this bug?
+      options:
+        - Low - Minor inconvenience, workaround exists
+        - Medium - Significant impact, workaround exists
+        - High - Major functionality broken, no workaround
+        - Critical - System unusable or data loss
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of the bug
+      placeholder: Describe what happened
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+      placeholder: Describe what you expected
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+      placeholder: Describe what actually occurred
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Detailed steps to reproduce the bug
+      placeholder: |
+        1. Step one
+        2. Step two
+        3. Step three
+        4. Bug occurs
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Please provide your environment details
+      value: |
+        - OS: [e.g., Ubuntu 22.04, macOS 13, Windows 11]
+        - Python Version: [e.g., 3.11.5]
+        - Installation Method: [pip, docker, source]
+        - Database: [PostgreSQL, SQLite, etc.]
+        - Deployment: [local, docker, kubernetes]
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: configuration
+    attributes:
+      label: Configuration
+      description: Relevant configuration (remove sensitive data!)
+      placeholder: |
+        Paste relevant configuration here
+        (Remove passwords, API keys, etc.)
+      render: yaml
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs and Error Messages
+      description: Relevant logs or error messages
+      placeholder: Paste logs here
+      render: shell
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: If applicable, add screenshots to help explain the problem
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other context about the problem
+      placeholder: Add any other relevant information
+
+  - type: checkboxes
+    id: workaround
+    attributes:
+      label: Workaround Available
+      options:
+        - label: I have found a workaround for this issue
+
+  - type: textarea
+    id: workaround-description
+    attributes:
+      label: Workaround Description
+      description: If you found a workaround, please describe it
+      placeholder: Describe the workaround
+
+  - type: checkboxes
+    id: willingness
+    attributes:
+      label: Contribution
+      options:
+        - label: I am willing to submit a pull request to fix this bug

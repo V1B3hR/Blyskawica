@@ -1,0 +1,17 @@
+{
+    "model_info": {
+        "theory": "Orchestrated Objective Reduction (Orch OR) & Microtubule Quantum Optics",
+        "description": "Simulated tubulin dimer dipole-dipole quantum coupling and phonon-induced decoherence.",
+        "experimental_basis": "eNeuro 2024 - Microtubule stabilization and quantum-optical anesthesia delay."
+    },
+    "tubulin_lattice": {
+        "dimer_count": 8,
+        "inter_dimer_distance_nanometers": 8.0,
+        "dipole_coupling_constant_ev": 0.012,
+        "ambient_temperature_kelvin": 310.15
+    },
+    "quantum_coherence_thresholds": {
+        "coherence_time_limit_picoseconds": 500,
+        "critical_damping_factor": 0.18
+    }
+}

@@ -1,0 +1,125 @@
+{
+  "dashboard": {
+    "title": "Nethical Recon - Overview",
+    "uid": "nethical-overview",
+    "timezone": "utc",
+    "schemaVersion": 16,
+    "version": 1,
+    "refresh": "10s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "title": "API Request Rate",
+        "type": "graph",
+        "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "rate(nethical_api_requests_total[5m])",
+            "legendFormat": "{{method}} {{endpoint}} ({{status_code}})"
+          }
+        ]
+      },
+      {
+        "title": "Tool Run Success Rate",
+        "type": "stat",
+        "gridPos": {"x": 12, "y": 0, "w": 6, "h": 8},
+        "targets": [
+          {
+            "expr": "sum(rate(nethical_tool_run_total{status=\"success\"}[5m])) / sum(rate(nethical_tool_run_total[5m])) * 100"
+          }
+        ],
+        "options": {
+          "unit": "percent"
+        }
+      },
+      {
+        "title": "Active Workers",
+        "type": "stat",
+        "gridPos": {"x": 18, "y": 0, "w": 6, "h": 8},
+        "targets": [
+          {
+            "expr": "nethical_active_workers"
+          }
+        ]
+      },
+      {
+        "title": "Tool Run Duration (p95)",
+        "type": "graph",
+        "gridPos": {"x": 0, "y": 8, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(nethical_tool_run_duration_seconds_bucket[5m]))",
+            "legendFormat": "{{tool_name}}"
+          }
+        ]
+      },
+      {
+        "title": "Findings by Severity",
+        "type": "piechart",
+        "gridPos": {"x": 12, "y": 8, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "sum by (severity) (rate(nethical_findings_total[1h]))",
+            "legendFormat": "{{severity}}"
+          }
+        ]
+      },
+      {
+        "title": "Queue Depth",
+        "type": "graph",
+        "gridPos": {"x": 0, "y": 16, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "nethical_queue_depth",
+            "legendFormat": "{{queue_name}}"
+          }
+        ]
+      },
+      {
+        "title": "Error Rate by Component",
+        "type": "graph",
+        "gridPos": {"x": 12, "y": 16, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "rate(nethical_errors_total[5m])",
+            "legendFormat": "{{component}} - {{error_type}}"
+          }
+        ]
+      },
+      {
+        "title": "API Response Time (p95)",
+        "type": "graph",
+        "gridPos": {"x": 0, "y": 24, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(nethical_api_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "{{method}} {{endpoint}}"
+          }
+        ]
+      },
+      {
+        "title": "Total Jobs",
+        "type": "stat",
+        "gridPos": {"x": 12, "y": 24, "w": 6, "h": 8},
+        "targets": [
+          {
+            "expr": "sum(nethical_job_total)"
+          }
+        ]
+      },
+      {
+        "title": "Total Findings",
+        "type": "stat",
+        "gridPos": {"x": 18, "y": 24, "w": 6, "h": 8},
+        "targets": [
+          {
+            "expr": "sum(nethical_findings_total)"
+          }
+        ]
+      }
+    ]
+  }
+}

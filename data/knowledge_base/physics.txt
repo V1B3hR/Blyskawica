@@ -1,0 +1,6 @@
+[CONCEPT: THERMODYNAMICS]
+Zasada zerowa termodynamiki mówi, że jeśli dwa układy są w równowadze termicznej z trzecim, to są też w równowadze ze sobą.
+[CONCEPT: GRAVITY]
+Grawitacja to siła przyciągania między ciałami obdarzonymi masą. Zgodnie z OTW Einsteina, jest to zakrzywienie czasoprzestrzeni.
+[CONCEPT: QUANTUM_MECHANICS]
+Zasada nieoznaczoności Heisenberga mówi, że nie można jednocześnie z dowolną dokładnością zmierzyć położenia i pędu cząstki.

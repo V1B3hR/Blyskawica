@@ -1,0 +1,54 @@
+# Dockerfile for Nethical Recon Celery Worker
+# Optimized for long-running tasks with scanning tools
+
+FROM python:3.11-slim
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PATH="/app/.local/bin:$PATH" \
+    CELERY_WORKER_CONCURRENCY=4 \
+    CELERY_WORKER_PREFETCH_MULTIPLIER=1
+
+# Install runtime dependencies and security scanning tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    nmap \
+    nikto \
+    dirb \
+    curl \
+    dnsutils \
+    whois \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN useradd -m -u 1000 -s /bin/bash nethical && \
+    mkdir -p /app /app/evidence /app/reports && \
+    chown -R nethical:nethical /app
+
+WORKDIR /app
+
+# Copy and install dependencies
+COPY --chown=nethical:nethical pyproject.toml requirements.txt README.md ./
+COPY --chown=nethical:nethical src/ ./src/
+COPY --chown=nethical:nethical alembic/ ./alembic/
+COPY --chown=nethical:nethical alembic.ini ./
+
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -e .
+
+# Switch to non-root user
+USER nethical
+
+# Health check - check if worker is processing tasks
+HEALTHCHECK --interval=60s --timeout=10s --start-period=60s --retries=3 \
+    CMD celery -A nethical_recon.worker.celery_app inspect ping -d celery@$(hostname) || exit 1
+
+# Start Celery worker with optimized settings
+CMD ["celery", "-A", "nethical_recon.worker.celery_app", "worker", \
+     "--loglevel=info", \
+     "--concurrency=${CELERY_WORKER_CONCURRENCY}", \
+     "--prefetch-multiplier=${CELERY_WORKER_PREFETCH_MULTIPLIER}", \
+     "--max-tasks-per-child=100"]

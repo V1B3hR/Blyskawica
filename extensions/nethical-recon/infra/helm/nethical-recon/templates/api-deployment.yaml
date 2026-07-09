@@ -1,0 +1,148 @@
+{{- if .Values.api.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "nethical-recon.fullname" . }}-api
+  labels:
+    {{- include "nethical-recon.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+  {{- with .Values.api.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.api.service.type }}
+  ports:
+    - name: http
+      port: {{ .Values.api.service.port }}
+      targetPort: {{ .Values.api.service.targetPort }}
+      protocol: TCP
+  selector:
+    {{- include "nethical-recon.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "nethical-recon.fullname" . }}-api
+  labels:
+    {{- include "nethical-recon.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+spec:
+  {{- if not .Values.api.autoscaling.enabled }}
+  replicas: {{ .Values.api.replicaCount }}
+  {{- end }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      {{- include "nethical-recon.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api
+  template:
+    metadata:
+      labels:
+        {{- include "nethical-recon.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: api
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secrets: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "nethical-recon.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: db-migrate
+          image: {{ include "nethical-recon.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - alembic
+            - upgrade
+            - head
+          env:
+            - name: DATABASE_URL
+              value: {{ include "nethical-recon.databaseUrl" . | quote }}
+      containers:
+        - name: api
+          image: {{ include "nethical-recon.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - nethical
+            - api
+            - serve
+            - --host
+            - "0.0.0.0"
+            - --port
+            - "8000"
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            - name: DATABASE_URL
+              value: {{ include "nethical-recon.databaseUrl" . | quote }}
+            - name: BROKER_URL
+              value: {{ printf "%s/0" (include "nethical-recon.redisUrl" .) | quote }}
+            - name: RESULT_BACKEND
+              value: {{ printf "%s/1" (include "nethical-recon.redisUrl" .) | quote }}
+            - name: API_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "nethical-recon.fullname" . }}-secrets
+                  key: API_SECRET_KEY
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "nethical-recon.fullname" . }}-config
+                  key: LOG_LEVEL
+            - name: JSON_LOGS
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "nethical-recon.fullname" . }}-config
+                  key: JSON_LOGS
+          {{- if .Values.persistence.enabled }}
+          volumeMounts:
+            - name: evidence
+              mountPath: /app/evidence
+            - name: reports
+              mountPath: /app/reports
+          {{- end }}
+          livenessProbe:
+            {{- toYaml .Values.api.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.api.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.api.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+      {{- if .Values.persistence.enabled }}
+      volumes:
+        - name: evidence
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.existingClaim | default (printf "%s-evidence-pvc" (include "nethical-recon.fullname" .)) }}
+        - name: reports
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.existingClaim | default (printf "%s-evidence-pvc" (include "nethical-recon.fullname" .)) }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

@@ -1,0 +1,11 @@
+model_path: "models/model.h5"
+graph_path: "data/graph.npz"
+labels:
+  0: "LEFT_HAND"
+  1: "RIGHT_HAND"
+batch_size: 16
+safe_mode: true
+confidence_threshold: 0.4
+monitoring: true
+output_layers: null
+attention_extractor: null

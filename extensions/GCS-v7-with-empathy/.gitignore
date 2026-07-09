@@ -1,0 +1,42 @@
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Model files (can be large)
+models/*.h5
+models/*.keras
+models/*.pkl
+
+# Data files (can be large)
+data/*.pkl
+data/*.h5
+data/*.csv
+data/deap_dataset.npz
+data/real_eeg/
+
+# Test and temporary files (but keep tests in tests/ directory)
+/test_*.py
+/backend/test_*.py
+create_sample_real_data.py
+# Note: test fixture data files (tests/*.npz) are tracked for testing
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db

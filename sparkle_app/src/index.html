@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sparkle VIBE IDE & Błyskawica V8</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="/main.js" defer></script>
+</head>
+<body class="level-2">
+  <div class="glass-bg"></div>
+  
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-area">
+        <span class="lightning-icon">⚡</span>
+        <h1>SPARKLE <span class="vibe-text">VIBE IDE</span></h1>
+        <span class="version-tag">V9.0</span>
+      </div>
+      <div class="status-area">
+        <div id="engine-status-indicator" class="status-indicator idle"></div>
+        <span id="engine-status-text">Silnik nieaktywny</span>
+        <button id="btn-start-engine" class="control-btn accent">URUCHOM RDZEŃ</button>
+      </div>
+    </header>
+
+    <!-- Main Workspace Split Container -->
+    <main class="split-container">
+      
+      <!-- LEFT PANEL: Błyskawica Chat & Neurochemistry -->
+      <section class="panel left-panel">
+        <div class="panel-header">
+          <h2>BŁYSKAWICA COGNITIVE HUB</h2>
+          <div class="panel-actions">
+            <span class="neuro-pulse">Pulse: OK</span>
+          </div>
+        </div>
+        
+        <div class="chat-container">
+          <div id="chat-messages" class="chat-messages">
+            <div class="message system-msg">
+              <strong>System Sparkle:</strong> Witaj w kokpicie kognitywnym Błyskawicy V8. Kliknij "URUCHOM RDZEŃ", aby wybudzić silnik neurochemiczny.
+            </div>
+          </div>
+          <div class="chat-input-area">
+            <input type="text" id="chat-input" placeholder="Napisz do Błyskawicy..." disabled>
+            <button id="btn-send-message" disabled>WYŚLIJ</button>
+          </div>
+        </div>
+
+        <!-- Neurochemical Monitor -->
+        <div class="neurochemistry-panel">
+          <h3>MONITOR NEUROCHEMICZNY (V8 BRAIN MAP)</h3>
+          <div class="neuro-indicators">
+            <!-- Dopamina -->
+            <div class="neuro-pod" id="pod-dopamine">
+              <div class="pod-header">
+                <span>Dopamina (Motywacja)</span>
+                <span class="pod-value" id="val-dopamine">0.67</span>
+              </div>
+              <div class="pod-bar-wrapper">
+                <div class="pod-bar" id="bar-dopamine" style="width: 67%;"></div>
+              </div>
+            </div>
+            <!-- Serotonina -->
+            <div class="neuro-pod" id="pod-serotonin">
+              <div class="pod-header">
+                <span>Serotonina (Stabilność)</span>
+                <span class="pod-value" id="val-serotonin">0.80</span>
+              </div>
+              <div class="pod-bar-wrapper">
+                <div class="pod-bar" id="bar-serotonin" style="width: 80%;"></div>
+              </div>
+            </div>
+            <!-- GABA -->
+            <div class="neuro-pod" id="pod-gaba">
+              <div class="pod-header">
+                <span>GABA (Filtr Szumów)</span>
+                <span class="pod-value" id="val-gaba">0.73</span>
+              </div>
+              <div class="pod-bar-wrapper">
+                <div class="pod-bar" id="bar-gaba" style="width: 73%;"></div>
+              </div>
+            </div>
+            <!-- Oksytocyna -->
+            <div class="neuro-pod" id="pod-oxytocin">
+              <div class="pod-header">
+                <span>Oksytocyna (Więź)</span>
+                <span class="pod-value" id="val-oxytocin">0.00</span>
+              </div>
+              <div class="pod-bar-wrapper">
+                <div class="pod-bar" id="bar-oxytocin" style="width: 0%;"></div>
+              </div>
+            </div>
+            <!-- Melatonina -->
+            <div class="neuro-pod" id="pod-melatonin">
+              <div class="pod-header">
+                <span>Melatonina (Sen)</span>
+                <span class="pod-value" id="val-melatonin">0.10</span>
+              </div>
+              <div class="pod-bar-wrapper">
+                <div class="pod-bar" id="bar-melatonin" style="width: 10%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- System Activity Stream -->
+        <div class="activity-panel">
+          <div class="activity-header">
+            <h3>🔔 AKTYWNOŚĆ SILNIKA (LOGS)</h3>
+            <div style="display: flex; gap: 8px;">
+              <button id="btn-export-logs" class="small-btn">Eksportuj</button>
+              <button id="btn-clear-logs" class="small-btn">Wyczyść</button>
+            </div>
+          </div>
+          <div id="log-console" class="log-console">
+            [System]: Oczekiwanie na inicjalizację wątku Rust...
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT PANEL: Workspace & Guest Collaboration -->
+      <section class="panel right-panel">
+        <div class="tabs-header">
+          <button id="tab-btn-workspace" class="tab-btn active">WORKSPACE & EXPLORER</button>
+          <button id="tab-btn-guests" class="tab-btn">GUEST MODEL COLLABORATION</button>
+          <button id="tab-btn-spore" class="tab-btn">ONNX SPORE (EMISARIUSZ)</button>
+        </div>
+
+        <!-- Tab 1: Workspace & Code Editor -->
+        <div id="tab-workspace" class="tab-content active">
+          <div class="workspace-layout">
+            <!-- File Explorer Sidebar -->
+            <div class="file-explorer">
+              <h4>Eksplorator Plików</h4>
+              <button id="btn-refresh-files" class="small-btn" style="margin-bottom: 8px; width: 100%;">Odśwież listę</button>
+              <div id="file-list" class="file-list">
+                <div class="file-item empty">Brak plików (Uruchom silnik)</div>
+              </div>
+            </div>
+            
+            <!-- Code Editor Area -->
+            <div class="editor-area">
+              <div class="editor-toolbar">
+                <span id="current-filename">Nie wybrano pliku</span>
+                <div class="editor-buttons">
+                  <button id="btn-save-file" class="control-btn small" disabled>ZAPISZ (VIBE CODE)</button>
+                </div>
+              </div>
+              <div class="editor-container">
+                <textarea id="code-editor" class="code-textarea" placeholder="// Wybierz plik z eksploratora po lewej lub utwórz nowy kod..." disabled></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Guest AI Models -->
+        <div id="tab-guests" class="tab-content">
+          <div class="guest-collab-layout">
+            <div class="guest-setup">
+              <h3>Zaproszenie Gościa AI</h3>
+              <p class="description">Umożliwia podłączenie innego modelu AI (np. Gemini, Claude) w celu stworzenia dualnego doświadczenia współpracy.</p>
+              <div class="form-row">
+                <label for="select-guest-model">Wybierz Model Gościa:</label>
+                <select id="select-guest-model">
+                  <option value="gemini-2.5-pro">Gemini 2.5 Pro (Gość)</option>
+                  <option value="claude-3.5-sonnet">Claude 3.5 Sonnet (Gość)</option>
+                  <option value="local-llama">Local Llama 3 (Offline)</option>
+                </select>
+              </div>
+              <button id="btn-invite-guest" class="control-btn accent">ZAPROŚ DO DYSKUSJI</button>
+            </div>
+            
+            <div class="split-chat-view">
+              <div class="split-pane pane-primary">
+                <h4>Główna rozmowa (Błyskawica)</h4>
+                <div id="primary-chat-stream" class="chat-messages-mini">
+                  <div class="message system-msg">Brak wiadomości.</div>
+                </div>
+              </div>
+              <div class="split-pane pane-guest">
+                <h4>Rozmowa z gościem (<span id="active-guest-name">Brak</span>)</h4>
+                <div id="guest-chat-stream" class="chat-messages-mini">
+                  <div class="message system-msg">Gość nie został jeszcze zaproszony.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: ONNX Spore (Emisariusz) -->
+        <div id="tab-spore" class="tab-content">
+          <div class="spore-layout">
+            <div class="spore-setup">
+              <h3>Kognitywny Emisariusz ONNX (WebGPU Spore)</h3>
+              <p class="description">Uruchom lokalną, skrystalizowaną instancję Błyskawicy w przeglądarce za pomocą ONNX Runtime. Plastyczność synaptyczna dostosowuje wagi w czasie rzeczywistym w zależności od poziomu neuroprzekaźników.</p>
+              
+              <div class="spore-actions" style="display: flex; gap: 12px; margin-top: 16px;">
+                <button id="btn-spore-load" class="control-btn accent">ZAŁADUJ EMISARIUSZA ONNX</button>
+                <button id="btn-spore-run" class="control-btn" disabled>URUCHOM INFERENCJĘ</button>
+              </div>
+              
+              <div class="spore-metrics" style="margin-top: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="metric-card">
+                  <span class="card-label">Współczynnik Plastyczności</span>
+                  <span class="card-value" id="spore-plasticity-val">0.00%</span>
+                </div>
+                <div class="metric-card">
+                  <span class="card-label">Stan Kognitywny Spore</span>
+                  <span class="card-value" id="spore-state-val">Uśpiony</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="spore-visualization" style="margin-top: 24px;">
+              <h4>MACIERZ SYNAPTYCZNA (PLASTYCZNOŚĆ W CZASIE RZECZYWISTYM)</h4>
+              <canvas id="spore-canvas" width="600" height="250" style="background: rgba(0,0,0,0.4); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); width: 100%; height: 250px; display: block;"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer Status / Security Slider -->
+    <footer class="app-footer">
+      <div class="security-level-slider">
+        <label for="security-slider">POZIOM BEZPIECZEŃSTWA SYSTEMOWEGO (REGIME):</label>
+        <div class="slider-wrapper">
+          <span class="slider-label">SANDBOX (1)</span>
+          <input type="range" id="security-slider" min="1" max="3" value="2" class="slider">
+          <span class="slider-label">WORKSPACE (2)</span>
+          <span class="slider-label">FULL OS CONTROL (3)</span>
+        </div>
+      </div>
+      <div class="regime-status">
+        STATUS REŻIMU: <span id="txt-regime-status" class="status-badge level-2-badge">Standard Workspace</span>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

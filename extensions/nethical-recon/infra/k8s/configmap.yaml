@@ -1,0 +1,35 @@
+# ConfigMap for shared configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nethical-recon-config
+  namespace: nethical-recon
+  labels:
+    app.kubernetes.io/name: nethical-recon
+    app.kubernetes.io/component: config
+data:
+  # Logging configuration
+  LOG_LEVEL: "INFO"
+  JSON_LOGS: "true"
+  
+  # Database configuration
+  DATABASE_HOST: "nethical-postgres"
+  DATABASE_PORT: "5432"
+  DATABASE_NAME: "nethical_recon"
+  
+  # Redis configuration
+  REDIS_HOST: "nethical-redis"
+  REDIS_PORT: "6379"
+  
+  # API configuration
+  API_HOST: "0.0.0.0"
+  API_PORT: "8000"
+  
+  # Worker configuration
+  CELERY_WORKER_CONCURRENCY: "4"
+  CELERY_WORKER_PREFETCH_MULTIPLIER: "1"
+  CELERY_MAX_TASKS_PER_CHILD: "100"
+  
+  # Policy configuration
+  MAX_CONCURRENT_SCANS: "10"
+  RATE_LIMIT_PER_SECOND: "10"

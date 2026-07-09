@@ -1,0 +1,9 @@
+# Kubernetes namespace for Nethical Recon
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nethical-recon
+  labels:
+    app.kubernetes.io/name: nethical-recon
+    app.kubernetes.io/part-of: nethical-recon
+    app.kubernetes.io/managed-by: kubectl

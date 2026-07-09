@@ -1,0 +1,61 @@
+# Nethical Recon - Requirements
+# Required for Fala 1: Czujniki Ruchu i Wibracji
+# Required for Fala 2: Kamery na Podczerwień
+
+# System resource monitoring (Fala 1)
+psutil>=5.8.0
+
+# Camera dependencies (Fala 2)
+# Shodan Eye - Night Vision
+shodan>=1.28.0
+
+# Censys Eye - Alternative Night Vision
+censys>=2.1.9
+
+# SSL Scanner - X-ray Vision
+# (uses standard library ssl module)
+
+# DNS Enumerator - Ghost Vision
+dnspython>=2.3.0
+
+# WAF Detector - Mask Detection
+requests>=2.28.0
+urllib3>=1.26.0
+
+# Database dependencies (Fala 6) - Optional, install as needed
+# SQLite - Built-in, no extra packages needed
+# PostgreSQL
+# psycopg2-binary>=2.9.0
+# MySQL
+# mysql-connector-python>=8.0.0
+# Microsoft SQL Server
+# pyodbc>=4.0.0
+# Oracle Database
+# cx_Oracle>=8.3.0
+# IBM Db2
+# ibm_db>=3.1.0
+# Snowflake
+# snowflake-connector-python>=3.0.0
+# MongoDB
+# pymongo>=4.0.0
+# Redis
+# redis>=4.5.0
+# Elasticsearch
+# elasticsearch>=8.0.0
+
+# UI dependencies (Fala 7) - Command Center Dashboard
+rich>=13.0.0
+textual>=0.41.0
+
+# MFA/2FA Support (Security Hardening)
+pyotp>=2.9.0
+qrcode>=7.4.2
+Pillow>=10.0.0
+
+# DNS Monitoring Fallback
+scapy>=2.5.0
+
+# Optional: For enhanced features (install as needed)
+# Note: Some features require system tools like:
+# - tcpdump, zeek (Fala 1)
+# - theHarvester (Fala 2 - Harvester Eye)

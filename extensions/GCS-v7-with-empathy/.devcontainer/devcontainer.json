@@ -1,0 +1,33 @@
+{
+  "name": "GCS Development Environment",
+  // Use Docker Compose to define our multi-service environment
+  "dockerComposeFile": "docker-compose.yml",
+  
+  // The service to open VS Code in (our Python backend)
+  "service": "backend",
+  
+  // The folder to open in the VS Code editor
+  "workspaceFolder": "/workspace",
+
+  // Run commands AFTER the environment is created to install dependencies
+  "postCreateCommand": "pip install -r backend/requirements.txt && npm install --prefix frontend",
+
+  // VS Code extensions to automatically install for a great experience
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "esbenp.prettier-vscode",
+        "ms-azuretools.vscode-docker"
+      ]
+    }
+  },
+
+  // Forward ports from the container to your local machine
+  "forwardPorts": [8000, 3000],
+  "portsAttributes": {
+    "8000": { "label": "GCS Backend (API)" },
+    "3000": { "label": "GCS Frontend (UI)" }
+  }
+}

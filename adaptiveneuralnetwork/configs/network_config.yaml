@@ -1,0 +1,39 @@
+# 3D Network Configuration Example
+# Three-dimensional network for realistic spatial simulations
+# Suitable for robotics, 3D environments, and volumetric processing
+
+spatial_dims: 3
+nodes: 27  # 3x3x3 cube arrangement
+topology: grid
+
+# 3D-optimized settings
+external_signal_interval: 5
+
+# API endpoints for external signals (optional)
+api_endpoints:
+  human: null
+  ai: null
+  world: null
+
+# Network parameters optimized for 3D
+# Note: Communication range increased to account for 3D volume scaling
+communication_range: 3.0
+collision_radius: 0.7
+
+# 3D-specific bounds (optional, used by some experiments)
+space_bounds: [-10, 10, -10, 10, -10, 10]  # [x_min, x_max, y_min, y_max, z_min, z_max]
+
+# Performance settings
+max_nodes_per_step: 75  # Slightly reduced for 3D complexity
+simulation_speed: 1.0
+
+# Visualization settings for 3D
+visualization:
+  enabled: true
+  type: "3d_scatter"
+  update_interval: 10
+
+# Logging and monitoring
+log_level: "INFO"
+metrics_enabled: true
+spatial_metrics_enabled: true

@@ -1,0 +1,6 @@
+[CONCEPT: EVOLUTION]
+Dobór naturalny to mechanizm ewolucji polegający na przeżywaniu i reprodukcji organizmów najlepiej przystosowanych do środowiska.
+[CONCEPT: GENETICS]
+DNA to kwas deoksyrybonukleinowy, nośnik informacji genetycznej u organizmów żywych, o strukturze podwójnej helisy.
+[CONCEPT: CELL_BIOLOGY]
+Mitochondrium to organellum komórkowe, które odpowiada za oddychanie komórkowe i produkcję ATP (energii).

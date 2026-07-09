@@ -1,0 +1,58 @@
+{
+    "database": "KEGG Metabolic Pathways Stub",
+    "version": "V9.0-Offline",
+    "last_update": "2026-05-28",
+    "pathways": [
+        {
+            "id": "map00010",
+            "name": "Glycolysis / Gluconeogenesis",
+            "description": "Glycolysis is the process of converting glucose into pyruvate, generating ATP and NADH.",
+            "reactions": [
+                {
+                    "id": "R00959",
+                    "enzyme": "2.7.1.1 (Hexokinase)",
+                    "substrates": ["D-Glucose", "ATP"],
+                    "products": ["alpha-D-Glucose 6-phosphate", "ADP"]
+                },
+                {
+                    "id": "R02740",
+                    "enzyme": "5.3.1.9 (Glucose-6-phosphate isomerase)",
+                    "substrates": ["alpha-D-Glucose 6-phosphate"],
+                    "products": ["beta-D-Fructose 6-phosphate"]
+                }
+            ]
+        },
+        {
+            "id": "map00020",
+            "name": "Citrate cycle (TCA cycle / Krebs cycle)",
+            "description": "The citrate cycle (TCA cycle, Krebs cycle) is an essential metabolic pathway in all aerobic organisms.",
+            "reactions": [
+                {
+                    "id": "R00351",
+                    "enzyme": "4.1.3.7 (Citrate synthase)",
+                    "substrates": ["Acetyl-CoA", "Oxaloacetate", "H2O"],
+                    "products": ["Citrate", "CoA"]
+                },
+                {
+                    "id": "R01325",
+                    "enzyme": "4.2.1.3 (Aconitate hydratase)",
+                    "substrates": ["Citrate"],
+                    "products": ["Isocitrate"]
+                }
+            ]
+        },
+        {
+            "id": "map00190",
+            "name": "Oxidative phosphorylation",
+            "description": "Oxidative phosphorylation is the metabolic pathway in which cells use enzymes to oxidize nutrients, thereby releasing energy which is used to reform ATP.",
+            "reactions": [
+                {
+                    "id": "R00081",
+                    "enzyme": "1.6.5.3 (NADH dehydrogenase)",
+                    "substrates": ["NADH", "Ubiquinone"],
+                    "products": ["NAD+", "Ubiquinol"]
+                }
+            ]
+        }
+    ]
+}

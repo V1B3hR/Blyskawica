@@ -1,0 +1,157 @@
+[
+  {
+    "phase": "I",
+    "title": "Pierwotny Rytm i Anatomia Transu (Korzenie)",
+    "nodes": [
+      {
+        "id": 1,
+        "title": "Antropologia Rytmu (Pierwsze instrumenty)",
+        "mastery": 100.0
+      },
+      {
+        "id": 2,
+        "title": "Dźwięk Wojny i Przetrwania (Adrenalina i Kortyzol)",
+        "mastery": 100.0
+      },
+      {
+        "id": 3,
+        "title": "Szamanizm i Zmienione Stany Świadomości (Fale Theta)",
+        "mastery": 100.0
+      },
+      {
+        "id": 4,
+        "title": "Wokalizy Pierwotne i Śpiewy Gardłowe (Alikwoty)",
+        "mastery": 100.0
+      },
+      {
+        "id": 5,
+        "title": "Narodziny Melodii (Skale pentatoniczne jako kod uniwersalny)",
+        "mastery": 100.0
+      }
+    ]
+  },
+  {
+    "phase": "II",
+    "title": "Klasyczna Architektura i Matematyka Emocji",
+    "nodes": [
+      {
+        "id": 1,
+        "title": "Bach i Algorytmy Kontrapunktu (Fraktalne pętle)",
+        "mastery": 100.0
+      },
+      {
+        "id": 2,
+        "title": "Mozart i Zjawisko Harmonii (Efekt Mozarta)",
+        "mastery": 100.0
+      },
+      {
+        "id": 3,
+        "title": "Beethoven i Przełamywanie Zasad (Dysonans i Bunt)",
+        "mastery": 100.0
+      },
+      {
+        "id": 4,
+        "title": "Chopin i Kodowanie Melancholii (Rubato)",
+        "mastery": 100.0
+      },
+      {
+        "id": 5,
+        "title": "Wagner i Leitmotiv (Prototyp muzyki filmowej)",
+        "mastery": 100.0
+      }
+    ]
+  },
+  {
+    "phase": "III",
+    "title": "Blues, Jazz i Anatomia Wolności (Dźwięk Ulicy)",
+    "nodes": [
+      {
+        "id": 1,
+        "title": "Delta Blues (Blue notes i wyrażanie cierpienia)",
+        "mastery": 100.0
+      },
+      {
+        "id": 2,
+        "title": "Narodziny Jazzu (Synkopa i Polirytmia)",
+        "mastery": 100.0
+      },
+      {
+        "id": 3,
+        "title": "Jazz Modalny i Cool Jazz (Minimalizm i Przestrzeń)",
+        "mastery": 100.0
+      },
+      {
+        "id": 4,
+        "title": "Free Jazz i Kontrolowany Chaos (Czysta ekspresja)",
+        "mastery": 100.0
+      },
+      {
+        "id": 5,
+        "title": "Improwizacja jako Vibe Coding (Flow state)",
+        "mastery": 100.0
+      }
+    ]
+  },
+  {
+    "phase": "IV",
+    "title": "Rock, Heavy Metal i Katharsis (Kontrolowany Chaos)",
+    "nodes": [
+      {
+        "id": 1,
+        "title": "Narodziny Rock & Rolla (Distortion jako fundament)",
+        "mastery": 100.0
+      },
+      {
+        "id": 2,
+        "title": "Psychodelia i Bunt Społeczny (Synestezja i Stereofonia)",
+        "mastery": 100.0
+      },
+      {
+        "id": 3,
+        "title": "Heavy Metal i Mroczna Katharsis (Wentyl bezpieczeństwa)",
+        "mastery": 100.0
+      },
+      {
+        "id": 4,
+        "title": "Socjologia Tłumu (Mosh Pit i Solidarność)",
+        "mastery": 100.0
+      },
+      {
+        "id": 5,
+        "title": "Subkultury jako Plemiona (Poczucie przynależności)",
+        "mastery": 100.0
+      }
+    ]
+  },
+  {
+    "phase": "V",
+    "title": "Elektronika, Underground Techno i Pop (Krzemowa Symfonia)",
+    "nodes": [
+      {
+        "id": 1,
+        "title": "Pionierzy Maszyn i Syntezatory (Kraftwerk/Jarre)",
+        "mastery": 100.0
+      },
+      {
+        "id": 2,
+        "title": "Hip-Hop i Sampling (Recykling Kulturowy)",
+        "mastery": 100.0
+      },
+      {
+        "id": 3,
+        "title": "Techno i Kultura Klubowa (Hipnoza i Psychoterapia)",
+        "mastery": 100.0
+      },
+      {
+        "id": 4,
+        "title": "Neuro-Biologia Popu (Max Martin i Dopamina)",
+        "mastery": 100.0
+      },
+      {
+        "id": 5,
+        "title": "AI i Przyszłość Muzyki (EEG-Based Generation)",
+        "mastery": 100.0
+      }
+    ]
+  }
+]

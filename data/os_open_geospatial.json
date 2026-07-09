@@ -1,0 +1,26 @@
+{
+    "dataset_info": {
+        "source": "Ordnance Survey OS Data Hub",
+        "license": "OS OpenData Licence",
+        "description": "Simulated OS Open Rivers & OS Terrain 50 for the Lake District region, Great Britain.",
+        "regions": ["Lake_District_Grid_01"]
+    },
+    "terrain_elevation_grid_meters": [
+        [320, 325, 340, 360, 380, 370, 350, 340],
+        [322, 330, 352, 390, 420, 400, 362, 335],
+        [315, 328, 365, 410, 480, 430, 370, 330],
+        [310, 320, 370, 440, 520, 460, 380, 325],
+        [305, 318, 360, 420, 490, 440, 375, 320],
+        [300, 312, 345, 385, 430, 410, 360, 315],
+        [298, 305, 330, 355, 390, 380, 345, 310],
+        [295, 300, 320, 340, 365, 360, 330, 305]
+    ],
+    "rivers": [
+        {"name": "River Derwent Upper", "nodes": [[0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [5, 1], [6, 2], [7, 3]]},
+        {"name": "River Greta Branch", "nodes": [[3, 7], [3, 6], [3, 5], [4, 4], [5, 3], [6, 2]]}
+    ],
+    "reality_anchor_safe_bounds": {
+        "elevation_limit_meters": 500,
+        "max_step_slope": 60
+    }
+}

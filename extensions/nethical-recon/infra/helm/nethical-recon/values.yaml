@@ -1,0 +1,264 @@
+# Default values for nethical-recon Helm chart
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Global settings
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  storageClass: ""
+
+# Image configuration
+image:
+  repository: nethical-recon
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# Service Account
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# API configuration
+api:
+  enabled: true
+  replicaCount: 2
+  
+  service:
+    type: ClusterIP
+    port: 8000
+    targetPort: 8000
+    annotations: {}
+  
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 8000
+    initialDelaySeconds: 60
+    periodSeconds: 30
+    timeoutSeconds: 10
+    failureThreshold: 3
+  
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: 8000
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+# Worker configuration
+worker:
+  enabled: true
+  replicaCount: 2
+  concurrency: 4
+  prefetchMultiplier: 1
+  maxTasksPerChild: 100
+  
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+  
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      percent: 50
+      periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      percent: 100
+      periodSeconds: 30
+
+# Scheduler (Celery Beat) configuration
+scheduler:
+  enabled: true
+  replicaCount: 1
+  
+  resources:
+    limits:
+      cpu: 500m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# PostgreSQL configuration
+postgresql:
+  enabled: true
+  auth:
+    username: nethical
+    password: changeme-in-production
+    database: nethical_recon
+  
+  primary:
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+    
+    persistence:
+      enabled: true
+      size: 10Gi
+      # storageClass: ""
+  
+  service:
+    type: ClusterIP
+    port: 5432
+
+# Redis configuration
+redis:
+  enabled: true
+  auth:
+    enabled: false
+  
+  master:
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+    
+    persistence:
+      enabled: false
+      size: 1Gi
+  
+  replica:
+    replicaCount: 0
+
+# Persistence for evidence and reports
+persistence:
+  enabled: true
+  accessMode: ReadWriteMany
+  size: 50Gi
+  # storageClass: ""
+  # existingClaim: ""
+
+# Ingress configuration
+ingress:
+  enabled: false
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: nethical.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  #  - secretName: nethical-tls-cert
+  #    hosts:
+  #      - nethical.example.com
+
+# Security context
+podSecurityContext:
+  fsGroup: 1000
+  runAsNonRoot: true
+  runAsUser: 1000
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  runAsUser: 1000
+  capabilities:
+    drop:
+      - ALL
+
+# Configuration
+config:
+  logLevel: "INFO"
+  jsonLogs: "true"
+  maxConcurrentScans: 10
+  rateLimitPerSecond: 10
+
+# Secrets
+secrets:
+  # API configuration
+  apiSecretKey: "changeme-your-secret-key-minimum-32-characters-long"
+  
+  # Database credentials (if not using external database)
+  databaseUser: "nethical"
+  databasePassword: "changeme-in-production"
+  
+  # External API keys (optional)
+  shodanApiKey: ""
+  censysApiId: ""
+  censysApiSecret: ""
+  openaiApiKey: ""
+
+# External database configuration (if postgresql.enabled=false)
+externalDatabase:
+  enabled: false
+  host: ""
+  port: 5432
+  database: nethical_recon
+  user: nethical
+  password: ""
+
+# External Redis configuration (if redis.enabled=false)
+externalRedis:
+  enabled: false
+  host: ""
+  port: 6379
+
+# Monitoring
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: false
+    interval: 30s
+    scrapeTimeout: 10s
+
+# Node selector, tolerations, and affinity
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Pod disruption budget
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+  # maxUnavailable: 1

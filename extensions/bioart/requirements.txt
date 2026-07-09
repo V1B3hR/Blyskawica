@@ -1,0 +1,22 @@
+# DNA Programming Language - No External Dependencies Required
+# 
+# This project is implemented using only Python standard library modules.
+# No additional packages need to be installed.
+#
+# Minimum Python version: 3.6+
+#
+# For development and testing:
+# - Python 3.6 or higher
+# - Standard library modules only:
+#   - sys
+#   - os  
+#   - time
+#   - random
+#   - gc
+#   - struct
+#   - io
+#   - contextlib
+#   - typing (for type hints)
+#
+# Installation:
+# No pip install required - just run the Python scripts directly 

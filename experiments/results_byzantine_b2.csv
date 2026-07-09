@@ -1,0 +1,3 @@
+Config,Final Performance,Byzantine Trust (Final),Normal Trust (Final),Trust Drop Delta
+Trust Enabled (Resilient),0.9862525878101588,0.6509516835212708,0.6576782464981079,0.006726562976837158
+Trust Disabled (Vulnerable),0.9912858254089951,1.0,1.0,0.0

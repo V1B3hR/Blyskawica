@@ -1,0 +1,17 @@
+# Development dependencies for Bioart
+# Install with: pip install -r dev-requirements.txt
+
+# Testing
+pytest>=7.0.0
+pytest-cov>=4.0.0
+coverage[toml]>=7.0.0
+
+# Code quality
+black>=24.0.0
+ruff>=0.1.0
+mypy>=1.0.0
+pre-commit>=3.0.0
+
+# Optional: for profiling (M1)
+# py-spy>=0.3.14
+# scalene>=1.5.0

@@ -1,0 +1,41 @@
+{
+  "timestamp": 1757897968.8758526,
+  "ci_mode": true,
+  "results": {
+    "Encoding Performance": {
+      "error": "'DNAEncoder' object has no attribute 'bytes_to_dna'"
+    },
+    "Decoding Performance": {
+      "error": "'DNAEncoder' object has no attribute 'bytes_to_dna'"
+    },
+    "Virtual Machine": {
+      "error": "'Bioart' object has no attribute 'compile_dna_program'"
+    },
+    "Memory Usage": {
+      "error": "'DNAEncoder' object has no attribute 'bytes_to_dna'"
+    },
+    "Large Data Processing": {
+      "error": "'DNAEncoder' object has no attribute 'bytes_to_dna'"
+    },
+    "Error Correction": {
+      "sequence_40": {
+        "length": 40,
+        "correction_time_ms": 0.007673999903090589,
+        "error_count": 0,
+        "error_rate": 0.0
+      },
+      "sequence_400": {
+        "length": 400,
+        "correction_time_ms": 0.010579999980109278,
+        "error_count": 0,
+        "error_rate": 0.0
+      },
+      "sequence_4000": {
+        "length": 4000,
+        "correction_time_ms": 0.060553000025720394,
+        "error_count": 0,
+        "error_rate": 0.0
+      }
+    }
+  }
+}

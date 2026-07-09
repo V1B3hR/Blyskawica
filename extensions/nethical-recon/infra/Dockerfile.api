@@ -1,0 +1,46 @@
+# Dockerfile for Nethical Recon API Service
+# Optimized for API workload with health checks and graceful shutdown
+
+FROM python:3.11-slim
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PATH="/app/.local/bin:$PATH"
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN useradd -m -u 1000 -s /bin/bash nethical && \
+    mkdir -p /app /app/evidence /app/reports && \
+    chown -R nethical:nethical /app
+
+WORKDIR /app
+
+# Copy and install dependencies
+COPY --chown=nethical:nethical pyproject.toml requirements.txt README.md ./
+COPY --chown=nethical:nethical src/ ./src/
+COPY --chown=nethical:nethical alembic/ ./alembic/
+COPY --chown=nethical:nethical alembic.ini ./
+
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -e .
+
+# Switch to non-root user
+USER nethical
+
+# Health check for API
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Expose API port
+EXPOSE 8000
+
+# Run migrations and start API
+CMD ["sh", "-c", "alembic upgrade head && nethical api serve --host 0.0.0.0 --port 8000"]

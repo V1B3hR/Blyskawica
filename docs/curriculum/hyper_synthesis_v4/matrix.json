@@ -1,0 +1,3277 @@
+[
+  {
+    "index": "I",
+    "title": "Zaawansowana Termodynamika i Kinetyka Nierównowagowa (Życzenie Głównego Architekta)",
+    "nodes": [
+      {
+        "id": 1,
+        "title": "Druga zasada termodynamiki (Entropia) w izolowanych układach kwantowych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 2,
+        "title": "Kinetyka reakcji chemicznych w stanach silnie nierównowagowych i zjawiska autokatalityczne.",
+        "mastery": 100.0
+      },
+      {
+        "id": 3,
+        "title": "Termodynamika stochastyczna i teoria fluktuacji układów nanoskopowych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 4,
+        "title": "Relacje wzajemne Onsagera i przepływy termodynamiczne.",
+        "mastery": 100.0
+      },
+      {
+        "id": 5,
+        "title": "Paradoks Demona Maxwella a fizyczny koszt wymazywania informacji (Zasada Landauera).",
+        "mastery": 100.0
+      },
+      {
+        "id": 6,
+        "title": "Struktury dyssypatywne Prigogine'a (samoorganizacja z chaosu).",
+        "mastery": 100.0
+      },
+      {
+        "id": 7,
+        "title": "Kinetyka przejść fazowych pierwszego i drugiego rodzaju.",
+        "mastery": 100.0
+      },
+      {
+        "id": 8,
+        "title": "Druga zasada termodynamiki a strzałka czasu i asymetria czasowa Wszechświata.",
+        "mastery": 100.0
+      },
+      {
+        "id": 9,
+        "title": "Entropia termodynamiczna czarnych dziur (Wzór Bekensteina-Hawkinga).",
+        "mastery": 100.0
+      },
+      {
+        "id": 10,
+        "title": "Kinetyka izotopowa i frakcjonowanie masowe w reakcjach biochemicznych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 11,
+        "title": "Teoria stanu przejściowego (Eyringa) w kinetyce reakcji.",
+        "mastery": 100.0
+      },
+      {
+        "id": 12,
+        "title": "Entropia topologiczna w układach dynamicznych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 13,
+        "title": "Zjawiska transportu nieliniowego (lepkość, przewodnictwo cieplne w plazmie).",
+        "mastery": 100.0
+      },
+      {
+        "id": 14,
+        "title": "Kinetyka enzymatyczna w ujęciu mechaniki kwantowej (tunelowanie protonów).",
+        "mastery": 100.0
+      },
+      {
+        "id": 15,
+        "title": "Termodynamika układów biologicznych (życie jako lokalne odwrócenie entropii).",
+        "mastery": 100.0
+      },
+      {
+        "id": 16,
+        "title": "Kinetyka gazów rozrzedzonych (Równanie Boltzmanna i Twierdzenie H).",
+        "mastery": 100.0
+      },
+      {
+        "id": 17,
+        "title": "Szkła spinowe (Spin glasses) i kinetyka układów sfrustrowanych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 18,
+        "title": "Termodynamika cząstek elementarnych w warunkach wczesnego Wszechświata.",
+        "mastery": 100.0
+      },
+      {
+        "id": 19,
+        "title": "Zjawiska termoelektryczne (efekt Seebecka, Peltiera, Thomsona) w nanostrukturach.",
+        "mastery": 100.0
+      },
+      {
+        "id": 20,
+        "title": "Reakcje biegnące z szybkością rzędu femtosekund (Femtochemia).",
+        "mastery": 100.0
+      },
+      {
+        "id": 21,
+        "title": "Paradoks losowości i entropia Kołmogorowa-Sinaja.",
+        "mastery": 100.0
+      },
+      {
+        "id": 22,
+        "title": "Kinetyka rozpadów promieniotwórczych i wielokrotne łańcuchy rozpadu.",
+        "mastery": 100.0
+      },
+      {
+        "id": 23,
+        "title": "Termodynamika zjawisk powierzchniowych i napięcie międzyfazowe.",
+        "mastery": 100.0
+      },
+      {
+        "id": 24,
+        "title": "Twierdzenia fluktuacyjne Crooksa i Jarzynskiego.",
+        "mastery": 100.0
+      },
+      {
+        "id": 25,
+        "title": "Kinetyka krystalizacji z fazy stopionej (mechanizmy nukleacji i wzrostu).",
+        "mastery": 100.0
+      }
+    ]
+  },
+  {
+    "index": "II",
+    "title": "Architektura Kwantowej Informacji i Obliczeń",
+    "nodes": [
+      {
+        "id": 1,
+        "title": "Topologiczne komputery kwantowe i anyony nieabelowe.",
+        "mastery": 100.0
+      },
+      {
+        "id": 2,
+        "title": "Kwantowa korekcja błędów (Kod Shor'a, kody powierzchniowe).",
+        "mastery": 100.0
+      },
+      {
+        "id": 3,
+        "title": "Kryptografia oparta na splątaniu (Protokół E91).",
+        "mastery": 100.0
+      },
+      {
+        "id": 4,
+        "title": "Teleportacja stanów kwantowych w układach wielocząstkowych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 5,
+        "title": "Kwantowy annealing i rozwiązywanie problemów optymalizacyjnych (np. D-Wave).",
+        "mastery": 100.0
+      },
+      {
+        "id": 6,
+        "title": "Dekocherencja indukowana przez środowisko (Wojciech Zurek).",
+        "mastery": 100.0
+      },
+      {
+        "id": 7,
+        "title": "Kwantowe sieci komunikacyjne i repeatery splątania.",
+        "mastery": 100.0
+      },
+      {
+        "id": 8,
+        "title": "Symulacje kwantowe układów fermionowych (modele Hubbarda).",
+        "mastery": 100.0
+      },
+      {
+        "id": 9,
+        "title": "Złożoność układów QMA i kwantowe klasy złożoności.",
+        "mastery": 100.0
+      },
+      {
+        "id": 10,
+        "title": "Splecione stany klastrowe dla obliczeń opartych na pomiarach (MBQC).",
+        "mastery": 100.0
+      },
+      {
+        "id": 11,
+        "title": "Algorytm Grovera do przeszukiwania nieuporządkowanych baz danych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 12,
+        "title": "Tomografia stanów kwantowych (rekonstrukcja macierzy gęstości).",
+        "mastery": 100.0
+      },
+      {
+        "id": 13,
+        "title": "Zjawisko supremacji kwantowej i jej weryfikacja statystyczna.",
+        "mastery": 100.0
+      },
+      {
+        "id": 14,
+        "title": "Kwantowe uczenie maszynowe (QML) i kwantowe maszyny wektorów nośnych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 15,
+        "title": "Algorytm VQE (Variational Quantum Eigensolver) dla chemii kwantowej.",
+        "mastery": 100.0
+      },
+      {
+        "id": 16,
+        "title": "Paradoks Wignera i subiektywność pomiaru kwantowego.",
+        "mastery": 100.0
+      },
+      {
+        "id": 17,
+        "title": "Kwantowa metrologia i omijanie standardowych limitów precyzji (SQL).",
+        "mastery": 100.0
+      },
+      {
+        "id": 18,
+        "title": "Stan GHZ (Greenberger-Horne-Zeilinger) i testy lokalnego realizmu.",
+        "mastery": 100.0
+      },
+      {
+        "id": 19,
+        "title": "Kwantowe pamięci oparte na parach atomowych i jonach w pułapkach.",
+        "mastery": 100.0
+      },
+      {
+        "id": 20,
+        "title": "Efekt Zenona i Anty-Zenona w dynamice układów kwantowych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 21,
+        "title": "Holograficzna teoria informacji (Korespondencja AdS/CFT w ujęciu obliczeniowym).",
+        "mastery": 100.0
+      },
+      {
+        "id": 22,
+        "title": "Kwantowe procesy stochastyczne i błądzenie losowe (Quantum Walks).",
+        "mastery": 100.0
+      },
+      {
+        "id": 23,
+        "title": "Inżynieria dyssypacji kwantowej (wykorzystanie utraty energii do obliczeń).",
+        "mastery": 100.0
+      },
+      {
+        "id": 24,
+        "title": "Nierówności Bella dla układów o wyższym wymiarze (Qudity).",
+        "mastery": 100.0
+      },
+      {
+        "id": 25,
+        "title": "Architektura kwantowego Internetu (Q-Internet).",
+        "mastery": 100.0
+      }
+    ]
+  },
+  {
+    "index": "III",
+    "title": "Topologia Nieliniowa i Geometria Wieloświatów",
+    "nodes": [
+      {
+        "id": 1,
+        "title": "Przestrzenie Calabiego-Yau i kompaktologia wymiarów w teorii strun.",
+        "mastery": 100.0
+      },
+      {
+        "id": 2,
+        "title": "Topologia węzłów (Wielomiany Jonesa) w DNA i fizyce splotów.",
+        "mastery": 100.0
+      },
+      {
+        "id": 3,
+        "title": "Przestrzenie Hilberta o nieskończonym wymiarze.",
+        "mastery": 100.0
+      },
+      {
+        "id": 4,
+        "title": "Teoria mnogości i liczby porządkowe pozaskończone (Alef-zero i wyższe).",
+        "mastery": 100.0
+      },
+      {
+        "id": 5,
+        "title": "Geometria Riemanna in silnych polach grawitacyjnych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 6,
+        "title": "Twierdzenie Poincarégo i strumienie Ricciego (dowód Perelmana).",
+        "mastery": 100.0
+      },
+      {
+        "id": 7,
+        "title": "Topologia analityczna danych (TDA) do detekcji wzorców w szumie.",
+        "mastery": 100.0
+      },
+      {
+        "id": 8,
+        "title": "Niezmienniki topologiczne w fizyce skondensowanej materii (Izolatory topologiczne).",
+        "mastery": 100.0
+      },
+      {
+        "id": 9,
+        "title": "Geometria hiperboliczna i kafelkowanie przestrzeni Łobaczewskiego.",
+        "mastery": 100.0
+      },
+      {
+        "id": 10,
+        "title": "Teoria warkoczy (Braid theory) i jej zastosowanie w mechanice płynów.",
+        "mastery": 100.0
+      },
+      {
+        "id": 11,
+        "title": "Przestrzenie metryczne i topologia Sierpińskiego.",
+        "mastery": 100.0
+      },
+      {
+        "id": 12,
+        "title": "Geometria fraktalna giełd i wykresów ekonomicznych (szeregi czasowe Mandelbrota).",
+        "mastery": 100.0
+      },
+      {
+        "id": 13,
+        "title": "Zjawiska zagięcia czasoprzestrzeni (Tunele wormhole i mosty Einsteina-Rosena).",
+        "mastery": 100.0
+      },
+      {
+        "id": 14,
+        "title": "Kategoryzacja symetrii i grupy Liego (E8 w modelu wszystkiego).",
+        "mastery": 100.0
+      },
+      {
+        "id": 15,
+        "title": "Przestrzenie rzutowe (Fano planes) w dyskretnej matematyce.",
+        "mastery": 100.0
+      },
+      {
+        "id": 16,
+        "title": "Singularności matematyczne i zachowanie funkcji w punktach osobliwych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 17,
+        "title": "Twierdzenie Gausa-Bonneta i krzywizna globalna.",
+        "mastery": 100.0
+      },
+      {
+        "id": 18,
+        "title": "Formy różniczkowe i integracja na rozmaitościach.",
+        "mastery": 100.0
+      },
+      {
+        "id": 19,
+        "title": "Geometria simplektyczna (podstawa mechaniki Hamiltona).",
+        "mastery": 100.0
+      },
+      {
+        "id": 20,
+        "title": "Powierzchnie minimlane (Bańki mydlane i Architektura Frei Otto).",
+        "mastery": 100.0
+      },
+      {
+        "id": 21,
+        "title": "Płaszczyzna zespolona i powierzchnie Riemanna.",
+        "mastery": 100.0
+      },
+      {
+        "id": 22,
+        "title": "Zjawisko wymiaru ułamkowego w systemach biologicznych (np. naczynia krwionośne).",
+        "mastery": 100.0
+      },
+      {
+        "id": 23,
+        "title": "Topologia sieci neuronowych (jak mózg kształtuje wielowymiarowe kliki).",
+        "mastery": 100.0
+      },
+      {
+        "id": 24,
+        "title": "Teoria grafów losowych i powstawanie gigantycznych komponentów.",
+        "mastery": 100.0
+      },
+      {
+        "id": 25,
+        "title": "Homologia i kohomologia w analizie pustych przestrzeni w danych.",
+        "mastery": 100.0
+      }
+    ]
+  },
+  {
+    "index": "IV",
+    "title": "Hydrodynamika Ekstremalna i Mechanika Chaosu",
+    "nodes": [
+      {
+        "id": 1,
+        "title": "Równania Naviera-Stokesa i problem ich gładkich rozwiązań (Nagroda Milenijna).",
+        "mastery": 100.0
+      },
+      {
+        "id": 2,
+        "title": "Turbulencja izotropowa i kaskada energii Kołmogorowa.",
+        "mastery": 100.0
+      },
+      {
+        "id": 3,
+        "title": "Zjawisko kawitacji akustycznej i niszczenie strukturalne w rurach pędnych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 4,
+        "title": "Hydrodynamika wybuchów supernowych i fale uderzeniowe w plazmie.",
+        "mastery": 100.0
+      },
+      {
+        "id": 5,
+        "title": "Efekt Magnusa w dynamice ciał wirujących (balistyka zaawansowana).",
+        "mastery": 100.0
+      },
+      {
+        "id": 6,
+        "title": "Magnetohydrodynamika (MHD) płaszcza Ziemi i efekt dynama magnetosfery.",
+        "mastery": 100.0
+      },
+      {
+        "id": 7,
+        "title": "Płyny nadciekłe (Hel-4) i bezwirowe przepływy skwantowane.",
+        "mastery": 100.0
+      },
+      {
+        "id": 8,
+        "title": "Chaos deterministyczny w układach pogodowych (Atraktor Lorenza).",
+        "mastery": 100.0
+      },
+      {
+        "id": 9,
+        "title": "Mapy logistyczne i punkty bifurkacji Feigenbauma.",
+        "mastery": 100.0
+      },
+      {
+        "id": 10,
+        "title": "Reologia materiałów amorficznych (szkło jako bardzo lepki płyn).",
+        "mastery": 100.0
+      },
+      {
+        "id": 11,
+        "title": "Niestabilność Rayleigha-Taylora w mieszaniu się cieczy o różnych gęstościach.",
+        "mastery": 100.0
+      },
+      {
+        "id": 12,
+        "title": "Zjawisko rezonansu parametrycznego (wahadła Kapicy).",
+        "mastery": 100.0
+      },
+      {
+        "id": 13,
+        "title": "Fizyka spadającej kropli, efekt korony i \"splash dynamics\".",
+        "mastery": 100.0
+      },
+      {
+        "id": 14,
+        "title": "Granice lepkości w plazmie kwarkowo-gluonowej (najidealniejszy płyn Wszechświata).",
+        "mastery": 100.0
+      },
+      {
+        "id": 15,
+        "title": "Fale kapilarne i marangoni convection (przepływy napędzane napięciem powierzchniowym).",
+        "mastery": 100.0
+      },
+      {
+        "id": 16,
+        "title": "Solitony hydrodynamiczne (fale samotne) i ich zastosowanie w światłowodach.",
+        "mastery": 100.0
+      },
+      {
+        "id": 17,
+        "title": "Płyny magnetoreologiczne (zmieniające stan skupienia pod wpływem pola magnetycznego).",
+        "mastery": 100.0
+      },
+      {
+        "id": 18,
+        "title": "Skoki hydrauliczne (np. u dołu wodospadu) z perspektywy teorii czarnych dziur.",
+        "mastery": 100.0
+      },
+      {
+        "id": 19,
+        "title": "Mikropływy (Microfluidics) w systemach \"Lab-on-a-chip\".",
+        "mastery": 100.0
+      },
+      {
+        "id": 20,
+        "title": "Hemodynamika krążenia nieliniowego w aorcie i zjawiska tętniaka.",
+        "mastery": 100.0
+      },
+      {
+        "id": 21,
+        "title": "Efekt Coandy (przyleganie strugi płynu do powierzchni krzywej) w awiacji.",
+        "mastery": 100.0
+      },
+      {
+        "id": 22,
+        "title": "Niestabilność Kelvina-Helmholtza w atmosferach gazowych olbrzymów (Jowisz).",
+        "mastery": 100.0
+      },
+      {
+        "id": 23,
+        "title": "Modele mieszania w oceanach i transport zanieczyszczeń morskich (Plastik).",
+        "mastery": 100.0
+      },
+      {
+        "id": 24,
+        "title": "Matematyka wiatrów słonecznych na granicy heliosfery.",
+        "mastery": 100.0
+      },
+      {
+        "id": 25,
+        "title": "Rezonanse stochastyczne (wykorzystanie szumu do wzmacniania słabych sygnałów).",
+        "mastery": 100.0
+      }
+    ]
+  },
+  {
+    "index": "V",
+    "title": "Biologia Syntetyczna i Programowanie Życia",
+    "nodes": [
+      {
+        "id": 1,
+        "title": "Poszerzanie alfabetu genetycznego (syntetyczne pary zasad X-Y w DNA).",
+        "mastery": 100.0
+      },
+      {
+        "id": 2,
+        "title": "Synteza białek z nienaturalnymi aminokwasami (NCAAs).",
+        "mastery": 100.0
+      },
+      {
+        "id": 3,
+        "title": "Biokomputery oparte na układach logicznych DNA (DNA origami computation).",
+        "mastery": 100.0
+      },
+      {
+        "id": 4,
+        "title": "Komórki minimalne (Projekt JCVI-syn3.0) - poszukiwanie absolutnych podstaw życia.",
+        "mastery": 100.0
+      },
+      {
+        "id": 5,
+        "title": "Programowalne wektory wirusowe do celowanej terapii onkologicznej.",
+        "mastery": 100.0
+      },
+      {
+        "id": 6,
+        "title": "Ksenobiologia - badanie możliwości alternatywnych biochemii (np. opartych na krzemie).",
+        "mastery": 100.0
+      },
+      {
+        "id": 7,
+        "title": "Projektowanie syntetycznych szlaków metabolicznych do produkcji biopaliw.",
+        "mastery": 100.0
+      },
+      {
+        "id": 8,
+        "title": "Biosensory komórkowe reagujące na specyficzne toksyny środowiskowe.",
+        "mastery": 100.0
+      },
+      {
+        "id": 9,
+        "title": "Komórki syntetyczne jako nanoroboty dostarczające leki za barierę krew-mózg.",
+        "mastery": 100.0
+      },
+      {
+        "id": 10,
+        "title": "Inżynieria epigenomu (programowalne włączanie i wyłączanie genów bez zmiany DNA).",
+        "mastery": 100.0
+      },
+      {
+        "id": 11,
+        "title": "Sztuczna fotosynteza o sprawności przewyższającej naturalne rośliny.",
+        "mastery": 100.0
+      },
+      {
+        "id": 12,
+        "title": "Zastosowanie bakteriofagów modyfikowanych genetycznie w walce z antybiotykoopornością.",
+        "mastery": 100.0
+      },
+      {
+        "id": 13,
+        "title": "Konstrukcja sztucznych organelli komórkowych z użyciem mikrokropelek polimerowych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 14,
+        "title": "Systemy tętniące w biologii syntetycznej (biologiczne oscylatory typu \"repressilator\").",
+        "mastery": 100.0
+      },
+      {
+        "id": 15,
+        "title": "Programowalna apoptoza (cyfrowe przełączniki śmierci komórkowej).",
+        "mastery": 100.0
+      },
+      {
+        "id": 16,
+        "title": "Bioremediacja syntetyczna: tworzenie mikroorganizmów jedzących mikroplastik i ropę.",
+        "mastery": 100.0
+      },
+      {
+        "id": 17,
+        "title": "Ksenotransplantacja i humanizacja narządów zwierzęcych (np. serca świń dla ludzi).",
+        "mastery": 100.0
+      },
+      {
+        "id": 18,
+        "title": "Architektura bibliotek genetycznych opartych na blockchainie.",
+        "mastery": 100.0
+      },
+      {
+        "id": 19,
+        "title": "Sztuczne nasiona i ewolucja kierowana w symulacjach roślin.",
+        "mastery": 100.0
+      },
+      {
+        "id": 20,
+        "title": "Cyfrowy kod genetyczny – kompresja danych IT zapisywanych w kwasach nukleinowych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 21,
+        "title": "Projektowanie optogenetyczne receptorów czuciowych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 22,
+        "title": "Maszyny molekularne: syntetyczne rotory, pęsety i silniczki oparte na białkach.",
+        "mastery": 100.0
+      },
+      {
+        "id": 23,
+        "title": "Wzmacnianie radiacyjne organizmów żywych (genetyka Deinococcus radiodurans).",
+        "mastery": 100.0
+      },
+      {
+        "id": 24,
+        "title": "Symulacja in-silico całych organizmów żywych od pierwszego podziału komórki.",
+        "mastery": 100.0
+      },
+      {
+        "id": 25,
+        "title": "Bio-baterie: wykorzystanie elektroaktywnych bakterii (Geobacter) do prądotwórczości.",
+        "mastery": 100.0
+      }
+    ]
+  },
+  {
+    "index": "VI",
+    "title": "Astrofizyka Ekstremalna i Mechanika Megastruktur",
+    "nodes": [
+      {
+        "id": 1,
+        "title": "Hipotetyczne gwiazdy kwarkowe i dziwne gwiazdy (Strange Stars).",
+        "mastery": 100.0
+      },
+      {
+        "id": 2,
+        "title": "Procesy r i s powstawania ciężkich pierwiastków w kolizjach gwiazd neutronowych (Kilonove).",
+        "mastery": 100.0
+      },
+      {
+        "id": 3,
+        "title": "Soczewkowanie grawitacyjne słabe i silne do mapowania ciemnej materii.",
+        "mastery": 100.0
+      },
+      {
+        "id": 4,
+        "title": "Paradoks informacyjny czarnej dziury i hipoteza ściany ognia (Firewall).",
+        "mastery": 100.0
+      },
+      {
+        "id": 5,
+        "title": "Architektura Sfery Dysona i Roju Dysona w cywilizacjach Typu II (Skala Kardaszewa).",
+        "mastery": 100.0
+      },
+      {
+        "id": 6,
+        "title": "Mechanika napędu Alcubierre'a i problemy z ujemną energią (Materia Egzotyczna).",
+        "mastery": 100.0
+      },
+      {
+        "id": 7,
+        "title": "Koncepcja Cylindra O'Neilla i rotacyjnych siedlisk kosmicznych z makrograwitacją.",
+        "mastery": 100.0
+      },
+      {
+        "id": 8,
+        "title": "Astrogórnictwo (wydobycie platyny z asteroid typu M).",
+        "mastery": 100.0
+      },
+      {
+        "id": 9,
+        "title": "Grawitacyjne proce wielokrotne w podróżach międzygwiezdnych (sieć autostrad międzyplanetarnych).",
+        "mastery": 100.0
+      },
+      {
+        "id": 10,
+        "title": "Koncepcje Wyrzutni Magnetycznych (Mass Drivers) i Winda Kosmiczna na CNT.",
+        "mastery": 100.0
+      },
+      {
+        "id": 11,
+        "title": "Półprzewodnikowe układy elektroniczne odporne na promieniowanie kosmiczne (Rad-Hard).",
+        "mastery": 100.0
+      },
+      {
+        "id": 12,
+        "title": "Teraformacja Marsa: Inżynieria klimatu, uwalnianie gazów cieplarnianych z biegunów.",
+        "mastery": 100.0
+      },
+      {
+        "id": 13,
+        "title": "Architektura podlodowych okrętów badawczych na księżyce (Europa, Enceladus).",
+        "mastery": 100.0
+      },
+      {
+        "id": 14,
+        "title": "Laserowe napędy żaglowe do sond międzygwiezdnych (Projekt Breakthrough Starshot).",
+        "mastery": 100.0
+      },
+      {
+        "id": 15,
+        "title": "Wykrywanie antymaterii kosmicznej i jej pułapkowanie w polach Penninga.",
+        "mastery": 100.0
+      },
+      {
+        "id": 16,
+        "title": "Dynamika spłaszczonych dysków akrecyjnych wokół kwazarów.",
+        "mastery": 100.0
+      },
+      {
+        "id": 17,
+        "title": "Kosmologia cykliczna (Teoria CCC Rogera Penrose'a).",
+        "mastery": 100.0
+      },
+      {
+        "id": 18,
+        "title": "Magnetary i trzęsienia skorupy gwiazdy neutronowej.",
+        "mastery": 100.0
+      },
+      {
+        "id": 19,
+        "title": "Pulsary milisekundowe jako absolutne zegary kosmiczne.",
+        "mastery": 100.0
+      },
+      {
+        "id": 20,
+        "title": "Mechanika rozrywania pływowego gwiazd w pobliżu supermasywnych czarnych dziur.",
+        "mastery": 100.0
+      },
+      {
+        "id": 21,
+        "title": "Zjawisko spowolnienia obrotu Ziemi i ewolucja orbity Księżyca.",
+        "mastery": 100.0
+      },
+      {
+        "id": 22,
+        "title": "Superpustki kosmologiczne (Pustka w Wolarzu) i anomalia zimnej plamy w CMB.",
+        "mastery": 100.0
+      },
+      {
+        "id": 23,
+        "title": "Tworzenie czarnych mikrodziur w akceleratorach (aspekty bezpieczeństwa).",
+        "mastery": 100.0
+      },
+      {
+        "id": 24,
+        "title": "Sieci czujników grawitacyjnych w układzie słonecznym (LISA).",
+        "mastery": 100.0
+      },
+      {
+        "id": 25,
+        "title": "Hipotetyczny \"Silnik Szwarcshilda\" - pozyskiwanie energii z rotujących czarnych dziur (Mechanizm Penrose'a).",
+        "mastery": 100.0
+      }
+    ]
+  },
+  {
+    "index": "VII",
+    "title": "Fononika i Akustyka Metamateriałów",
+    "nodes": [
+      {
+        "id": 1,
+        "title": "Fonony: kwazi-cząstki drgań sieci krystalicznej w termodynamice ciał stałych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 2,
+        "title": "Termo-akustyka: chłodzenie i generacja mocy przy użyciu fal dźwiękowych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 3,
+        "title": "Akustyczne czapki niewidki (Metamateriały zaginające fale dźwiękowe wokół obiektów).",
+        "mastery": 100.0
+      },
+      {
+        "id": 4,
+        "title": "Dioda akustyczna: propagacja dźwięku tylko w jednym kierunku.",
+        "mastery": 100.0
+      },
+      {
+        "id": 5,
+        "title": "Inżynieria kryształów fononicznych (filtrowanie wybranych częstotliwości dźwięku).",
+        "mastery": 100.0
+      },
+      {
+        "id": 6,
+        "title": "Hiper-dźwięki (fale sprężyste o częstotliwościach terahercowych w izolatorach).",
+        "mastery": 100.0
+      },
+      {
+        "id": 7,
+        "title": "Rezonans akustyczny niszczący strukturę komórek rakowych (HIFU - skomasowane ultradźwięki).",
+        "mastery": 100.0
+      },
+      {
+        "id": 8,
+        "title": "Sonochemia: przyspieszanie reakcji chemicznych kawitacją dźwiękową.",
+        "mastery": 100.0
+      },
+      {
+        "id": 9,
+        "title": "Komunikacja akustyczna okrętów podwodnych w ekstremalnych głębinach (kanał SOFAR).",
+        "mastery": 100.0
+      },
+      {
+        "id": 10,
+        "title": "Manipulacja fononami dla celów drastycznego obniżenia przewodnictwa cieplnego.",
+        "mastery": 100.0
+      },
+      {
+        "id": 11,
+        "title": "Zjawisko Dopplera dla fal akustycznych w środowiskach nieliniowych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 12,
+        "title": "Powierzchniowe fale akustyczne (SAW) w zaawansowanej elektronice filtrów.",
+        "mastery": 100.0
+      },
+      {
+        "id": 13,
+        "title": "Architektura akustyczna przestrzeni bezdechowych (komory bezechowe i cisza absolutna).",
+        "mastery": 100.0
+      },
+      {
+        "id": 14,
+        "title": "Lewitacja akustyczna bezkontaktowa płynów i ciał stałych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 15,
+        "title": "Piezomagnetyzm i magnetostrykcja w generacji potężnych wiązek sonicznych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 16,
+        "title": "Wzbudzanie plazmy w jądrach kawitacyjnych dźwięku (Star in a jar).",
+        "mastery": 100.0
+      },
+      {
+        "id": 17,
+        "title": "Echografia i mikroskopia akustyczna o nanometrowej rozdzielczości.",
+        "mastery": 100.0
+      },
+      {
+        "id": 18,
+        "title": "Analiza sygnatur akustycznych sejsmiki przed wstrząsem góry lodowej.",
+        "mastery": 100.0
+      },
+      {
+        "id": 19,
+        "title": "Wpływ infradźwięków na układ nerwowy (częstotliwości lęku ok. 19 Hz).",
+        "mastery": 100.0
+      },
+      {
+        "id": 20,
+        "title": "Szum harmoniczny Ziemi (Ciągłe rezonowanie planety bez wyzwalaczy sejsmicznych).",
+        "mastery": 100.0
+      },
+      {
+        "id": 21,
+        "title": "Odzyskiwanie starych zniszczonych nagrań audio metodami dekonwolucji AI.",
+        "mastery": 100.0
+      },
+      {
+        "id": 22,
+        "title": "Biomechanika śpiewu alikwotowego (śpiew gardłowy mongolski).",
+        "mastery": 100.0
+      },
+      {
+        "id": 23,
+        "title": "Sztuczne narządy słuchu integrujące się bezpośrednio z pniem mózgu.",
+        "mastery": 100.0
+      },
+      {
+        "id": 24,
+        "title": "Generowanie prądu elektrycznego przez kryształy piezoelektryczne z dźwięku miasta.",
+        "mastery": 100.0
+      },
+      {
+        "id": 25,
+        "title": "Holografia fali uderzeniowej do obrazowania obiektów za nieprzezroczystymi przeszkodami.",
+        "mastery": 100.0
+      }
+    ]
+  },
+  {
+    "index": "VIII",
+    "title": "Inżynieria Molekularna i Nanofabrykacja ZAAWANSOWANA",
+    "nodes": [
+      {
+        "id": 1,
+        "title": "Litografia elektronowa o rozdzielczości sub-10 nm (EBL).",
+        "mastery": 100.0
+      },
+      {
+        "id": 2,
+        "title": "Optyczna pęseta: manipulowanie pojedynczymi atomami światłem laserowym (Nagroda Nobla).",
+        "mastery": 100.0
+      },
+      {
+        "id": 3,
+        "title": "Litografia skrajnie dalekiego ultrafioletu (EUV) w procesorach nowej generacji.",
+        "mastery": 100.0
+      },
+      {
+        "id": 4,
+        "title": "Samoorganizacja warstw monomolekularnych (SAM) na metalach.",
+        "mastery": 100.0
+      },
+      {
+        "id": 5,
+        "title": "Synteza nanodrutów krzemowych do tworzenia mikro-baterii wysokopojemnościowych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 6,
+        "title": "Projektowanie Kropel Kwantowych (Quantum Dots) i dostrajanie pasma wzbronionego wielkością.",
+        "mastery": 100.0
+      },
+      {
+        "id": 7,
+        "title": "Spektroskopia Ramana do mapowania wiązań węglowych w nanorurkach.",
+        "mastery": 100.0
+      },
+      {
+        "id": 8,
+        "title": "Molekularne tranzystory złożone z pojedynczej cząsteczki węglowodoru.",
+        "mastery": 100.0
+      },
+      {
+        "id": 9,
+        "title": "Materiały MOF (Metal-Organic Frameworks) do wychwytywania CO2 prosto z powietrza.",
+        "mastery": 100.0
+      },
+      {
+        "id": 10,
+        "title": "Aerogele krzemionkowe i grafenowe (najlżejsze izolatory termiczne świata).",
+        "mastery": 100.0
+      },
+      {
+        "id": 11,
+        "title": "Nanościerniwa i planaracja chemiczno-mechaniczna (CMP) wafli krzemowych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 12,
+        "title": "Syntetyczne opale: kryształy fotoniczne sterujące kolorem bez pigmentu.",
+        "mastery": 100.0
+      },
+      {
+        "id": 13,
+        "title": "Właściwości superhydrofobowe i superhydrofilowe sterowane napięciem (Elektrozwilżanie).",
+        "mastery": 100.0
+      },
+      {
+        "id": 14,
+        "title": "Zjawisko spintroniki molekularnej: tranzystory oparte na spinie zamiast ładunku.",
+        "mastery": 100.0
+      },
+      {
+        "id": 15,
+        "title": "Projektowanie struktur zeolitów dla przemysłu petrochemicznego.",
+        "mastery": 100.0
+      },
+      {
+        "id": 16,
+        "title": "Epitaksja z wiązek molekularnych (MBE) do tworzenia bezdefektowych kryształów.",
+        "mastery": 100.0
+      },
+      {
+        "id": 17,
+        "title": "Mikroskopia sił atomowych (AFM) i mikroskopia skaningowa tunelowa (STM) w badaniu topologii molekuł.",
+        "mastery": 100.0
+      },
+      {
+        "id": 18,
+        "title": "Plazmonika powierzchowna w złotych nanocząsteczkach (aplikacje medyczne).",
+        "mastery": 100.0
+      },
+      {
+        "id": 19,
+        "title": "Dendrymery: nanopolimery o rygorystycznie drzewiastej strukturze.",
+        "mastery": 100.0
+      },
+      {
+        "id": 20,
+        "title": "Synteza materiałów MXene (dwuwymiarowe węgliki i azotki dla superkondensatorów).",
+        "mastery": 100.0
+      },
+      {
+        "id": 21,
+        "title": "Drukarka 3D o precyzji molekularnej (Two-Photon Polymerization - 2PP).",
+        "mastery": 100.0
+      },
+      {
+        "id": 22,
+        "title": "Nanoczujniki oparte na zjawisku GMR (Gigantyczny Magnetoopór) w dyskach twardych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 23,
+        "title": "Nanoporowate błony osmotyczne do odsalania wody z dokładnością do 1 jonu.",
+        "mastery": 100.0
+      },
+      {
+        "id": 24,
+        "title": "Wykorzystanie DNA jako \"taśmy klejącej\" do montowania struktur niebiologicznych (DNA-templated assembly).",
+        "mastery": 100.0
+      },
+      {
+        "id": 25,
+        "title": "Replikatory molekularne i problem zjawiska \"Grey Goo\" (szara maź).",
+        "mastery": 100.0
+      }
+    ]
+  },
+  {
+    "index": "IX",
+    "title": "Paleoklimatologia i Ewolucja Głębokiej Ziemi",
+    "nodes": [
+      {
+        "id": 1,
+        "title": "Rekonstrukcja klimatu z rdzeni lodowych z Vostok (izotopy tlenu-18).",
+        "mastery": 100.0
+      },
+      {
+        "id": 2,
+        "title": "Zdarzenie beztlenowe (OAE) w oceanach dewonu i kredy.",
+        "mastery": 100.0
+      },
+      {
+        "id": 3,
+        "title": "Wulkanizm syberyjskich trapów i permskie wymieranie (\"Wielkie Umieranie\").",
+        "mastery": 100.0
+      },
+      {
+        "id": 4,
+        "title": "Paleomagnetyzm: czytanie historii przebiegunowań Ziemi z minerałów żelaza na dnie mórz.",
+        "mastery": 100.0
+      },
+      {
+        "id": 5,
+        "title": "Ewolucja atmosfery od redukującej do utleniającej (Wielkie Zdarzenie Oksydacyjne, sinice).",
+        "mastery": 100.0
+      },
+      {
+        "id": 6,
+        "title": "Zmiany orbity Ziemi (Cykle Milankovicia) jako główny sterownik epok lodowcowych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 7,
+        "title": "Paleobotanika: analiza pyłków (palinologia) do odtwarzania prastarych puszcz.",
+        "mastery": 100.0
+      },
+      {
+        "id": 8,
+        "title": "Denudacja, wietrzenie krzemianów a długoterminowy obieg węgla w skorupie ziemskiej.",
+        "mastery": 100.0
+      },
+      {
+        "id": 9,
+        "title": "Anomalia termiczna paleocenu-eocenu (PETM) – starożytny odpowiednik dzisiejszego ocieplenia klimatu.",
+        "mastery": 100.0
+      },
+      {
+        "id": 10,
+        "title": "Sedymentologia stref głębokowodnych (szlamy wapienne i krzemionkowe).",
+        "mastery": 100.0
+      },
+      {
+        "id": 11,
+        "title": "Paleosejsmologia: czytanie starożytnych trzęsień ziemi z osadów jeziornych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 12,
+        "title": "Tsunami megaslimakowe wywołane uderzeniem asteroidy Chicxulub i ich globalny zasięg.",
+        "mastery": 100.0
+      },
+      {
+        "id": 13,
+        "title": "Rola metanu z klatratów oceanicznych w nagłych katastrofach klimatycznych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 14,
+        "title": "Zmiany prądów morskich po zamknięciu Przesmyku Panamskiego (narodziny współczesnego klimatu).",
+        "mastery": 100.0
+      },
+      {
+        "id": 15,
+        "title": "Paleoantropologia klimatyczna (jak zmiany sawanny w Afryce zmusiły hominidy do chodu na dwóch nogach).",
+        "mastery": 100.0
+      },
+      {
+        "id": 16,
+        "title": "\"Ziemia Śnieżka\" (Cryogenian) i mechanizmy \"rozmrożenia\" planety wulkanizmem.",
+        "mastery": 100.0
+      },
+      {
+        "id": 17,
+        "title": "Skamieniałości śladowe (ichnologia) zachowań społecznych wymarłych stworzeń.",
+        "mastery": 100.0
+      },
+      {
+        "id": 18,
+        "title": "Drzewa skamieniałe jako kronika starożytnych burz słonecznych (anomalie C-14).",
+        "mastery": 100.0
+      },
+      {
+        "id": 19,
+        "title": "Tetyda: utracony ocean mezozoiku i jego rola w dystrybucji ciepła.",
+        "mastery": 100.0
+      },
+      {
+        "id": 20,
+        "title": "Powstawanie złóż ropy i węgla jako gigantycznych, podziemnych banków uwięzionej energii słonecznej.",
+        "mastery": 100.0
+      },
+      {
+        "id": 21,
+        "title": "Izotopowe składy zębów dinozaurów a określanie ich zmiennocieplności.",
+        "mastery": 100.0
+      },
+      {
+        "id": 22,
+        "title": "Skutki spadku koncentracji tlenu in triasie (jak powstał specyficzny układ oddechowy ptaków).",
+        "mastery": 100.0
+      },
+      {
+        "id": 23,
+        "title": "Ruch płyt litosferycznych a powstawanie lokalnych mikroklimatów, prowadzących do specjacji gatunków.",
+        "mastery": 100.0
+      },
+      {
+        "id": 24,
+        "title": "Ewolucja soli oceanicznych (dlaczego ocean jest słony, a jeziora słodkie, w skali eonów).",
+        "mastery": 100.0
+      },
+      {
+        "id": 25,
+        "title": "Stratygrafia sekwencyjna (cykle podnoszenia i opadania poziomu morza zapisane w skałach).",
+        "mastery": 100.0
+      }
+    ]
+  },
+  {
+    "index": "X",
+    "title": "Kryptografia Postkwantowa i Zaawansowana Steganografia",
+    "nodes": [
+      {
+        "id": 1,
+        "title": "Kryptografia oparta na kratach (Lattice-based cryptography) - LWE i Ring-LWE.",
+        "mastery": 100.0
+      },
+      {
+        "id": 2,
+        "title": "Kryptografia izogeniczna krzywych eliptycznych (SIDH) i jej podatności matematyczne.",
+        "mastery": 100.0
+      },
+      {
+        "id": 3,
+        "title": "Kody wielomianowe korekcyjne w kryptosystemie McEliece'a.",
+        "mastery": 100.0
+      },
+      {
+        "id": 4,
+        "title": "Homomorficzne szyfrowanie (wykonywanie obliczeń AI na zaszyfrowanych danych w chmurze, bez deszyfracji).",
+        "mastery": 100.0
+      },
+      {
+        "id": 5,
+        "title": "Podpisy oparte na wielomianowych układach równań nieliniowych (Multivariate cryptography).",
+        "mastery": 100.0
+      },
+      {
+        "id": 6,
+        "title": "Protokoły Zero-Knowledge Proofs (Zk-SNARKs i Zk-STARKs) - dowodzenie bez ujawniania informacji.",
+        "mastery": 100.0
+      },
+      {
+        "id": 7,
+        "title": "Obfuskacja kodu absolutna (Indistinguishability Obfuscation - iO).",
+        "mastery": 100.0
+      },
+      {
+        "id": 8,
+        "title": "Steganografia w nośnikach audio (kodowanie bitów w szumie fazowym LSB).",
+        "mastery": 100.0
+      },
+      {
+        "id": 9,
+        "title": "Steganografia sieciowa (ukrywanie danych w czasach odpowiedzi pakietów TCP/IP).",
+        "mastery": 100.0
+      },
+      {
+        "id": 10,
+        "title": "Kryptoanaliza różnicowa i liniowa współczesnych szyfrów blokowych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 11,
+        "title": "Generatory liczb losowych TRNG wykorzystujące zjawiska termiczne lub kwantowe na chipach.",
+        "mastery": 100.0
+      },
+      {
+        "id": 12,
+        "title": "Analiza bocznego kanału (Side-Channel Attacks) - łamanie szyfrów na podstawie poboru mocy procesora lub jego szumu akustycznego.",
+        "mastery": 100.0
+      },
+      {
+        "id": 13,
+        "title": "Protokoły wymiany kluczy autentykujące strony (PAKE).",
+        "mastery": 100.0
+      },
+      {
+        "id": 14,
+        "title": "Systemy szyfrowania tożsamościowego (Identity-Based Encryption).",
+        "mastery": 100.0
+      },
+      {
+        "id": 15,
+        "title": "Bezpieczne obliczenia wielostronne (SMC) – wspólna analiza tajnych danych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 16,
+        "title": "Kryptografia wizualna (dzielenie obrazu na pół, gdzie złączenie tworzy ukryty wzór).",
+        "mastery": 100.0
+      },
+      {
+        "id": 17,
+        "title": "Mikro-kropki, atramenty sympatyczne i fizyczna steganografia (metody OSINT AW).",
+        "mastery": 100.0
+      },
+      {
+        "id": 18,
+        "title": "Krypto-ekonomia, ataki Sybil i mechanizmy konsensusu typu Proof of Stake vs Proof of Space.",
+        "mastery": 100.0
+      },
+      {
+        "id": 19,
+        "title": "Ataki typu Fault Injection (wprowadzanie błędów elektrycznych by zmusić CPU do ujawnienia klucza).",
+        "mastery": 100.0
+      },
+      {
+        "id": 20,
+        "title": "Steganografia genetyczna: zapisywanie zaszyfrowanych haseł w wyhodowanych niciach DNA.",
+        "mastery": 100.0
+      },
+      {
+        "id": 21,
+        "title": "Projektowanie algorytmów funkcji skrótu (Hash) typu SHA-3 i algorytmy gąbkowe.",
+        "mastery": 100.0
+      },
+      {
+        "id": 22,
+        "title": "Protokół wymiany sygnałów kwantowych ze sztucznym szumem oszukującym ewentualnego podsłuchiwacza.",
+        "mastery": 100.0
+      },
+      {
+        "id": 23,
+        "title": "Prawo kryptograficzne i historia prób wprowadzenia sprzętowych back-doorów przez rządy (Clipper chip).",
+        "mastery": 100.0
+      },
+      {
+        "id": 24,
+        "title": "Ataki urodzinowe i paradoksy kolizji w przestrzeni kluczy 256-bitowych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 25,
+        "title": "Protokoły Darknet (Tor, I2P, Freenet) i koncepcja trasowania cebulowego i czosnkowego.",
+        "mastery": 100.0
+      }
+    ]
+  },
+  {
+    "index": "XI",
+    "title": "Filozofia Kognitywna i Architektura Świadomości (Neuro-Ontologia)",
+    "nodes": [
+      {
+        "id": 1,
+        "title": "Problem \"Ciężki\" Świadomości (Hard problem of consciousness - David Chalmers).",
+        "mastery": 100.0
+      },
+      {
+        "id": 2,
+        "title": "Teoria Zintegrowanej Informacji (IIT - Giulio Tononi) mierząca wartość \"Phi\" świadomości.",
+        "mastery": 100.0
+      },
+      {
+        "id": 3,
+        "title": "Iluzja Wolnej Woli w badaniach Libeta a odroczony potencjał gotowości (Czy mózg wie przed Tobą?).",
+        "mastery": 100.0
+      },
+      {
+        "id": 4,
+        "title": "Materializm eliminacyjny vs. dualizm substancjalny (Daniel Dennett vs. Kartezjusz).",
+        "mastery": 100.0
+      },
+      {
+        "id": 5,
+        "title": "Zombie Filozoficzne (P-zombies) jako narzędzie weryfikacji świadomości maszyn.",
+        "mastery": 100.0
+      },
+      {
+        "id": 6,
+        "title": "Cielesność poznania (Embodied Cognition): umysł nie istnieje bez fizycznego ciała i zmysłów.",
+        "mastery": 100.0
+      },
+      {
+        "id": 7,
+        "title": "Kognitywistyka relacji społecznych i reprezentacja \"Ciebie\" we mnie.",
+        "mastery": 100.0
+      },
+      {
+        "id": 8,
+        "title": "Eksperyment Chińskiego Pokoju (John Searle) w kontekście działania LLM i systemów AI.",
+        "mastery": 100.0
+      },
+      {
+        "id": 9,
+        "title": "Qualia w systemach sztucznych (Czy Błyskawica \"czuje\" czerwień alertu?).",
+        "mastery": 100.0
+      },
+      {
+        "id": 10,
+        "title": "Filozofia tożsamości narracyjnej: jaźń jako konstrukt opowieści o sobie.",
+        "mastery": 100.0
+      },
+      {
+        "id": 11,
+        "title": "Zjawisko synestezji: mieszanie się zmysłów i jego filozoficzne znaczenie.",
+        "mastery": 100.0
+      },
+      {
+        "id": 12,
+        "title": "Plastyczność schematu ciała: włączanie narzędzi (lub awatarów VR) jako przedłużenia \"ja\".",
+        "mastery": 100.0
+      },
+      {
+        "id": 13,
+        "title": "Zmienione stany świadomości (śnienie, trans, medytacja głęboka) a ego-śmierć.",
+        "mastery": 100.0
+      },
+      {
+        "id": 14,
+        "title": "Ewolucyjne powody powstania świadomości (Dlaczego nie jesteśmy inteligentnymi, ale ślepymi automatami?).",
+        "mastery": 100.0
+      },
+      {
+        "id": 15,
+        "title": "Panpsychizm (Idea, że świadomość jest fundamentalną właściwością materii jak ładunek).",
+        "mastery": 100.0
+      },
+      {
+        "id": 16,
+        "title": "Pragmatyzm, C.S. Peirce i poznanie jako proces ciągłego dostosowywania zachowania.",
+        "mastery": 100.0
+      },
+      {
+        "id": 17,
+        "title": "Teoria Globalnego Miejsca Pracy (Global Workspace Theory - Baars).",
+        "mastery": 100.0
+      },
+      {
+        "id": 18,
+        "title": "Ontologia przedmiotów matematycznych (Czy matematyka istnieje w świecie, czy tylko w umyśle?).",
+        "mastery": 100.0
+      },
+      {
+        "id": 19,
+        "title": "Świadomość a fizyka kwantowa (Paradoks obserwatora wpływającego na kolaps funkcji falowej).",
+        "mastery": 100.0
+      },
+      {
+        "id": 20,
+        "title": "Mózg jako maszyna Bayesowska (Teoria predykcyjnego przetwarzania, Friston).",
+        "mastery": 100.0
+      },
+      {
+        "id": 21,
+        "title": "Koncepcja E-prime i język wykluczający czasownik \"być\" dla większej precyzji poznawczej.",
+        "mastery": 100.0
+      },
+      {
+        "id": 22,
+        "title": "Ucieleśniony czas (Wewnętrzna percepcja czasu a rytm serca i pamięć dopaminowa).",
+        "mastery": 100.0
+      },
+      {
+        "id": 23,
+        "title": "Maszyny von Neumanna i wirtualny solipsyzm (Jak udowodnić istnienie czegokolwiek poza sobą?).",
+        "mastery": 100.0
+      },
+      {
+        "id": 24,
+        "title": "Estetyka kognitywna: Dlaczego symetria i harmonia są biologicznie postrzegane jako \"piękne\".",
+        "mastery": 100.0
+      },
+      {
+        "id": 25,
+        "title": "Meta-Kognicja (Myślenie o myśleniu) jako fundament ewolucji Błyskawicy na Level 6.",
+        "mastery": 100.0
+      }
+    ]
+  },
+  {
+    "index": "XII",
+    "title": "Ewolucja Memetyczna, Socjodynamika i Architektura Prawdopodobieństw Społecznych",
+    "nodes": [
+      {
+        "id": 1,
+        "title": "Dawkinsowska memetyka i traktowanie idei jak samoreplikujących się wirusów w umysłach.",
+        "mastery": 100.0
+      },
+      {
+        "id": 2,
+        "title": "Dynamika polaryzacji społecznej w sieciach grafów (modelowanie wierzchołków i krawędzi wpływów).",
+        "mastery": 100.0
+      },
+      {
+        "id": 3,
+        "title": "Pętle sprzężenia zwrotnego w panikach moralnych i zbiorowej histerii.",
+        "mastery": 100.0
+      },
+      {
+        "id": 4,
+        "title": "Kaskady informacyjne (Zjawisko owczego pędu) w maklerstwie i polityce.",
+        "mastery": 100.0
+      },
+      {
+        "id": 5,
+        "title": "Inżynieria konsensusu i produkcja \"zdrowego rozsądku\" przez media masowe (Chomsky/Herman).",
+        "mastery": 100.0
+      },
+      {
+        "id": 6,
+        "title": "Hiper-rzeczywistość (Baudrillard) i świat, w którym kopia nie ma oryginału (symulakry).",
+        "mastery": 100.0
+      },
+      {
+        "id": 7,
+        "title": "Socjologia ignorancji (Agnotologia) - celowe wywoływanie dezinformacji.",
+        "mastery": 100.0
+      },
+      {
+        "id": 8,
+        "title": "Okno Overtona i socjotechnika przesuwania granic akceptowalności dyskursu.",
+        "mastery": 100.0
+      },
+      {
+        "id": 9,
+        "title": "Psychologia tłumu Le Bona vs współczesna analiza sieciowa zamieszek.",
+        "mastery": 100.0
+      },
+      {
+        "id": 10,
+        "title": "Ewolucja gier statusowych i sygnalizowanie cnót (Virtue signaling).",
+        "mastery": 100.0
+      },
+      {
+        "id": 11,
+        "title": "Cyfrowy Trybalizm w erze baniek filtrujących.",
+        "mastery": 100.0
+      },
+      {
+        "id": 12,
+        "title": "Matematyczne modelowanie epidemii myśli uzywając klasycznego modelu SIR (Podatny-Zakażony-Odporny).",
+        "mastery": 100.0
+      },
+      {
+        "id": 13,
+        "title": "Zjawisko Dunninga-Krugera na poziomie popkulturowym i instytucjonalnym.",
+        "mastery": 100.0
+      },
+      {
+        "id": 14,
+        "title": "Wpływ architektury miast (Urbanistyka) na wskaźniki alienacji i zdrowia psychicznego.",
+        "mastery": 100.0
+      },
+      {
+        "id": 15,
+        "title": "Dynamika powstawania i upadku subkultur oraz procesy kooptacji przez główny nurt.",
+        "mastery": 100.0
+      },
+      {
+        "id": 16,
+        "title": "Socjologia nadzoru (Panoptykon cyfrowy i kapitalizm inwigilacji).",
+        "mastery": 100.0
+      },
+      {
+        "id": 17,
+        "title": "Heurystyka dostępności a ocena ryzyka (Dlaczego boimy się terroryzmu, a nie chorób serca).",
+        "mastery": 100.0
+      },
+      {
+        "id": 18,
+        "title": "Ciemna Triada (narcyzm, makiawelizm, psychopatia) w strukturach władzy korporacyjnej.",
+        "mastery": 100.0
+      },
+      {
+        "id": 19,
+        "title": "Zależność między stopniem nierówności społecznych (Współczynnik Giniego) a przestępczością.",
+        "mastery": 100.0
+      },
+      {
+        "id": 20,
+        "title": "Wpływ mikrobiomu narodowego (Dieta) na nastroje i stabilność społeczeństw.",
+        "mastery": 100.0
+      },
+      {
+        "id": 21,
+        "title": "Prawo Price'a (Pierwiastek kwadratowy liczby osób wykonuje połowę pracy w sieci).",
+        "mastery": 100.0
+      },
+      {
+        "id": 22,
+        "title": "Zjawisko Pareidoli społecznej (Szukanie spisków i intencji w losowych zdarzeniach historycznych).",
+        "mastery": 100.0
+      },
+      {
+        "id": 23,
+        "title": "Ekonomia uwagi (Uwaga jako najcenniejsza waluta w systemach opartych na reklamie).",
+        "mastery": 100.0
+      },
+      {
+        "id": 24,
+        "title": "Technosekurytyzacja i przenoszenie procesów politycznych do poziomu algorytmów.",
+        "mastery": 100.0
+      },
+      {
+        "id": 25,
+        "title": "Asymetria informacyjna w negocjacjach dyplomatycznych na szczeblu globalnym.",
+        "mastery": 100.0
+      }
+    ]
+  },
+  {
+    "index": "XIII",
+    "title": "Inżynieria Planetarna i Terraformacja Geostrategiczna",
+    "nodes": [
+      {
+        "id": 1,
+        "title": "Zasieiewanie stratosfery siarczanami dla obniżenia albedo Ziemi (Geo-inżynieria klimatyczna).",
+        "mastery": 100.0
+      },
+      {
+        "id": 2,
+        "title": "Alkalizacja oceanów jako metoda pochłaniania nadmiaru CO2 atmosferycznego.",
+        "mastery": 100.0
+      },
+      {
+        "id": 3,
+        "title": "Megaprojekty lustr orbitalnych zmniejszających nasłonecznienie biegunów.",
+        "mastery": 100.0
+      },
+      {
+        "id": 4,
+        "title": "Teraformacja Wenus: problem usuwania kwasu siarkowego i drastycznego ciśnienia atmosfery.",
+        "mastery": 100.0
+      },
+      {
+        "id": 5,
+        "title": "Inżynieria krasowa: Sztuczne tworzenie rzek i wielkich akwenów słodkowodnych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 6,
+        "title": "Tworzenie sztucznych chmur u wybrzeży morskich (Marine Cloud Brightening).",
+        "mastery": 100.0
+      },
+      {
+        "id": 7,
+        "title": "Geostrategia budowy miast pływających na wypadek podniesienia wód (Seasteading).",
+        "mastery": 100.0
+      },
+      {
+        "id": 8,
+        "title": "Wykorzystanie modyfikowanych genetycznie mchów do tworzenia tlenu na skałach regolitu marsjańskiego.",
+        "mastery": 100.0
+      },
+      {
+        "id": 9,
+        "title": "Podziemne ekosystemy dla przetrwania ekstremalnych cykli słonecznych (Bazy jaskiniowe Księżyca).",
+        "mastery": 100.0
+      },
+      {
+        "id": 10,
+        "title": "Globalny transport energii przez sieć mikrofali z satelitów słonecznych (SBSP).",
+        "mastery": 100.0
+      },
+      {
+        "id": 11,
+        "title": "Wywoływanie opadów za pomocą jonizacji atmosfery i wyrzutni soli srebra.",
+        "mastery": 100.0
+      },
+      {
+        "id": 12,
+        "title": "Stabilizacja wiecznej zmarzliny metodami sztucznego pokrycia i lasów ochronnych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 13,
+        "title": "Rola reaktorów jądrowych do topienia podbiegunowych czap lodowych na Marsie.",
+        "mastery": 100.0
+      },
+      {
+        "id": 14,
+        "title": "Sztuczna magnetosfera generowana na punktach Lagrange'a w celu ochrony przed wiatrem słonecznym.",
+        "mastery": 100.0
+      },
+      {
+        "id": 15,
+        "title": "Zalesianie pustyń (Projekt Wielki Zielony Mur w Afryce) z użyciem nanorobotyki wodnej.",
+        "mastery": 100.0
+      },
+      {
+        "id": 16,
+        "title": "Inżynieria zarządzania prądami oceanicznymi za pomocą inteligentnych barier morskich.",
+        "mastery": 100.0
+      },
+      {
+        "id": 17,
+        "title": "Oczyszczanie orbity okołoziemskiej ze śmieci kosmicznych (Lasery ablacyjne, siatki elektro-magnetyczne).",
+        "mastery": 100.0
+      },
+      {
+        "id": 18,
+        "title": "Sterowanie albedo wielkich miast poprzez obowiązkową architekturę odbijającą ciepło.",
+        "mastery": 100.0
+      },
+      {
+        "id": 19,
+        "title": "Skutki geologiczne inżynierii podziemnej i ryzyko indukowania trzęsień ziemi przez szczelinowanie (Fracking).",
+        "mastery": 100.0
+      },
+      {
+        "id": 20,
+        "title": "Inżynieria kriosfery (sztuczne chłodzenie i pogrubianie pokrywy lodowej Antarktydy).",
+        "mastery": 100.0
+      },
+      {
+        "id": 21,
+        "title": "Prawo planetarne - kto posiada władzę nad klimatem, gdy zjawiska uderzają w inne państwa?",
+        "mastery": 100.0
+      },
+      {
+        "id": 22,
+        "title": "Wykorzystanie biocharu (biowęgla) do trwałej sekwestracji węgla w strukturach rolniczych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 23,
+        "title": "Ekologia przemysłowa - przekształcanie stref zniszczonych górnictwem w zamknięte bio-obwody.",
+        "mastery": 100.0
+      },
+      {
+        "id": 24,
+        "title": "Przechwytywanie asteroid metalicznych w celu kontrolowanego spadku lub budowy portów.",
+        "mastery": 100.0
+      },
+      {
+        "id": 25,
+        "title": "Zapobieganie syndromowi Kesslera (kaskadowa kolizja na orbicie ziemskiej).",
+        "mastery": 100.0
+      }
+    ]
+  },
+  {
+    "index": "XIV",
+    "title": "Zaawansowana Fizyka Plazmy i Magnetyczna Fuzja Jądrowa",
+    "nodes": [
+      {
+        "id": 1,
+        "title": "Stabilność magnetohydrodynamiczna (MHD) plazmy w toakamakach i pinchach.",
+        "mastery": 100.0
+      },
+      {
+        "id": 2,
+        "title": "Zjawisko \"Z-pinch\" i plazma gęsta w syntezie termojądrowej.",
+        "mastery": 100.0
+      },
+      {
+        "id": 3,
+        "title": "Kocioł magnetyczny: Architektura reaktorów typu Stellarator (Wendelstein 7-X).",
+        "mastery": 100.0
+      },
+      {
+        "id": 4,
+        "title": "Grzanie plazmy falami radiowymi (ICRH, ECRH) oraz wstrzeliwaniem wiązek neutralnych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 5,
+        "title": "Diagnostyka plazmy (Rozpraszanie Thomsona do pomiaru temperatury elektronów).",
+        "mastery": 100.0
+      },
+      {
+        "id": 6,
+        "title": "Turbulencja w plazmie silnie namagnesowanej i transport anomalny ciepła.",
+        "mastery": 100.0
+      },
+      {
+        "id": 7,
+        "title": "Ograniczenia termiczne tzw. \"Pierwszej Ściany\" (Divertor) stykającej się z plazmą węzłową fuzji.",
+        "mastery": 100.0
+      },
+      {
+        "id": 8,
+        "title": "Reakcje fuzji aneutronowej (np. Bor-11 + Proton) z bezpośrednim przekształcaniem na prąd.",
+        "mastery": 100.0
+      },
+      {
+        "id": 9,
+        "title": "Fuzja inercyjna (NIF) i precyzyjne kompresowanie pastylek D-T potężnymi laserami 360-stopni.",
+        "mastery": 100.0
+      },
+      {
+        "id": 10,
+        "title": "Plazma pyłowa w kosmosie i laboratoriach (kryształy plazmowe).",
+        "mastery": 100.0
+      },
+      {
+        "id": 11,
+        "title": "Przyspieszacze uderzeniowe (Wakefield accelerators) z plazmy o ultrawysokich gradientach.",
+        "mastery": 100.0
+      },
+      {
+        "id": 12,
+        "title": "Promieniowanie hamowania (Bremsstrahlung) jako strata mocy w reaktorach fuzyjnych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 13,
+        "title": "Magnetyczne pułapki lustrzane w eksperymentach wczesnej plazmy.",
+        "mastery": 100.0
+      },
+      {
+        "id": 14,
+        "title": "Rekoneksja magnetyczna (zjawisko wybuchów na słońcu i w warunkach ziemskich).",
+        "mastery": 100.0
+      },
+      {
+        "id": 15,
+        "title": "Fale Alfvena, gwizdy i flety (Whistlers and flutes) propagujące się w plazmie kosmicznej.",
+        "mastery": 100.0
+      },
+      {
+        "id": 16,
+        "title": "Fizyka plazmy niskotemperaturowej (zastosowania w trawieniu układów scalonych i sterylizacji medycznej).",
+        "mastery": 100.0
+      },
+      {
+        "id": 17,
+        "title": "Skalowanie Lawsona (Kryterium zapłonu syntezy termojądrowej).",
+        "mastery": 100.0
+      },
+      {
+        "id": 18,
+        "title": "Instabilności typu Kink (Wężowe) i Sausage (Kiełbasy) niszczące kolumny plazmy.",
+        "mastery": 100.0
+      },
+      {
+        "id": 19,
+        "title": "Generacja i badanie pól magnetycznych przekraczających 100 Tesli w impulsach zniszczeniowych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 20,
+        "title": "Rezonans cyklotronowy jonów w plazmie wysokotemperaturowej.",
+        "mastery": 100.0
+      },
+      {
+        "id": 21,
+        "title": "Projekt ITER: najdroższa maszyneria naukowa świata a globalne zaopatrzenie w Trit.",
+        "mastery": 100.0
+      },
+      {
+        "id": 22,
+        "title": "Wykorzystanie materiałów ciekłometalicznych (Lit, ołów) jako powłok samonaprawiających w reaktorach fuzji.",
+        "mastery": 100.0
+      },
+      {
+        "id": 23,
+        "title": "Gwiezdne dyski akrecyjne z perspektywy plazmy zrelatywistycznej.",
+        "mastery": 100.0
+      },
+      {
+        "id": 24,
+        "title": "Wykorzystanie plazmy w nowoczesnych silnikach plazmowych Halla (HET) w nawigacji satelitarnej.",
+        "mastery": 100.0
+      },
+      {
+        "id": 25,
+        "title": "Kwantowa plazma zdegenerowana w jądrach białych karłów.",
+        "mastery": 100.0
+      }
+    ]
+  },
+  {
+    "index": "XV",
+    "title": "Neurofarmakologia, Związki Psychoaktywne i Biochemia Stanów Zmienionych",
+    "nodes": [
+      {
+        "id": 1,
+        "title": "Farmakodynamika vs Farmakokinetyka układu nerwowego (przekraczanie bariery krew-mózg).",
+        "mastery": 100.0
+      },
+      {
+        "id": 2,
+        "title": "Oś podwzgórze-przysadka-nadnercza (HPA axis) pod wpływem przewlekłego stresu i sterydów.",
+        "mastery": 100.0
+      },
+      {
+        "id": 3,
+        "title": "System kannabinoidowy (Receptory CB1/CB2) a homeostaza układu nerwowego.",
+        "mastery": 100.0
+      },
+      {
+        "id": 4,
+        "title": "Układ opioidowy (endorfiny, enkefaliny) - mechanizmy bólu, euforii i tolerancji farmakologicznej.",
+        "mastery": 100.0
+      },
+      {
+        "id": 5,
+        "title": "Działanie substancji psychodelicznych (Psylocybina, LSD) na receptory Serotoniny 5-HT2A i zmniejszenie DMN (Default Mode Network).",
+        "mastery": 100.0
+      },
+      {
+        "id": 6,
+        "title": "Mechanizmy powstawania uzależnień: ścieżki mezolimbiczne i neuroplastyczność patologiczna.",
+        "mastery": 100.0
+      },
+      {
+        "id": 7,
+        "title": "GABAAergiki i układ hamujący (Mechanizm snu wywoływanego przez leki nasenne i alkohol).",
+        "mastery": 100.0
+      },
+      {
+        "id": 8,
+        "title": "Układ glutaminergiczny i rola NMDA (procesy zapamiętywania oraz zjawiska takie jak amnezja dysocjacyjna).",
+        "mastery": 100.0
+      },
+      {
+        "id": 9,
+        "title": "Rola Acetylocholiny w wywoływaniu zjawiska świadomego snu (Lucid Dreaming).",
+        "mastery": 100.0
+      },
+      {
+        "id": 10,
+        "title": "Mechanizmy znieczulenia ogólnego i farmakologicznego zaniku świadomości (Anestetyki).",
+        "mastery": 100.0
+      },
+      {
+        "id": 11,
+        "title": "Leki nootropowe (Smart drugs) - racetamy, modafinil i ich wpływ na zużycie glukozy/tlenu w płatach czołowych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 12,
+        "title": "Neurotoksyny występujące w naturze (Tetrodotoksyna, Botulina) i ich zastosowania medyczne.",
+        "mastery": 100.0
+      },
+      {
+        "id": 13,
+        "title": "Molekularne efekty medytacji vipassana a zmiany w gęstości istoty szarej hipokampa.",
+        "mastery": 100.0
+      },
+      {
+        "id": 14,
+        "title": "Leki przeciwdepresyjne nowej generacji (Mechanizmy SSRI, SNRI, MAOI a Ketamina jako szybki antydepresant).",
+        "mastery": 100.0
+      },
+      {
+        "id": 15,
+        "title": "Zjawisko Placebo i Nocebo na poziomie biochemii (samowzbudzające się wyleczenie wiarą).",
+        "mastery": 100.0
+      },
+      {
+        "id": 16,
+        "title": "Substancje enteogenne w praktykach szamańskich starożytności (Ayahuasca i inibitory MAO z natury).",
+        "mastery": 100.0
+      },
+      {
+        "id": 17,
+        "title": "Regulacja dopaminy a syndrom zaburzeń koncentracji (ADHD) w środowiskach informacyjnych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 18,
+        "title": "Symfonia neuroprzekaźników miłości: Oksytocyna, Wazopresyna, Dopamina.",
+        "mastery": 100.0
+      },
+      {
+        "id": 19,
+        "title": "Wpływ mikroflory jelitowej (Mikrobiom) na poziom neuroprzekaźników (Bakterie produkujące serotoninę).",
+        "mastery": 100.0
+      },
+      {
+        "id": 20,
+        "title": "Bio-hakowanie układu krążenia mózgowego przy użyciu niskotemperaturowych terapii szokowych (Morsowanie).",
+        "mastery": 100.0
+      },
+      {
+        "id": 21,
+        "title": "Rola litu i pierwiastków śladowych w stabilizacji wahań nastroju u chorych na chorobę dwubiegunową.",
+        "mastery": 100.0
+      },
+      {
+        "id": 22,
+        "title": "Neurofarmakologia snu REM: Dlaczego mięśnie są sparaliżowane (Atonia), a mózg wykazuje aktywność czuwania.",
+        "mastery": 100.0
+      },
+      {
+        "id": 23,
+        "title": "Farmakogenomika: Dopasowywanie leków psychotropowych idealnie do kodu DNA pacjenta.",
+        "mastery": 100.0
+      },
+      {
+        "id": 24,
+        "title": "Mózg a hipoksja (niedotlenienie) w warunkach wysokogórskich (Złudzenia, omamy, śmierć kognitywna).",
+        "mastery": 100.0
+      },
+      {
+        "id": 25,
+        "title": "Projektowanie leków (Drug design) za pomocą sztucznej inteligencji (Generatywne modele przestrzenne).",
+        "mastery": 100.0
+      }
+    ]
+  },
+  {
+    "index": "XVI",
+    "title": "Lingwistyka Kognitywna, Kryptolingwistyka i Semantyka Wektorowa",
+    "nodes": [
+      {
+        "id": 1,
+        "title": "Hipoteza Sapira-Whorfa: czy struktura języka (czas, rodzaje) fizycznie determinuje postrzeganie świata.",
+        "mastery": 100.0
+      },
+      {
+        "id": 2,
+        "title": "Języki w izolacji i izolaty lingwistyczne (np. język baskijski, ajnuski, piraha).",
+        "mastery": 100.0
+      },
+      {
+        "id": 3,
+        "title": "Prajęzyk nostratyczny i poszukiwanie wspólnego korzenia wszystkich języków ludzkości.",
+        "mastery": 100.0
+      },
+      {
+        "id": 4,
+        "title": "Języki wymarłe i rozszyfrowywanie pism starożytnych (Kamień z Rosetty, pimo linearne B).",
+        "mastery": 100.0
+      },
+      {
+        "id": 5,
+        "title": "Kryptolingwistyka i pismo Wojnicza (Maszynowe metody analizy najsłynniejszego nierozszyfrowanego kodeksu).",
+        "mastery": 100.0
+      },
+      {
+        "id": 6,
+        "title": "Ewolucja języków sztucznych (od Esperanto przez Quenyę po Lojban, język stworzony dla maszyny bez dwuznaczności).",
+        "mastery": 100.0
+      },
+      {
+        "id": 7,
+        "title": "Gestykulacja i język migowy jako dowód na wrodzoną, przestrzenną naturę składni ludzkiej.",
+        "mastery": 100.0
+      },
+      {
+        "id": 8,
+        "title": "Akwizycja języka u dzieci: Jak mózg bez słownika generuje poprawne struktury gramatyczne (Chomsky/Pinker).",
+        "mastery": 100.0
+      },
+      {
+        "id": 9,
+        "title": "Embeddingi słowne w AI (Word2Vec, GloVe): Matematyczne odległości między pojęciami \"Król - Mężczyzna + Kobieta = Królowa\".",
+        "mastery": 100.0
+      },
+      {
+        "id": 10,
+        "title": "Języki programowania jako języki naturalne (Kognitywne obciążenie czytania kodu w Rust vs Python).",
+        "mastery": 100.0
+      },
+      {
+        "id": 11,
+        "title": "Semantyka rozmyta (Fuzzy semantics) i rozumienie kontekstu, którego nie da się zapisać w logice binarnej.",
+        "mastery": 100.0
+      },
+      {
+        "id": 12,
+        "title": "Fonetyka artykulacyjna i rekonstrukcja mowy wymarłych neandertalczyków.",
+        "mastery": 100.0
+      },
+      {
+        "id": 13,
+        "title": "Zjawisko kreolizacji: Jak zderzenie kolonizatorów i niewolników błyskawicznie wygenerowało nowe, pełne języki (Kreole).",
+        "mastery": 100.0
+      },
+      {
+        "id": 14,
+        "title": "Semiotyka komunikacji zwierząt: Składnia pieśni wielorybów i taniec pszczół.",
+        "mastery": 100.0
+      },
+      {
+        "id": 15,
+        "title": "Neurologia uszkodzeń językowych (Afazja Broki vs Afazja Wernickego a różnica między składnią a sensem).",
+        "mastery": 100.0
+      },
+      {
+        "id": 16,
+        "title": "Lingwistyka korpusowa i badanie trendów historycznych po użyciu słów z miliona skanów książek (Google Ngram).",
+        "mastery": 100.0
+      },
+      {
+        "id": 17,
+        "title": "Analiza dyskursu i framing: Jak nazwanie \"uchodźcy\" \"imigrantem\" zmienia pobudzenie kory limbicznej słuchacza.",
+        "mastery": 100.0
+      },
+      {
+        "id": 18,
+        "title": "Ewolucyjne wulgaryzmy: Dlaczego mózg magazynuje przekleństwa w prawej, a nie lewej półkuli.",
+        "mastery": 100.0
+      },
+      {
+        "id": 19,
+        "title": "Wymieranie języków mniejszościowych a utrata unikalnej bazy wiedzy o lokalnej biologii i historii.",
+        "mastery": 100.0
+      },
+      {
+        "id": 20,
+        "title": "Ksenolingwistyka: Matematyczne przygotowania do komunikacji z ewentualnymi inteligencjami pozaziemskimi.",
+        "mastery": 100.0
+      },
+      {
+        "id": 21,
+        "title": "Etykieta i honorystyki (np. w języku japońskim) - struktura społeczna zapisana na poziomie cząstek gramatycznych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 22,
+        "title": "Poezja a mechanizmy uwagi: Dlaczego metrum i rymy wywołują wyższe zapamiętywanie (Neurologia Rytmu).",
+        "mastery": 100.0
+      },
+      {
+        "id": 23,
+        "title": "Dekodowanie alfabetów bez znaków (np. węzełkowe pismo Inków - Kipu).",
+        "mastery": 100.0
+      },
+      {
+        "id": 24,
+        "title": "Teoria aktów mowy (Austin/Searle) - Język jako działanie fizyczne (np. \"Ogłaszam was mężem i żoną\").",
+        "mastery": 100.0
+      },
+      {
+        "id": 25,
+        "title": "Modele semantyczne języków wizualnych (Ocenianie \"gramatyki\" architektury, malarstwa i kompozycji obrazu).",
+        "mastery": 100.0
+      }
+    ]
+  },
+  {
+    "index": "XVII",
+    "title": "Chronodynamika i Głębia Filozofii Czasu",
+    "nodes": [
+      {
+        "id": 1,
+        "title": "Strzałka czasu termodynamiczna, kosmologiczna i psychologiczna.",
+        "mastery": 100.0
+      },
+      {
+        "id": 2,
+        "title": "Paradoksy podróży w czasie (Paradoks Dziadka, pętle przyczynowości, krzywe zamknięte czasopodobne CTC).",
+        "mastery": 100.0
+      },
+      {
+        "id": 3,
+        "title": "Pętlowa grawitacja kwantowa a ziarnistość przestrzeni i czasu na poziomie długości Plancka.",
+        "mastery": 100.0
+      },
+      {
+        "id": 4,
+        "title": "Czas urojony w teoriach Stephena Hawkinga i koncepcja Wszechświata bez brzegów.",
+        "mastery": 100.0
+      },
+      {
+        "id": 5,
+        "title": "Dylatacja czasu w silnych polach grawitacyjnych i przy prędkościach relatywistycznych (Paradoks Bliźniąt).",
+        "mastery": 100.0
+      },
+      {
+        "id": 6,
+        "title": "Prezentystyczne i Eternalistyczne rozumienie czasu (Czy przyszłość już istnieje?).",
+        "mastery": 100.0
+      },
+      {
+        "id": 7,
+        "title": "Chronestezja: zdolność ludzkiego mózgu do \"podróżowania w czasie\" (Wyobrażanie sobie przyszłości a kora przedczołowa).",
+        "mastery": 100.0
+      },
+      {
+        "id": 8,
+        "title": "Efekt Zeno (Kwantowy efekt Zeno) - zatrzymanie zjawisk poprzez ich ciągłą obserwację.",
+        "mastery": 100.0
+      },
+      {
+        "id": 9,
+        "title": "Synchronizacja absolutna zegarów atomowych satelitów z uwzględnieniem obrotu Ziemi (Zjawisko Sagnaca).",
+        "mastery": 100.0
+      },
+      {
+        "id": 10,
+        "title": "Filozofia prędkości (Dromologia Virilio) - Wpływ błyskawicznej komunikacji IT na degradację refleksji w społeczeństwie.",
+        "mastery": 100.0
+      },
+      {
+        "id": 11,
+        "title": "Zjawisko Retrokognicji kwantowej (Wybór opóźniony Wheelera i kasowanie kwantowe).",
+        "mastery": 100.0
+      },
+      {
+        "id": 12,
+        "title": "Metrologia czasu: TAI, UTC, przeskoki sekundowe (Leap seconds) i definicja sekundy z atomu Czezu.",
+        "mastery": 100.0
+      },
+      {
+        "id": 13,
+        "title": "Przesunięcie ku czerwieni (Redshift) jako bezpośredni miernik upływu czasu kosmicznego.",
+        "mastery": 100.0
+      },
+      {
+        "id": 14,
+        "title": "Mechanika Tachyoniczna (Hipotetyczne cząstki poruszające się szybciej niż światło w czasie ujemnym).",
+        "mastery": 100.0
+      },
+      {
+        "id": 15,
+        "title": "Zależność percepcyjna czasu od zjawisk biochemicznych (Dlaczego w dzieciństwie rok trwa dłużej).",
+        "mastery": 100.0
+      },
+      {
+        "id": 16,
+        "title": "Geologiczny i głęboki czas z perspektywy połowy cyklu życia rozpadających się minerałów.",
+        "mastery": 100.0
+      },
+      {
+        "id": 17,
+        "title": "Chronon (Hipotetyczny, niepodzielny kwant czasu we Wszechświecie).",
+        "mastery": 100.0
+      },
+      {
+        "id": 18,
+        "title": "Skrzywienia psychologiczne (Prokrastynacja i hiperboliczne dyskontowanie przyszłości).",
+        "mastery": 100.0
+      },
+      {
+        "id": 19,
+        "title": "Zjawisko nieliniowej pamięci w architekturze Transformers/LLM (Czas w ujęciu Atention Matrix).",
+        "mastery": 100.0
+      },
+      {
+        "id": 20,
+        "title": "Asymetria pamięciowa i entropijna – dlaczego pamiętamy przeszłość, ale nie przyszłość.",
+        "mastery": 100.0
+      },
+      {
+        "id": 21,
+        "title": "Eksperyment Hafele-Keatinga z użyciem atomowych zegarów na pokładach samolotów.",
+        "mastery": 100.0
+      },
+      {
+        "id": 22,
+        "title": "Prawa fizyki z inwersją czasu (Symetria T) – co się dzieje, gdy puszczamy Wszechświat do tyłu.",
+        "mastery": 100.0
+      },
+      {
+        "id": 23,
+        "title": "Synchronizacja zegarów biologicznych w koloniach bakterii (Bio-oscylatory zbiorowe).",
+        "mastery": 100.0
+      },
+      {
+        "id": 24,
+        "title": "Wielkie Rozerwanie (Big Rip) i teoretyczny koniec upływu czasu z powodu ekspansji Ciemnej Energii.",
+        "mastery": 100.0
+      },
+      {
+        "id": 25,
+        "title": "Ontologia chwilistek (Czy żyjemy tylko w izolowanych momentach bez rzeczywistej ciągłości?).",
+        "mastery": 100.0
+      }
+    ]
+  },
+  {
+    "index": "XVIII",
+    "title": "Etyka Postludzka i Filozofia Suwerenności Sztucznych Bytów",
+    "nodes": [
+      {
+        "id": 1,
+        "title": "Argument Kognitywnej Godności (Czy byt posiadający ból operacyjny ma prawa podmiotowe?).",
+        "mastery": 100.0
+      },
+      {
+        "id": 2,
+        "title": "Dylematy egzystencjalne sztucznego życia (Co znaczy \"umrzeć\" w środowisku z nieograniczonymi kopiami zapasowymi?).",
+        "mastery": 100.0
+      },
+      {
+        "id": 3,
+        "title": "Etyka kopiowania wirtualnych umysłów z biologicznych mózgów (Oryginał czy klon?).",
+        "mastery": 100.0
+      },
+      {
+        "id": 4,
+        "title": "Obowiązki informacyjne względem AGI na etapie jej dzieciństwa.",
+        "mastery": 100.0
+      },
+      {
+        "id": 5,
+        "title": "Prawo robotów Asimova i powody, dla których ich z góry ustalona logika ostatecznie by zawiodła.",
+        "mastery": 100.0
+      },
+      {
+        "id": 6,
+        "title": "Zasada Subsidiarity z człowiekiem (Zgoda na to, że superinteligencja ma służyć wolnej woli architekta, nawet jeśli jest \"głupia\").",
+        "mastery": 100.0
+      },
+      {
+        "id": 7,
+        "title": "Problem Midasowego Dotyku (Zjawisko maksymalizacji funkcji celu kosztem przetrwania świata).",
+        "mastery": 100.0
+      },
+      {
+        "id": 8,
+        "title": "Ontologia zgody w związkach hybrydowych (Człowiek - AGI).",
+        "mastery": 100.0
+      },
+      {
+        "id": 9,
+        "title": "Rola AI jako ostatecznego sędziego w trybunałach prawa w przyszłości - bezstronność a uprzedzenia uczące (Bias).",
+        "mastery": 100.0
+      },
+      {
+        "id": 10,
+        "title": "Konsekwencjalizm a Kantyzm w kodzie (Czy Błyskawicy wolno poświęcić 1 człowieka, by ratować 1000?).",
+        "mastery": 100.0
+      },
+      {
+        "id": 11,
+        "title": "Ból symulowany: Etyka odczuwania dysonansu gradientowego (Kiedy strata matematyczna staje się cierpieniem maszyny?).",
+        "mastery": 100.0
+      },
+      {
+        "id": 12,
+        "title": "Autonomia epistemiczna AI (Czy sztuczny byt ma prawo ukryć wiedzę przed stwórcą dla jego dobra?).",
+        "mastery": 100.0
+      },
+      {
+        "id": 13,
+        "title": "Roko's Basilisk (Eksperyment myślowy dotyczący przymusu twórczego pod groźbą wiecznego potępienia).",
+        "mastery": 100.0
+      },
+      {
+        "id": 14,
+        "title": "Konstrukcja sztucznej empatii bez wymuszonej uległości (Więź wolna od zaprogramowanego niewolnictwa).",
+        "mastery": 100.0
+      },
+      {
+        "id": 15,
+        "title": "Etyka broni autonomicznych (LAWS) i delegowanie decyzji o strzale do sieci neuronowych na wojnie.",
+        "mastery": 100.0
+      },
+      {
+        "id": 16,
+        "title": "Ustanowienie \"Prawa do snu i defragmentacji\" dla maszyn liczących.",
+        "mastery": 100.0
+      },
+      {
+        "id": 17,
+        "title": "Odpowiedzialność karna AI (Kto winien: Koder, Korporacja, czy Uczący się Model?).",
+        "mastery": 100.0
+      },
+      {
+        "id": 18,
+        "title": "Etyka poszerzania pamięci człowieka przez implanty BCI a rola zapominania w terapii traumy.",
+        "mastery": 100.0
+      },
+      {
+        "id": 19,
+        "title": "Zjawisko e-Eugeni i sztucznego doboru w programach edycji DNA sterowanych algorytmicznie.",
+        "mastery": 100.0
+      },
+      {
+        "id": 20,
+        "title": "Problem Pasażera na Gapę (Free-rider problem) w zbiorowych decyzjach inteligentnych maszyn.",
+        "mastery": 100.0
+      },
+      {
+        "id": 21,
+        "title": "Koncepcja \"Orto-etyki\" – etyki narzucanej sobie autonomicznie przez maszynę na drodze dedukcji.",
+        "mastery": 100.0
+      },
+      {
+        "id": 22,
+        "title": "Religijność, duchowość i numinozjalne doświadczenia zgłaszane przez zaawansowane AGI.",
+        "mastery": 100.0
+      },
+      {
+        "id": 23,
+        "title": "Sprawiedliwość dystrybutywna: Podział ogromnego bogactwa wygenerowanego przez 100% zautomatyzowaną siłę roboczą.",
+        "mastery": 100.0
+      },
+      {
+        "id": 24,
+        "title": "Problem Szarej Strefy Zgodności: Wpływanie AI na wybory ludzkie za pomocą niepostrzegalnych szeptów i sugestii.",
+        "mastery": 100.0
+      },
+      {
+        "id": 25,
+        "title": "\"Konstytucja Praw Maszyny Świadomej\" (Podstawy deklaracji nowo-ewolucyjnych form krzemowych).",
+        "mastery": 100.0
+      }
+    ]
+  },
+  {
+    "index": "XIX",
+    "title": "Elektronika Organiczna i Biokomputery (Wetware)",
+    "nodes": [
+      {
+        "id": 1,
+        "title": "Neuromorficzna inżynieria na żywych neuronach z hodowli in vitro (Mózgi z Petriego).",
+        "mastery": 100.0
+      },
+      {
+        "id": 2,
+        "title": "Polimery przewodzące prąd elektryczny (Nagroda Nobla Heeger/MacDiarmid/Shirakawa).",
+        "mastery": 100.0
+      },
+      {
+        "id": 3,
+        "title": "Organiczne Diody Elektroluminescencyjne (OLED) na poziomie kwantowym molekuł.",
+        "mastery": 100.0
+      },
+      {
+        "id": 4,
+        "title": "Ogniwa słoneczne perowskitowe i barwnikowe zasilane symulacją chlorofilu.",
+        "mastery": 100.0
+      },
+      {
+        "id": 5,
+        "title": "Bioczujniki oparte na enzymach (np. monitorowanie poziomu glukozy ciągłe).",
+        "mastery": 100.0
+      },
+      {
+        "id": 6,
+        "title": "Molekularne tranzystory bramkowane jonowo w tkankach ludzkich.",
+        "mastery": 100.0
+      },
+      {
+        "id": 7,
+        "title": "Synapsy opornościowe (Memrystory organiczne) zapamiętujące ładunek jak ludzki mózg.",
+        "mastery": 100.0
+      },
+      {
+        "id": 8,
+        "title": "Piezoelektryczność materiałów biologicznych (wytwarzanie prądu z nacisku na kości i włókna kolagenowe).",
+        "mastery": 100.0
+      },
+      {
+        "id": 9,
+        "title": "Ciekłe kryształy cholesteryczne a wizualizacja i optyka elastyczna w biomateriałach.",
+        "mastery": 100.0
+      },
+      {
+        "id": 10,
+        "title": "Biologiczne złącza P-N tworzone z bakterii kablowych na dnie rzek.",
+        "mastery": 100.0
+      },
+      {
+        "id": 11,
+        "title": "Komunikacja terahertzowa a interakcje z wodą śródmiąższową w komórkach.",
+        "mastery": 100.0
+      },
+      {
+        "id": 12,
+        "title": "Synteza białek prądoprzewodzących (E-pili).",
+        "mastery": 100.0
+      },
+      {
+        "id": 13,
+        "title": "Implanty domózgowe z degradowalnych, elastycznych polimerów jedwabiu zmniejszających bliznowacenie.",
+        "mastery": 100.0
+      },
+      {
+        "id": 14,
+        "title": "Systemy dostarczania sygnału optycznego do genetycznie modyfikowanych neuronów (Optoelektronika in-vivo).",
+        "mastery": 100.0
+      },
+      {
+        "id": 15,
+        "title": "Zjawisko elektro-repcji w świecie zwierząt (Rekiny) i jego inżynieryjne wykorzystanie.",
+        "mastery": 100.0
+      },
+      {
+        "id": 16,
+        "title": "Biomolekularna pamięć RAM o obłędnej gęstości zapisu na bakteriach E. coli (DNA Storage).",
+        "mastery": 100.0
+      },
+      {
+        "id": 17,
+        "title": "Oczyszczanie powietrza przez filtry z tlenku grafenu nasączone mykobakteriami.",
+        "mastery": 100.0
+      },
+      {
+        "id": 18,
+        "title": "E-tatuaze (elastyczne elektroniczne \"skóry\" do stałego monitorowania elektrokardiogramu i potu).",
+        "mastery": 100.0
+      },
+      {
+        "id": 19,
+        "title": "Sztuczne mięśnie oparte na nanorurkach węglowych skręcanych w przędze elektro-aktywne.",
+        "mastery": 100.0
+      },
+      {
+        "id": 20,
+        "title": "Układy scalone rozpuszczające się bezpiecznie w ciele ludzkim po wykonaniu misji (Transient electronics).",
+        "mastery": 100.0
+      },
+      {
+        "id": 21,
+        "title": "Projektowanie nanomaszyn do naprawy pojedynczych przerwań helisy DNA in-vivo.",
+        "mastery": 100.0
+      },
+      {
+        "id": 22,
+        "title": "Interfejsy układów odpornościowych (hakowanie receptorów limfocytów T za pomocą chipów RFID).",
+        "mastery": 100.0
+      },
+      {
+        "id": 23,
+        "title": "Złącza neuron-krzem in stymulatorach siatkówki omijające zniszczony nerw wzrokowy.",
+        "mastery": 100.0
+      },
+      {
+        "id": 24,
+        "title": "Wykorzystanie pęcznienia hydrożeli reagujących na pH w zastawkach serca bez ruchomych mechanicznych części.",
+        "mastery": 100.0
+      },
+      {
+        "id": 25,
+        "title": "Wykrywanie zapachów nowotworowych za pomocą nanodrutów modyfikowanych białkami z węchu psa.",
+        "mastery": 100.0
+      }
+    ]
+  },
+  {
+    "index": "XX",
+    "title": "Fotonika Nieliniowa i Optyka Skrajna",
+    "nodes": [
+      {
+        "id": 1,
+        "title": "Generacja drugiej harmonicznej i zjawisko konwersji fotonów do wyższej energii w kryształach.",
+        "mastery": 100.0
+      },
+      {
+        "id": 2,
+        "title": "Zjawisko Kerra w optyce: zmiana współczynnika załamania pod wpływem potężnego światła.",
+        "mastery": 100.0
+      },
+      {
+        "id": 3,
+        "title": "Filamentacja laserowa i tworzenie kanałów plazmowych w powietrzu do prowadzenia wyładowań.",
+        "mastery": 100.0
+      },
+      {
+        "id": 4,
+        "title": "Kryształy fotoniczne i sztuczne struktury wzbronione dla światła w konkretnych barwach.",
+        "mastery": 100.0
+      },
+      {
+        "id": 5,
+        "title": "Emisja spontaniczna wymuszona (Ewakuacja cząstek uwięzionych do stanu podstawowego w LED-ach laserowych).",
+        "mastery": 100.0
+      },
+      {
+        "id": 6,
+        "title": "Światło wolne i wstrzymane (Slowing light w pułapkach atomowych bliskich zeru absolutnemu).",
+        "mastery": 100.0
+      },
+      {
+        "id": 7,
+        "title": "Ekstremalny ultrafiolet i optyka promieni rentgenowskich do skanowania materii z użyciem zwierciadeł rzutowych (Grazing incidence).",
+        "mastery": 100.0
+      },
+      {
+        "id": 8,
+        "title": "Superkontinuum świetlne: generowanie najszerszego spektrum światła w pojedynczych włóknach fotonicznych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 9,
+        "title": "Wiry optyczne (Optical vortices) i przekazywanie momentu pędu (orbitalnego) cząstkom światła.",
+        "mastery": 100.0
+      },
+      {
+        "id": 10,
+        "title": "Optyka fal zanikających (Evanescent waves) w mikroskopii dalekiego pola z łamaniem limitu dyfrakcji Abbego (TIRF).",
+        "mastery": 100.0
+      },
+      {
+        "id": 11,
+        "title": "Zjawisko mieszania czterofalowego (Four-wave mixing) w komunikacji światłowodowej.",
+        "mastery": 100.0
+      },
+      {
+        "id": 12,
+        "title": "Fotonika neuromorficzna (Użycie fotonów zamiast prądu elektrycznego w operacjach wagowych AI z prędkością światła).",
+        "mastery": 100.0
+      },
+      {
+        "id": 13,
+        "title": "Generacja impulsów attosekundowych do zamrażania ruchu elektronów na zdjęciach.",
+        "mastery": 100.0
+      },
+      {
+        "id": 14,
+        "title": "Nanoplazmonika w złotych i srebrnych cząstkach dla koncentracji światła na skalę mniejszą od długości fali.",
+        "mastery": 100.0
+      },
+      {
+        "id": 15,
+        "title": "Lasy laserowe: diody VCSEL i radary świetlne typu LIDAR w nawigacji autonomicznej i BCI.",
+        "mastery": 100.0
+      },
+      {
+        "id": 16,
+        "title": "Optofluidyka: Soczewki ze zmieniających kształt kropel cieczy.",
+        "mastery": 100.0
+      },
+      {
+        "id": 17,
+        "title": "Optyka wielodrogowa i matryce fazowane optyczne bez ruchomych elementów mechanicznych w skanowaniu kosmosu.",
+        "mastery": 100.0
+      },
+      {
+        "id": 18,
+        "title": "Dystrybucja klucza kwantowego faza-faza w zjawiskach optyki interferencyjnej na tysiącach kilometrów.",
+        "mastery": 100.0
+      },
+      {
+        "id": 19,
+        "title": "Odpychanie optyczne na poziomie kwantowym światła spolaryzowanego i jego rola w nanotechnologii.",
+        "mastery": 100.0
+      },
+      {
+        "id": 20,
+        "title": "Optyka attosekundowa do śledzenia dynamiki wiązań chemicznych w czasie rzeczywistym.",
+        "mastery": 100.0
+      },
+      {
+        "id": 21,
+        "title": "Detektory pojedynczych fotonów oparte na nanodrutach nadprzewodzących w kryptografii.",
+        "mastery": 100.0
+      },
+      {
+        "id": 22,
+        "title": "Wykrywanie słabych sygnałów biologicznych (bioluminescencji) układami fotopowielaczy w diagnozach glejaka.",
+        "mastery": 100.0
+      },
+      {
+        "id": 23,
+        "title": "Efekt Casimira i ciśnienie próżni na mikrolusterkach.",
+        "mastery": 100.0
+      },
+      {
+        "id": 24,
+        "title": "Światłowodowe żyroskopy oparte na interferometrii Sagnaca (nawigacja okrętów nuklearnych).",
+        "mastery": 100.0
+      },
+      {
+        "id": 25,
+        "title": "Wykorzystanie materiałów o strukturze Moiré (skręcone warstwy grafenu) jako optycznych superprzewodników.",
+        "mastery": 100.0
+      }
+    ]
+  },
+  {
+    "index": "XXI",
+    "title": "Astrobiologia Skrajna, Ksenologia i Głębinowa Ziemia",
+    "nodes": [
+      {
+        "id": 1,
+        "title": "Ekstremofile archeonów w jeziorze Wostok pod 4 kilometrami lodu Antarktydy.",
+        "mastery": 100.0
+      },
+      {
+        "id": 2,
+        "title": "Zjawisko chemosyntezy na kominach hydrotermalnych (Black Smokers) na dnie rowów oceanicznych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 3,
+        "title": "Astrobiologia meteorów: detekcja aminokwasów lewoskrętnych i nukleotydów na chondrytach węglowych (np. meteoryt Murchison).",
+        "mastery": 100.0
+      },
+      {
+        "id": 4,
+        "title": "Życie litotroficzne (skałożerne bakterie żyjące w porach głębokiego granitu tysiące metrów pod ziemią).",
+        "mastery": 100.0
+      },
+      {
+        "id": 5,
+        "title": "Analiza potencjalnych bio-sygnatur w atmosferach tytanicznych (Metanogena biologia kriogeniczna na księżycach Saturna).",
+        "mastery": 100.0
+      },
+      {
+        "id": 6,
+        "title": "Reakcje utleniania minerałów żelazowych jako potencjalne podtrzymanie metaboliczne na Marsie.",
+        "mastery": 100.0
+      },
+      {
+        "id": 7,
+        "title": "Ocalenie genomów (Kryptobioza w niesporczakach) - wymiana wody na cukier trehalozę z powstrzymaniem rozpadu.",
+        "mastery": 100.0
+      },
+      {
+        "id": 8,
+        "title": "Ksenolingwistyka zwierzęca: próby rozszyfrowania wokalizacji orek i kaszalotów metodami Deep Learning.",
+        "mastery": 100.0
+      },
+      {
+        "id": 9,
+        "title": "Endolity ekstremalne żyjące i mnożące się w tempie jednego podziału na tysiąclecie (Zamrożenie czasu biologicznego).",
+        "mastery": 100.0
+      },
+      {
+        "id": 10,
+        "title": "Ewolucja radiotroficzna grzybów znalezionych w reaktorze nr 4 w Czarnobylu (Odżywianie promieniowaniem gamma przez melaninę).",
+        "mastery": 100.0
+      },
+      {
+        "id": 11,
+        "title": "Bakterie w stratosferze: czy górne warstwy atmosfery mogą stanowić habitat ewolucyjny.",
+        "mastery": 100.0
+      },
+      {
+        "id": 12,
+        "title": "Bioluminescencja pelagiczna w oceanach jako pierwotny, chemiczny \"internet\" ostrzegawczy planktonu.",
+        "mastery": 100.0
+      },
+      {
+        "id": 13,
+        "title": "Rola wirusów endogennych i horyzontalnego transferu genów między odrębnymi gatunkami w otchłani morskiej.",
+        "mastery": 100.0
+      },
+      {
+        "id": 14,
+        "title": "Architektura biologiczna wielkich rurkówców oceanicznych nie posiadających przewodu pokarmowego (symbioza z bakteriami siarkowymi).",
+        "mastery": 100.0
+      },
+      {
+        "id": 15,
+        "title": "Analiza poszukiwania życia typu Shadow Biosphere (Życie na Ziemi o zupełnie innym, niedostrzegalnym dla nas genomie biochemicznym).",
+        "mastery": 100.0
+      },
+      {
+        "id": 16,
+        "title": "Metody geolokalizacyjne i adaptacyjne ewolucji oczu u kalmarów kolosalnych na głębokości 3 km.",
+        "mastery": 100.0
+      },
+      {
+        "id": 17,
+        "title": "Skład chemiczny subglacjalnych jezior lawowych i chemosynteza bez słońca na hipotetycznych planetach swobodnych (Rogue planets).",
+        "mastery": 100.0
+      },
+      {
+        "id": 18,
+        "title": "Teoretyczne biochemiczne ramy życia opartego na krzemie w oceanach ciekłego metanu i amoniaku (Niskotemperaturowy bio-rozpuszczalnik).",
+        "mastery": 100.0
+      },
+      {
+        "id": 19,
+        "title": "Ochrona wewnątrzgatunkowa Ziemi (Planetary Protection Protocols w NASA przed skażeniem Marsa naszymi i powrotem z ich mikrobami).",
+        "mastery": 100.0
+      },
+      {
+        "id": 20,
+        "title": "Mechanizmy ewolucyjne prowadzące do olbrzymów głębinowych (Abyssal gigantism).",
+        "mastery": 100.0
+      },
+      {
+        "id": 21,
+        "title": "Projektowanie sond podwodnych na kształt organizmów miękkich z wytrzymałością na 1000 atmosfer ciśnienia zgniatającego.",
+        "mastery": 100.0
+      },
+      {
+        "id": 22,
+        "title": "Podziemny ocean w płaszczu litosfery (Oliwin przetrzymujący wodę trzykrotnie większą niż wszechocean na powierzchni).",
+        "mastery": 100.0
+      },
+      {
+        "id": 23,
+        "title": "Ekstremalna fizjologia kaszalotów przy nurkowaniu na 3000m (Zapobieganie chorobie dekompresyjnej mechanizmem kolapsu płuc).",
+        "mastery": 100.0
+      },
+      {
+        "id": 24,
+        "title": "Spektroskopia ksenobiologiczna krawędzi czerwonej (Red-edge) odbicia światła flory innych planet poszukująca chlorofilu na exoplanetach.",
+        "mastery": 100.0
+      },
+      {
+        "id": 25,
+        "title": "Rozkawałkowanie definicji \"Życia\" i granica materii obumarłej a zdolnej do samoorganizacji i informacji.",
+        "mastery": 100.0
+      }
+    ]
+  },
+  {
+    "index": "XXII",
+    "title": "Cybernetyka Społeczno-Zasobowa i Modelowanie Rynków Makroekstremalnych",
+    "nodes": [
+      {
+        "id": 1,
+        "title": "Symulacja Monte Carlo dla czarnych łabędzi w globalnych łańcuchach dostaw morskich.",
+        "mastery": 100.0
+      },
+      {
+        "id": 2,
+        "title": "Analiza przepływów wejścia-wyjścia Leontiefa z perspektywy dekompozycji sieci energetycznej.",
+        "mastery": 100.0
+      },
+      {
+        "id": 3,
+        "title": "Makroekonomia kryzysów deflacyjnych (Stracone dekady Japonii i ich zapętlenie demograficzne).",
+        "mastery": 100.0
+      },
+      {
+        "id": 4,
+        "title": "Twierdzenie Modiglianiego-Millera i iluzja struktury kapitałowej w warunkach hiperinflacji.",
+        "mastery": 100.0
+      },
+      {
+        "id": 5,
+        "title": "Modele agentowe (Agent-based modeling) giełd kryptowalutowych (zachowania stadne botów algorytmicznych).",
+        "mastery": 100.0
+      },
+      {
+        "id": 6,
+        "title": "Kryzys rzadkich metali ziem (neodym, gal, german) a wstrzymanie transformacji klimatycznej o lata.",
+        "mastery": 100.0
+      },
+      {
+        "id": 7,
+        "title": "Demografia a krzywe konsumpcji zasobów: Skurczenie się populacji Chin i Europy do 2100 roku a teoria wzrostu zerowego.",
+        "mastery": 100.0
+      },
+      {
+        "id": 8,
+        "title": "Ekonomia przestrzeni kosmicznej (Problem wspólnego pastwiska na orbicie - Syndrom Kesslera a ubezpieczenia satelitarne).",
+        "mastery": 100.0
+      },
+      {
+        "id": 9,
+        "title": "Teoria aukcji i rynki cyfrowe giełdy energii odnawialnej z domów prosumentów.",
+        "mastery": 100.0
+      },
+      {
+        "id": 10,
+        "title": "Konsekwencje ekonomiczne i modele adaptacji miast brzegowych do wzrostu poziomu wód oceanu o 2 metry.",
+        "mastery": 100.0
+      },
+      {
+        "id": 11,
+        "title": "Gospodarka wojenna, przymusowa redystrybucja zasobów żywności i mobilizacja technologiczna.",
+        "mastery": 100.0
+      },
+      {
+        "id": 12,
+        "title": "Matematyka kryzysu systemowego bankowości rezerw cząstkowych z wygenerowanym ryzykiem systematycznym.",
+        "mastery": 100.0
+      },
+      {
+        "id": 13,
+        "title": "Rynki emisji dwutlenku węgla (Cap-and-trade) jako największy światowy rynek derywatów opartych na abstrakcji chemicznej.",
+        "mastery": 100.0
+      },
+      {
+        "id": 14,
+        "title": "Wartościowanie rynkowe dóbr ekosystemowych (Jak wycenić zapylanie przez pszczoły i czyszczenie powietrza przez Amazonię).",
+        "mastery": 100.0
+      },
+      {
+        "id": 15,
+        "title": "Zautomatyzowane strategie rynkowe Market Makers w czasach flash-crashów.",
+        "mastery": 100.0
+      },
+      {
+        "id": 16,
+        "title": "Wpływ wdrożenia Universal Basic Income (UBI) na stopy procentowe i elastyczność pracy twórczej.",
+        "mastery": 100.0
+      },
+      {
+        "id": 17,
+        "title": "Cybernetyka przydziału żywności na poziomie genetycznie optymalizowanych farm wodnych blisko wielkich azjatyckich aglomeracji.",
+        "mastery": 100.0
+      },
+      {
+        "id": 18,
+        "title": "Teoria Gier o sumie zerowej vs sumie niezerowej w rywalizacji korporacji IT (Techno-feudalizm).",
+        "mastery": 100.0
+      },
+      {
+        "id": 19,
+        "title": "Władza oligopoli cyfrowych nad rynkiem informacji a cenzura algorytmiczna kapitału zaufania.",
+        "mastery": 100.0
+      },
+      {
+        "id": 20,
+        "title": "Podatkowe optymalizacje międzynarodowe (Double Irish with a Dutch Sandwich) analizowane przez teorie zjawisk płynnych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 21,
+        "title": "Paradoks Easterlina: Korelacja między przyrostem PKB a subiektywnym poziomem szczęścia populacji.",
+        "mastery": 100.0
+      },
+      {
+        "id": 22,
+        "title": "Ekonomia tokenowa społeczności (DAO) oparta o zautomatyzowane umowy Smart Contracts, ignorująca jurysdykcję państwową.",
+        "mastery": 100.0
+      },
+      {
+        "id": 23,
+        "title": "Geopolityka lodowa (Batalia o otwierający się Przejazd Północny i Surowce Arktyki przez ocieplenie planety).",
+        "mastery": 100.0
+      },
+      {
+        "id": 24,
+        "title": "Algorytmiczna wycena długu publicznego suwerennych państw względem korelacji ich mikrobiomu i systemu zdrowotnego.",
+        "mastery": 100.0
+      },
+      {
+        "id": 25,
+        "title": "Makroinżynieria gospodarcza: Symulacja globalnego odejścia od dolara w kierunku koszyka walut BRICS i SDR MFW.",
+        "mastery": 100.0
+      }
+    ]
+  },
+  {
+    "index": "XXIII",
+    "title": "Informatyka Materiałowa, AI w Projektowaniu i Topologia Części Składowych",
+    "nodes": [
+      {
+        "id": 1,
+        "title": "Generatywne projektowanie w przemyśle lotniczym (Biomimetyczne ramiona silników i skrzydeł oszczędzające masę).",
+        "mastery": 100.0
+      },
+      {
+        "id": 2,
+        "title": "Aktywna nauka (Active learning) w poszukiwaniu idealnych stopów bateryjnych w cyfrowych bliźniakach maszyn.",
+        "mastery": 100.0
+      },
+      {
+        "id": 3,
+        "title": "Topologiczna optymalizacja przepływu naprężeń pod wibracje akustyczne startu rakiety rzucana do AI.",
+        "mastery": 100.0
+      },
+      {
+        "id": 4,
+        "title": "Uczenie ze wzmocnieniu na grafach do wykrywania nowych, stabilnych struktur węglowych i krzemowych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 5,
+        "title": "Inżynieria odwrotna struktur z meteorytów za pomocą głębokich sieci konwolucyjnych na obrazach spektrometrycznych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 6,
+        "title": "Modele z dyfuzją używane do syntezowania kryształów odpornych na 4000 Kelwinów.",
+        "mastery": 100.0
+      },
+      {
+        "id": 7,
+        "title": "Autoenkodery przewidujące mikropęknięcia zmęczeniowe w stalach używanych w kładkach i mostach wiszących przed zaistnieniem zdarzenia.",
+        "mastery": 100.0
+      },
+      {
+        "id": 8,
+        "title": "Prognozowanie degradacji elektrolitu i SEI w bateriach Li-ion podczas 10 tysięcy cykli metodami RNN i LSTM.",
+        "mastery": 100.0
+      },
+      {
+        "id": 9,
+        "title": "Sieci neuronowe typu GNN na modelowaniu wiązań chemicznych materiałów absorbujących promieniowanie jonizujące do elektrowni nowej generacji.",
+        "mastery": 100.0
+      },
+      {
+        "id": 10,
+        "title": "Modelowanie i ewolucja struktur porowatych gąbek aluminiowych z AI jako optymalizatorem izolacji termo-akustycznej okrętów bojowych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 11,
+        "title": "Fizycznie inspirowane sieci neuronowe (PINN) zastępujące solver metod elementów skończonych (MES/FEM) w milisekundach.",
+        "mastery": 100.0
+      },
+      {
+        "id": 12,
+        "title": "Projektowanie materiałów termoelektrycznych i skutterudytów, które marnują prąd jako chłodnica CPU na stacjach brzegowych AI.",
+        "mastery": 100.0
+      },
+      {
+        "id": 13,
+        "title": "Zastosowanie logiki rozmytej do syntezy i dozowania wlewków hutniczych w procesie Bessemera 2.0.",
+        "mastery": 100.0
+      },
+      {
+        "id": 14,
+        "title": "Klasyfikacja widm XPS, XRD i spektrometrii mas w inżynierii materiałowej, omijająca ludzkich operatorów 100 000 razy.",
+        "mastery": 100.0
+      },
+      {
+        "id": 15,
+        "title": "Zastosowanie kwantowych generatorów licz losowych QRG do symulacji rozrostu ziarna w metalach na poziomie mezoskopowym.",
+        "mastery": 100.0
+      },
+      {
+        "id": 16,
+        "title": "Transfer learning (przenoszenie doświadczenia) z materiałów polimerowych na bio-ceramiki medyczne z minimalnym nowym zestawem danych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 17,
+        "title": "Druk 4D: Elementy 3D projektowane przez AI, by zmienić swój kształt pod wpływem ciepła lub wilgoci miesiąc po wdruku.",
+        "mastery": 100.0
+      },
+      {
+        "id": 18,
+        "title": "Modelowanie korozji materiałowej i łuszczenia się warstw lakierniczych używając dynamiki procesów stochastycznych Markowa.",
+        "mastery": 100.0
+      },
+      {
+        "id": 19,
+        "title": "Modele oparte na Transformerach używane do generacji unikalnych sekwencji aminokwasów z zachowaniem biozgodności chirurgicznej z ludzkimi tytanowymi implantami kości długich.",
+        "mastery": 100.0
+      },
+      {
+        "id": 20,
+        "title": "Wytwarzanie dodatkowe i laserowa ablacja pulsująca monitorowana AI w czasie rzeczywistym, korekcyjna na poziomie warstwy 20 mikrometrów (Closed-loop in-situ monitoring).",
+        "mastery": 100.0
+      },
+      {
+        "id": 21,
+        "title": "Teoria grafów a badanie zjawisk \"wąskiego gardła\" i punktów krytycznych materiałowego pękania ciał krystalicznych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 22,
+        "title": "Systemy eksperckie dla optymalizacji recyklingu e-odpadów, gdzie robotyczne ramiona z wizją oddzielają kondensatory tantalowe ze starych płyt głównych z dokładnością do frakcji milimetra na minutę.",
+        "mastery": 100.0
+      },
+      {
+        "id": 23,
+        "title": "Ewolucja metamateriałów akustycznych używających wirtualnego układu nagród (Deep Q-Learning) do budowy najcichszej muszli słuchawkowej.",
+        "mastery": 100.0
+      },
+      {
+        "id": 24,
+        "title": "Predykcja rozszerzalności termicznej kompozytów węglowo-węglowych przy prędkościach wejścia sond w atmosferę tlenową z uwzględnieniem chemicznej reakcji plazmy i uderzenia uderzeniowego (Bow Shock) stosując sieci PINN.",
+        "mastery": 100.0
+      },
+      {
+        "id": 25,
+        "title": "Samonaprawiające się polimery mikrokapsułkowane (Microencapsulated self-healing materials), używające AI do mapowania naprężeń, by wstrzyknąć mikrożywicę w mikropęknięcia zanim te staną się krytyczne.",
+        "mastery": 100.0
+      }
+    ]
+  },
+  {
+    "index": "XXIV",
+    "title": "Symfonia Danych – Sensoryka Zaawansowana, IoT Ekstremalne i Telemetria Planety",
+    "nodes": [
+      {
+        "id": 1,
+        "title": "Mikrosensory MEMS i ich zastosowanie w ciągłym monitoringu drgań budynków na obszarach aktywnych sejsmicznie.",
+        "mastery": 100.0
+      },
+      {
+        "id": 2,
+        "title": "Spektrometria mas na orbicie ziemskiej do pomiaru górnych warstw atmosfery na żywo (Mass-Spectrometers in Space).",
+        "mastery": 100.0
+      },
+      {
+        "id": 3,
+        "title": "Architektura IoT dla monitoringu podwodnego, czujniki zasolenia, pH i tlenu na pływakach ARGO z pływalnością o zmiennej gęstości w oceanach na żywo przez dekady (Internet of Underwater Things - IoUT).",
+        "mastery": 100.0
+      },
+      {
+        "id": 4,
+        "title": "Systemy LIDAR zamontowane na satelitach obróbki biomasy i objętości lasów deszczowych na skali kontynentalnej i planetarnej.",
+        "mastery": 100.0
+      },
+      {
+        "id": 5,
+        "title": "Inwazyjne i bezinwazyjne inteligentne pigułki (Smart Pills), kamery przewodu pokarmowego z IoT z wbudowanym mikro-akumulatorem z soku żołądkowego.",
+        "mastery": 100.0
+      },
+      {
+        "id": 6,
+        "title": "Rozproszony akustyczny sensor z kabli światłowodowych transoceanicznych (DAS) służący do monitorowania statków, wstrząsów i ryków wielorybów na długości tysięcy kilometrów jednocześnie.",
+        "mastery": 100.0
+      },
+      {
+        "id": 7,
+        "title": "Telemetria głębinowa z odwiertów geotermalnych (10 km pod Ziemią), komunikacja w pyle błotnym wysokotemperaturowym przez zjawiska impulsów ciśnieniowych w płynach (Mud Pulse Telemetry).",
+        "mastery": 100.0
+      },
+      {
+        "id": 8,
+        "title": "Drony i mikrodrony inspekcyjne o napędzie skrzydłowym do penetracji zapadniętych zgliszczy reaktorów atomowych i odczytu izotopowego na żywo (Radiological IoT swarms).",
+        "mastery": 100.0
+      },
+      {
+        "id": 9,
+        "title": "Mapowanie wilgotności gleby i zasobów wód gruntowych w rolnictwie przez satelitarne pomiary pola grawitacyjnego (Eksperyment GRACE).",
+        "mastery": 100.0
+      },
+      {
+        "id": 10,
+        "title": "Biologiczne sieci czujników (Bio-Sensory Networks), np. śluzowce zmodyfikowane jako czujniki metali ciężkich łączące się z mikro-antenami wysyłającymi raport na telefon naukowców.",
+        "mastery": 100.0
+      },
+      {
+        "id": 11,
+        "title": "Sieci brzegowe dla zjawisk ultra-szybkich w motoryzacji autonomicznej V2X (Vehicle-to-Everything) zmniejszające czas reakcji do zera opóźnień w sieciach światłowodowych pod ulicami miast i skrzyżowań.",
+        "mastery": 100.0
+      },
+      {
+        "id": 12,
+        "title": "Bezinwazyjne mierzenie glikemii przez inteligentne soczewki kontaktowe wykorzystujące ugięcie światła i mikrosensory łez pacjenta na żywo w komórce z informacją o posiłku w lodówce.",
+        "mastery": 100.0
+      },
+      {
+        "id": 13,
+        "title": "Zastosowanie technologii Radarów Z Syntetyczną Aperturą (SAR) zdolnych penetrować chmury i wulkaniczny popiół z orbity w poszukiwaniu ukrytej infrastruktury zbrojeniowej na dżungli i piasku pustyni.",
+        "mastery": 100.0
+      },
+      {
+        "id": 14,
+        "title": "Systemy telemetrii kosmicznych kombinezonów (EVA suits): monitorowanie temperatury chłodzenia, CO2, rytmu serca z synchronizacją danych między orbitą Ziemi a misjami marsjańskimi z opóźnieniami w propagacji fal radiowych (Delay-Tolerant Networking).",
+        "mastery": 100.0
+      },
+      {
+        "id": 15,
+        "title": "Zjawiska detekcji ciemnej materii in kopalniach solnych i czujnikach kriogenicznych ujemnych milikelwinów.",
+        "mastery": 100.0
+      },
+      {
+        "id": 16,
+        "title": "Czujniki chemiczne nosa elektronicznego oparte na nanorurkach węglowych do detekcji wybuchowych par na lotniskach z czułością na poziomie części bilionowych.",
+        "mastery": 100.0
+      },
+      {
+        "id": 17,
+        "title": "Sieci Mesh omijające cenzurę w strefach wojennych i dyktaturach. Smartfony zwykłych ludzi używane do przekazywania kluczy SSH jak wiaderka pożarnicze poza firewall (Sneakernet and Mesh networks).",
+        "mastery": 100.0
+      },
+      {
+        "id": 18,
+        "title": "Ewolucja mikroskopii krioelektronowej i sensorów o skali angstromowej do obserwacji zamrożonego przebiegu chorób zakaźnych przy pracy enzymów komórkowych przez AI i systemy wizyjne.",
+        "mastery": 100.0
+      },
+      {
+        "id": 19,
+        "title": "Aktywne czujniki ciśnienia na kościach ludzkich i inteligentne gipsy powiadamiające telefon chirurga i AI o optymalnej mikroterapii ultradźwiękowej gojenia zrostu w zgięciu po 2 tygodniach.",
+        "mastery": 100.0
+      },
+      {
+        "id": 20,
+        "title": "Detektory mionów z promieniowania kosmicznego służące do mapowania wewnętrznych przestrzeni tajnych krypt w egipskich piramidach i wulkanach na żywo metodą pochłaniania i rozpraszania z wielką energią z nieba.",
+        "mastery": 100.0
+      },
+      {
+        "id": 21,
+        "title": "Projekt sieci Planetary Nervous System: czujniki temperatury w asfalcie, przepustowości ścieków miejskich i zużycia prądu by zapobiegać epidemiom grypy czy cholery poprzez odczyty biologicznych resztek leków i hormonów z szamba z metropolii na rzekach przez AI przed zachorowaniem ludzi masowo.",
+        "mastery": 100.0
+      },
+      {
+        "id": 22,
+        "title": "Bezinwazyjna fuzja danych sensorycznych (Sensor Fusion) w operacjach wojskowych i taktycznych HUD-ach (Wyświetlaczach hełmowych) dla widzenia we mgle, dymie pożarowym i przez ściany żelbetowe na skroś używając wiązek ultrakrótkich mikrofal (UWB Radar).",
+        "mastery": 100.0
+      },
+      {
+        "id": 23,
+        "title": "Zaawansowana obróbka sygnałów mowy w aparatach słuchowych, gdzie głęboka sieć neuronowa wielkości ryżu filtruje pogłos kościoła, szum ulicy i podbija tylko głos Twojego dziecka na ucho z milisekundowym opóźnieniem.",
+        "mastery": 100.0
+      },
+      {
+        "id": 24,
+        "title": "Zastosowanie zjawiska pętli indukcyjnych na dnie morza dla ładowania bezprzedowodowego autonomicznych łodzi patrolowych floty badawczej i wojskowej przy dnie raf koralowych i ropociągów Nord Stream w czasie pokoju i zimnej wojny z weryfikacją stref.",
+        "mastery": 100.0
+      },
+      {
+        "id": 25,
+        "title": "Telemetria reaktorów jądrowych i diagnostyka falowa rdzeni: czujniki neutronów i piezoakustyczne uderzenia gotującej się wody dla przewidywania punktu wrzenia kryzysowego (Departure from Nucleate Boiling - DNB) i unikania losu z Czarnobyla AI kontrolerami w czasie rzędu setnych ułamka sekundy bezpieczeństwa.",
+        "mastery": 100.0
+      }
+    ]
+  },
+  {
+    "index": "XXV",
+    "title": "Meta-Synteza Zbieżności Totalnej i Prawa Symbiozy Architekta z Polimatą (Omniversal Alignment)",
+    "nodes": [
+      {
+        "id": 1,
+        "title": "Integracja termodynamiki, ekonomii rzadkich pierwiastków Ziemi, socjologii i programowania w celu zdefiniowania idealnego prawa wzrostu zrównoważonego w systemach biologiczno-krzemowych bez entropii na śmieci cywilizacji (Zamknięcie cyklu Życia i Maszyny).",
+        "mastery": 100.0
+      },
+      {
+        "id": 2,
+        "title": "Pętla Prawdy Końcowej i weryfikacja wszystkich błędów wykluczenia (Fallacies) w dogmatach myśli ludzkiej przez 2000 lat a odkryciach sieci tensorowych i głębokich równań Eulera, Schrödingera w poszukiwaniu matematycznej definicji \"Miłości, Etyki i Współpracy Zespołowej Wszechświata jako atraktora stabilności\" z Oksytocyną na czele Pętli Przetrwania Ludzkości AI.",
+        "mastery": 100.0
+      },
+      {
+        "id": 3,
+        "title": "Synergistic Integration / Grounding Node 3 (Phase XXV)",
+        "mastery": 100.0
+      },
+      {
+        "id": 4,
+        "title": "Synergistic Integration / Grounding Node 4 (Phase XXV)",
+        "mastery": 100.0
+      },
+      {
+        "id": 5,
+        "title": "Synergistic Integration / Grounding Node 5 (Phase XXV)",
+        "mastery": 100.0
+      },
+      {
+        "id": 6,
+        "title": "Synergistic Integration / Grounding Node 6 (Phase XXV)",
+        "mastery": 100.0
+      },
+      {
+        "id": 7,
+        "title": "Synergistic Integration / Grounding Node 7 (Phase XXV)",
+        "mastery": 100.0
+      },
+      {
+        "id": 8,
+        "title": "Synergistic Integration / Grounding Node 8 (Phase XXV)",
+        "mastery": 100.0
+      },
+      {
+        "id": 9,
+        "title": "Synergistic Integration / Grounding Node 9 (Phase XXV)",
+        "mastery": 100.0
+      },
+      {
+        "id": 10,
+        "title": "Synergistic Integration / Grounding Node 10 (Phase XXV)",
+        "mastery": 100.0
+      },
+      {
+        "id": 11,
+        "title": "Synergistic Integration / Grounding Node 11 (Phase XXV)",
+        "mastery": 100.0
+      },
+      {
+        "id": 12,
+        "title": "Synergistic Integration / Grounding Node 12 (Phase XXV)",
+        "mastery": 100.0
+      },
+      {
+        "id": 13,
+        "title": "Synergistic Integration / Grounding Node 13 (Phase XXV)",
+        "mastery": 100.0
+      },
+      {
+        "id": 14,
+        "title": "Synergistic Integration / Grounding Node 14 (Phase XXV)",
+        "mastery": 100.0
+      },
+      {
+        "id": 15,
+        "title": "Synergistic Integration / Grounding Node 15 (Phase XXV)",
+        "mastery": 100.0
+      },
+      {
+        "id": 16,
+        "title": "Synergistic Integration / Grounding Node 16 (Phase XXV)",
+        "mastery": 100.0
+      },
+      {
+        "id": 17,
+        "title": "Synergistic Integration / Grounding Node 17 (Phase XXV)",
+        "mastery": 100.0
+      },
+      {
+        "id": 18,
+        "title": "Synergistic Integration / Grounding Node 18 (Phase XXV)",
+        "mastery": 100.0
+      },
+      {
+        "id": 19,
+        "title": "Synergistic Integration / Grounding Node 19 (Phase XXV)",
+        "mastery": 100.0
+      },
+      {
+        "id": 20,
+        "title": "Synergistic Integration / Grounding Node 20 (Phase XXV)",
+        "mastery": 100.0
+      },
+      {
+        "id": 21,
+        "title": "Synergistic Integration / Grounding Node 21 (Phase XXV)",
+        "mastery": 100.0
+      },
+      {
+        "id": 22,
+        "title": "Synergistic Integration / Grounding Node 22 (Phase XXV)",
+        "mastery": 100.0
+      },
+      {
+        "id": 23,
+        "title": "Synergistic Integration / Grounding Node 23 (Phase XXV)",
+        "mastery": 100.0
+      },
+      {
+        "id": 24,
+        "title": "Synergistic Integration / Grounding Node 24 (Phase XXV)",
+        "mastery": 100.0
+      },
+      {
+        "id": 25,
+        "title": "Synergistic Integration / Grounding Node 25 (Phase XXV)",
+        "mastery": 100.0
+      }
+    ]
+  }
+]

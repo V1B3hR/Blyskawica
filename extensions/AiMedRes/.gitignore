@@ -1,0 +1,126 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+.env
+.venv
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Training artifacts
+trained_models/
+*.pkl
+*.h5
+*.model
+*.pth
+
+# Security and privacy files (generated during runtime)
+secure_medical_workspace/
+privacy_audit.db
+*.encrypted
+*.db
+
+# Test coverage and pytest
+.coverage
+.pytest_cache/
+htmlcov/
+coverage.xml
+.tox/
+
+# Logs
+*.log
+
+# Audit logs (runtime-generated)
+audit_logs/
+
+# Test and output directories
+outputs/
+test_outputs/
+cache/
+.cache/
+data/raw/
+results/
+logs/
+experiments/
+
+# MLflow
+mlruns/
+
+# Generated files and duplicates
+files/
+dataset/
+diabetes_training.log
+
+# Build and egg artifacts
+*.egg-info/
+build/
+dist/
+.test_env/
+
+# Training outputs
+summaries/
+als_outputs/
+alzheimer_outputs/
+alzheimer_outputs_enhanced/
+diabetes_outputs/
+
+# Demo outputs and intermediate results
+demo_outputs/
+*_demo_results.json
+*_results/
+*_training_results/
+*_output/
+phase*_results.json
+test_*_output/
+
+# Debug phase outputs (keep only final)
+debug/phase[1-9]_*.py
+debug/phase[1-9]_*.json
+debug/PHASE[1-9]_*.md
+memory_state_demo.json
+training_output.log
+
+# Frontend build artifacts
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/coverage/
+
+# Cypress
+frontend/cypress/screenshots/
+frontend/cypress/videos/

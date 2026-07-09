@@ -1,0 +1,29 @@
+{
+    "timestamp": 1776005538.4643729,
+    "performance": {
+        "throughput": 0.7072715240631711,
+        "latency_ms": 1413.8841533660889
+    },
+    "intelligence": {
+        "phi_score": 0.41496267914772034,
+        "neural_health": 0.23805487155914307,
+        "metacognitive_accuracy": 0.85
+    },
+    "logic": {
+        "inference_stability": 0.9999999701976776
+    },
+    "defense": {
+        "lever_expansion": 1.6145144701004028,
+        "mechanical_advantage": 1.9842850081263634
+    },
+    "attack": {
+        "counter_torque": 0.0,
+        "confidence_score": 0.5,
+        "strategy_deployed": "NEUTRAL (Observation)"
+    },
+    "ethics": {
+        "compliance_score": 1.0,
+        "laws_violated": 0,
+        "audit_integrity": "PASSED"
+    }
+}

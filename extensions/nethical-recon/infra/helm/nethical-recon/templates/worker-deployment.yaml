@@ -1,0 +1,160 @@
+{{- if .Values.worker.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "nethical-recon.fullname" . }}-worker
+  labels:
+    {{- include "nethical-recon.labels" . | nindent 4 }}
+    app.kubernetes.io/component: worker
+spec:
+  {{- if not .Values.worker.autoscaling.enabled }}
+  replicas: {{ .Values.worker.replicaCount }}
+  {{- end }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 2
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      {{- include "nethical-recon.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: worker
+  template:
+    metadata:
+      labels:
+        {{- include "nethical-recon.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: worker
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secrets: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "nethical-recon.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: worker
+          image: {{ include "nethical-recon.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - celery
+            - -A
+            - nethical_recon.worker.celery_app
+            - worker
+            - --loglevel=info
+            - --concurrency=$(CELERY_WORKER_CONCURRENCY)
+            - --prefetch-multiplier=$(CELERY_WORKER_PREFETCH_MULTIPLIER)
+            - --max-tasks-per-child=$(CELERY_MAX_TASKS_PER_CHILD)
+          env:
+            - name: DATABASE_URL
+              value: {{ include "nethical-recon.databaseUrl" . | quote }}
+            - name: BROKER_URL
+              value: {{ printf "%s/0" (include "nethical-recon.redisUrl" .) | quote }}
+            - name: RESULT_BACKEND
+              value: {{ printf "%s/1" (include "nethical-recon.redisUrl" .) | quote }}
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "nethical-recon.fullname" . }}-config
+                  key: LOG_LEVEL
+            - name: JSON_LOGS
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "nethical-recon.fullname" . }}-config
+                  key: JSON_LOGS
+            - name: CELERY_WORKER_CONCURRENCY
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "nethical-recon.fullname" . }}-config
+                  key: CELERY_WORKER_CONCURRENCY
+            - name: CELERY_WORKER_PREFETCH_MULTIPLIER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "nethical-recon.fullname" . }}-config
+                  key: CELERY_WORKER_PREFETCH_MULTIPLIER
+            - name: CELERY_MAX_TASKS_PER_CHILD
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "nethical-recon.fullname" . }}-config
+                  key: CELERY_MAX_TASKS_PER_CHILD
+            {{- if .Values.secrets.shodanApiKey }}
+            - name: SHODAN_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "nethical-recon.fullname" . }}-secrets
+                  key: SHODAN_API_KEY
+                  optional: true
+            {{- end }}
+            {{- if .Values.secrets.censysApiId }}
+            - name: CENSYS_API_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "nethical-recon.fullname" . }}-secrets
+                  key: CENSYS_API_ID
+                  optional: true
+            {{- end }}
+            {{- if .Values.secrets.censysApiSecret }}
+            - name: CENSYS_API_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "nethical-recon.fullname" . }}-secrets
+                  key: CENSYS_API_SECRET
+                  optional: true
+            {{- end }}
+          {{- if .Values.persistence.enabled }}
+          volumeMounts:
+            - name: evidence
+              mountPath: /app/evidence
+            - name: reports
+              mountPath: /app/reports
+          {{- end }}
+          livenessProbe:
+            exec:
+              command:
+                - celery
+                - -A
+                - nethical_recon.worker.celery_app
+                - inspect
+                - ping
+                - -d
+                - celery@$(HOSTNAME)
+            initialDelaySeconds: 90
+            periodSeconds: 60
+            timeoutSeconds: 30
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.worker.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - NET_RAW  # Required for some scanning tools
+      {{- if .Values.persistence.enabled }}
+      volumes:
+        - name: evidence
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.existingClaim | default (printf "%s-evidence-pvc" (include "nethical-recon.fullname" .)) }}
+        - name: reports
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.existingClaim | default (printf "%s-evidence-pvc" (include "nethical-recon.fullname" .)) }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

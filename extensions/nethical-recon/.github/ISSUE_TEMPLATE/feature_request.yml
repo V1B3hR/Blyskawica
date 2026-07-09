@@ -1,0 +1,207 @@
+name: ✨ Feature Request
+description: Suggest a new feature or enhancement
+title: "[Feature]: "
+labels: ["enhancement", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a new feature! Please provide as much detail as possible to help us understand your request.
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Prerequisites
+      description: Please confirm the following before submitting
+      options:
+        - label: I have searched existing issues and discussions to ensure this hasn't been requested
+          required: true
+        - label: I have read the roadmap and this feature is not already planned
+          required: true
+        - label: This feature aligns with the project's goals and scope
+          required: true
+
+  - type: dropdown
+    id: feature-type
+    attributes:
+      label: Feature Type
+      description: What type of feature is this?
+      options:
+        - New Camera/Scanner
+        - New Weapon/Exploit
+        - API Enhancement
+        - UI/UX Improvement
+        - Integration with Third-Party Service
+        - Performance Improvement
+        - Security Enhancement
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this feature to you?
+      options:
+        - Low - Nice to have
+        - Medium - Would improve workflow
+        - High - Important for my use case
+        - Critical - Blocking my work
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve?
+      placeholder: |
+        Describe the problem or limitation you're facing.
+        Is your feature request related to a problem? Please describe.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe your proposed solution
+      placeholder: |
+        A clear and concise description of what you want to happen.
+        How would this feature work?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Have you considered any alternative solutions or features?
+      placeholder: |
+        Describe any alternative solutions or features you've considered.
+        Why is your proposed solution better?
+
+  - type: textarea
+    id: use-cases
+    attributes:
+      label: Use Cases
+      description: Describe specific use cases for this feature
+      placeholder: |
+        1. Use case 1: ...
+        2. Use case 2: ...
+        3. Use case 3: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: benefits
+    attributes:
+      label: Benefits
+      description: What are the benefits of implementing this feature?
+      placeholder: |
+        - Benefit 1
+        - Benefit 2
+        - Benefit 3
+    validations:
+      required: true
+
+  - type: dropdown
+    id: users
+    attributes:
+      label: Target Users
+      description: Who would benefit from this feature?
+      multiple: true
+      options:
+        - Security Professionals
+        - Penetration Testers
+        - Bug Bounty Hunters
+        - System Administrators
+        - SOC Analysts
+        - Researchers
+        - Educators/Students
+        - Enterprise Users
+        - All Users
+    validations:
+      required: true
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: Examples
+      description: Provide examples from other tools or mockups
+      placeholder: |
+        Links to similar features in other tools, mockups, or screenshots
+
+  - type: textarea
+    id: technical-considerations
+    attributes:
+      label: Technical Considerations
+      description: Any technical considerations or implementation notes?
+      placeholder: |
+        - Dependencies required
+        - Performance considerations
+        - Security implications
+        - Backward compatibility concerns
+
+  - type: checkboxes
+    id: breaking-changes
+    attributes:
+      label: Breaking Changes
+      options:
+        - label: This feature may introduce breaking changes
+
+  - type: textarea
+    id: breaking-description
+    attributes:
+      label: Breaking Changes Description
+      description: If applicable, describe potential breaking changes
+      placeholder: Describe what might break and migration path
+
+  - type: checkboxes
+    id: backward-compatibility
+    attributes:
+      label: Backward Compatibility
+      options:
+        - label: This feature should maintain backward compatibility
+
+  - type: dropdown
+    id: roadmap-phase
+    attributes:
+      label: Roadmap Phase
+      description: Which roadmap phase does this align with?
+      options:
+        - Phase I - Legal Foundation
+        - Phase II - Compliance Documentation
+        - Phase III - User Experience
+        - Phase IV - Enterprise Features
+        - Phase V - Advanced Features
+        - Not in current roadmap
+        - Not sure
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other context, screenshots, or information
+      placeholder: Add any other relevant information
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label: I am willing to implement this feature
+        - label: I am willing to help test this feature
+        - label: I am willing to help with documentation
+
+  - type: textarea
+    id: implementation-help
+    attributes:
+      label: Implementation Notes
+      description: If you're willing to implement, provide any implementation notes
+      placeholder: |
+        Describe your proposed implementation approach

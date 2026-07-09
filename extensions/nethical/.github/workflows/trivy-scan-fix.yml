@@ -1,0 +1,69 @@
+name: Trivy Container Scan (fixed)
+
+on:
+  workflow_dispatch:
+    inputs: 
+      image:
+        description: 'Image to scan (optional). If empty, workflow builds the repo image.'
+        required: false
+        default: ''
+  push: 
+    branches:
+      - main
+
+jobs:
+  trivy-scan:
+    runs-on: ubuntu-latest
+    permissions: 
+      contents: read
+    # Set env vars as needed. Example for JWT_SECRET:
+    # env:
+    #   JWT_SECRET: ${{ secrets.JWT_SECRET }}
+    steps: 
+      - name: Prepare Trivy cache directory
+        run: mkdir -p .trivycache
+        
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Show disk usage (before cleanup)
+        run: df -h
+
+      - name: Aggressive runner cleanup (free disk)
+        run: |
+          sudo rm -rf /usr/share/dotnet \
+            /opt/ghc \
+            /usr/local/lib/android \
+            /opt/hostedtoolcache/CodeQL \
+            /opt/hostedtoolcache/go \
+            /opt/hostedtoolcache/node \
+            /opt/hostedtoolcache/Python || true
+          sudo docker system prune -af --volumes || true
+          sudo rm -rf /tmp/* /var/lib/docker/tmp/* || true
+          df -h
+
+      # NEW: Build Docker image if not specified
+      - name: Build Docker image
+        if: github.event.inputs.image == ''
+        run: |
+          docker build -t v1b3hr/nethical:latest .
+
+      - name: Cache Trivy DB
+        uses: actions/cache@v4
+        with: 
+          path: .trivycache
+          key: trivy-db-${{ github.run_id }}
+          restore-keys: trivy-db-
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.28.0
+        env:
+          TRIVY_CACHE_DIR: .trivycache
+        with:
+          image-ref: ${{ github.event.inputs.image || 'v1b3hr/nethical:latest' }}
+          format: 'table'
+          exit-code: '0'
+
+      - name: Show disk usage (after scan)
+        if: always()
+        run: df -h
