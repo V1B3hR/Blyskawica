@@ -32,11 +32,107 @@ class MemoryLedgerEntry:
         }
 
 class MemoryLedger:
-    def __init__(self, drift_threshold: float = 0.65):
+    def __init__(self, drift_threshold: float = 0.65, db_path: str = None):
         self.chain: List[MemoryLedgerEntry] = []
         self.drift_threshold = drift_threshold
-        # Genesis block
-        self._create_genesis_block()
+        self.db_path = db_path
+        
+        if self.db_path:
+            self._init_db()
+            self._load_chain_from_db()
+            
+        # Genesis block setup
+        if not self.chain:
+            self._create_genesis_block()
+            if self.db_path:
+                self._save_entry_to_db(self.chain[0])
+
+    def _init_db(self):
+        try:
+            import sqlite3
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS memory_ledger (
+                    index_val INTEGER PRIMARY KEY,
+                    timestamp REAL,
+                    vector_id INTEGER,
+                    text TEXT,
+                    prev_hash TEXT,
+                    signature TEXT,
+                    hash TEXT,
+                    vector_json TEXT
+                )
+            """)
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            logger.error(f"[MEMORY LEDGER] SQLite initialization error: {e}")
+
+    def _load_chain_from_db(self):
+        try:
+            import sqlite3
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute("SELECT index_val, timestamp, vector_id, text, prev_hash, signature, hash FROM memory_ledger ORDER BY index_val ASC")
+            rows = cursor.fetchall()
+            conn.close()
+            
+            for row in rows:
+                entry = MemoryLedgerEntry(
+                    index=row[0],
+                    timestamp=row[1],
+                    vector_id=row[2],
+                    text=row[3],
+                    prev_hash=row[4],
+                    signature=row[5]
+                )
+                entry.hash = row[6]
+                self.chain.append(entry)
+            
+            if self.chain:
+                logger.info(f"[MEMORY LEDGER] Loaded {len(self.chain)} entries from SQLite database.")
+        except Exception as e:
+            logger.error(f"[MEMORY LEDGER] Error loading chain from SQLite: {e}")
+
+    def _save_entry_to_db(self, entry: MemoryLedgerEntry, vector: List[float] = None):
+        try:
+            import sqlite3
+            import json
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            vector_json = json.dumps(vector) if vector is not None else "[]"
+            cursor.execute(
+                "INSERT OR REPLACE INTO memory_ledger (index_val, timestamp, vector_id, text, prev_hash, signature, hash, vector_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (entry.index, entry.timestamp, entry.vector_id, entry.text, entry.prev_hash, entry.signature, entry.hash, vector_json)
+            )
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            logger.error(f"[MEMORY LEDGER] Error saving entry to SQLite: {e}")
+
+    def _get_all_vectors_from_db(self) -> List[List[float]]:
+        try:
+            import sqlite3
+            import json
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute("SELECT vector_json FROM memory_ledger ORDER BY index_val ASC")
+            rows = cursor.fetchall()
+            conn.close()
+            
+            vectors = []
+            for row in rows:
+                try:
+                    vec = json.loads(row[0])
+                    if vec:
+                        vectors.append([float(x) for x in vec])
+                except Exception:
+                    continue
+            return vectors
+        except Exception as e:
+            logger.error(f"[MEMORY LEDGER] Error retrieving vectors from SQLite: {e}")
+            return []
 
     def _create_genesis_block(self):
         genesis = MemoryLedgerEntry(
@@ -66,6 +162,12 @@ class MemoryLedger:
         """
         Waliduje wektor wejściowy, sprawdza dryf semantyczny (dystans cosinusowy) i dodaje wpis do rejestru.
         """
+        # Jeśli mamy bazę, pobierz rzeczywiste historyczne wektory z SQLite
+        if self.db_path:
+            db_vectors = self._get_all_vectors_from_db()
+            if db_vectors:
+                historical_vectors = db_vectors
+
         # 1. Obliczenie dystansu cosinusowego (pure Python)
         if historical_vectors:
             def dot_product(v1, v2):
@@ -106,5 +208,10 @@ class MemoryLedger:
             signature=signature
         )
         self.chain.append(new_entry)
+        
+        # Zapis do bazy danych SQLite
+        if self.db_path:
+            self._save_entry_to_db(new_entry, vector)
+            
         logger.info(f"[MEMORY LEDGER] Dodano wpis: ID={vector_id}, Hash={new_entry.hash[:8]}")
         return True

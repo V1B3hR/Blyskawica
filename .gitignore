@@ -199,3 +199,10 @@ adaptiveneuralnetwork/data/models/
 *.tgz
 *.tar
 *.gz
+
+# Local SQLite Databases
+blyskawica_app/memory/*.db
+blyskawica_app/memory/*.db-journal
+
+# Temporary Logs
+training_log.txt

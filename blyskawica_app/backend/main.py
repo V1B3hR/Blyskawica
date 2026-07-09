@@ -424,7 +424,7 @@ if CORE_AVAILABLE:
     consolidation_engine = ConsolidationEngine(core_network=blysk_core, neurochemistry=cra_engine.neuro_state if cra_engine else None)
     wolf_teeth = WolfTeethDefenseEngine()
     agent_honeypot = AgenticHoneypot()
-    memory_ledger = MemoryLedger()
+    memory_ledger = MemoryLedger(db_path=str(MEMORY_DIR / "blyskawica_memory.db"))
 else:
     env_manager = None
     blysk_core = None

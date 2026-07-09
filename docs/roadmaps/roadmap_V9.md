@@ -35,9 +35,9 @@ The V9 version focuses on resolving the 4 remaining cognitive gaps. They have be
 - [x] **1.2. Virtual Neuromorphic Bridge**: Implementing Loihi 2 emulation support in `LavaCompiler`.
 
 ### Phase 2: Advanced Physics and Cybernetics
-- [ ] **2.1. GR Solver Application**: Use geodesic solver orbits to simulate time dilation and reduce entropy in deep cognitive sleep states.
-- [ ] **2.2. EBM Albedo Implementation**: Utilize climate feedbacks to study network resilience against stochastic external disturbances (environmental noise).
+- [x] **2.1. GR Solver Application**: Use geodesic solver orbits to simulate time dilation and reduce entropy in deep cognitive sleep states.
+- [x] **2.2. EBM Albedo Implementation**: Utilize climate feedbacks to study network resilience against stochastic external disturbances (environmental noise).
 
 ### Phase 3: Consolidation of Autonomy in the Sparkle VIBE Environment
-- [ ] **3.1. Transition to Full Offline Work**: Integrate a SQLite vector database to eliminate external APIs and secure data sovereignty.
-- [ ] **3.2. ONNX Digital Signature**: Implement RSA-2048 private key encryption for each nightly model update.
+- [x] **3.1. Transition to Full Offline Work**: Integrate a SQLite vector database to eliminate external APIs and secure data sovereignty.
+- [x] **3.2. ONNX Digital Signature**: Implement RSA-2048 private key encryption for each nightly model update.
