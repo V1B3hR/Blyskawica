@@ -21,8 +21,16 @@ if exist venv_orbital\Scripts\python.exe (
 echo Oczekiwanie na start serwera API (3 sekundy)...
 timeout /t 3 /nobreak >nul
 
-echo Otwieranie Sparkle VIBE IDE w trybie aplikacji bezramkowej...
-start "" msedge --app=http://127.0.0.1:8000/?token=%SPARKLE_TOKEN%
+echo Otwieranie natywnej powloki Sparkle VIBE IDE (Tauri)...
+if exist sparkle_app\src-tauri\target\release\sparkle_app.exe (
+    echo [Wykryto wersje produkcyjna] Uruchamianie powloki Tauri...
+    start "" sparkle_app\src-tauri\target\release\sparkle_app.exe
+) else (
+    echo [Brak wersji produkcyjnej] Uruchamianie deweloperskiej powloki Tauri (tauri dev)...
+    cd sparkle_app
+    start "" cmd /c "npm run tauri dev"
+    cd ..
+)
 
 echo Gotowe! Mozesz zamknac to okno (procesy dzialaja w tle).
 timeout /t 3 >nul

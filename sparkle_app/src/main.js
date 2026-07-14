@@ -29,10 +29,41 @@ let btnInviteGuest, selectGuestModel, primaryChatStream, guestChatStream, active
 
 let securitySlider, txtRegimeStatus;
 
-// Stan aplikacji
-let currentFileOpen = null;
-let permissionLevel = 2; // Domyślnie Workspace
-let isEngineRunning = false;
+// Scentralizowany State Store (Pojedyncze Źródło Prawdy)
+const SparkleStore = {
+  state: {
+    currentFileOpen: null,
+    permissionLevel: 2,
+    isEngineRunning: false,
+    neurochemistry: { dopamine: 0.69, serotonin: 0.94, gaba: 0.64, oxytocin: 0.58, melatonin: 0.10 }
+  },
+  listeners: [],
+  subscribe(fn) {
+    this.listeners.push(fn);
+  },
+  update(key, value) {
+    this.state[key] = value;
+    this.listeners.forEach(fn => fn(this.state));
+    // Zapisz wybrane preferencje w localStorage
+    if (key === 'permissionLevel') {
+      localStorage.setItem('sparkle_permission_level', value);
+    }
+  }
+};
+
+// Mapowanie zmiennych stanu na gettery/settery dla pełnej kompatybilności wstecznej
+Object.defineProperty(window, 'permissionLevel', {
+  get() { return SparkleStore.state.permissionLevel; },
+  set(val) { SparkleStore.update('permissionLevel', val); }
+});
+Object.defineProperty(window, 'isEngineRunning', {
+  get() { return SparkleStore.state.isEngineRunning; },
+  set(val) { SparkleStore.update('isEngineRunning', val); }
+});
+Object.defineProperty(window, 'currentFileOpen', {
+  get() { return SparkleStore.state.currentFileOpen; },
+  set(val) { SparkleStore.update('currentFileOpen', val); }
+});
 
 // Funkcja dodawania wpisów logów
 function addLog(text) {
@@ -162,6 +193,7 @@ async function startBlyskawicaEngine() {
     engineStatusIndicator.className = "status-indicator idle";
     engineStatusText.textContent = "Błąd inicjalizacji";
     appendChatMessage("System Sparkle", `Nie udało się uruchomić rdzenia: ${error}`, "system-msg");
+    throw error;
   }
 }
 
@@ -174,21 +206,59 @@ async function sendMessage() {
   chatInput.value = "";
 
   try {
-    addLog(`[Tauri]: Wysyłanie wiadomości do silnika: "${text}"`);
-    const status = await invoke("send_user_message", { message: text });
+    addLog(`[Tauri]: Wysyłanie wiadomości do silnika Rust: "${text}"`);
+    await invoke("send_user_message", { message: text });
     
-    // Sprawdź, czy prompt wywoła intencję destrukcyjną (heurystyka w JS)
-    const isDestructive = /(modyfikuj\s+kod|usuń\s+welcome|delete\s+welcome|nadpisz\s+dusz|destroy\s+blyskawica|rm\s+-rf)/i.test(text);
-    
-    if (isDestructive) {
-      setWolfTeethVisuals(true);
-    } else {
-      // Normalna odpowiedź
-      setTimeout(() => {
-        if (!document.body.classList.contains("wolf-teeth-active")) {
-          appendChatMessage("Błyskawica V9", "Zintegrowałam informację. Moje parametry kognitywne są stabilne i reagują prawidłowo.");
+    // Jeśli silnik w Rust wywoła kwarantannę, natychmiast wyłącz dalszy bieg
+    if (document.body.classList.contains("wolf-teeth-active")) {
+      return;
+    }
+
+    // Dodanie wskaźnika generowania odpowiedzi (loader/typing indicator)
+    const generatingMsgEl = document.createElement("div");
+    generatingMsgEl.className = "message blysk-msg generating";
+    generatingMsgEl.innerHTML = `<strong>Błyskawica V9:</strong> <span class="typing-dot">.</span><span class="typing-dot">.</span><span class="typing-dot">.</span>`;
+    chatMessages.appendChild(generatingMsgEl);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    // Przygotowanie żądania POST z parametrem message jako Form Data do FastAPI
+    const formData = new FormData();
+    formData.append("message", text);
+
+    addLog("[Tauri]: Przekazywanie zapytania do serwera kognitywnego (FastAPI)...");
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/chat", {
+        method: "POST",
+        body: formData
+      });
+
+      generatingMsgEl.remove();
+
+      if (!res.ok) {
+        appendChatMessage("System Sparkle", "Błąd: Brak odpowiedzi ze strony serwera kognitywnego.", "system-msg");
+        return;
+      }
+
+      const data = await res.json();
+      
+      if (data.quarantine_active) {
+        setWolfTeethVisuals(true);
+      } else {
+        appendChatMessage("Błyskawica V9", data.reply);
+        
+        // Wywołanie AllTalk TTS w tle, jeśli włączony
+        if (data.reply) {
+          synthesizeTTS(data.reply);
         }
-      }, 1000);
+      }
+
+      if (data.cra_metrics) {
+        updateNeurochemistryUI(data.cra_metrics);
+      }
+    } catch (err) {
+      generatingMsgEl.remove();
+      addLog(`[Python API Błąd]: ${err}`);
+      appendChatMessage("Błyskawica V9", "Rozpoznałam Twoją intencję lokalnie w Rust Core. Pętla kognitywna działa prawidłowo, lecz serwer LLM/FastAPI nie odpowiedział w oczekiwanym czasie.");
     }
   } catch (error) {
     addLog(`[Tauri Błąd wysyłania]: ${error}`);
@@ -206,14 +276,15 @@ async function updatePermissionLevel(level) {
 
   // Wyłącz tryb kwarantanny jeśli suwak jest przesuwany
   setWolfTeethVisuals(false);
+  applyFeatureGating();
 
   try {
     const response = await invoke("set_permission_level", { level: permissionLevel });
     addLog(`[Tauri]: ${response}`);
     updateRegimeBadge(permissionLevel);
 
-    // Odśwież listę plików z uwzględnieniem poziomu zabezpieczeń
-    if (isEngineRunning) {
+    // Odśwież listę plików z workspace, jeśli nie jesteśmy w Sandboxie
+    if (isEngineRunning && permissionLevel >= 2) {
       await refreshWorkspaceFiles();
     }
   } catch (error) {
@@ -233,6 +304,52 @@ function updateRegimeBadge(level) {
   } else if (level === 3) {
     txtRegimeStatus.textContent = "Full OS Control (Poziom 3)";
     addLog("[Tauri]: Włączono tryb Pełnej Suwerenności. Dostęp do operacji systemowych aktywny.");
+  }
+}
+
+// Funkcja gatingu funkcji UI na podstawie uprawnień
+function applyFeatureGating() {
+  const codeTextArea = document.getElementById("code-editor");
+  const btnSaveFile = document.getElementById("btn-save-file");
+
+  if (permissionLevel === 1) {
+    // Blokada trybu Sandbox
+    if (codeTextArea) {
+      codeTextArea.disabled = true;
+      codeTextArea.placeholder = "// ZABLOKOWANO: Edycja plików wyłączona w trybie Sandbox (Poziom 1).";
+      codeTextArea.value = "";
+    }
+    if (btnSaveFile) {
+      btnSaveFile.disabled = true;
+    }
+    if (fileList) {
+      fileList.innerHTML = `<div class="file-item empty locked">🔒 Edycja zablokowana (Tryb Sandbox)</div>`;
+    }
+    currentFileOpen = null;
+    currentFilenameText.textContent = "Brak dostępu";
+  } else {
+    // Odblokowanie w trybie Workspace / Full OS
+    if (codeTextArea && isEngineRunning) {
+      codeTextArea.disabled = false;
+      codeTextArea.placeholder = "// Wybierz plik z eksploratora po lewej lub utwórz nowy kod...";
+    }
+    if (btnSaveFile && isEngineRunning && currentFileOpen) {
+      btnSaveFile.disabled = false;
+    }
+  }
+}
+
+// Asynchroniczna synteza głosu za pomocą AllTalk TTS
+async function synthesizeTTS(text) {
+  try {
+    const formData = new FormData();
+    formData.append("text", text);
+    fetch("http://127.0.0.1:8000/api/tts", {
+      method: "POST",
+      body: formData
+    }).catch(() => {}); // Ciche zignorowanie błędów
+  } catch (e) {
+    // Ignorowanie
   }
 }
 
@@ -421,6 +538,7 @@ async function pollEngineStatus() {
       document.body.classList.remove("level-1", "level-2", "level-3");
       document.body.classList.add(`level-${permissionLevel}`);
       updateRegimeBadge(permissionLevel);
+      applyFeatureGating();
     }
     
     // 3. Synchronizacja parametrów neurochemicznych
@@ -661,39 +779,49 @@ window.addEventListener("DOMContentLoaded", () => {
     btnInviteGuest.addEventListener("click", inviteGuestModel);
   }
 
-  // Obsługa zakładek
+  // Obsługa zakładek i funkcja pomocnicza switchTab
+  function switchTab(tabId) {
+    localStorage.setItem('sparkle_active_tab', tabId);
+    
+    tabBtnWorkspace.classList.remove("active");
+    tabBtnGuests.classList.remove("active");
+    tabBtnSpore.classList.remove("active");
+    tabWorkspace.classList.remove("active");
+    tabGuests.classList.remove("active");
+    tabSpore.classList.remove("active");
+
+    if (tabId === 'workspace') {
+      tabBtnWorkspace.classList.add("active");
+      tabWorkspace.classList.add("active");
+    } else if (tabId === 'guests') {
+      tabBtnGuests.classList.add("active");
+      tabGuests.classList.add("active");
+    } else if (tabId === 'spore') {
+      tabBtnSpore.classList.add("active");
+      tabSpore.classList.add("active");
+    }
+  }
+
   const tabBtnSpore = document.getElementById("tab-btn-spore");
   const tabSpore = document.getElementById("tab-spore");
   const btnSporeLoad = document.getElementById("btn-spore-load");
   const btnSporeRun = document.getElementById("btn-spore-run");
 
   if (tabBtnWorkspace && tabBtnGuests && tabBtnSpore && tabWorkspace && tabGuests && tabSpore) {
-    tabBtnWorkspace.addEventListener("click", () => {
-      tabBtnWorkspace.classList.add("active");
-      tabBtnGuests.classList.remove("active");
-      tabBtnSpore.classList.remove("active");
-      tabWorkspace.classList.add("active");
-      tabGuests.classList.remove("active");
-      tabSpore.classList.remove("active");
-    });
+    tabBtnWorkspace.addEventListener("click", () => switchTab('workspace'));
+    tabBtnGuests.addEventListener("click", () => switchTab('guests'));
+    tabBtnSpore.addEventListener("click", () => switchTab('spore'));
+    
+    // Przywróć zapisaną zakładkę z localStorage
+    const savedTab = localStorage.getItem('sparkle_active_tab') || 'workspace';
+    switchTab(savedTab);
+  }
 
-    tabBtnGuests.addEventListener("click", () => {
-      tabBtnGuests.classList.add("active");
-      tabBtnWorkspace.classList.remove("active");
-      tabBtnSpore.classList.remove("active");
-      tabGuests.classList.add("active");
-      tabWorkspace.classList.remove("active");
-      tabSpore.classList.remove("active");
-    });
-
-    tabBtnSpore.addEventListener("click", () => {
-      tabBtnSpore.classList.add("active");
-      tabBtnWorkspace.classList.remove("active");
-      tabBtnGuests.classList.remove("active");
-      tabSpore.classList.add("active");
-      tabWorkspace.classList.remove("active");
-      tabGuests.classList.remove("active");
-    });
+  // Przywróć zapisany poziom uprawnień z localStorage
+  const savedLevel = localStorage.getItem('sparkle_permission_level');
+  if (savedLevel && securitySlider) {
+    securitySlider.value = savedLevel;
+    updatePermissionLevel(savedLevel).catch((err) => addLog(`[Restore Permission Error]: ${err}`));
   }
 
   if (btnSporeLoad) {
@@ -712,4 +840,94 @@ window.addEventListener("DOMContentLoaded", () => {
   setInterval(() => {
     pollEngineStatus().catch((err) => addLog(`[Poll Status Error]: ${err}`));
   }, 2500);
+
+  // Uruchomienie sekwencji rozruchowej (onboarding)
+  runStartupSequence().catch((err) => addLog(`[Startup Error]: ${err}`));
 });
+
+// Sekwencja rozruchowa (Onboarding / Startup State Machine)
+async function runStartupSequence() {
+  const overlay = document.getElementById("startup-overlay");
+  const stepBackend = document.getElementById("step-backend");
+  const stepOllama = document.getElementById("step-ollama");
+  const stepEngine = document.getElementById("step-engine");
+  const warningDiv = document.getElementById("startup-warning");
+  const btnRetry = document.getElementById("btn-retry-connection");
+
+  if (!overlay) return;
+
+  // Krok 1: Połączenie z serwerem kognitywnym (FastAPI)
+  stepBackend.className = "step running";
+  addLog("[Startup]: Sprawdzanie połączenia z FastAPI backendem (Port 8000)...");
+  
+  let status = null;
+  try {
+    status = await invoke("get_engine_status");
+  } catch (err) {
+    addLog(`[Startup Błąd]: Nie można pobrać statusu z Tauri Core: ${err}`);
+  }
+
+  if (!status || !status.backend_connected) {
+    stepBackend.className = "step failed";
+    addLog("[Startup Błąd]: Serwer FastAPI na porcie 8000 jest offline.");
+    warningDiv.classList.remove("hidden");
+    
+    btnRetry.onclick = () => {
+      warningDiv.classList.add("hidden");
+      stepBackend.className = "step pending";
+      stepOllama.className = "step pending";
+      stepEngine.className = "step pending";
+      runStartupSequence().catch((err) => addLog(`[Startup Retry Error]: ${err}`));
+    };
+    return;
+  }
+
+  stepBackend.className = "step success";
+  stepBackend.textContent = "✓ Połączenie z serwerem kognitywnym: Aktywne";
+  addLog("[Startup]: Połączono z FastAPI backendem.");
+
+  // Krok 2: Weryfikacja Ollama
+  stepOllama.className = "step running";
+  addLog("[Startup]: Sprawdzanie dostępności serwisu Ollama (Port 11434)...");
+  
+  let ollamaOk = false;
+  try {
+    const res = await fetch("http://localhost:11434/api/tags");
+    ollamaOk = res.ok;
+  } catch (e) {
+    ollamaOk = false;
+  }
+
+  if (ollamaOk) {
+    stepOllama.className = "step success";
+    stepOllama.textContent = "✓ Środowisko LLM (Ollama): Gotowe";
+    addLog("[Startup]: Serwis Ollama wykryty i gotowy.");
+  } else {
+    stepOllama.className = "step failed";
+    stepOllama.textContent = "⚠ Środowisko LLM (Ollama): Offline (Ostrzeżenie)";
+    addLog("[Startup Ostrzeżenie]: Brak kontaktu z lokalnym Ollama na porcie 11434. Rozmowy z Błyskawicą będą symulowane.");
+  }
+
+  // Krok 3: Wybudzanie rdzenia Rust Core
+  stepEngine.className = "step running";
+  addLog("[Startup]: Uruchamianie kognitywnego rdzenia Rust Core...");
+  
+  try {
+    if (!status.running) {
+      await startBlyskawicaEngine();
+    }
+    stepEngine.className = "step success";
+    stepEngine.textContent = "✓ Rdzeń systemowy (Rust Core): Wybudzony";
+    addLog("[Startup]: Rdzeń systemowy pomyślnie zainicjalizowany.");
+  } catch (err) {
+    stepEngine.className = "step failed";
+    addLog(`[Startup Błąd]: Nie udało się uruchomić rdzenia Rust: ${err}`);
+    return;
+  }
+
+  // Zakończenie sekwencji rozruchu i ukrycie nakładki
+  setTimeout(() => {
+    overlay.classList.add("hidden");
+    addLog("[Startup]: Sekwencja rozruchowa pomyślnie ukończona.");
+  }, 1000);
+}

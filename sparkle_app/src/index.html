@@ -3,12 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sparkle VIBE IDE & Błyskawica V8</title>
+  <title>Sparkle VIBE IDE & Błyskawica V9</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <script type="module" src="/main.js" defer></script>
 </head>
 <body class="level-2">
+  <!-- Startup Overlay -->
+  <div id="startup-overlay" class="startup-overlay">
+    <div class="startup-card">
+      <span class="startup-logo">⚡</span>
+      <h2>INICJALIZACJA SPARKLE V9</h2>
+      <p class="startup-subtitle">Zogniskowana przestrzeń robocza AI do myślenia, kodowania i kolaboracji — zasilana żywym rdzeniem kognitywnym</p>
+      <div class="startup-steps">
+        <div id="step-backend" class="step pending">Połączenie z serwerem kognitywnym (FastAPI)...</div>
+        <div id="step-ollama" class="step pending">Weryfikacja środowiska LLM (Ollama)...</div>
+        <div id="step-engine" class="step pending">Wybudzanie rdzenia systemowego (Rust Core)...</div>
+      </div>
+      <div id="startup-warning" class="startup-warning hidden">
+        <p>⚠️ Nie można nawiązać połączenia z serwerem kognitywnym Błyskawicy (Port 8000).</p>
+        <p class="warning-instruction">Uruchom skrypt <strong>Uruchom_Sparkle.bat</strong> w katalogu projektu, aby włączyć silnik w tle.</p>
+        <button id="btn-retry-connection" class="control-btn accent">Spróbuj ponownie</button>
+      </div>
+    </div>
+  </div>
+
   <div class="glass-bg"></div>
   
   <div class="app-container">
@@ -41,7 +60,10 @@
         <div class="chat-container">
           <div id="chat-messages" class="chat-messages">
             <div class="message system-msg">
-              <strong>System Sparkle:</strong> Witaj w kokpicie kognitywnym Błyskawicy V8. Kliknij "URUCHOM RDZEŃ", aby wybudzić silnik neurochemiczny.
+              <strong>System Sparkle:</strong> Zogniskowana przestrzeń robocza AI do myślenia, kodowania i kolaboracji — zasilana żywym rdzeniem kognitywnym.
+            </div>
+            <div class="message system-msg">
+              Witaj w kokpicie kognitywnym Błyskawicy V9. Uruchom rdzeń kognitywny, aby wybudzić silnik neurochemiczny i rozpocząć sesję.
             </div>
           </div>
           <div class="chat-input-area">
@@ -52,7 +74,7 @@
 
         <!-- Neurochemical Monitor -->
         <div class="neurochemistry-panel">
-          <h3>MONITOR NEUROCHEMICZNY (V8 BRAIN MAP)</h3>
+          <h3>MONITOR NEUROCHEMICZNY (V9 BRAIN MAP)</h3>
           <div class="neuro-indicators">
             <!-- Dopamina -->
             <div class="neuro-pod" id="pod-dopamine">
@@ -195,8 +217,8 @@
         <div id="tab-spore" class="tab-content">
           <div class="spore-layout">
             <div class="spore-setup">
-              <h3>Kognitywny Emisariusz ONNX (WebGPU Spore)</h3>
-              <p class="description">Uruchom lokalną, skrystalizowaną instancję Błyskawicy w przeglądarce za pomocą ONNX Runtime. Plastyczność synaptyczna dostosowuje wagi w czasie rzeczywistym w zależności od poziomu neuroprzekaźników.</p>
+              <h3>Kolektor Edge: Lokalny Emisariusz ONNX (WebGPU Edge Mode)</h3>
+              <p class="description">Lokalny, offline-owy tryb wnioskowania uruchamiany bezpośrednio na karcie graficznej użytkownika (WebGPU). W tym trybie wagi modelu są skrystalizowane (zapisane w formacie ONNX z podpisem cyfrowym RSA-2048), a dynamiczna plastyczność jest emulowana na podstawie aktualnego poziomu neuroprzekaźników rdzenia.</p>
               
               <div class="spore-actions" style="display: flex; gap: 12px; margin-top: 16px;">
                 <button id="btn-spore-load" class="control-btn accent">ZAŁADUJ EMISARIUSZA ONNX</button>

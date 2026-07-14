@@ -303,10 +303,12 @@ fn get_engine_status(state: State<'_, AppState>) -> Result<serde_json::Value, St
         "permission_level": inner.permission_level,
         "workspace_path": inner.workspace_path.to_string_lossy(),
         "neurochemistry": serde_json::Value::Null,
+        "backend_connected": false,
     });
     
     // Attempt to fetch from local FastAPI status endpoint
     if let Some(fastapi_status) = fetch_fastapi_status() {
+        response["backend_connected"] = serde_json::json!(true);
         if let Some(metrics) = fastapi_status.get("cra_metrics") {
             response["neurochemistry"] = metrics.clone();
         }

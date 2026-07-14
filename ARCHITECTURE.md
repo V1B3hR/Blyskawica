@@ -7,19 +7,19 @@
 
 ## 1. Przegląd Architektoniczny
 
-Błyskawica V9 to hybrydowy system kognitywno-symulacyjny zbudowany na **trzech warstwach**:
+Błyskawica V9 to hybrydowy system kognitywno-symulacyjny zunifikowany wokół powłoki Tauri, komunikującej się z bezgłowym (headless) backendem Python FastAPI:
 
 ```mermaid
 graph TB
     subgraph "Warstwa 1: Interfejs Użytkownika"
         A["Sparkle UI (HTML/CSS/JS)"]
-        B["Tauri Shell (Rust)"]
+        B["Tauri Shell (Rust / sparkle_app)"]
     end
     
-    subgraph "Warstwa 2: Backend & Orkiestracja"
-        C["FastAPI Backend (Python)\nmain.py — 970 LOC"]
-        D["Ollama LLM\nlocalhost:11434"]
+    subgraph "Warstwa 2: Orkiestracja & Zabezpieczenia"
         E["blyskawica_core (Rust)\nstate_manager.rs"]
+        C["FastAPI Backend (Python)\nmain.py (Port 8000)"]
+        D["Ollama LLM\nlocalhost:11434"]
     end
     
     subgraph "Warstwa 3: Rdzeń Kognitywny"
@@ -29,33 +29,32 @@ graph TB
         I["ONNX Bridge\nonnx_bridge.py"]
     end
     
-    A --> C
-    B --> E
-    C --> D
-    C --> F
-    C --> G
-    C --> H
-    C --> I
-    E --> B
+    A -->|1. Tauri Commands| B
+    B -->|2. Niskopoziomowy Audyt| E
+    A -->|3. API Chat & Actions (HTTP)| C
+    B -->|4. Synchronizacja cra_metrics| C
+    C -->|Inference / LLM| D
+    C -->|Zarządzanie Genomem| F
+    C -->|Heurystyka i Kwarantanna| G
+    C -->|Konsolidacja & ONNX Spore| H
+    C -->|Podpis Cyfrowy ONNX| I
 ```
 
 ---
 
-## 2. Dwie Ścieżki Aplikacyjne
+## 2. Jednolita Ścieżka Aplikacyjna (Tauri Shell)
 
-### Ścieżka A: Python FastAPI (`blyskawica_app/`)
-- **Backend**: `blyskawica_app/backend/main.py` — serwer FastAPI
-- **Frontend**: `blyskawica_app/frontend/` — HTML/CSS/JS (3 pliki)
-- **Integracje**: Ollama LLM, CRA Engine, Wolf Teeth, Konsolidacja, DuckDuckGo search
-- **Uruchomienie**: `python -m uvicorn main:app` na porcie 8000
+Zgodnie z decyzją architektoniczną **[ADR 0001: Wybór Tauri jako kanonicznej powłoki aplikacji](docs/adr/0001-single-shell-decision.md)**, system wykorzystuje jedną powłokę klienta połączoną z bezgłowym serwisem backendowym:
 
-### Ścieżka B: Rust/Tauri (`sparkle_app/`)
-- **Shell**: `sparkle_app/src-tauri/` — Tauri v2 z `lib.rs` (338 LOC)
-- **Core**: `blyskawica_core/` — oddzielna biblioteka Rust
-- **Frontend**: `sparkle_app/src/` — HTML/CSS/JS (3 pliki)
-- **Uruchomienie**: `cargo tauri dev`
+### Aplikacja Kliencka: Rust/Tauri (`sparkle_app/`)
+- **Shell**: `sparkle_app/src-tauri/` — powłoka Tauri v2 z `lib.rs` (338 LOC) kontrolująca natywne zachowanie systemu i gating uprawnień.
+- **Core Security**: `blyskawica_core/` — niskopoziomowa biblioteka w Rust realizująca natywny sandbox, kwarantannę sieciową/wątkową oraz tempo-throttle.
+- **Frontend**: `sparkle_app/src/` — premium interfejs w HTML/CSS/JS (vanilla) o strukturze glassmorphic.
 
-> **⚠️ Uwaga**: Te dwie ścieżki posiadają **oddzielne implementacje** neurochemii i zarządzania stanem. Docelowa architektura powinna wykorzystywać Tauri jako natywny shell z Python FastAPI jako serwisem backendowym.
+### Serwis Backendowy: Python FastAPI (`blyskawica_app/`)
+- **Backend**: `blyskawica_app/backend/main.py` — bezgłowy serwer FastAPI działający w tle na porcie 8000.
+- **Funkcja**: Realizacja ciężkich operacji kognitywnych, zarządca modeli PyTorch, integracja z lokalnym API Ollama oraz monitor kontekstu Windows 11.
+- **Uruchomienie**: Wystartowanie backendu następuje automatycznie z poziomu skryptu `Uruchom_Sparkle.bat`.
 
 ---
 

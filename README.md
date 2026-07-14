@@ -1,6 +1,8 @@
-# Adaptive Neural Network
+# Adaptive Neural Network & Blyskawica/SPARKLE V9
 
-> A production-ready neural network framework with adaptive learning capabilities
+> **SPARKLE**: Zogniskowana przestrzeń robocza AI do myślenia, kodowania i kolaboracji — zasilana żywym rdzeniem kognitywnym.
+>
+> A production-ready neural network framework with adaptive learning capabilities, paired with the SPARKLE home AI desktop shell.
 
 ## 🚀 Quick Start
 
