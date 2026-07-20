@@ -13,6 +13,8 @@ rand = "0.8"
 regex = "1.10"
 candle-core = "0.8.2"
 candle-nn = "0.8.2"
+candle-transformers = "0.8.2"
+tokenizers = { version = "0.19" }
 
 [profile.release]
 opt-level = 3

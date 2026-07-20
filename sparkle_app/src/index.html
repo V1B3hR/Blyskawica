@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sparkle VIBE IDE & Błyskawica V9</title>
+  <title>Sparkle VIBE IDE & Błyskawica V10</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <script type="module" src="/main.js" defer></script>
@@ -13,7 +13,7 @@
   <div id="startup-overlay" class="startup-overlay">
     <div class="startup-card">
       <span class="startup-logo">⚡</span>
-      <h2>INICJALIZACJA SPARKLE V9</h2>
+      <h2>INICJALIZACJA SPARKLE V10</h2>
       <p class="startup-subtitle">Zogniskowana przestrzeń robocza AI do myślenia, kodowania i kolaboracji — zasilana żywym rdzeniem kognitywnym</p>
       <div class="startup-steps">
         <div id="step-backend" class="step pending">Połączenie z serwerem kognitywnym (FastAPI)...</div>
@@ -36,7 +36,7 @@
       <div class="logo-area">
         <span class="lightning-icon">⚡</span>
         <h1>SPARKLE <span class="vibe-text">VIBE IDE</span></h1>
-        <span class="version-tag">V9.0</span>
+        <span class="version-tag">V10.0</span>
       </div>
       <div class="status-area">
         <div id="engine-status-indicator" class="status-indicator idle"></div>
@@ -63,7 +63,7 @@
               <strong>System Sparkle:</strong> Zogniskowana przestrzeń robocza AI do myślenia, kodowania i kolaboracji — zasilana żywym rdzeniem kognitywnym.
             </div>
             <div class="message system-msg">
-              Witaj w kokpicie kognitywnym Błyskawicy V9. Uruchom rdzeń kognitywny, aby wybudzić silnik neurochemiczny i rozpocząć sesję.
+              Witaj w kokpicie kognitywnym Błyskawicy V10. Uruchom rdzeń kognitywny, aby wybudzić silnik neurochemiczny i rozpocząć sesję.
             </div>
           </div>
           <div class="chat-input-area">
@@ -74,7 +74,7 @@
 
         <!-- Neurochemical Monitor -->
         <div class="neurochemistry-panel">
-          <h3>MONITOR NEUROCHEMICZNY (V9 BRAIN MAP)</h3>
+          <h3>MONITOR NEUROCHEMICZNY (V10 BRAIN MAP)</h3>
           <div class="neuro-indicators">
             <!-- Dopamina -->
             <div class="neuro-pod" id="pod-dopamine">
@@ -168,8 +168,11 @@
             <div class="editor-area">
               <div class="editor-toolbar">
                 <span id="current-filename">Nie wybrano pliku</span>
-                <div class="editor-buttons">
-                  <button id="btn-save-file" class="control-btn small" disabled>ZAPISZ (VIBE CODE)</button>
+                <div class="editor-buttons" style="display: flex; gap: 8px;">
+                  <button id="btn-new-file" class="control-btn small">NOWY PLIK</button>
+                  <button id="btn-open-file" class="control-btn small">OTWÓRZ</button>
+                  <button id="btn-save-file" class="control-btn small" disabled>ZAPISZ</button>
+                  <button id="btn-save-as-file" class="control-btn small" disabled>ZAPISZ JAKO</button>
                 </div>
               </div>
               <div class="editor-container">

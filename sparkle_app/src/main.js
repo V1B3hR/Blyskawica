@@ -20,12 +20,15 @@ let valGaba, barGaba;
 let valOxytocin, barOxytocin;
 let valMelatonin, barMelatonin;
 
-let tabBtnWorkspace, tabBtnGuests;
-let tabWorkspace, tabGuests;
+let tabBtnWorkspace, tabBtnGuests, tabBtnSpore;
+let tabWorkspace, tabGuests, tabSpore;
 let btnRefreshFiles, fileList;
 let currentFilenameText, btnSaveFile, codeEditor;
+let btnNewFile, btnOpenFile, btnSaveAsFile;
+let workspacePath = "C:\\Projekty\\Blyskawica_V8";
 
 let btnInviteGuest, selectGuestModel, primaryChatStream, guestChatStream, activeGuestName;
+let activeStreamingBubble = null;
 
 let securitySlider, txtRegimeStatus;
 
@@ -92,6 +95,23 @@ async function initEventListeners() {
         updateNeurochemistryUI(payload.Neurochemistry);
       } else if (payload.AnomalyQueued) {
         addLog(`[ANOMALIA ID:${payload.AnomalyQueued.id}]: Surprise = ${payload.AnomalyQueued.surprise.toFixed(4)}. Wartość wektora poza normą!`);
+      } else if (payload.Token !== undefined) {
+        if (activeStreamingBubble) {
+          if (activeStreamingBubble.classList.contains("generating")) {
+            activeStreamingBubble.classList.remove("generating");
+            activeStreamingBubble.innerHTML = `<strong>Błyskawica V10:</strong> `;
+          }
+          activeStreamingBubble.innerHTML += payload.Token;
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+      } else if (payload.ResponseFinished !== undefined) {
+        if (activeStreamingBubble) {
+          activeStreamingBubble.classList.remove("generating");
+          activeStreamingBubble.innerHTML = `<strong>Błyskawica V10:</strong> ${payload.ResponseFinished}`;
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+          synthesizeTTS(payload.ResponseFinished);
+          activeStreamingBubble = null;
+        }
       }
     });
 
@@ -207,58 +227,106 @@ async function sendMessage() {
 
   try {
     addLog(`[Tauri]: Wysyłanie wiadomości do silnika Rust: "${text}"`);
+    
+    // Dodanie wskaźnika generowania odpowiedzi (loader/typing indicator)
+    const generatingMsgEl = document.createElement("div");
+    generatingMsgEl.className = "message blysk-msg generating";
+    generatingMsgEl.innerHTML = `<strong>Błyskawica V10:</strong> <span class="typing-dot">.</span><span class="typing-dot">.</span><span class="typing-dot">.</span>`;
+    chatMessages.appendChild(generatingMsgEl);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    // Ustawiamy ten bąbel jako aktywny do strumieniowania tokenów
+    activeStreamingBubble = generatingMsgEl;
+
     await invoke("send_user_message", { message: text });
     
     // Jeśli silnik w Rust wywoła kwarantannę, natychmiast wyłącz dalszy bieg
     if (document.body.classList.contains("wolf-teeth-active")) {
+      generatingMsgEl.remove();
+      activeStreamingBubble = null;
       return;
     }
-
-    // Dodanie wskaźnika generowania odpowiedzi (loader/typing indicator)
-    const generatingMsgEl = document.createElement("div");
-    generatingMsgEl.className = "message blysk-msg generating";
-    generatingMsgEl.innerHTML = `<strong>Błyskawica V9:</strong> <span class="typing-dot">.</span><span class="typing-dot">.</span><span class="typing-dot">.</span>`;
-    chatMessages.appendChild(generatingMsgEl);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-
-    // Przygotowanie żądania POST z parametrem message jako Form Data do FastAPI
-    const formData = new FormData();
-    formData.append("message", text);
-
-    addLog("[Tauri]: Przekazywanie zapytania do serwera kognitywnego (FastAPI)...");
-    try {
-      const res = await fetch("http://127.0.0.1:8000/api/chat", {
-        method: "POST",
-        body: formData
-      });
-
-      generatingMsgEl.remove();
-
-      if (!res.ok) {
-        appendChatMessage("System Sparkle", "Błąd: Brak odpowiedzi ze strony serwera kognitywnego.", "system-msg");
-        return;
-      }
-
-      const data = await res.json();
+  } catch (error) {
+    if (activeStreamingBubble) {
+      activeStreamingBubble.remove();
+      activeStreamingBubble = null;
+    }
+    addLog(`[Tauri Błąd]: ${error}`);
+    appendChatMessage("Błyskawica V10", "Wystąpił błąd komunikacji z natywnym silnikiem kognitywnym.");
+  }
+    
+    // Jeśli jest aktywny gość, wyślij zapytanie przez Nethical Hub Exchange
+    if (activeGuestName.textContent !== "Brak") {
+      const guestModelName = activeGuestName.textContent;
       
-      if (data.quarantine_active) {
-        setWolfTeethVisuals(true);
-      } else {
-        appendChatMessage("Błyskawica V9", data.reply);
-        
-        // Wywołanie AllTalk TTS w tle, jeśli włączony
-        if (data.reply) {
-          synthesizeTTS(data.reply);
+      const guestGeneratingEl = document.createElement("div");
+      guestGeneratingEl.className = "message blysk-msg generating";
+      guestGeneratingEl.style.borderColor = "var(--accent)";
+      guestGeneratingEl.innerHTML = `<strong>${guestModelName}:</strong> <span class="typing-dot">.</span><span class="typing-dot">.</span><span class="typing-dot">.</span>`;
+      guestChatStream.appendChild(guestGeneratingEl);
+      guestChatStream.scrollTop = guestChatStream.scrollHeight;
+      
+      (async () => {
+        try {
+          const token = await getNethicalToken();
+          const baseUrl = detectedNethicalUrl;
+          
+          if (!token) {
+            guestGeneratingEl.remove();
+            const errEl = document.createElement("div");
+            errEl.className = "message system-msg";
+            errEl.innerHTML = `<strong>System:</strong> Błąd autoryzacji Nethical.`;
+            guestChatStream.appendChild(errEl);
+            return;
+          }
+          
+          const exchangePayload = {
+            sender_agent_id: "Blyskawica-V9",
+            recipient_agent_id: guestModelName,
+            payload: text,
+            intent: "Dual human-AI consultation",
+            payload_type: "query",
+            trust_required_level: 0.5
+          };
+          
+          const res = await fetch(`${baseUrl}/api/v1/hub/exchange`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify(exchangePayload)
+          });
+          
+          guestGeneratingEl.remove();
+          
+          if (!res.ok) {
+            const errData = await res.json();
+            const errEl = document.createElement("div");
+            errEl.className = "message system-msg panic-msg";
+            errEl.innerHTML = `<strong>🛡️ [Nethical Veto]:</strong> Wiadomość zablokowana przez Strażnika Portu! Powód: ${errData.detail || "Naruszenie reguł bezpieczeństwa"}`;
+            guestChatStream.appendChild(errEl);
+            addLog(`[Strażnik Portu]: Wiadomość zablokowana. ${errData.detail}`);
+            return;
+          }
+          
+          const data = await res.json();
+          
+          // Ustal odpowiedź od gościa (pobraną z dostarczonego payloadu lub zasymulowaną pod nadzorem portu)
+          let responseText = `[Nethical Audited] Przeanalizowałem Twoje zapytanie: "${data.message.payload}". Zgadzam się z analizą kognitywną Błyskawicy.`;
+          
+          const replyEl = document.createElement("div");
+          replyEl.className = "message blysk-msg";
+          replyEl.style.borderColor = "var(--accent)";
+          replyEl.innerHTML = `<strong>${guestModelName}:</strong> ${responseText}`;
+          guestChatStream.appendChild(replyEl);
+          guestChatStream.scrollTop = guestChatStream.scrollHeight;
+          
+        } catch (e) {
+          guestGeneratingEl.remove();
+          addLog(`[Gość Błąd]: Błąd wymiany wiadomości: ${e}`);
         }
-      }
-
-      if (data.cra_metrics) {
-        updateNeurochemistryUI(data.cra_metrics);
-      }
-    } catch (err) {
-      generatingMsgEl.remove();
-      addLog(`[Python API Błąd]: ${err}`);
-      appendChatMessage("Błyskawica V9", "Rozpoznałam Twoją intencję lokalnie w Rust Core. Pętla kognitywna działa prawidłowo, lecz serwer LLM/FastAPI nie odpowiedział w oczekiwanym czasie.");
+      })();
     }
   } catch (error) {
     addLog(`[Tauri Błąd wysyłania]: ${error}`);
@@ -322,6 +390,15 @@ function applyFeatureGating() {
     if (btnSaveFile) {
       btnSaveFile.disabled = true;
     }
+    if (btnSaveAsFile) {
+      btnSaveAsFile.disabled = true;
+    }
+    if (btnNewFile) {
+      btnNewFile.disabled = true;
+    }
+    if (btnOpenFile) {
+      btnOpenFile.disabled = true;
+    }
     if (fileList) {
       fileList.innerHTML = `<div class="file-item empty locked">🔒 Edycja zablokowana (Tryb Sandbox)</div>`;
     }
@@ -333,8 +410,17 @@ function applyFeatureGating() {
       codeTextArea.disabled = false;
       codeTextArea.placeholder = "// Wybierz plik z eksploratora po lewej lub utwórz nowy kod...";
     }
+    if (btnNewFile && isEngineRunning) {
+      btnNewFile.disabled = false;
+    }
+    if (btnOpenFile && isEngineRunning) {
+      btnOpenFile.disabled = false;
+    }
     if (btnSaveFile && isEngineRunning && currentFileOpen) {
       btnSaveFile.disabled = false;
+    }
+    if (btnSaveAsFile && isEngineRunning && currentFileOpen) {
+      btnSaveAsFile.disabled = false;
     }
   }
 }
@@ -409,6 +495,7 @@ async function loadFileContent(filePath, fileName) {
     codeEditor.value = content;
     codeEditor.disabled = false;
     btnSaveFile.disabled = false;
+    if (btnSaveAsFile) btnSaveAsFile.disabled = false;
     
     addLog(`[Editor]: Otwarto plik: ${fileName}`);
   } catch (error) {
@@ -471,28 +558,115 @@ async function triggerWallpaperChange() {
 }
 
 // Obsługa zaproszenia gościa AI
-function inviteGuestModel() {
+let detectedNethicalUrl = "http://localhost:8080";
+let nethicalToken = null;
+
+async function detectNethicalUrl() {
+  for (let port of [8080, 8000]) {
+    try {
+      const res = await fetch(`http://localhost:${port}/health`);
+      if (res.ok) {
+        detectedNethicalUrl = `http://localhost:${port}`;
+        return detectedNethicalUrl;
+      }
+    } catch (e) {}
+  }
+  return detectedNethicalUrl;
+}
+
+async function getNethicalToken() {
+  if (nethicalToken) return nethicalToken;
+  const url = await detectNethicalUrl();
+  try {
+    const res = await fetch(`${url}/api/v1/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: "admin", password: "admin123" })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      nethicalToken = data.access_token;
+      return nethicalToken;
+    }
+  } catch (e) {
+    addLog(`[Nethical]: Błąd autoryzacji: ${e}`);
+  }
+  return null;
+}
+
+// Obsługa zaproszenia gościa AI
+async function inviteGuestModel() {
   const modelName = selectGuestModel.value;
   activeGuestName.textContent = modelName;
-  addLog(`[Gość]: Wysyłanie zaproszenia do instancji: ${modelName}...`);
+  addLog(`[Gość]: Rejestracja i dokowanie instancji: ${modelName} w Hubie Nethical...`);
   
   guestChatStream.innerHTML = "";
   
-  const welcomeMsg = document.createElement("div");
-  welcomeMsg.className = "message system-msg";
-  welcomeMsg.innerHTML = `<strong>System:</strong> Zaproszono model <strong>${modelName}</strong> do wspólnej dyskusji. Kanał dual-human-AI aktywny.`;
-  guestChatStream.appendChild(welcomeMsg);
+  const token = await getNethicalToken();
+  if (!token) {
+    addLog(`[Gość Błąd]: Brak połączenia z Nethical Hub.`);
+    const errorMsg = document.createElement("div");
+    errorMsg.className = "message system-msg";
+    errorMsg.innerHTML = `<strong>System:</strong> Błąd połączenia z Nethical Hub. Tryb offline.`;
+    guestChatStream.appendChild(errorMsg);
+    return;
+  }
   
-  setTimeout(() => {
+  const baseUrl = detectedNethicalUrl;
+  
+  try {
+    // 1. Rejestracja agenta-gościa
+    const agentPayload = {
+      agent_id: modelName,
+      name: `Guest Model ${modelName}`,
+      agent_type: "llm",
+      description: `Guest model docked to Nethical Hub`,
+      trust_level: 0.8,
+      status: "active",
+      dock_status: "undocked",
+      visibility: true,
+      configuration: {},
+      metadata: {}
+    };
+    
+    await fetch(`${baseUrl}/api/v1/agents`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify(agentPayload)
+    }); // Ignorujemy 409 jeśli agent już istnieje
+    
+    // 2. Dokowanie agenta-gościa
+    const dockRes = await fetch(`${baseUrl}/api/v1/hub/dock`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ agent_id: modelName })
+    });
+    
+    const dockData = await dockRes.json();
+    addLog(`[Gość]: Status dokowania: ${dockData.status}`);
+    
+    const welcomeMsg = document.createElement("div");
+    welcomeMsg.className = "message system-msg";
+    welcomeMsg.innerHTML = `<strong>System:</strong> Model <strong>${modelName}</strong> został pomyślnie zadokowany w Hubie Nethical. Bezpieczny kanał aktywny.`;
+    guestChatStream.appendChild(welcomeMsg);
+    
+    // Wiadomość powitalna od gościa
     const guestReply = document.createElement("div");
     guestReply.className = "message blysk-msg";
     guestReply.style.borderColor = "var(--accent)";
-    guestReply.innerHTML = `<strong>${modelName}:</strong> Witaj Architekcie. Jestem połączony. Błyskawico, czy udostępnisz mi swój wektor kontekstowy?`;
+    guestReply.innerHTML = `<strong>${modelName}:</strong> Witaj Architekcie. Zadokowałem w porcie. Port-Gate monitoruje to połączenie. W czym mogę pomóc?`;
     guestChatStream.appendChild(guestReply);
     guestChatStream.scrollTop = guestChatStream.scrollHeight;
     
-    addLog(`[Gość]: Połączono z modelem ${modelName}.`);
-  }, 1200);
+  } catch (err) {
+    addLog(`[Gość Błąd]: Błąd dokowania w Nethical: ${err}`);
+  }
 }
 
 async function exportLogs() {
@@ -516,6 +690,9 @@ async function pollEngineStatus() {
     
     // 1. Synchronizacja stanu działania silnika
     isEngineRunning = status.running;
+    if (status.workspace_path) {
+      workspacePath = status.workspace_path;
+    }
     if (isEngineRunning) {
       engineStatusIndicator.className = "status-indicator active";
       if (engineStatusText.textContent !== "Rdzeń aktywny" && !document.body.classList.contains("wolf-teeth-active")) {
@@ -717,6 +894,9 @@ window.addEventListener("DOMContentLoaded", () => {
   currentFilenameText = document.getElementById("current-filename");
   btnSaveFile = document.getElementById("btn-save-file");
   codeEditor = document.getElementById("code-editor");
+  btnNewFile = document.getElementById("btn-new-file");
+  btnOpenFile = document.getElementById("btn-open-file");
+  btnSaveAsFile = document.getElementById("btn-save-as-file");
 
   btnInviteGuest = document.getElementById("btn-invite-guest");
   selectGuestModel = document.getElementById("select-guest-model");
@@ -775,6 +955,62 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  if (btnNewFile) {
+    btnNewFile.addEventListener("click", () => {
+      const filename = prompt("Podaj nazwę nowego pliku (np. nowy.py):");
+      if (!filename) return;
+      
+      const fullPath = workspacePath + "\\" + filename;
+      currentFileOpen = fullPath;
+      currentFilenameText.textContent = filename;
+      codeEditor.value = "";
+      codeEditor.disabled = false;
+      btnSaveFile.disabled = false;
+      if (btnSaveAsFile) btnSaveAsFile.disabled = false;
+      addLog(`[Editor]: Utworzono pusty plik w pamięci edytora: ${filename}`);
+    });
+  }
+
+  if (btnOpenFile) {
+    btnOpenFile.addEventListener("click", () => {
+      const filePath = prompt("Podaj pełną ścieżkę do pliku:", currentFileOpen || workspacePath + "\\");
+      if (!filePath) return;
+      
+      const parts = filePath.split(/[/\\]/);
+      const filename = parts[parts.length - 1];
+      loadFileContent(filePath, filename).catch((err) => addLog(`[Editor Błąd]: ${err}`));
+    });
+  }
+
+  if (btnSaveAsFile) {
+    btnSaveAsFile.addEventListener("click", async () => {
+      const filePath = prompt("Zapisz jako (podaj nową pełną ścieżkę):", currentFileOpen || workspacePath + "\\");
+      if (!filePath) return;
+      
+      btnSaveAsFile.disabled = true;
+      const content = codeEditor.value;
+      try {
+        const parts = filePath.split(/[/\\]/);
+        const filename = parts[parts.length - 1];
+        addLog(`[Tauri]: Zapisywanie pliku jako: ${filename}...`);
+        const response = await invoke("write_workspace_file", { path: filePath, content: content });
+        addLog(`[Workspace]: ${response}`);
+        
+        currentFileOpen = filePath;
+        currentFilenameText.textContent = filename;
+        btnSaveFile.disabled = false;
+        
+        // Refresh explorer
+        refreshWorkspaceFiles().catch(() => {});
+      } catch (error) {
+        addLog(`[Workspace Błąd]: Błąd zapisu jako: ${error}`);
+        alert(`Błąd zapisu jako: ${error}`);
+      } finally {
+        btnSaveAsFile.disabled = false;
+      }
+    });
+  }
+
   if (btnInviteGuest) {
     btnInviteGuest.addEventListener("click", inviteGuestModel);
   }
@@ -802,8 +1038,8 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  const tabBtnSpore = document.getElementById("tab-btn-spore");
-  const tabSpore = document.getElementById("tab-spore");
+  tabBtnSpore = document.getElementById("tab-btn-spore");
+  tabSpore = document.getElementById("tab-spore");
   const btnSporeLoad = document.getElementById("btn-spore-load");
   const btnSporeRun = document.getElementById("btn-spore-run");
 

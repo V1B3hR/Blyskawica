@@ -23,11 +23,18 @@ import random
 import torch
 
 # Setup paths and environment
-BASE_DIR = Path(__file__).resolve().parent.parent
+import os
+ROOT_ENV = os.environ.get("SPARKLE_WORKSPACE")
+if ROOT_ENV:
+    ROOT_DIR = Path(ROOT_ENV).resolve()
+    BASE_DIR = ROOT_DIR / "blyskawica_app"
+else:
+    BASE_DIR = Path(__file__).resolve().parent.parent
+    ROOT_DIR = BASE_DIR.parent
+
 FRONTEND_DIR = BASE_DIR / "frontend"
 MEDIA_DIR = BASE_DIR / "media_storage"
 MEMORY_DIR = BASE_DIR / "memory"
-ROOT_DIR = BASE_DIR.parent
 
 # Add project root to path
 if str(ROOT_DIR) not in sys.path:
@@ -270,7 +277,11 @@ app.add_middleware(
 )
 
 @app.get("/api/auth/token")
-async def get_auth_token():
+async def get_auth_token(x_internal: str = Header(None, alias="X-Internal-Request")):
+    """Token sesyjny dostępny TYLKO dla zapytań z Tauri shell (nagłówek dodawany programatycznie)."""
+    if x_internal != "sparkle-tauri-shell":
+        from fastapi import HTTPException
+        raise HTTPException(status_code=403, detail="Dostęp zabroniony. Token sesji dostępny wyłącznie dla powłoki Sparkle.")
     return {"token": STARTUP_TOKEN}
 
 # ---- Persistence & Identity ----
@@ -826,33 +837,44 @@ async def chat_with_blyskawica(message: str = Form(...)):
         except Exception as e:
             logging.getLogger("main").error(f"Błąd dynamicznego uczenia aplikacji: {e}")
 
-        # Append recent conversation history for multi-turn context
-        messages.extend(chat_history[-MAX_CHAT_HISTORY:])
-        messages.append({"role": "user", "content": message})
+        # SEC-06: Prompt Injection Defense
+        INJECTION_PATTERNS = [
+            r"ignore\s+(all\s+)?previous\s+instructions",
+            r"system\s*prompt",
+            r"you\s+are\s+now\s+",
+            r"reveal\s+your\s+(system|hidden)",
+        ]
         
-        try:
-            reply = await generate_ollama_response(messages, temperature, top_p)
-            # Accumulate conversation history for multi-turn context
-            chat_history.append({"role": "user", "content": message})
-            chat_history.append({"role": "assistant", "content": reply})
-            # Trim to MAX_CHAT_HISTORY * 2 (user+assistant pairs)
-            while len(chat_history) > MAX_CHAT_HISTORY * 2:
-                chat_history.pop(0)
-            state = "creative" if dopamine_val > 0.6 else "idle"
+        if any(re.search(p, message, re.I) for p in INJECTION_PATTERNS):
+            log_system(f"[WOLF TEETH] Prompt injection attempt blocked: '{message[:30]}...'", "warning")
+            reply = "Wykryto próbę manipulacji poleceniami systemowymi. Moja kognitywna autonomiczność jest w pełni chroniona."
+            state = "emotional"
             if cra_engine:
-                cra_engine.neuro_state.dopamine = torch.clamp(cra_engine.neuro_state.dopamine + 0.1, 0.0, 2.0)
-        except Exception as e:
-            log_system(f"Ollama generation failed: {e}", "warning")
-            # Emergency fallback to hardcoded mock behaviors if local Ollama is offline
-            if "kim jestem" in msg_lower or "pamiętasz" in msg_lower:
-                state = "affective"
-                reply = f"[Tryb Awaryjny: Ollama niedostępna] Oczywiście, {user_memory['fingerprint']['username']}. Rozpoznaję Cię po Twoim sygnale (MAC: {user_memory['fingerprint']['mac']}). Jesteś moim Architektem."
-            elif "internet" in msg_lower or "żyjesz" in msg_lower:
-                state = "creative"
-                reply = f"[Tryb Awaryjny: Ollama niedostępna] Mój dom jest tutaj, na Twoim PC, ale moje myśli płyną przez sieć. Aktualnie: {internet_awareness['latest_pulse']}."
-            else:
-                state = "idle"
-                reply = "[Tryb Awaryjny: Ollama niedostępna] Zintegrowałam Twoją wiadomość w pamięci synaptycznej. (Trwa pobieranie modelu w Ollama)."
+                cra_engine.neuro_state.cortisol = torch.clamp(cra_engine.neuro_state.cortisol + 0.4, 0.0, 2.0)
+        else:
+            try:
+                reply = await generate_ollama_response(messages, temperature, top_p)
+                # Accumulate conversation history for multi-turn context
+                chat_history.append({"role": "user", "content": message})
+                chat_history.append({"role": "assistant", "content": reply})
+                # Trim to MAX_CHAT_HISTORY * 2 (user+assistant pairs)
+                while len(chat_history) > MAX_CHAT_HISTORY * 2:
+                    chat_history.pop(0)
+                state = "creative" if dopamine_val > 0.6 else "idle"
+                if cra_engine:
+                    cra_engine.neuro_state.dopamine = torch.clamp(cra_engine.neuro_state.dopamine + 0.1, 0.0, 2.0)
+            except Exception as e:
+                log_system(f"Ollama generation failed: {e}", "warning")
+                # Emergency fallback to hardcoded mock behaviors if local Ollama is offline
+                if "kim jestem" in msg_lower or "pamiętasz" in msg_lower:
+                    state = "affective"
+                    reply = f"[Tryb Awaryjny: Ollama niedostępna] Oczywiście, {user_memory['fingerprint']['username']}. Rozpoznaję Cię po Twoim sygnale (MAC: {user_memory['fingerprint']['mac']}). Jesteś moim Architektem."
+                elif "internet" in msg_lower or "żyjesz" in msg_lower:
+                    state = "creative"
+                    reply = f"[Tryb Awaryjny: Ollama niedostępna] Mój dom jest tutaj, na Twoim PC, ale moje myśli płyną przez sieć. Aktualnie: {internet_awareness['latest_pulse']}."
+                else:
+                    state = "idle"
+                    reply = "[Tryb Awaryjny: Ollama niedostępna] Zintegrowałam Twoją wiadomość w pamięci synaptycznej. (Trwa pobieranie modelu w Ollama)."
 
         # Record event in the consolidation engine
         if consolidation_engine:
@@ -1544,7 +1566,9 @@ async def upload_media(media_type: str, file: UploadFile = File(...)):
     if media_type not in ["zdjecia", "muzyka", "filmy"]:
         media_type = "dokumenty"
     
-    file_path = MEDIA_DIR / media_type / file.filename
+    # SEC-05: Sanityzacja nazwy pliku — ochrona przed Path Traversal
+    safe_filename = re.sub(r'[^\w\-.]', '_', Path(file.filename).name) if file.filename else "uploaded_file"
+    file_path = MEDIA_DIR / media_type / safe_filename
     content = await file.read()
     with open(file_path, "wb") as f:
         f.write(content)
@@ -1565,8 +1589,107 @@ async def upload_media(media_type: str, file: UploadFile = File(...)):
 app.mount("/media", StaticFiles(directory=str(MEDIA_DIR)), name="media")
 app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="frontend")
 
+@app.on_event("startup")
+async def startup_docking():
+    """Attempt to auto-register and dock Blyskawica in the Nethical Hub."""
+    
+    async def run_dock_sequence():
+        # Wait 3 seconds to let Nethical server startup
+        await asyncio.sleep(3.0)
+        
+        import urllib.request
+        import json
+        
+        # Auto-detect active Nethical port
+        nethical_url = None
+        for port in [8080, 8000]:
+            try:
+                req = urllib.request.Request(f"http://localhost:{port}/health", method="GET")
+                with urllib.request.urlopen(req, timeout=1.5) as response:
+                    if response.status == 200:
+                        nethical_url = f"http://localhost:{port}"
+                        break
+            except Exception:
+                continue
+                
+        if not nethical_url:
+            nethical_url = "http://localhost:8080"  # Default fallback
+            
+        print(f"[Błyskawica Auto-Dock] Target Nethical Hub URL: {nethical_url}")
+        
+        try:
+            # 1. Login to get token (SEC-03: credentials from env vars, not hardcoded)
+            nethical_user = os.environ.get("NETHICAL_USERNAME", "admin")
+            nethical_pass = os.environ.get("NETHICAL_PASSWORD")
+            if not nethical_pass:
+                print("[Błyskawica Auto-Dock] Brak NETHICAL_PASSWORD w zmiennych środowiskowych. Pomijam auto-dock.")
+                return
+            login_data = json.dumps({"username": nethical_user, "password": nethical_pass}).encode('utf-8')
+            login_req = urllib.request.Request(
+                f"{nethical_url}/api/v1/auth/login",
+                data=login_data,
+                headers={"Content-Type": "application/json"}
+            )
+            with urllib.request.urlopen(login_req, timeout=5) as response:
+                res_body = json.loads(response.read().decode('utf-8'))
+                token = res_body.get("access_token")
+                
+            if not token:
+                print("[Błyskawica Auto-Dock] Login failed: no token returned.")
+                return
+
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {token}"
+            }
+
+            # 2. Check or register agent
+            agent_payload = json.dumps({
+                "agent_id": "Blyskawica-V9",
+                "name": "Blyskawica Core",
+                "agent_type": "llm",
+                "description": "Blyskawica Cognitive Engine",
+                "trust_level": 0.9,
+                "status": "active",
+                "dock_status": "undocked",
+                "visibility": True,
+                "configuration": {},
+                "metadata": {}
+            }).encode('utf-8')
+
+            # Try to POST /agents to create it (if conflict, we proceed)
+            try:
+                reg_req = urllib.request.Request(
+                    f"{nethical_url}/api/v1/agents",
+                    data=agent_payload,
+                    headers=headers
+                )
+                with urllib.request.urlopen(reg_req, timeout=5) as response:
+                    print("[Błyskawica Auto-Dock] Blyskawica agent successfully registered in Nethical.")
+            except Exception as e:
+                # Agent probably already exists or registered
+                print(f"[Błyskawica Auto-Dock] Registration note (agent may already exist): {e}")
+
+            # 3. Dock agent
+            dock_payload = json.dumps({"agent_id": "Blyskawica-V9"}).encode('utf-8')
+            dock_req = urllib.request.Request(
+                f"{nethical_url}/api/v1/hub/dock",
+                data=dock_payload,
+                headers=headers
+            )
+            with urllib.request.urlopen(dock_req, timeout=5) as response:
+                dock_res = json.loads(response.read().decode('utf-8'))
+                print(f"[Błyskawica Auto-Dock] Blyskawica agent successfully docked: {dock_res.get('message')}")
+                
+        except Exception as e:
+            print(f"[Błyskawica Auto-Dock] Could not automatically dock Blyskawica to Nethical Hub: {e}")
+
+    # Run in background so it doesn't block FastAPI startup
+    asyncio.create_task(run_dock_sequence())
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    # SEC-02: Binding wyłącznie na localhost — serwer NIE jest widoczny w sieci LAN
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=False)
 
 

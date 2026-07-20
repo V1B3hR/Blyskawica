@@ -16,6 +16,8 @@ pub enum EngineEvent {
     Log(String),
     Neurochemistry(NeurochemicalState),
     AnomalyQueued { id: usize, surprise: f32, text: String },
+    Token(String),
+    ResponseFinished(String),
 }
 
 macro_rules! log_print {
@@ -102,6 +104,7 @@ pub struct BlyskawicaEngine {
     pub shield: crate::cognitive_shield::CognitiveShield,
     pub event_tx: Option<mpsc::Sender<EngineEvent>>,
     db_path: Option<(PathBuf, String)>,
+    pub llm: Option<crate::cognitive_llm::LocalCognitiveLLM>,
 }
 
 impl BlyskawicaEngine {
@@ -126,6 +129,7 @@ impl BlyskawicaEngine {
             shield: crate::cognitive_shield::CognitiveShield::new(adversarial_ids, semantic_threshold),
             event_tx: None,
             db_path: None,
+            llm: None,
         }
     }
 
@@ -236,6 +240,75 @@ impl BlyskawicaEngine {
                                 
                                 let selected = gating.select_expert(&ns, &text);
                                 log_print!(self, "🧠 [ENGINE GATING]: Zapytanie skierowane do Eksperta ID: {} na podstawie stanu: Serotonina={:.2}, Dopamina={:.2}", selected, ns.serotonin, ns.dopamine);
+                            }
+
+                            // Wczytywanie lokalnego modelu LLM jeśli nie jest załadowany
+                            if self.llm.is_none() {
+                                let workspace_root = self.weights_path.parent()
+                                    .and_then(|p| p.parent())
+                                    .unwrap_or(&self.weights_path);
+                                
+                                let model_path = workspace_root.join("model").join("qwen2.5-1.5b-coder.gguf");
+                                let tokenizer_path = workspace_root.join("model").join("tokenizer.json");
+                                
+                                log_print!(self, "⚙️ [ENGINE LLM]: Próba wczytania lokalnego modelu: {:?}", model_path);
+                                match crate::cognitive_llm::LocalCognitiveLLM::load(&model_path, &tokenizer_path) {
+                                    Ok(loaded_llm) => {
+                                        self.llm = Some(loaded_llm);
+                                        log_print!(self, "✓ [ENGINE LLM]: Lokalny model załadowany pomyślnie.");
+                                    }
+                                    Err(e) => {
+                                        log_print!(self, "⚠️ [ENGINE LLM BŁĄD]: Nie udało się załadować lokalnego modelu: {}", e);
+                                    }
+                                }
+                            }
+
+                            if let Some(llm) = &mut self.llm {
+                                // Dynamiczne parametry z Neurochemii
+                                let (temp, rep_pen, max_toks) = if let BlysState::Active { neuro_state, .. } = &self.state {
+                                    let ns = neuro_state.read().await;
+                                    (
+                                        (0.7 + (ns.dopamine - 0.5) * 0.5) as f64,
+                                        (1.1 + (ns.serotonin - 0.5) * 0.2) as f32,
+                                        (256.0 + (ns.cortisol - 0.5) * 128.0) as usize
+                                    )
+                                } else {
+                                    (0.7, 1.1, 256)
+                                };
+                                
+                                log_print!(self, "🚀 [ENGINE INFERENCE]: Rozpoczęcie natywnego generowania odpowiedzi.");
+                                
+                                let params = crate::cognitive_llm::GenerationParams {
+                                    temperature: temp,
+                                    repetition_penalty: rep_pen,
+                                    top_p: 0.9,
+                                    max_tokens: max_toks,
+                                };
+                                
+                                let event_tx_clone = self.event_tx.clone();
+                                let prompt_input = text.clone();
+                                
+                                let response_res = llm.generate(&prompt_input, &params, |token| {
+                                    if let Some(ref tx) = event_tx_clone {
+                                       let tx = tx.clone();
+                                       let token_str = token.to_string();
+                                       tokio::spawn(async move {
+                                           let _ = tx.send(EngineEvent::Token(token_str)).await;
+                                       });
+                                    }
+                                });
+                                
+                                match response_res {
+                                    Ok(final_reply) => {
+                                        log_print!(self, "✓ [ENGINE INFERENCE]: Odpowiedź wygenerowana.");
+                                        self.emit_event(EngineEvent::ResponseFinished(final_reply));
+                                    }
+                                    Err(e) => {
+                                        log_print!(self, "❌ [ENGINE INFERENCE ERROR]: {}", e);
+                                    }
+                                }
+                            } else {
+                                log_print!(self, "⚠️ [ENGINE LLM]: Brak załadowanego modelu. Umieść plik modelu i tokenizatora w folderze model/ i spróbuj ponownie.");
                             }
                         }
                         StateCommand::QueryWithVector { id, vector, text } => {

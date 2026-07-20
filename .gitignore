@@ -206,3 +206,24 @@ blyskawica_app/memory/*.db-journal
 
 # Temporary Logs
 training_log.txt
+
+# AI Model Weights (SEC-10: zapobieganie commitowi plików 1+ GB)
+model/
+*.gguf
+*.safetensors
+mock_weights.bin
+*.pkl
+neuro_predictor_meta.pkl
+
+# Identity & Memory Vault (wrażliwe dane tożsamości)
+identity_vault/
+blyskawica_app/memory/user_identity.json
+blyskawica_app/memory/mycreds.txt
+blyskawica_app/memory/client_secrets.json
+blyskawica_app/memory/client_secret.json
+
+# Quantum keys
+quantum_key.json
+
+# Compiled sidecar binaries
+sparkle_app/src-tauri/bin/

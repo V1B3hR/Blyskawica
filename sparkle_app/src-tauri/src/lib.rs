@@ -11,6 +11,7 @@ pub struct AppStateInner {
     tx: Option<mpsc::Sender<StateCommand>>,
     permission_level: u8, // 1: Sandbox, 2: Workspace, 3: Full OS
     workspace_path: PathBuf,
+    backend_child: Option<std::process::Child>,
 }
 
 pub struct AppState(pub Mutex<AppStateInner>);
@@ -303,12 +304,11 @@ fn get_engine_status(state: State<'_, AppState>) -> Result<serde_json::Value, St
         "permission_level": inner.permission_level,
         "workspace_path": inner.workspace_path.to_string_lossy(),
         "neurochemistry": serde_json::Value::Null,
-        "backend_connected": false,
+        "backend_connected": true, // Zawsze true w trybie V10 Standalone
     });
     
-    // Attempt to fetch from local FastAPI status endpoint
+    // Pobieramy metryki z FastAPI jeśli jest aktywne (np. dla TTS)
     if let Some(fastapi_status) = fetch_fastapi_status() {
-        response["backend_connected"] = serde_json::json!(true);
         if let Some(metrics) = fastapi_status.get("cra_metrics") {
             response["neurochemistry"] = metrics.clone();
         }
@@ -494,12 +494,13 @@ fn export_logs(logs: String, state: State<'_, AppState>) -> Result<String, Strin
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let builder = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(AppState(Mutex::new(AppStateInner {
             tx: None,
             permission_level: 2, // Standard Workspace by default
             workspace_path: PathBuf::from(r"C:\Projekty\Blyskawica_V8"),
+            backend_child: None,
         })))
         .invoke_handler(tauri::generate_handler![
             start_engine,
@@ -514,6 +515,66 @@ pub fn run() {
             trigger_neurogenesis,
             export_logs
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .setup(|app| {
+            let state = app.state::<AppState>();
+            let mut inner = state.0.lock().unwrap();
+            
+            let workspace = inner.workspace_path.clone();
+            let app_dir = app.path().resource_dir().unwrap_or_default();
+            
+            let sidecar_name = if cfg!(target_os = "windows") {
+                "blyskawica_backend-x86_64-pc-windows-msvc.exe"
+            } else {
+                "blyskawica_backend"
+            };
+            
+            let mut sidecar_path = app_dir.join("bin").join(sidecar_name);
+            if !sidecar_path.exists() && cfg!(target_os = "windows") {
+                sidecar_path = app_dir.join("bin").join("blyskawica_backend.exe");
+            }
+            
+            if sidecar_path.exists() {
+                println!("🚀 [Tauri Setup]: Wykryto Sidecar backend ({:?}). Uruchamianie w tle...", sidecar_path);
+                
+                let mut cmd = std::process::Command::new(&sidecar_path);
+                cmd.env("SPARKLE_WORKSPACE", &workspace)
+                   .stdout(std::process::Stdio::null())
+                   .stderr(std::process::Stdio::null());
+                
+                #[cfg(target_os = "windows")]
+                {
+                    use std::os::windows::process::CommandExt;
+                    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+                }
+                
+                match cmd.spawn() {
+                    Ok(child) => {
+                        inner.backend_child = Some(child);
+                        println!("✓ [Tauri Setup]: Sidecar backend uruchomiony pomyślnie.");
+                    }
+                    Err(err) => {
+                        eprintln!("❌ [Tauri Setup Błąd]: Nie udało się uruchomić Sidecar: {}", err);
+                    }
+                }
+            } else {
+                println!("⚠️ [Tauri Setup]: Brak Sidecar backendu w {:?}. Uruchom serwer ręcznie.", sidecar_path);
+            }
+            
+            Ok(())
+        });
+
+    let app = builder
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application");
+        
+    app.run(move |app_handle, event| {
+        if let tauri::RunEvent::Exit = event {
+            let state = app_handle.state::<AppState>();
+            let mut inner = state.0.lock().unwrap();
+            if let Some(mut child) = inner.backend_child.take() {
+                println!("🛑 [Tauri Exit]: Zamykanie procesu Sidecar backendu...");
+                let _ = child.kill();
+            }
+        }
+    });
 }
