@@ -328,10 +328,6 @@ async function sendMessage() {
         }
       })();
     }
-  } catch (error) {
-    addLog(`[Tauri Błąd wysyłania]: ${error}`);
-    appendChatMessage("System Sparkle", `Błąd komunikacji z silnikiem: ${error}`, "system-msg");
-  }
 }
 
 // Zmiana poziomu uprawnień (Slider)
