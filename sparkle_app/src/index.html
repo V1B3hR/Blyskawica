@@ -173,6 +173,7 @@
                   <button id="btn-open-file" class="control-btn small">OTWÓRZ</button>
                   <button id="btn-save-file" class="control-btn small" disabled>ZAPISZ</button>
                   <button id="btn-save-as-file" class="control-btn small" disabled>ZAPISZ JAKO</button>
+                  <input type="file" id="native-file-picker" style="display:none;" accept="*/*">
                 </div>
               </div>
               <div class="editor-container">
@@ -191,9 +192,13 @@
               <div class="form-row">
                 <label for="select-guest-model">Wybierz Model Gościa:</label>
                 <select id="select-guest-model">
-                  <option value="gemini-2.5-pro">Gemini 2.5 Pro (Gość)</option>
-                  <option value="claude-3.5-sonnet">Claude 3.5 Sonnet (Gość)</option>
-                  <option value="local-llama">Local Llama 3 (Offline)</option>
+                  <option value="gemini-1.5-pro">Gemini 1.5 Pro (Google DeepMind)</option>
+                  <option value="claude-3.5-sonnet">Claude 3.5 Sonnet (Anthropic)</option>
+                  <option value="gpt-4o">GPT-4o (OpenAI)</option>
+                  <option value="deepseek-r1">DeepSeek R1 / V3 (DeepSeek)</option>
+                  <option value="qwen-2.5-coder">Qwen 2.5 Coder 32B (Alibaba Cloud)</option>
+                  <option value="llama-3.3-70b">Llama 3.3 70B (Meta AI)</option>
+                  <option value="local-emissary">Lokalna Błyskawica Emisariusz (Offline)</option>
                 </select>
               </div>
               <button id="btn-invite-guest" class="control-btn accent">ZAPROŚ DO DYSKUSJI</button>

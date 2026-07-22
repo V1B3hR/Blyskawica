@@ -244,12 +244,19 @@ impl BlyskawicaEngine {
 
                             // Wczytywanie lokalnego modelu LLM jeśli nie jest załadowany
                             if self.llm.is_none() {
-                                let workspace_root = self.weights_path.parent()
-                                    .and_then(|p| p.parent())
-                                    .unwrap_or(&self.weights_path);
+                                let workspace_root = self.weights_path.parent().unwrap_or(&self.weights_path);
+                                let mut model_path = workspace_root.join("model").join("qwen2.5-1.5b-coder.gguf");
+                                let mut tokenizer_path = workspace_root.join("model").join("tokenizer.json");
                                 
-                                let model_path = workspace_root.join("model").join("qwen2.5-1.5b-coder.gguf");
-                                let tokenizer_path = workspace_root.join("model").join("tokenizer.json");
+                                if !model_path.exists() {
+                                    if let Some(parent) = workspace_root.parent() {
+                                        let alt_model = parent.join("model").join("qwen2.5-1.5b-coder.gguf");
+                                        if alt_model.exists() {
+                                            model_path = alt_model;
+                                            tokenizer_path = parent.join("model").join("tokenizer.json");
+                                        }
+                                    }
+                                }
                                 
                                 log_print!(self, "⚙️ [ENGINE LLM]: Próba wczytania lokalnego modelu: {:?}", model_path);
                                 match crate::cognitive_llm::LocalCognitiveLLM::load(&model_path, &tokenizer_path) {
@@ -258,7 +265,9 @@ impl BlyskawicaEngine {
                                         log_print!(self, "✓ [ENGINE LLM]: Lokalny model załadowany pomyślnie.");
                                     }
                                     Err(e) => {
-                                        log_print!(self, "⚠️ [ENGINE LLM BŁĄD]: Nie udało się załadować lokalnego modelu: {}", e);
+                                        let err_msg = format!("⚠️ [ENGINE LLM BŁĄD]: Nie udało się załadować lokalnego modelu ({:?}): {}", model_path, e);
+                                        log_print!(self, "{}", err_msg);
+                                        self.emit_event(EngineEvent::ResponseFinished(err_msg));
                                     }
                                 }
                             }
@@ -304,11 +313,15 @@ impl BlyskawicaEngine {
                                         self.emit_event(EngineEvent::ResponseFinished(final_reply));
                                     }
                                     Err(e) => {
-                                        log_print!(self, "❌ [ENGINE INFERENCE ERROR]: {}", e);
+                                        let err_msg = format!("❌ [ENGINE INFERENCE ERROR]: {}", e);
+                                        log_print!(self, "{}", err_msg);
+                                        self.emit_event(EngineEvent::ResponseFinished(err_msg));
                                     }
                                 }
                             } else {
-                                log_print!(self, "⚠️ [ENGINE LLM]: Brak załadowanego modelu. Umieść plik modelu i tokenizatora w folderze model/ i spróbuj ponownie.");
+                                let warn_msg = format!("⚠️ [ENGINE LLM]: Brak załadowanego modelu. Umieść pliki qwen2.5-1.5b-coder.gguf i tokenizer.json w katalogu model/ i spróbuj ponownie.");
+                                log_print!(self, "{}", warn_msg);
+                                self.emit_event(EngineEvent::ResponseFinished(warn_msg));
                             }
                         }
                         StateCommand::QueryWithVector { id, vector, text } => {
