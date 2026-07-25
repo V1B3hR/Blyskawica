@@ -5,6 +5,15 @@ All notable changes to the Adaptive Neural Network project will be documented in
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v10.1.0] - 2026-07-25
+
+### Added
+- **100% Native Embedded Rust Engine**: Integrated HuggingFace Candle (`candle-core`, `candle-transformers`) into `blyskawica_core` for native, offline GGUF model execution (`Qwen2.5-Coder-1.5B-GGUF`).
+- **Installer Permissions & UAC Elevation**: Updated NSIS `installMode` to `perMachine` in `tauri.conf.json` and added `nsis/hooks.nsh` for process termination and recursive directory wipe (`RMDir /r "$INSTDIR"`).
+- **Multi-Model LLM Orchestration**: Dynamic fallback priority supporting DeepSeek-R1, Qwen 2.5 Coder (1.5B/7B/14B), and 32B models.
+- **Vector Memory Scaling**: Expanded `SparkleVectorIndex` capacity to 10,000 elements for high-density long-term memory.
+- **Omniscient Knowledge Assimilation**: Multi-phase learning pipelines across IT/OS, biomedicine, particle physics (CERN Z/Higgs bosons), and fusion plasma MHD simulation.
+
 ## [0.1.0] - 2024-12-17
 
 ### Added

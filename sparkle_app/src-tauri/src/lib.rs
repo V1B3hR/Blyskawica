@@ -154,7 +154,7 @@ async fn start_engine(app_handle: AppHandle, state: State<'_, AppState>) -> Resu
         }
         Err(err) => {
             println!("📊 [Tauri]: Brak zapisanego indeksu lub błąd ({}). Tworzenie nowego...", err);
-            let idx = Arc::new(SparkleVectorIndex::new(dimension, 1000));
+            let idx = Arc::new(SparkleVectorIndex::new(dimension, 10000));
             // Wektor adwersarialny dla Wolf Teeth
             let adv_id = 666;
             let mut adv_vec = vec![0.0f32; dimension];

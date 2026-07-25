@@ -21,6 +21,8 @@ from datetime import datetime, timezone
 from enum import IntEnum
 from typing import Optional, Dict, Any, List
 
+import sys
+sys.stdout.reconfigure(encoding='utf-8')
 import torch
 
 

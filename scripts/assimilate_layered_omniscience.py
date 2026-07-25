@@ -1,4 +1,6 @@
 import logging
+import sys
+sys.stdout.reconfigure(encoding='utf-8')
 import torch
 import numpy as np
 import time
@@ -24,7 +26,7 @@ def perform_layered_assimilation(start_phase=3, end_phase=7, target_mastery=0.50
     vel = torch.zeros(3)
     node = AliveLoopNode(position=pos, velocity=vel, node_id=88, spatial_dims=3)
     curriculum = DeepEducationCurriculum()
-    loader = GlobalScienceLoader(target_node=node)
+    loader = GlobalScienceLoader()
     tm = get_time_manager()
     tm.reset()
     
@@ -66,17 +68,15 @@ def perform_layered_assimilation(start_phase=3, end_phase=7, target_mastery=0.50
             target_domain = min(budget_manager.domain_confidence, key=budget_manager.domain_confidence.get)
             
             # Simulated data load (Phase-aware)
-            if phase_id == "III":
-                if "Music" in target_domain: loader.load_music_mathematical_systems()
-                else: loader.load_cymatics_resonance()
-            elif phase_id == "IV": loader.load_gis_ecology()
-            elif phase_id == "V": loader.load_macroeconomics_geopolitics()
-            elif phase_id == "VI": loader.load_biology_neuroscience()
-            elif phase_id == "VII": loader.load_ethics_transcendence()
+            if phase_id == "III": loader.load_it_networking_patterns()
+            elif phase_id == "IV": loader.load_os_encyclopedia()
+            elif phase_id == "V": loader.load_software_dev_vault()
+            elif phase_id == "VI": loader.load_advanced_genetics()
+            elif phase_id == "VII": loader.load_advanced_physics()
 
             # Cognitive friction
             friction = 0.1 + (int(ord(phase_id[-1])) - ord('I')) * 0.05
-            node.current_entropy = min(1.0, node.current_entropy + friction)
+            node.anxiety = min(1.0, node.anxiety + friction)
             node.gradient_noise = min(1.0, node.gradient_noise + 0.1)
             for i in range(5): node.working_memory.append(i)
             

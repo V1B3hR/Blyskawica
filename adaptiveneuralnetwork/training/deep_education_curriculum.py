@@ -205,3 +205,7 @@ class DeepEducationCurriculum:
                 current["mastery_confidence"] = max(current.get("mastery_confidence", 0.0), confidence)
                 
         return advanced
+
+    def get_phase_domains(self, phase_id: str) -> List[str]:
+        """Returns list of domains for a specific learning phase."""
+        return list(self.curriculum.keys())

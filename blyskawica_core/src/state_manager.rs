@@ -245,15 +245,39 @@ impl BlyskawicaEngine {
                             // Wczytywanie lokalnego modelu LLM jeśli nie jest załadowany
                             if self.llm.is_none() {
                                 let workspace_root = self.weights_path.parent().unwrap_or(&self.weights_path);
-                                let mut model_path = workspace_root.join("model").join("qwen2.5-1.5b-coder.gguf");
-                                let mut tokenizer_path = workspace_root.join("model").join("tokenizer.json");
+                                let model_dir = workspace_root.join("model");
+                                let mut model_path = model_dir.join("qwen2.5-1.5b-coder.gguf");
+                                let mut tokenizer_path = model_dir.join("tokenizer.json");
+                                
+                                if !model_path.exists() {
+                                    // Auto-discover any .gguf file in model/ directory
+                                    if let Ok(entries) = std::fs::read_dir(&model_dir) {
+                                        for entry in entries.flatten() {
+                                            let p = entry.path();
+                                            if p.extension().map_or(false, |ext| ext == "gguf") {
+                                                model_path = p;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
                                 
                                 if !model_path.exists() {
                                     if let Some(parent) = workspace_root.parent() {
-                                        let alt_model = parent.join("model").join("qwen2.5-1.5b-coder.gguf");
+                                        let alt_model_dir = parent.join("model");
+                                        let alt_model = alt_model_dir.join("qwen2.5-1.5b-coder.gguf");
                                         if alt_model.exists() {
                                             model_path = alt_model;
-                                            tokenizer_path = parent.join("model").join("tokenizer.json");
+                                            tokenizer_path = alt_model_dir.join("tokenizer.json");
+                                        } else if let Ok(entries) = std::fs::read_dir(&alt_model_dir) {
+                                            for entry in entries.flatten() {
+                                                let p = entry.path();
+                                                if p.extension().map_or(false, |ext| ext == "gguf") {
+                                                    model_path = p;
+                                                    tokenizer_path = alt_model_dir.join("tokenizer.json");
+                                                    break;
+                                                }
+                                            }
                                         }
                                     }
                                 }

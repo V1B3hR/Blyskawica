@@ -14,6 +14,7 @@ Usage:
 import argparse
 import subprocess
 import sys
+sys.stdout.reconfigure(encoding='utf-8')
 from pathlib import Path
 
 

@@ -10,6 +10,7 @@ import argparse
 import json
 import logging
 import sys
+sys.stdout.reconfigure(encoding='utf-8')
 import time
 from pathlib import Path
 from typing import Any

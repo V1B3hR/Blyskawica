@@ -13,6 +13,7 @@ This script validates that all features listed in the problem statement work cor
 
 import json
 import sys
+sys.stdout.reconfigure(encoding='utf-8')
 import tempfile
 from pathlib import Path
 

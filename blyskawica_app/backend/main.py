@@ -600,11 +600,20 @@ async def generate_ollama_response(messages: list[dict], temperature: float, top
         raise RuntimeError("Brak dostępnych modeli w lokalnym serwisie Ollama.")
         
     # Choose optimal model based on active profile and availability
-    preferred = "qwen2.5:7b" if game_active else "qwen2.5:14b"
+    preferred = "qwen2.5:7b" if game_active else "deepseek-r1:14b"
     
-    # Fallback logic if the preferred model is not downloaded
+    # Fallback logic supporting 14B/32B reasoning models
     selected_model = None
-    for model in [preferred, "qwen2.5:7b", "qwen2.5:14b", "qwen2.5:latest"]:
+    fallback_candidates = [
+        preferred,
+        "deepseek-r1:14b",
+        "qwen2.5-coder:14b",
+        "qwen2.5:14b",
+        "deepseek-r1:8b",
+        "qwen2.5:7b",
+        "qwen2.5:latest"
+    ]
+    for model in fallback_candidates:
         # Match name ignoring registry tag extensions
         match = next((m for m in available_models if m.startswith(model) or model in m), None)
         if match:

@@ -5,6 +5,12 @@ from typing import List, Dict, Tuple
 class BudgetAllocation:
     allocated_cycles: int
 
+@dataclass
+class LearningAttempt:
+    domain: str
+    accuracy_before: float
+    accuracy_after: float
+
 class LearningBudgetManager:
     def __init__(self, domains: List[str], plateau_window: int = 3, plateau_threshold: float = 0.01):
         self.domains: List[str] = domains

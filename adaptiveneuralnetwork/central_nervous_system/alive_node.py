@@ -260,6 +260,8 @@ class AliveLoopNode:
         self.curiosity = 1.0                   # Curiosity level (0.0 to 5.0), start with some curiosity
         self.frustration = 0.0                 # Frustration level (0.0 to 5.0)
         self.resilience = 2.0                  # Resilience level (0.0 to 5.0), start with moderate resilience
+        self.gradient_noise = 0.0
+        self.current_entropy = 0.0
 
         # Configurable emotion schema - defines which emotions are tracked
         self.emotion_schema = {
