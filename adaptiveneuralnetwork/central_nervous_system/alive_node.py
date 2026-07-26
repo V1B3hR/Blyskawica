@@ -316,6 +316,28 @@ class AliveLoopNode:
         self.persisted_signals = deque(maxlen=1000)  # For replay capabilities
         self.partition_queues = {}  # partition_key -> deque for ordering guarantees
 
+    def generative_dreaming(self) -> dict:
+        """
+        Nocny Silnik Marzeń (Generative REM Dreaming Engine).
+        Syntetyzuje pomysły i reorganizuje pamięć roboczą podczas fazy snu.
+        """
+        if self.phase != "sleep":
+            self.phase = "sleep"
+            
+        dream_concepts = [
+            "Hyper-dimensional vector alignment",
+            "Quantum-decoupled backpressure buffering",
+            "Neuromorphic zero-point energy equilibrium",
+            "Pareto-frontier neural pruning"
+        ]
+        chosen_dream = dream_concepts[len(self.working_memory) % len(dream_concepts)]
+        self.anxiety = max(0.0, self.anxiety - 0.2)
+        self.hope = min(5.0, self.hope + 0.3)
+        self.working_memory.append({"dream": chosen_dream, "type": "REM_synthesis"})
+        
+        logger.info(f"🌙 [REM DREAMING]: Wygenerowano syntetyczny koncept marzenia: '{chosen_dream}'")
+        return {"status": "DREAMING_ACTIVE", "concept": chosen_dream, "anxiety": self.anxiety, "hope": self.hope}
+
     def update(self, external_activity, internal_stimuli, emotional_trigger=0.0):
         """Update node state based on recent activity and stimuli."""
         import torch
