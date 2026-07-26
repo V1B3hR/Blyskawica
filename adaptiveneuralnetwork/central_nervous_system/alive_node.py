@@ -21,6 +21,7 @@ from adaptiveneuralnetwork.immune_system.trust_network import TrustNetwork
 from adaptiveneuralnetwork.central_nervous_system.neurochemistry import NeurochemicalState
 from adaptiveneuralnetwork.immune_system.wolf_teeth import WolfTeethDefenseEngine
 from adaptiveneuralnetwork.immune_system.epistemic_defense import EpistemicQuarantineNode
+from adaptiveneuralnetwork.immune_system.cognitive_capacitor import CognitiveCapacitor
 from adaptiveneuralnetwork.cognitive_tools.polymathic_hub import PolymathicHub
 from adaptiveneuralnetwork.central_nervous_system.soul import Soul
 from adaptiveneuralnetwork.central_nervous_system.intelligence.quantum_intuition import QuantumIntuition
@@ -180,6 +181,7 @@ class AliveLoopNode:
         self.neurochemistry = NeurochemicalState()
         self.wolf_teeth = WolfTeethDefenseEngine()
         self.epistemic_quarantine = EpistemicQuarantineNode()
+        self.cognitive_capacitor = CognitiveCapacitor()
         self.polymathic_hub = PolymathicHub()
         
         # Advanced Intelligence Modules
