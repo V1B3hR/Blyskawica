@@ -125,7 +125,23 @@ class TemporalPatternEncoder(nn.Module):
 
         device = input_spikes.device
         batch_size = input_spikes.size(0)
-        
+        curr_size = input_spikes.size(-1)
+
+        # Dynamic dimension check if input dimension differs from initialization
+        if curr_size != self.input_size or self.spike_history.size(1) != curr_size:
+            self.input_size = curr_size
+            history_len = int(self.config.pattern_window / dt) + 1 if isinstance(self.config.pattern_window, float) else int(self.config.pattern_window)
+            self.spike_history = torch.zeros(
+                history_len, curr_size, device=device
+            )
+            self.history_index.zero_()
+            self.pattern_weights = nn.Parameter(
+                torch.randn(self.pattern_size, curr_size, device=device)
+            )
+            self.pattern_templates = torch.randn(
+                self.pattern_size, self.config.max_pattern_length, curr_size, device=device
+            )
+
         # Ensure parameters and buffers are on correct device
         pattern_templates = self.pattern_templates.to(device)
         spike_history = self.spike_history.to(device)

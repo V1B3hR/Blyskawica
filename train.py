@@ -458,7 +458,7 @@ def train_with_config(config: WorkflowConfig):
         )
 
         # 5. Fit Model
-        trainer.fit(train_loader, num_epochs=config.training.epochs)
+        metrics_history = trainer.fit(train_loader, num_epochs=config.training.epochs)
         
         # 6. Save model checkpoint
         checkpoint_dir = Path(config.training.checkpoint_dir)
@@ -470,8 +470,21 @@ def train_with_config(config: WorkflowConfig):
             'config': adaptive_config
         }, checkpoint_path)
 
+        # 7. Save learning curve benchmark metrics JSON
+        output_dir = Path(config.evaluation.output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        benchmark_file = output_dir / f"learning_curve_{config.dataset.name}.json"
+        with open(benchmark_file, "w") as f:
+            json.dump({
+                "dataset": config.dataset.name,
+                "batch_size": config.dataset.batch_size,
+                "epochs": config.training.epochs,
+                "metrics_history": metrics_history
+            }, f, indent=2)
+
         logger.info("Training completed successfully!")
         logger.info(f"Model saved to: {checkpoint_path}")
+        logger.info(f"Benchmark results saved to: {benchmark_file}")
 
     except Exception as e:
         logger.error(f"Training failed: {e}", exc_info=True)

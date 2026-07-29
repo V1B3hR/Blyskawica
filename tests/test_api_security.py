@@ -22,7 +22,10 @@ class TestAPISecurity(unittest.TestCase):
 
     def test_get_token(self):
         """Test that the auth token endpoint returns the correct token"""
-        response = self.client.get("/api/auth/token")
+        response = self.client.get(
+            "/api/auth/token",
+            headers={"X-Internal-Request": "sparkle-tauri-shell"}
+        )
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertIn("token", data)

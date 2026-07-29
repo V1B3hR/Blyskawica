@@ -163,7 +163,10 @@ class TestSparkleBackend(unittest.TestCase):
         bly_main.quarantine_active = False
 
         # Retrieve startup token for authentication
-        token_response = self.client.get("/api/auth/token")
+        token_response = self.client.get(
+            "/api/auth/token",
+            headers={"X-Internal-Request": "sparkle-tauri-shell"}
+        )
         self.assertEqual(token_response.status_code, 200)
         token = token_response.json().get("token")
 

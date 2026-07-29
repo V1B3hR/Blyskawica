@@ -132,6 +132,31 @@ class SensoryPreprocessor(nn.Module):
         self.activity_tracker = self.activity_tracker.detach()
         self.gain_factors = self.gain_factors.detach()
 
+        # Dynamic dimension handling if input size differs from initial configuration
+        curr_dim = raw_input.shape[-1]
+        if curr_dim != self.input_size or self.input_history.shape[1] != curr_dim:
+            self.input_size = curr_dim
+            self.input_history = torch.zeros(
+                self.config.real_time_buffer_size, curr_dim, device=raw_input.device
+            )
+            self.buffer_index.zero_()
+            self.gain_factors = torch.ones(curr_dim, device=raw_input.device)
+            self.activity_tracker = torch.zeros(curr_dim, device=raw_input.device)
+
+            base_config = NeuromorphicConfig(generation=3)
+            neuron_config = NeuronV3Config(
+                base_config=base_config,
+                threshold_adaptation_rate=self.config.adaptation_rate,
+                target_spike_rate=50.0
+            )
+            self.adaptive_population = PopulationLayer(
+                population_size=curr_dim,
+                neuron_type="adaptive_threshold",
+                neuron_config=neuron_config,
+                lateral_inhibition=True,
+                inhibition_strength=0.1
+            ).to(raw_input.device)
+
         # Update input history buffer
         buffer_idx = self.buffer_index.item() % self.config.real_time_buffer_size
         self.input_history[buffer_idx] = raw_input[0]  # Store first batch item
@@ -348,9 +373,12 @@ class ModalityProcessor(nn.Module):
             combined_features = temporal_patterns
 
         # Project to feature space
-        # Ensure projection layer is on the correct device
+        # Ensure projection layer is on the correct device and matches input dim
         device = combined_features.device
-        self.feature_projection = self.feature_projection.to(device)
+        if self.feature_projection.in_features != combined_features.shape[1]:
+            self.feature_projection = nn.Linear(combined_features.shape[1], self.feature_size).to(device)
+        else:
+            self.feature_projection = self.feature_projection.to(device)
         
         projected_features = torch.relu(self.feature_projection(combined_features))
 

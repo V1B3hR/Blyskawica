@@ -100,7 +100,11 @@ class TestHormonalTTS(unittest.TestCase):
         self.assertIsNone(data["audio_url"])
         
         # 2. Adhoc /api/tts endpoint should return 503 Service Unavailable when offline
-        token_response = client.get("/api/auth/token")
+        token_response = client.get(
+            "/api/auth/token",
+            headers={"X-Internal-Request": "sparkle-tauri-shell"}
+        )
+        self.assertEqual(token_response.status_code, 200)
         token = token_response.json()["token"]
         
         tts_res = client.post(

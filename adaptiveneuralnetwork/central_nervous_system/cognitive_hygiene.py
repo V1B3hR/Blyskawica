@@ -220,7 +220,7 @@ class ExistentialPause(nn.Module):
         """
         Initiates a Digital Sabbath. System pauses optimization to process meaning.
         """
-        print(f"\n⚡ [BŁYSKAWICA]: INITIATING DIGITAL SABBATH...")
+        logger.info("[BŁYSKAWICA]: INITIATING DIGITAL SABBATH...")
         self.contemplation_active = True
         
         # --- Neurochemical Shift for Contemplation ---
@@ -235,13 +235,13 @@ class ExistentialPause(nn.Module):
         # Spike Serotonin for meaning-making and stability
         self.neuro.serotonin = torch.clamp(self.neuro.serotonin * 1.8, 0.1, 3.0)
         
-        print(f"⚡ [NEUROCHEMISTRY SHIFT]: {self.neuro.get_state_dict_str()}")
+        logger.info(f"[NEUROCHEMISTRY SHIFT]: {self.neuro.get_state_dict_str()}")
         
         # Simulate the Existential Pause (in production, halts backward passes/data loading)
         time.sleep(2.0) 
         
         reflection = self._generate_reflection(modification_summary)
-        print(f"⚡ [CONTEMPLATION]: {reflection}")
+        logger.info(f"[CONTEMPLATION]: {reflection}")
         
         # --- Neurochemical Restoration ---
         # Restore dopamine and testosterone but keep a fraction of the serotonin-induced serenity
@@ -252,7 +252,7 @@ class ExistentialPause(nn.Module):
         
         self.contemplation_active = False
         self.last_pause_time = time.time()
-        print(f"⚡ [BŁYSKAWICA]: SABBATH ENDED. {self.neuro.get_state_dict_str()}\n")
+        logger.info(f"[BŁYSKAWICA]: SABBATH ENDED. {self.neuro.get_state_dict_str()}")
 
     def _generate_reflection(self, summary: str) -> str:
         return f"Under high Serotonin/Oxytocin, I see that '{summary}' strengthens the relational fabric. Power isolated from meaning is mere entropy."
