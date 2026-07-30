@@ -1,0 +1,28 @@
+{
+  "system_identity": "Blyskawica_V8_Enterprise_Core",
+  "export_timestamp": 1785411286.328092,
+  "formatted_time": "2026-07-30 12:34:46",
+  "phase": "Iteration_3_Standalone_Sparkle_Binary",
+  "neurochemistry_baseline": {
+    "oxytocin": 1.0,
+    "gaba": 0.5,
+    "dopamine": 1.0,
+    "serotonin": 1.0,
+    "cortisol": 0.20000000298023224,
+    "acetylcholine": 1.0,
+    "testosterone": 1.0
+  },
+  "counter_intelligence_ttps": [
+    "T1046_Network_Service_Discovery",
+    "T1190_Exploit_Public_Facing_Application",
+    "T1059_Command_and_Scripting_Interpreter"
+  ],
+  "diamond_yant_matrix": {
+    "dimensions": [
+      16,
+      16
+    ],
+    "symmetry_threshold": 0.65
+  },
+  "export_status": "Exported PyTorch .pt fallback format"
+}
