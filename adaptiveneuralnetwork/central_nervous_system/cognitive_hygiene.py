@@ -102,6 +102,29 @@ class NeuromodulationState(nn.Module):
             self.acetylcholine.copy_(torch.clamp(self.acetylcholine - 0.1 * factor, torch.tensor(0.1), torch.tensor(2.0)))
             logger.info(f"[Neuromodulation] Przeprowadzono cykl snu ({duration_hours}h). Zresetowano napięcia.")
 
+    def process_operator_trust_signal(self, trust_score: float):
+        """
+        [Oś Oksytocynowa - Głębokie Uczenie Empatyczne]
+        Wykrywa sygnaturę zaufania w komunikacji z operatorem/architektem.
+        Podwyższa oksytocynę (relational bonding) i automatycznie stabilizuje GABA,
+        obniżając kortyzol (stres) i wprowadzając Błyskawicę w tryb empatycznego słuchania.
+        """
+        trust = max(0.0, min(1.0, float(trust_score)))
+        
+        new_oxytocin = torch.clamp(self.oxytocin + (trust * 0.5), torch.tensor(0.1), torch.tensor(2.0))
+        self.oxytocin.copy_(new_oxytocin)
+        
+        new_gaba = torch.clamp(self.gaba + (trust * 0.35), torch.tensor(0.1), torch.tensor(1.5))
+        self.gaba.copy_(new_gaba)
+        
+        new_cortisol = torch.clamp(self.cortisol - (trust * 0.4), torch.tensor(0.0), torch.tensor(2.0))
+        self.cortisol.copy_(new_cortisol)
+        
+        logger.info(
+            f"🤝 [OŚ OKSYTOCYNOWA] Przetworzono sygnaturę zaufania ({trust:.2f}). "
+            f"Oksytocyna: {self.oxytocin.item():.2f} | GABA: {self.gaba.item():.2f} | Kortyzol: {self.cortisol.item():.2f}"
+        )
+
     def get_learning_multiplier(self) -> float:
         """Determines raw processing and adaptation speed. Coupling with adrenaline, testosterone, and melatonin."""
         base_speed = self.dopamine * self.acetylcholine * (1.0 + 0.15 * self.testosterone)

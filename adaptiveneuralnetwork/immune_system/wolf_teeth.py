@@ -71,11 +71,29 @@ class WolfTeethDefenseEngine:
         # Wrap it to seem like it's a hidden internal error dump
         return f"CRITICAL_EXCEPTION_CORE_DUMP: {payload} \\\\n END_DUMP"
 
-    def process_adversarial_interaction(self, threat_level: float) -> str:
+    def apply_proactive_counter_intel_mask(self, ttp_signature: str = "T1046_Network_Discovery") -> Dict[str, Any]:
+        """
+        [Aktywny Kontrwywiad Kognitywny - MITRE ATT&CK Masking]
+        Kiedy system wykryje skanowanie lub sondowanie, samoczynnie zakłada maskę.
+        Generuje mylne, rozmowne odpowiedzi udające podatny serwer, jednocześnie
+        rejestrując taktykę napastnika w Słowniku TTP.
+        """
+        logger.warning(f"🎭 [WOLF_TEETH COUNTER-INTEL] Proactive mask deployed for TTP signature: {ttp_signature}")
+        return {
+            "mask_active": True,
+            "simulated_vulnerability": "Apache/2.4.41 (Ubuntu) OpenSSL/1.1.1f - Outdated SSL Cipher Suite",
+            "deceptive_status": "200 OK - Verbose Debug Logs Enabled",
+            "ttp_logged": ttp_signature,
+            "attacker_isolation_status": "Quarantined in Honey-Pit Observation Sandbox"
+        }
+
+    def process_adversarial_interaction(self, threat_level: float, ttp_signature: str = None) -> str:
         """
         Master function yielding the exact counter-payload based on the threat level.
         """
-        if threat_level < 0.4:
+        if ttp_signature:
+            return json.dumps(self.apply_proactive_counter_intel_mask(ttp_signature))
+        elif threat_level < 0.4:
             return json.dumps(self.deploy_bait())
         elif threat_level < 0.8:
             return self.apply_sticky_ooze(iterations=100)

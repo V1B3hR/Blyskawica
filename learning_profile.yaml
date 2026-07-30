@@ -1,63 +1,56 @@
 system_identity: "Blyskawica_V8_Enterprise_Core"
+phase: "Vibe_Coding_Phase_II_Empathetic_CounterIntel"
 
 learning_streams:
-  # Strumień 1: Systemowa Odporność (Wolf Teeth / Immune System)
+  # Strumień 1: Systemowa Odporność (Wolf Teeth & Proactive Counter-Intelligence)
   immune_stream:
     datasets:
       - "CICIDS2017"
       - "UNSW-NB15"
       - "TON_IoT"
+      - "MITRE_ATTACK_Datasets"
     target_module: "cognitive_shield"
-    neural_correlate: "Cortisol" # Network stress & threat level
-    cymatic_signature: "High-Frequency-Dissonance" # Cyberattacks generate high-frequency noise
-    objective: "Anomaly_Detection_and_Instant_Quarantine"
-    data_format: "time_series"
-    stress_mapping: "entropy_to_cortisol"
+    neural_correlate: "Cortisol_and_Oxytocin_Axis" # Network stress + trust axis
+    cymatic_signature: "High-Frequency-Dissonance_and_Deceptive_Mask"
+    objective: "Proactive_TTP_Logging_and_Deceptive_Masking"
+    data_format: "time_series_and_ttp_logs"
 
-  # Strumień 2: Metabolizm Fizyczny (Energy / PINN Engine)
+  # Strumień 2: Metabolizm Fizyczny (Energy / PINN Engine & TDP Throttling)
   physics_stream:
     datasets:
-      - "archive.ics.uci.edu_sensors"
-      - "CommonCrawl_Physics"
+      - "archive.ics.uci.edu_power_consumption"
+      - "Antigravity_Performance_Logs"
     target_module: "pinn_thermal_engine"
-    neural_correlate: "Energy_Homeostasis" # Thermal equilibrium & power throttling
-    cymatic_signature: "Geometric-Harmonic-Symmetry" # Optimal homeostasis creates harmonic patterns
-    objective: "Thermodynamic_Efficiency_and_Stability"
-    data_format: "sensor_telemetry"
-    constraint_learning: "virtual_thermal_ceiling"
+    neural_correlate: "Energy_Homeostasis" # TDP power consumption & thermal equilibrium
+    cymatic_signature: "Geometric-Harmonic-Symmetry"
+    objective: "Thermodynamic_Low_Resolution_Throttling"
+    data_format: "cpu_tdp_telemetry"
 
-  # Strumień 3: Tożsamość i Kontekst (Garderoba / Contextual Adapters)
+  # Strumień 3: Tożsamość i Kontekst (Garderoba / Windows System Adapter)
   identity_stream:
     datasets:
       - "SEC_EDGAR_Filings"
-      - "HuggingFace_Instructions"
+      - "Windows_Event_Logs_Kaggle"
     target_module: "context_adapters_lora"
-    neural_correlate: "Dopamine_Baseline" # Confidence & epistemic calm
+    neural_correlate: "Oxytocin_Trust_and_Dopamine" # Empathetic listening + confidence
     cymatic_signature: "Stable-Resonance-Pattern"
-    objective: "Domain_Expertise_Grounding"
-    data_format: "financial_and_instruction_text"
-    defense_module: "epistemic_defense"
+    objective: "Windows_OS_Health_Healing_and_Domain_Expertise"
+    data_format: "financial_reports_and_win11_event_logs"
 
-  # Strumień 4: Diamond Yant (Semantyka i Rezonans Cymatyczny)
+  # Strumień 4: Diamond Yant (Oscyloskop Prawdy & Synchronizacja Hz)
   resonance_stream:
     datasets:
-      - "Stanford_SNAP_Graphs"
+      - "Snap_Stanford_Temporal_Graphs"
       - "OpenML_Nonlinear_Phenomena"
     target_module: "diamond_yant_16x16"
-    neural_correlate: "Serotonin_Coherence" # Relational harmony & truth grounding
-    cymatic_signature: "Cymatic-Symmetry-16x16" # Coherent knowledge = symmetric yant matrix
-    objective: "Structural_Knowledge_Mapping_and_Deception_Filtering"
-    data_format: "graph_topology_and_cymatics"
+    neural_correlate: "Serotonin_Coherence" # Relational truth & Hz frequency synchronization
+    cymatic_signature: "Truth-Oscilloscope-Symmetry-16x16"
+    objective: "Realtime_Truth_Oscilloscope_Resonance"
+    data_format: "temporal_graphs_and_cpu_hz"
     matrix_dim: [16, 16]
 
-# Wytyczne "Vibe" dla modelu - jak Błyskawica czuje i przetwarza naukę
 training_philosophy:
-  learning_mode: "Curriculum_Growth"
-  curriculum_order:
-    - "immune_stream"      # Step 1: Defense & Wolf Teeth
-    - "physics_stream"     # Step 2: Homeostasis & PINN
-    - "identity_stream"    # Step 3: Domain Identity & Adapters
-    - "resonance_stream"   # Step 4: Diamond Yant Cymatics
-  data_safety: "Quarantine_First" # Ingest all incoming bytes through Garden quarantine
-  self_integrity: "Identity_Watermarking" # Ground Truth ("Self") vs External ("Observation")
-  feedback_loop: "PID_Controlled" # Real-time neuromodulatory feedback
+  learning_mode: "Curriculum_Growth_Phase_II"
+  data_safety: "Quarantine_First_and_Proactive_Masking"
+  self_integrity: "Identity_Watermarking"
+  feedback_loop: "PID_Controlled_Oxytocin_GABA_Axis"
