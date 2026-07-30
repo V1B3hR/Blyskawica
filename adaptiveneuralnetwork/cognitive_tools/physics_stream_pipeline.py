@@ -102,10 +102,11 @@ class CognitivePhysicsEngine(nn.Module):
         if self.current_temperature >= self.thermal_ceiling:
             throttled = True
             # Suppress dopamine to cool down system
-            self.neuro.dopamine = max(0.2, dopamine_level * 0.7)
+            new_dop = max(0.2, dopamine_level * 0.7)
+            self.neuro.dopamine = torch.tensor(new_dop, device=self.neuro.dopamine.device, dtype=torch.float32)
             logger.warning(
                 f"🔥 [THERMAL OVERLOAD ALERT] Temp ({self.current_temperature:.1f}°C) >= Ceiling ({self.thermal_ceiling}°C)! "
-                f"Throttling Dopamine ({dopamine_level:.2f} -> {float(self.neuro.dopamine):.2f})"
+                f"Throttling Dopamine ({dopamine_level:.2f} -> {new_dop:.2f})"
             )
 
         # Cymatic Signature
