@@ -276,6 +276,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from blyskawica_app.backend.vibe_telemetry_bridge import vibe_telemetry_bridge
+
 @app.get("/api/auth/token")
 async def get_auth_token(x_internal: str = Header(None, alias="X-Internal-Request")):
     """Token sesyjny dostępny TYLKO dla zapytań z Tauri shell (nagłówek dodawany programatycznie)."""
@@ -283,6 +285,11 @@ async def get_auth_token(x_internal: str = Header(None, alias="X-Internal-Reques
         from fastapi import HTTPException
         raise HTTPException(status_code=403, detail="Dostęp zabroniony. Token sesji dostępny wyłącznie dla powłoki Sparkle.")
     return {"token": STARTUP_TOKEN}
+
+@app.get("/api/vibe/telemetry")
+async def get_vibe_telemetry():
+    """Zwraca skonsolidowany stan 4 Strumieni Vibe (Cortisol, PINN Temp, Garderoba Persona, Diamond Yant 16x16)."""
+    return vibe_telemetry_bridge.get_live_vibe_state()
 
 # ---- Persistence & Identity ----
 
