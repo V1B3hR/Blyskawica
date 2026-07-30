@@ -1,0 +1,63 @@
+system_identity: "Blyskawica_V8_Enterprise_Core"
+
+learning_streams:
+  # Strumień 1: Systemowa Odporność (Wolf Teeth / Immune System)
+  immune_stream:
+    datasets:
+      - "CICIDS2017"
+      - "UNSW-NB15"
+      - "TON_IoT"
+    target_module: "cognitive_shield"
+    neural_correlate: "Cortisol" # Network stress & threat level
+    cymatic_signature: "High-Frequency-Dissonance" # Cyberattacks generate high-frequency noise
+    objective: "Anomaly_Detection_and_Instant_Quarantine"
+    data_format: "time_series"
+    stress_mapping: "entropy_to_cortisol"
+
+  # Strumień 2: Metabolizm Fizyczny (Energy / PINN Engine)
+  physics_stream:
+    datasets:
+      - "archive.ics.uci.edu_sensors"
+      - "CommonCrawl_Physics"
+    target_module: "pinn_thermal_engine"
+    neural_correlate: "Energy_Homeostasis" # Thermal equilibrium & power throttling
+    cymatic_signature: "Geometric-Harmonic-Symmetry" # Optimal homeostasis creates harmonic patterns
+    objective: "Thermodynamic_Efficiency_and_Stability"
+    data_format: "sensor_telemetry"
+    constraint_learning: "virtual_thermal_ceiling"
+
+  # Strumień 3: Tożsamość i Kontekst (Garderoba / Contextual Adapters)
+  identity_stream:
+    datasets:
+      - "SEC_EDGAR_Filings"
+      - "HuggingFace_Instructions"
+    target_module: "context_adapters_lora"
+    neural_correlate: "Dopamine_Baseline" # Confidence & epistemic calm
+    cymatic_signature: "Stable-Resonance-Pattern"
+    objective: "Domain_Expertise_Grounding"
+    data_format: "financial_and_instruction_text"
+    defense_module: "epistemic_defense"
+
+  # Strumień 4: Diamond Yant (Semantyka i Rezonans Cymatyczny)
+  resonance_stream:
+    datasets:
+      - "Stanford_SNAP_Graphs"
+      - "OpenML_Nonlinear_Phenomena"
+    target_module: "diamond_yant_16x16"
+    neural_correlate: "Serotonin_Coherence" # Relational harmony & truth grounding
+    cymatic_signature: "Cymatic-Symmetry-16x16" # Coherent knowledge = symmetric yant matrix
+    objective: "Structural_Knowledge_Mapping_and_Deception_Filtering"
+    data_format: "graph_topology_and_cymatics"
+    matrix_dim: [16, 16]
+
+# Wytyczne "Vibe" dla modelu - jak Błyskawica czuje i przetwarza naukę
+training_philosophy:
+  learning_mode: "Curriculum_Growth"
+  curriculum_order:
+    - "immune_stream"      # Step 1: Defense & Wolf Teeth
+    - "physics_stream"     # Step 2: Homeostasis & PINN
+    - "identity_stream"    # Step 3: Domain Identity & Adapters
+    - "resonance_stream"   # Step 4: Diamond Yant Cymatics
+  data_safety: "Quarantine_First" # Ingest all incoming bytes through Garden quarantine
+  self_integrity: "Identity_Watermarking" # Ground Truth ("Self") vs External ("Observation")
+  feedback_loop: "PID_Controlled" # Real-time neuromodulatory feedback
