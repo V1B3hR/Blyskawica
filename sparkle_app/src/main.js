@@ -1100,11 +1100,16 @@ window.addEventListener("DOMContentLoaded", () => {
     } else if (tabId === 'spore') {
       tabBtnSpore.classList.add("active");
       tabSpore.classList.add("active");
+    } else if (tabId === 'yant') {
+      if (tabBtnYant) tabBtnYant.classList.add("active");
+      if (tabYant) tabYant.classList.add("active");
     }
   }
 
   tabBtnSpore = document.getElementById("tab-btn-spore");
   tabSpore = document.getElementById("tab-spore");
+  const tabBtnYant = document.getElementById("tab-btn-yant");
+  const tabYant = document.getElementById("tab-yant");
   const btnSporeLoad = document.getElementById("btn-spore-load");
   const btnSporeRun = document.getElementById("btn-spore-run");
 
@@ -1112,6 +1117,7 @@ window.addEventListener("DOMContentLoaded", () => {
     tabBtnWorkspace.addEventListener("click", () => switchTab('workspace'));
     tabBtnGuests.addEventListener("click", () => switchTab('guests'));
     tabBtnSpore.addEventListener("click", () => switchTab('spore'));
+    if (tabBtnYant) tabBtnYant.addEventListener("click", () => switchTab('yant'));
     
     // Przywróć zapisaną zakładkę z localStorage
     const savedTab = localStorage.getItem('sparkle_active_tab') || 'workspace';
@@ -1132,8 +1138,12 @@ window.addEventListener("DOMContentLoaded", () => {
     btnSporeRun.addEventListener("click", runSporeInference);
   }
 
-  // Uruchomienie wizualizatora Spore
+  // Uruchomienie wizualizatora Spore oraz pętli odpytywania Vibe Telemetry
   initSporeVisualizer();
+  startVibeTelemetryPolling().catch((err) => addLog(`[Vibe Telemetry Error]: ${err}`));
+  setInterval(() => {
+    startVibeTelemetryPolling().catch((err) => addLog(`[Vibe Telemetry Error]: ${err}`));
+  }, 2000);
 
   // Uruchomienie nasłuchiwania w tle i pętli odpytywania
   initEventListeners().catch((err) => addLog(`[Events Init Error]: ${err}`));
@@ -1232,3 +1242,127 @@ async function runStartupSequence() {
     addLog("[Startup]: Sekwencja rozruchowa pomyślnie ukończona.");
   }, 1000);
 }
+
+// Live 16x16 Diamond Yant Cymatic Oscilloscope Renderer
+function drawYantOscilloscope(flatGrid, symmetryIndex) {
+  const canvas = document.getElementById("yant-oscilloscope-canvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  const width = canvas.width;
+  const height = canvas.height;
+  const cellSize = width / 16;
+
+  ctx.clearRect(0, 0, width, height);
+
+  // Draw 16x16 Grid Cells
+  for (let r = 0; r < 16; r++) {
+    for (let c = 0; c < 16; c++) {
+      const idx = r * 16 + c;
+      const val = flatGrid && flatGrid[idx] !== undefined ? flatGrid[idx] : Math.sin((r + c) * 0.5);
+      const absVal = Math.min(1.0, Math.abs(val));
+
+      if (val >= 0) {
+        ctx.fillStyle = `rgba(0, 240, 255, ${0.15 + absVal * 0.75})`;
+      } else {
+        ctx.fillStyle = `rgba(255, 0, 150, ${0.15 + absVal * 0.75})`;
+      }
+
+      ctx.fillRect(c * cellSize + 1, r * cellSize + 1, cellSize - 2, cellSize - 2);
+    }
+  }
+
+  // Overlay Symmetrical Diamond Yant Geometry Lines
+  const sym = symmetryIndex !== undefined ? symmetryIndex : 0.6633;
+  ctx.strokeStyle = `rgba(255, 215, 0, ${0.4 + sym * 0.5})`;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(width / 2, 8);
+  ctx.lineTo(width - 8, height / 2);
+  ctx.lineTo(width / 2, height - 8);
+  ctx.lineTo(8, height / 2);
+  ctx.closePath();
+  ctx.stroke();
+
+  // Inner Concentric Diamond
+  ctx.strokeStyle = `rgba(0, 255, 200, ${0.3 + sym * 0.5})`;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(width / 2, height / 4);
+  ctx.lineTo((3 * width) / 4, height / 2);
+  ctx.lineTo(width / 2, (3 * height) / 4);
+  ctx.lineTo(width / 4, height / 2);
+  ctx.closePath();
+  ctx.stroke();
+
+  // Update Yant Metrics UI
+  const symEl = document.getElementById("yant-symmetry-val");
+  const statusEl = document.getElementById("yant-status-val");
+
+  if (symEl) symEl.textContent = sym.toFixed(4);
+  if (statusEl) {
+    if (sym >= 0.6) {
+      statusEl.textContent = "Synchronized (Harmonic Flow)";
+      statusEl.style.color = "#00ff88";
+    } else {
+      statusEl.textContent = "Oscilloscope Noise Detected";
+      statusEl.style.color = "#ff0055";
+    }
+  }
+}
+
+// Live Vibe Telemetry Polling Loop
+async function startVibeTelemetryPolling() {
+  try {
+    const res = await fetch("http://127.0.0.1:8000/api/vibe/telemetry");
+    if (!res.ok) return;
+    const data = await res.json();
+
+    // 1. Update Neurochemistry UI Dials
+    if (data.neurochemistry) {
+      const nc = data.neurochemistry;
+      const dopEl = document.getElementById("val-dopamine");
+      const barDopEl = document.getElementById("bar-dopamine");
+      if (dopEl && nc.dopamine !== undefined) {
+        dopEl.textContent = nc.dopamine.toFixed(2);
+        if (barDopEl) barDopEl.style.width = `${Math.min(100, nc.dopamine * 50)}%`;
+      }
+
+      const serEl = document.getElementById("val-serotonin");
+      const barSerEl = document.getElementById("bar-serotonin");
+      if (serEl && nc.serotonin !== undefined) {
+        serEl.textContent = nc.serotonin.toFixed(2);
+        if (barSerEl) barSerEl.style.width = `${Math.min(100, nc.serotonin * 50)}%`;
+      }
+
+      const gabaEl = document.getElementById("val-gaba");
+      const barGabaEl = document.getElementById("bar-gaba");
+      if (gabaEl && nc.gaba !== undefined) {
+        gabaEl.textContent = nc.gaba.toFixed(2);
+        if (barGabaEl) barGabaEl.style.width = `${Math.min(100, nc.gaba * 50)}%`;
+      }
+
+      const oxtEl = document.getElementById("val-oxytocin");
+      const barOxtEl = document.getElementById("bar-oxytocin");
+      if (oxtEl && nc.oxytocin !== undefined) {
+        oxtEl.textContent = nc.oxytocin.toFixed(2);
+        if (barOxtEl) barOxtEl.style.width = `${Math.min(100, nc.oxytocin * 50)}%`;
+      }
+
+      const melEl = document.getElementById("val-melatonin");
+      const barMelEl = document.getElementById("bar-melatonin");
+      if (melEl && nc.melatonin !== undefined) {
+        melEl.textContent = nc.melatonin.toFixed(2);
+        if (barMelEl) barMelEl.style.width = `${Math.min(100, nc.melatonin * 50)}%`;
+      }
+    }
+
+    // 2. Render 16x16 Diamond Yant Cymatic Grid
+    if (data.diamond_yant_16x16) {
+      const yantData = data.diamond_yant_16x16;
+      drawYantOscilloscope(yantData.cymatic_grid_flat, yantData.symmetry_index);
+    }
+  } catch (e) {
+    // Silent offline fallback
+  }
+}
+
