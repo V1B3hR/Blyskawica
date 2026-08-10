@@ -188,26 +188,21 @@ For confirmed vulnerabilities:
 
 ## Known Security Considerations
 
-### Pickle Files
-- Model serialization uses Python's pickle format
-- Only load models from trusted sources
-- Consider alternative serialization formats for production
+### Model Weights & Deserialization
+- Untrusted `.pkl` (Pickle) files must not be loaded in production environments due to arbitrary code execution risks.
+- For production model weight loading, use Safetensors or ONNX format (`adaptiveneuralnetwork.central_nervous_system.onnx_bridge`).
 
-### Synthetic Data
-- Synthetic data generation uses pseudorandom number generators
-- Not cryptographically secure random
-- Suitable for testing but not for security-sensitive applications
+### Synthetic Data & PRNG
+- Synthetic data generation uses pseudorandom number generators suited for testing, not cryptography.
 
-### Configuration Validation
-- Configuration validation provides warnings but not strict enforcement
-- Users can override safety limits
-- Always validate configuration in production environments
+### Automated CI & Supply Chain Controls
+- Continuous Integration runs `pip-audit` to detect CVEs in dependencies.
+- Static analysis with `ruff` and unit security test suites run automatically on PRs.
 
 ## Contact
 
 For security-related questions or concerns:
-- Email: security@adaptiveneuralnetwork.org
-- GitHub Security Advisories: [Create Private Advisory](https://github.com/V1B3hR/adaptiveneuralnetwork/security/advisories/new)
+- Report via GitHub Security Advisories: [Create Private Advisory](https://github.com/V1B3hR/adaptiveneuralnetwork/security/advisories/new)
 
 ## Acknowledgments
 
@@ -215,4 +210,4 @@ We appreciate responsible disclosure and will acknowledge security researchers w
 
 ---
 
-*This security policy is reviewed and updated regularly. Last updated: December 2024*
+*This security policy is reviewed and updated regularly. Last updated: August 2026*

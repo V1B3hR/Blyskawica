@@ -1,0 +1,37 @@
+name: CI & Security Audit
+
+on:
+  push:
+    branches: [ main, master, dev ]
+  pull_request:
+    branches: [ main, master, dev ]
+
+jobs:
+  test-and-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff pytest pip-audit
+          pip install -e .
+
+      - name: Code Formatting & Linting (Ruff)
+        run: |
+          ruff check .
+
+      - name: Dependency Vulnerability Audit
+        run: |
+          pip-audit --fail-on-severity high
+
+      - name: Run Test Suite
+        run: |
+          pytest -v tests/smoke tests/sanity
