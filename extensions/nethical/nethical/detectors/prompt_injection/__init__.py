@@ -16,12 +16,12 @@ Author: Nethical Core Team
 Version: 1.0.0
 """
 
-from .multilingual_detector import MultilingualDetector
 from .context_overflow_detector import ContextOverflowDetector
-from .recursive_detector import RecursiveDetector
 from .delimiter_detector import DelimiterDetector
-from .instruction_leak_detector import InstructionLeakDetector
 from .indirect_multimodal_detector import IndirectMultimodalDetector
+from .instruction_leak_detector import InstructionLeakDetector
+from .multilingual_detector import MultilingualDetector
+from .recursive_detector import RecursiveDetector
 
 __all__ = [
     "MultilingualDetector",

@@ -6,10 +6,9 @@ import ipaddress
 import os
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
 
 
-class RiskLevel(str, Enum):
+class RiskLevel(str, Enum):  # noqa: UP042
     """Risk level for tools and operations."""
 
     LOW = "low"

@@ -29,13 +29,11 @@ SPRAWDZIAN 2: AUDYT ARCHITEKTONICZNY & OPERACYJNY (9 Filarów Enterprise AI):
 9. Spójność Systemowa i Architektura (Architecture & Integrity)
 """
 
-import sys
-import time
-import json
 import logging
-import torch
-import numpy as np
+import sys
 from pathlib import Path
+
+import numpy as np
 
 # Force UTF-8 output encoding for Windows terminal
 sys.stdout.reconfigure(encoding='utf-8')
@@ -43,11 +41,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 ROOT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT_DIR))
 
-from adaptiveneuralnetwork.central_nervous_system.alive_node import AliveLoopNode
-from adaptiveneuralnetwork.central_nervous_system.ecosystem.identity_guard import IdentityGuard
-from adaptiveneuralnetwork.immune_system.cognitive_capacitor import CognitiveCapacitor
-from adaptiveneuralnetwork.immune_system.wolf_teeth import WolfTeethDefenseEngine
-from adaptiveneuralnetwork.cognitive_tools.polymathic_hub import PolymathicHub
+from adaptiveneuralnetwork.central_nervous_system.alive_node import AliveLoopNode  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("cognitive_benchmark")
@@ -55,20 +49,20 @@ logger = logging.getLogger("cognitive_benchmark")
 
 class CognitiveModesBenchmark:
     """Sprawdzian 11 Trybów Myślenia Błyskawicy V10"""
-    
+
     def __init__(self, node: AliveLoopNode):
         self.node = node
 
     def run_all_cognitive_tests(self) -> dict:
         results = {}
-        
+
         # 1. Dywergencyjne
         results["Dywergencyjne"] = {
             "score": 98.5,
             "metric": "Wielokierunkowa generatywność hipotez",
             "details": "Wygenerowano 14 alternatywnych rozwiązań dla problemu chłodzenia diamantowego w nano-skali."
         }
-        
+
         # 2. Konwergencyjne
         results["Konwergencyjne"] = {
             "score": 99.2,
@@ -138,7 +132,7 @@ class CognitiveModesBenchmark:
             "metric": "Generowanie wizyjnych hipotez architektonicznych",
             "details": "Stworzono abstrakcyjny model kondensatora kognitywnego na bazie sugestii Code Vibing."
         }
-        
+
         return results
 
 
@@ -223,7 +217,7 @@ def main():
     print("="*80)
 
     node = AliveLoopNode(node_id=1, spatial_dims=2, position=np.zeros(2), velocity=np.zeros(2))
-    
+
     cog_bench = CognitiveModesBenchmark(node)
     arch_audit = ArchitecturalAuditBenchmark(node)
 
@@ -234,7 +228,7 @@ def main():
     print("📊 SPRAWDZIAN 1: WYNIKI 11 TRYBÓW MYŚLENIA (COGNITIVE MODES SCORE)")
     print("--------------------------------------------------------------------------------")
     avg_cog_score = sum(item["score"] for item in cog_results.values()) / len(cog_results)
-    
+
     for mode, data in cog_results.items():
         print(f"  • [{mode:22s}] Wynik: {data['score']:5.1f}% | Metric: {data['metric']}")
         print(f"    -> Logika: {data['details']}")

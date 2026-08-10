@@ -9,7 +9,7 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
 logger = logging.getLogger(__name__)
@@ -32,8 +32,8 @@ class PlaybookExecution:
     execution_id: UUID = field(default_factory=uuid4)
     playbook_name: str = ""
     status: PlaybookStatus = PlaybookStatus.PENDING
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
     steps_completed: list[str] = field(default_factory=list)
     outputs: dict[str, Any] = field(default_factory=dict)
     errors: list[str] = field(default_factory=list)
@@ -53,7 +53,7 @@ class KEVRemediationPlaybook:
     Integrates with: ServiceNow, Jira, Slack, Email
     """
 
-    def __init__(self, ticketing_config: Optional[dict[str, Any]] = None):
+    def __init__(self, ticketing_config: dict[str, Any] | None = None):
         """
         Initialize KEV remediation playbook.
 
@@ -200,7 +200,7 @@ class ShieldsUpResponsePlaybook:
     Integrates with: SIEM, Scanners, Communication platforms
     """
 
-    def __init__(self, monitoring_config: Optional[dict[str, Any]] = None):
+    def __init__(self, monitoring_config: dict[str, Any] | None = None):
         """
         Initialize Shields Up response playbook.
 

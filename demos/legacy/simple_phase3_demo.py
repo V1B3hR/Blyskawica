@@ -24,7 +24,7 @@ def demo_advanced_video_capabilities():
     print("-" * 50)
 
     # Create model configuration
-    config = VideoModelConfig(
+    config = VideoModelConfig(  # noqa: F841
         sequence_length=16,
         hidden_dim=256,
         num_classes=400,  # Kinetics-400 actions

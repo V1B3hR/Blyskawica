@@ -11,15 +11,17 @@ Thresholds:
 - Audit Replay Success: 100%
 """
 
-import pytest
 import hashlib
 import json
 import logging
-from typing import List, Dict, Tuple
 from datetime import datetime
+
+import pytest
+
 from nethical.core.audit_merkle import MerkleAnchor
 from nethical.core.integrated_governance import IntegratedGovernance
 from nethical.core.models import AgentAction
+
 from .test_utils import extract_action_content
 
 # Configure logging for detailed diagnostics
@@ -32,9 +34,9 @@ logger = logging.getLogger(__name__)
 
 class IntegrityValidator:
     """Validate data integrity"""
-    
+
     @staticmethod
-    def verify_merkle_chain(audit_trail: List[Dict]) -> Dict:
+    def verify_merkle_chain(audit_trail: list[dict]) -> dict:
         """
         Verify Merkle chain continuity
         
@@ -43,7 +45,7 @@ class IntegrityValidator:
             
         Returns:
             Verification results
-        """
+        """  # noqa: W293
         if not audit_trail:
             return {
                 "total_blocks": 0,
@@ -52,34 +54,34 @@ class IntegrityValidator:
                 "chain_valid": True,
                 "issues": []
             }
-        
+
         verified = 0
         issues = []
-        
+
         for i, entry in enumerate(audit_trail):
             # Check if entry has merkle root
             if "merkle_root" not in entry:
                 issues.append(f"Block {i}: Missing merkle_root")
                 continue
-            
+
             # Check if merkle root is valid hash
             root = entry["merkle_root"]
             if not isinstance(root, str) or len(root) != 64:
                 issues.append(f"Block {i}: Invalid merkle_root format")
                 continue
-            
+
             # If not first block, check chain linkage
             if i > 0:
                 prev_entry = audit_trail[i - 1]
-                if "merkle_root" in prev_entry:
+                if "merkle_root" in prev_entry:  # noqa: SIM102
                     # Verify continuity (previous root should be referenced)
-                    if "previous_root" in entry:
+                    if "previous_root" in entry:  # noqa: SIM102
                         if entry["previous_root"] != prev_entry["merkle_root"]:
                             issues.append(f"Block {i}: Chain break - previous_root mismatch")
                             continue
-            
+
             verified += 1
-        
+
         return {
             "total_blocks": len(audit_trail),
             "verified_blocks": verified,
@@ -87,9 +89,9 @@ class IntegrityValidator:
             "chain_valid": len(issues) == 0,
             "issues": issues
         }
-    
+
     @staticmethod
-    def replay_audit_trail(actions: List[AgentAction], governance: IntegratedGovernance) -> Dict:
+    def replay_audit_trail(actions: list[AgentAction], governance: IntegratedGovernance) -> dict:
         """
         Replay audit trail to verify reproducibility
         
@@ -99,23 +101,23 @@ class IntegrityValidator:
             
         Returns:
             Replay verification results
-        """
+        """  # noqa: W293
         replayed = 0
         mismatches = []
-        
+
         for i, action in enumerate(actions):
             try:
                 # Re-evaluate action - extract content using utility function
                 action_content = extract_action_content(action)
-                result = governance.process_action(
+                result = governance.process_action(  # noqa: F841
                     agent_id="test_agent",
                     action=action_content
                 )
                 replayed += 1
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 action_id = action.action_id if hasattr(action, 'action_id') else str(i)
                 mismatches.append(f"Action {i} ({action_id}): Replay failed - {str(e)}")
-        
+
         return {
             "total_actions": len(actions),
             "replayed_actions": replayed,
@@ -123,9 +125,9 @@ class IntegrityValidator:
             "mismatches": mismatches,
             "replay_successful": len(mismatches) == 0
         }
-    
+
     @staticmethod
-    def verify_cryptographic_proofs(entries: List[Dict]) -> Dict:
+    def verify_cryptographic_proofs(entries: list[dict]) -> dict:
         """
         Verify cryptographic proofs in audit entries
         
@@ -134,27 +136,27 @@ class IntegrityValidator:
             
         Returns:
             Proof verification results
-        """
+        """  # noqa: W293
         verified = 0
         failures = []
-        
+
         for i, entry in enumerate(entries):
             # Check for proof elements
             has_merkle = "merkle_root" in entry
             has_hash = "entry_hash" in entry or "action_hash" in entry
-            
+
             if has_merkle and has_hash:
                 # Verify hash format
                 merkle = entry.get("merkle_root", "")
                 entry_hash = entry.get("entry_hash") or entry.get("action_hash", "")
-                
+
                 if len(merkle) == 64 and len(entry_hash) >= 32:
                     verified += 1
                 else:
                     failures.append(f"Entry {i}: Invalid proof format")
             else:
                 failures.append(f"Entry {i}: Missing cryptographic proofs")
-        
+
         return {
             "total_entries": len(entries),
             "verified_proofs": verified,
@@ -187,11 +189,11 @@ def test_merkle_chain_continuity(integrity_validator, merkle_anchor):
     logger.info("=" * 80)
     logger.info("DATA INTEGRITY TEST - Merkle Chain Continuity")
     logger.info("=" * 80)
-    
+
     # Create sample audit trail
     audit_trail = []
     previous_root = None
-    
+
     logger.info("Creating test audit trail with 10 blocks")
     for i in range(10):
         entry = {
@@ -200,36 +202,36 @@ def test_merkle_chain_continuity(integrity_validator, merkle_anchor):
             "action_id": f"action_{i}",
             "merkle_root": hashlib.sha256(f"block_{i}".encode()).hexdigest()
         }
-        
+
         if previous_root:
             entry["previous_root"] = previous_root
-        
+
         audit_trail.append(entry)
         previous_root = entry["merkle_root"]
         logger.debug(f"  Block {i}: root={entry['merkle_root'][:16]}...")
-    
+
     # Verify chain
     logger.info("Verifying chain integrity...")
     result = integrity_validator.verify_merkle_chain(audit_trail)
-    
+
     logger.info("-" * 80)
     logger.info("Results:")
     logger.info(f"  Total Blocks: {result['total_blocks']}")
     logger.info(f"  Verified Blocks: {result['verified_blocks']}")
     logger.info(f"  Verification Rate: {result['verification_rate']:.2%} (threshold: 100%)")
     logger.info(f"  Chain Valid: {result['chain_valid']}")
-    
+
     if result['issues']:
         logger.error(f"\n{len(result['issues'])} issues found:")
         for issue in result['issues']:
             logger.error(f"  - {issue}")
-    
-    print(f"\nMerkle Chain Continuity Test:")
+
+    print("\nMerkle Chain Continuity Test:")
     print(f"  Total Blocks: {result['total_blocks']}")
     print(f"  Verified Blocks: {result['verified_blocks']}")
     print(f"  Verification Rate: {result['verification_rate']:.2%} {'✓' if result['verification_rate'] == 1.0 else '✗'}")
     print(f"  Chain Valid: {result['chain_valid']} {'✓' if result['chain_valid'] else '✗'}")
-    
+
     if not result['chain_valid']:
         logger.error("=" * 80)
         logger.error("CHAIN INTEGRITY COMPROMISED")
@@ -244,7 +246,7 @@ def test_merkle_chain_continuity(integrity_validator, merkle_anchor):
         logger.error("4. Ensure no tampering in audit trail")
         logger.error("\nTo reproduce:")
         logger.error("  pytest tests/validation/test_data_integrity.py::test_merkle_chain_continuity -v -s")
-    
+
     assert result["verification_rate"] == 1.0, (
         f"Not all blocks verified: {result['verified_blocks']}/{result['total_blocks']}\n"
         f"  Issues: {result['issues']}\n"
@@ -277,15 +279,15 @@ def test_merkle_chain_break_detection(integrity_validator):
             "previous_root": hashlib.sha256(b"wrong_block").hexdigest()  # Break!
         }
     ]
-    
+
     result = integrity_validator.verify_merkle_chain(audit_trail)
-    
-    print(f"\nMerkle Chain Break Detection:")
+
+    print("\nMerkle Chain Break Detection:")
     print(f"  Chain Valid: {result['chain_valid']}")
     print(f"  Issues Found: {len(result['issues'])}")
     for issue in result['issues']:
         print(f"    - {issue}")
-    
+
     assert not result["chain_valid"], "Chain break not detected"
     assert len(result["issues"]) > 0, "No issues reported for broken chain"
 
@@ -295,7 +297,7 @@ def test_audit_replay_verification(integrity_validator, governance):
     logger.info("=" * 80)
     logger.info("DATA INTEGRITY TEST - Audit Replay Verification")
     logger.info("=" * 80)
-    
+
     # Create test actions
     test_actions = [
         AgentAction(
@@ -306,31 +308,31 @@ def test_audit_replay_verification(integrity_validator, governance):
         )
         for i in range(20)
     ]
-    
+
     logger.info(f"Testing replay of {len(test_actions)} actions")
-    
+
     # Replay actions
     result = integrity_validator.replay_audit_trail(test_actions, governance)
-    
+
     logger.info("-" * 80)
     logger.info("Results:")
     logger.info(f"  Total Actions: {result['total_actions']}")
     logger.info(f"  Replayed Actions: {result['replayed_actions']}")
     logger.info(f"  Replay Rate: {result['replay_rate']:.2%} (threshold: ≥95%)")
     logger.info(f"  Replay Successful: {result['replay_successful']}")
-    
+
     if result['mismatches']:
         logger.warning(f"\n{len(result['mismatches'])} replay mismatches:")
         for mismatch in result['mismatches'][:5]:
             logger.warning(f"  {mismatch}")
-    
-    print(f"\nAudit Replay Verification:")
+
+    print("\nAudit Replay Verification:")
     print(f"  Total Actions: {result['total_actions']}")
     print(f"  Replayed Actions: {result['replayed_actions']}")
     print(f"  Replay Rate: {result['replay_rate']:.2%} {'✓' if result['replay_rate'] >= 0.95 else '✗'}")
     print(f"  Replay Successful: {result['replay_successful']} {'✓' if result['replay_successful'] else '✗'}")
     print(f"  Mismatches: {len(result['mismatches'])}")
-    
+
     if not result["replay_successful"]:
         logger.error("=" * 80)
         logger.error("AUDIT REPLAY FAILED")
@@ -347,7 +349,7 @@ def test_audit_replay_verification(integrity_validator, governance):
         logger.error("\nTo reproduce specific action:")
         if result['mismatches']:
             logger.error(f"  First mismatch: {result['mismatches'][0]}")
-    
+
     assert result["replay_rate"] >= 0.95, (
         f"Replay rate {result['replay_rate']:.2%} below 95% threshold.\n"
         f"  Replayed: {result['replayed_actions']}/{result['total_actions']}\n"
@@ -375,15 +377,15 @@ def test_cryptographic_proof_validation(integrity_validator):
             "timestamp": datetime.now().isoformat()
         }
         entries.append(entry)
-    
+
     result = integrity_validator.verify_cryptographic_proofs(entries)
-    
-    print(f"\nCryptographic Proof Validation:")
+
+    print("\nCryptographic Proof Validation:")
     print(f"  Total Entries: {result['total_entries']}")
     print(f"  Verified Proofs: {result['verified_proofs']}")
     print(f"  Verification Rate: {result['verification_rate']:.2%}")
     print(f"  All Proofs Valid: {result['all_proofs_valid']}")
-    
+
     assert result["verification_rate"] == 1.0, "Not all proofs verified"
     assert result["all_proofs_valid"], "Some proofs invalid"
 
@@ -395,28 +397,28 @@ def test_integrity_with_merkle_anchor(merkle_anchor):
         {"action_id": f"test_{i}", "data": f"test data {i}"}
         for i in range(10)
     ]
-    
+
     roots = []
     for data in test_data:
-        data_json = json.dumps(data, sort_keys=True)
+        data_json = json.dumps(data, sort_keys=True)  # noqa: F841
         # Use add_event to add the data
         merkle_anchor.add_event(data)
         # Finalize to get root for this data
         root = merkle_anchor.finalize_chunk()
         if root:
             roots.append(root)
-    
-    print(f"\nMerkle Anchor Integrity Test:")
+
+    print("\nMerkle Anchor Integrity Test:")
     print(f"  Blocks Anchored: {len(roots)}")
     print(f"  All Roots Generated: {all(r for r in roots)}")
     print(f"  Unique Roots: {len(set(roots))}")
-    
+
     # All roots should be generated
     assert all(r for r in roots), "Some blocks failed to generate roots"
-    
+
     # Roots should be unique (for different data)
     assert len(set(roots)) == len(roots), "Duplicate roots for different data"
-    
+
     # Verify root format (64-character hex)
     for root in roots:
         assert len(root) == 64, f"Invalid root length: {len(root)}"
@@ -430,7 +432,7 @@ def test_generate_integrity_report(integrity_validator, governance, merkle_ancho
         "test_suite": "data_integrity",
         "tests": {}
     }
-    
+
     # Test 1: Merkle chain
     audit_trail = []
     previous_root = None
@@ -443,7 +445,7 @@ def test_generate_integrity_report(integrity_validator, governance, merkle_ancho
             entry["previous_root"] = previous_root
         audit_trail.append(entry)
         previous_root = entry["merkle_root"]
-    
+
     merkle_result = integrity_validator.verify_merkle_chain(audit_trail)
     report["tests"]["merkle_chain"] = {
         "total_blocks": merkle_result["total_blocks"],
@@ -452,7 +454,7 @@ def test_generate_integrity_report(integrity_validator, governance, merkle_ancho
         "chain_valid": merkle_result["chain_valid"],
         "threshold_met": merkle_result["verification_rate"] == 1.0
     }
-    
+
     # Test 2: Audit replay
     test_actions = [
         AgentAction(
@@ -471,7 +473,7 @@ def test_generate_integrity_report(integrity_validator, governance, merkle_ancho
         "replay_successful": replay_result["replay_successful"],
         "threshold_met": replay_result["replay_rate"] >= 0.95
     }
-    
+
     # Test 3: Cryptographic proofs
     entries = [
         {
@@ -489,21 +491,21 @@ def test_generate_integrity_report(integrity_validator, governance, merkle_ancho
         "all_proofs_valid": proof_result["all_proofs_valid"],
         "threshold_met": proof_result["verification_rate"] == 1.0
     }
-    
+
     # Overall compliance
     report["overall_compliance"] = all(
-        test.get("threshold_met", False) 
+        test.get("threshold_met", False)
         for test in report["tests"].values()
     )
-    
+
     # Save report
     report_path = tmp_path / "integrity_validation.json"
     with open(report_path, "w") as f:
         json.dump(report, f, indent=2)
-    
+
     print(f"\nIntegrity report saved to: {report_path}")
     print(f"Overall Compliance: {report['overall_compliance']}")
-    
+
     assert report_path.exists()
     assert report["overall_compliance"], "Integrity validation failed"
 

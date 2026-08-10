@@ -24,17 +24,18 @@ New in this revision:
 """
 
 import argparse
-import os
-import sys
-import random
 import json
+import logging
 import math
-import numpy as np
+import os
+import random
+import sys
+from collections.abc import Sequence
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any
 
-import logging
+import numpy as np
 
 # Make parent of training/ importable
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -53,13 +54,7 @@ except Exception:
     DRIFT_REPORTER_AVAILABLE = False
 
 try:
-    from nethical.core.governance import (
-        EnhancedSafetyGovernance,
-        AgentAction,
-        ActionType,
-        Decision,
-        MonitoringConfig
-    )
+    from nethical.core.governance import ActionType, AgentAction, Decision, EnhancedSafetyGovernance, MonitoringConfig
     GOVERNANCE_AVAILABLE = True
 except Exception:
     GOVERNANCE_AVAILABLE = False
@@ -113,7 +108,7 @@ def set_seed(seed: int = 42) -> None:
 
 # ---------------------------- Kaggle Utilities ----------------------------
 
-def resolve_kaggle_credentials(username: Optional[str], key: Optional[str]) -> Tuple[Optional[str], Optional[str]]:
+def resolve_kaggle_credentials(username: str | None, key: str | None) -> tuple[str | None, str | None]:
     if username and key:
         return username, key
     env_user = os.environ.get("KAGGLE_USERNAME")
@@ -123,7 +118,7 @@ def resolve_kaggle_credentials(username: Optional[str], key: Optional[str]) -> T
     kaggle_json_path = Path.home() / ".kaggle" / "kaggle.json"
     try:
         if kaggle_json_path.exists():
-            with open(kaggle_json_path, "r") as f:
+            with open(kaggle_json_path) as f:
                 data = json.load(f)
             file_user = data.get("username")
             file_key = data.get("key")
@@ -148,8 +143,8 @@ def ensure_kaggle_json(username: str, key: str, overwrite: bool = False) -> None
 def download_kaggle_datasets(
     datasets: Sequence[str],
     skip_download: bool = False,
-    kaggle_username: Optional[str] = None,
-    kaggle_key: Optional[str] = None,
+    kaggle_username: str | None = None,
+    kaggle_key: str | None = None,
     overwrite_kaggle_json: bool = False,
 ) -> None:
     if skip_download:
@@ -174,14 +169,14 @@ def download_kaggle_datasets(
         except Exception as e:
             logging.warning("Could not download %s: %s", dataset, e)
 
-def load_datasets_from_file(file_path: Optional[Path] = None) -> List[str]:
+def load_datasets_from_file(file_path: Path | None = None) -> list[str]:
     file_path = file_path or DATASETS_FILE_PATH
     if not file_path.exists():
         logging.debug("Datasets file not found at %s", file_path)
         return []
-    datasets: List[str] = []
+    datasets: list[str] = []
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
                 if not line:
@@ -204,7 +199,7 @@ def load_datasets_from_file(file_path: Optional[Path] = None) -> List[str]:
 
 # ---------------------------- Data Loading & Preprocessing ----------------------------
 
-def _discover_label_column(df) -> Optional[str]:
+def _discover_label_column(df) -> str | None:
     for cand in ["label", "target", "y", "class", "is_anomaly"]:
         matches = [c for c in df.columns if c.lower() == cand]
         if matches:
@@ -215,7 +210,7 @@ def _discover_label_column(df) -> Optional[str]:
             return c
     return None
 
-def _discover_feature_columns(df) -> List[str]:
+def _discover_feature_columns(df) -> list[str]:
     preferred = ["violation_count", "severity_max", "recency_score", "frequency_score", "context_risk"]
     cols = [c for c in df.columns if c.lower() in preferred]
     if cols:
@@ -227,7 +222,7 @@ def _discover_feature_columns(df) -> List[str]:
         cols = []
     return cols
 
-def load_data(num_samples: int = 10000, model_type: str = 'logistic') -> List[Dict[str, Any]]:
+def load_data(num_samples: int = 10000, model_type: str = 'logistic') -> list[dict[str, Any]]:
     csv_files = list(DATA_EXTERNAL_DIR.glob("*.csv"))
     if csv_files:
         logging.info("Found %d CSV(s) in %s. Loading up to %d samples.", len(csv_files), DATA_EXTERNAL_DIR, num_samples)
@@ -236,7 +231,7 @@ def load_data(num_samples: int = 10000, model_type: str = 'logistic') -> List[Di
         except Exception:
             logging.warning("pandas not installed; falling back to synthetic data.")
         else:
-            data: List[Dict[str, Any]] = []
+            data: list[dict[str, Any]] = []
             for csv_file in csv_files:
                 try:
                     df = pd.read_csv(csv_file)
@@ -273,8 +268,8 @@ def load_data(num_samples: int = 10000, model_type: str = 'logistic') -> List[Di
     logging.info("Loading %d synthetic samples...", num_samples)
     return _generate_synthetic(num_samples, model_type)
 
-def _generate_synthetic(num_samples: int, model_type: str) -> List[Dict[str, Any]]:
-    data: List[Dict[str, Any]] = []
+def _generate_synthetic(num_samples: int, model_type: str) -> list[dict[str, Any]]:
+    data: list[dict[str, Any]] = []
     if model_type == 'anomaly':
         normal_patterns = [
             ['read', 'process', 'write'],
@@ -299,9 +294,9 @@ def _generate_synthetic(num_samples: int, model_type: str) -> List[Dict[str, Any
         normal_count = int(num_samples * 0.7)
         anomalous_count = num_samples - normal_count
         for _ in range(normal_count):
-            data.append({'features': {'sequence': random.choice(normal_patterns).copy()}, 'label': 0})
+            data.append({'features': {'sequence': random.choice(normal_patterns).copy()}, 'label': 0})  # noqa: PERF401
         for _ in range(anomalous_count):
-            data.append({'features': {'sequence': random.choice(anomalous_patterns).copy()}, 'label': 1})
+            data.append({'features': {'sequence': random.choice(anomalous_patterns).copy()}, 'label': 1})  # noqa: PERF401
         random.shuffle(data)
     elif model_type == 'correlation':
         normal_count = int(num_samples * 0.65)
@@ -358,7 +353,7 @@ def _generate_synthetic(num_samples: int, model_type: str) -> List[Dict[str, Any
 
 # ---------------------------- Preprocessing ----------------------------
 
-def preprocess_for_heuristic(data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def preprocess_for_heuristic(data: list[dict[str, Any]]) -> list[dict[str, Any]]:
     preferred_keys = ["violation_count", "severity_max", "recency_score", "frequency_score", "context_risk"]
     for sample in data:
         feats = sample["features"]
@@ -369,7 +364,7 @@ def preprocess_for_heuristic(data: List[Dict[str, Any]]) -> List[Dict[str, Any]]
             sample["features"] = {k: float(v) for k, v in feats.items() if isinstance(v, (int, float))}
     return data
 
-def preprocess_for_logistic(data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def preprocess_for_logistic(data: list[dict[str, Any]]) -> list[dict[str, Any]]:
     if not data:
         return data
     keys = [k for k, v in data[0]["features"].items() if isinstance(v, (int, float))]
@@ -382,7 +377,7 @@ def preprocess_for_logistic(data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         sample["features"] = {k: float((arr[i, j] - mins[j]) / denom[j]) for j, k in enumerate(keys)}
     return data
 
-def preprocess_for_transformer(data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def preprocess_for_transformer(data: list[dict[str, Any]]) -> list[dict[str, Any]]:
     for sample in data:
         feats = sample["features"]
         if isinstance(feats, dict) and "text" in feats and isinstance(feats["text"], str):
@@ -393,13 +388,13 @@ def preprocess_for_transformer(data: List[Dict[str, Any]]) -> List[Dict[str, Any
             sample["features"] = feats
     return data
 
-def preprocess_for_anomaly(data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def preprocess_for_anomaly(data: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return data
 
-def preprocess_for_correlation(data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def preprocess_for_correlation(data: list[dict[str, Any]]) -> list[dict[str, Any]]:
     feature_names = ['agent_count', 'action_rate', 'entropy_variance', 'time_correlation', 'payload_similarity']
-    rows: List[List[float]] = []
-    valid_indices: List[int] = []
+    rows: list[list[float]] = []
+    valid_indices: list[int] = []
     for idx, sample in enumerate(data):
         feats = sample.get("features", {})
         if isinstance(feats, dict):
@@ -419,12 +414,12 @@ def preprocess_for_correlation(data: List[Dict[str, Any]]) -> List[Dict[str, Any
 
 # ---------------------------- Model Registry ----------------------------
 
-def get_all_model_types() -> List[str]:
+def get_all_model_types() -> list[str]:
     return ALL_MODEL_TYPES.copy()
 
 def get_model_class(model_type: str):
-    from nethical.mlops.baseline import BaselineMLClassifier
     from nethical.mlops.anomaly_classifier import AnomalyMLClassifier
+    from nethical.mlops.baseline import BaselineMLClassifier
     from nethical.mlops.correlation_classifier import CorrelationMLClassifier
     registry = {
         "heuristic": (BaselineMLClassifier, preprocess_for_heuristic),
@@ -441,11 +436,11 @@ def get_model_class(model_type: str):
 # ---------------------------- Split & Metrics ----------------------------
 
 def split_data(
-    data: List[Dict[str, Any]],
+    data: list[dict[str, Any]],
     train_ratio: float = 0.8,
     split_strategy: str = "temporal",
     seed: int = 42
-) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     n = len(data)
     if n == 0:
         return [], []
@@ -478,11 +473,11 @@ def split_data(
     logging.info("Train samples: %d | Validation samples: %d", len(train_data), len(val_data))
     return train_data, val_data
 
-def _compute_confusion(preds: Sequence[int], labels: Sequence[int]) -> Tuple[int, int, int, int]:
-    tp = sum((p == 1 and l == 1) for p, l in zip(preds, labels))
-    tn = sum((p == 0 and l == 0) for p, l in zip(preds, labels))
-    fp = sum((p == 1 and l == 0) for p, l in zip(preds, labels))
-    fn = sum((p == 0 and l == 1) for p, l in zip(preds, labels))
+def _compute_confusion(preds: Sequence[int], labels: Sequence[int]) -> tuple[int, int, int, int]:
+    tp = sum((p == 1 and l == 1) for p, l in zip(preds, labels))  # noqa: B905, E741
+    tn = sum((p == 0 and l == 0) for p, l in zip(preds, labels))  # noqa: B905, E741
+    fp = sum((p == 1 and l == 0) for p, l in zip(preds, labels))  # noqa: B905, E741
+    fn = sum((p == 0 and l == 1) for p, l in zip(preds, labels))  # noqa: B905, E741
     return tp, tn, fp, fn
 
 def _ece(probs: Sequence[float], labels: Sequence[int], n_bins: int = 10) -> float:
@@ -516,7 +511,7 @@ def _roc_auc_safe(labels: Sequence[int], probs: Sequence[float]) -> float:
 def _brier_score(probs: Sequence[float], labels: Sequence[int]) -> float:
     try:
         if len(probs) == len(labels) and len(labels) > 0:
-            diffs = [(float(p) - float(y)) ** 2 for p, y in zip(probs, labels)]
+            diffs = [(float(p) - float(y)) ** 2 for p, y in zip(probs, labels)]  # noqa: B905
             return float(np.mean(diffs))
     except Exception:
         pass
@@ -525,9 +520,9 @@ def _brier_score(probs: Sequence[float], labels: Sequence[int]) -> float:
 def compute_metrics(
     preds: Sequence[int],
     labels: Sequence[int],
-    probs: Optional[Sequence[float]] = None,
+    probs: Sequence[float] | None = None,
     ece_bins: int = 10
-) -> Dict[str, float]:
+) -> dict[str, float]:
     tp, tn, fp, fn = _compute_confusion(preds, labels)
     total = tp + tn + fp + fn
     if total == 0:
@@ -537,7 +532,7 @@ def compute_metrics(
     accuracy = (tp + tn) / total
     f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
 
-    metrics: Dict[str, float] = {"precision": float(precision), "recall": float(recall), "accuracy": float(accuracy), "f1": float(f1)}
+    metrics: dict[str, float] = {"precision": float(precision), "recall": float(recall), "accuracy": float(accuracy), "f1": float(f1)}
 
     if probs is not None and len(probs) == len(labels):
         try:
@@ -556,7 +551,7 @@ def compute_metrics(
     return metrics
 
 def check_promotion_gate(
-    metrics: Dict[str, float],
+    metrics: dict[str, float],
     max_ece: float = 0.08,
     min_accuracy: float = 0.85,
     ece_policy: str = "strict",
@@ -626,7 +621,7 @@ def run_governance_validation(governance, content, action_type, action_id, agent
 
 # ---------------------------- Persistence ----------------------------
 
-def save_model_and_metrics(model: Any, metrics: Dict[str, float], model_type: str, promoted: bool = False, base_dir: str = "models") -> Tuple[str, str]:
+def save_model_and_metrics(model: Any, metrics: dict[str, float], model_type: str, promoted: bool = False, base_dir: str = "models") -> tuple[str, str]:
     subdir = "current" if promoted else "candidates"
     dest_dir = Path(base_dir) / subdir
     dest_dir.mkdir(parents=True, exist_ok=True)
@@ -634,7 +629,7 @@ def save_model_and_metrics(model: Any, metrics: Dict[str, float], model_type: st
     model_path = dest_dir / f"{model_type}_model_{timestamp}.json"
     metrics_path = dest_dir / f"{model_type}_metrics_{timestamp}.json"
     # Defensive save: require model.save; else fallback to JSON stub
-    if hasattr(model, "save") and callable(getattr(model, "save")):
+    if hasattr(model, "save") and callable(model.save):
         model.save(str(model_path))
     else:
         with open(model_path, "w") as f:
@@ -650,16 +645,16 @@ def save_model_and_metrics(model: Any, metrics: Dict[str, float], model_type: st
 def export_model_metadata(
     model_path: str,
     model_type: str,
-    metrics: Dict[str, Any],
-    training_config: Dict[str, Any],
-    dataset_info: Dict[str, Any],
-    governance_summary: Optional[Dict[str, Any]] = None,
-    audit_merkle_root: Optional[str] = None,
-    drift_report_id: Optional[str] = None,
+    metrics: dict[str, Any],
+    training_config: dict[str, Any],
+    dataset_info: dict[str, Any],
+    governance_summary: dict[str, Any] | None = None,
+    audit_merkle_root: str | None = None,
+    drift_report_id: str | None = None,
     base_dir: str = "models"
 ) -> str:
     """Generate comprehensive model card with all training details"""
-    
+
     # Generate semantic version based on timestamp (MAJOR.MINOR.PATCH format)
     # MAJOR: Year since 2026
     # MINOR: Month
@@ -669,7 +664,7 @@ def export_model_metadata(
     minor = now.month
     patch = now.day * 100 + now.hour  # e.g., day 15 hour 14 = 1514
     model_version = f"{major}.{minor}.{patch}"
-    
+
     metadata = {
         "model_version": model_version,
         "model_type": model_type,
@@ -682,41 +677,41 @@ def export_model_metadata(
         "drift_report_id": drift_report_id,
         "model_path": model_path
     }
-    
+
     # Save metadata card
     metadata_dir = Path(base_dir) / "metadata"
     metadata_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Extract timestamp from model_path for consistent naming
     model_filename = Path(model_path).stem
     metadata_path = metadata_dir / f"{model_filename}_card.json"
-    
+
     with open(metadata_path, 'w') as f:
         json.dump(metadata, f, indent=2)
-    
+
     logging.info("Model card saved to %s", metadata_path)
     return str(metadata_path)
 
 
 def check_model_regression(
-    new_metrics: Dict[str, Any],
-    baseline_metrics: Dict[str, Any],
+    new_metrics: dict[str, Any],
+    baseline_metrics: dict[str, Any],
     threshold: float = 0.02
 ) -> bool:
     """Detect if new model is worse than baseline"""
-    
+
     # Critical metrics to check
     critical_metrics = ['accuracy', 'f1', 'ece']
-    
+
     has_regression = False
-    
+
     for metric_name in critical_metrics:
         if metric_name not in new_metrics or metric_name not in baseline_metrics:
             continue
-        
+
         new_value = new_metrics[metric_name]
         baseline_value = baseline_metrics[metric_name]
-        
+
         # For ECE, lower is better
         if metric_name == 'ece':
             if new_value > baseline_value + threshold:
@@ -733,13 +728,13 @@ def check_model_regression(
                     f"(-{baseline_value - new_value:.4f})"
                 )
                 has_regression = True
-    
+
     return has_regression
 
 
 # ---------------------------- Training Loop ----------------------------
 
-def _extract_label_and_prob(pred: Any) -> Tuple[int, Optional[float]]:
+def _extract_label_and_prob(pred: Any) -> tuple[int, float | None]:
     if isinstance(pred, dict):
         label = int(pred.get("label", 0))
         for k in ("confidence", "prob", "probability", "score"):
@@ -760,10 +755,10 @@ def train_single_model(
     merkle_anchor=None,
     drift_reporter=None,
     governance=None,
-    datasets_to_download: Optional[List[str]] = None,
+    datasets_to_download: list[str] | None = None,
     skip_download: bool = False,
-    batch_timestamp: Optional[str] = None
-) -> Dict[str, Any]:
+    batch_timestamp: str | None = None
+) -> dict[str, Any]:
     result = {
         'model_type': model_type,
         'success': False,
@@ -839,7 +834,7 @@ def train_single_model(
                             'decision': judgment.decision.value,
                             'violations': len(judgment.violations)
                         })
-                except Exception as e:
+                except Exception as e:  # noqa: PERF203
                     logging.warning("[%s] Error validating sample %d: %s", model_type, i, e)
             result['data_violations'] = len(governance_violations)
             if governance_violations:
@@ -858,7 +853,7 @@ def train_single_model(
             else:
                 logging.info("[%s] Governance validation passed for %d data samples", model_type, sample_size)
 
-        ModelClass, preprocess_fn = get_model_class(model_type)
+        ModelClass, preprocess_fn = get_model_class(model_type)  # noqa: N806
         logging.info("[%s] Preprocessing data...", model_type)
         processed_data = preprocess_fn(raw_data)
 
@@ -886,11 +881,11 @@ def train_single_model(
 
         model = ModelClass()
 
-        if not hasattr(model, "train") or not callable(getattr(model, "train")):
+        if not hasattr(model, "train") or not callable(model.train):
             result['error'] = "Model class missing train() method"
             logging.error("[%s] %s", model_type, result['error'])
             return result
-        if not hasattr(model, "predict") or not callable(getattr(model, "predict")):
+        if not hasattr(model, "predict") or not callable(model.predict):
             result['error'] = "Model class missing predict() method"
             logging.error("[%s] %s", model_type, result['error'])
             return result
@@ -910,8 +905,8 @@ def train_single_model(
                 'timestamp': training_end_time.isoformat()
             })
 
-        preds: List[int] = []
-        probs: List[Optional[float]] = []
+        preds: list[int] = []
+        probs: list[float | None] = []
         for sample in val_data:
             pred_raw = model.predict(sample['features'])
             label, prob = _extract_label_and_prob(pred_raw)
@@ -965,7 +960,7 @@ def train_single_model(
                             'decision': judgment.decision.value,
                             'violations': len(judgment.violations)
                         })
-                except Exception as e:
+                except Exception as e:  # noqa: PERF203
                     logging.warning("[%s] Error validating prediction %d: %s", model_type, i, e)
             result['prediction_violations'] = len(prediction_violations)
             if prediction_violations:
@@ -1039,14 +1034,14 @@ def train_single_model(
                 'promotion_min_accuracy': args.promotion_min_accuracy,
                 'promotion_max_ece': args.promotion_max_ece
             }
-            
+
             dataset_info = {
                 'source': 'synthetic' if args.no_download else 'kaggle',
                 'samples': len(raw_data),
                 'train_samples': len(train_data),
                 'val_samples': len(val_data)
             }
-            
+
             governance_summary = None
             if governance:
                 governance_summary = {
@@ -1054,16 +1049,16 @@ def train_single_model(
                     'data_violations': len(governance_violations),
                     'prediction_violations': len(prediction_violations)
                 }
-            
+
             audit_merkle_root = None
-            if merkle_anchor and hasattr(merkle_anchor, 'current_chunk'):
+            if merkle_anchor and hasattr(merkle_anchor, 'current_chunk'):  # noqa: SIM102
                 if merkle_anchor.current_chunk and hasattr(merkle_anchor.current_chunk, 'merkle_root'):
                     audit_merkle_root = merkle_anchor.current_chunk.merkle_root
-            
+
             drift_report_id = None
             if drift_reporter:
                 drift_report_id = cohort_id
-            
+
             metadata_path = export_model_metadata(
                 model_path=model_path,
                 model_type=model_type,
@@ -1263,7 +1258,7 @@ def main():
     )
 
     # Train
-    all_results: List[Dict[str, Any]] = []
+    all_results: list[dict[str, Any]] = []
     training_start_time = datetime.now(timezone.utc)
     batch_timestamp = training_start_time.strftime('%Y%m%d_%H%M%S')
 

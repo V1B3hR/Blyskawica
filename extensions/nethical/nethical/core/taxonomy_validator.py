@@ -8,11 +8,12 @@ This module implements:
 """
 
 import json
-from pathlib import Path
-from typing import Dict, Any, Optional
 from dataclasses import dataclass
 from datetime import datetime
-from jsonschema import validate, ValidationError
+from pathlib import Path
+from typing import Any
+
+from jsonschema import ValidationError, validate
 
 
 @dataclass
@@ -22,9 +23,9 @@ class TaxonomyVersion:
     version: str
     description: str
     created_at: datetime
-    dimensions: Dict[str, Any]
-    mapping: Dict[str, Any]
-    industry: Optional[str] = None
+    dimensions: dict[str, Any]
+    mapping: dict[str, Any]
+    industry: str | None = None
     deprecated: bool = False
     migration_notes: str = ""
 
@@ -35,7 +36,7 @@ class TaxonomyValidator:
     # Default schema hosting location (can be overridden)
     DEFAULT_SCHEMA_ID = "https://nethical.io/schemas/taxonomy/v1.0.0"
 
-    def __init__(self, schema_id: Optional[str] = None):
+    def __init__(self, schema_id: str | None = None):
         """Initialize taxonomy validator with schema.
 
         Args:
@@ -44,7 +45,7 @@ class TaxonomyValidator:
         self.schema_id = schema_id or self.DEFAULT_SCHEMA_ID
         self.schema = self._generate_json_schema()
 
-    def _generate_json_schema(self) -> Dict[str, Any]:
+    def _generate_json_schema(self) -> dict[str, Any]:
         """Generate JSON Schema for taxonomy validation.
 
         Returns:
@@ -124,7 +125,7 @@ class TaxonomyValidator:
             },
         }
 
-    def validate_taxonomy(self, taxonomy: Dict[str, Any]) -> Dict[str, Any]:
+    def validate_taxonomy(self, taxonomy: dict[str, Any]) -> dict[str, Any]:
         """Validate taxonomy against schema.
 
         Args:
@@ -150,7 +151,7 @@ class TaxonomyValidator:
         # Check that all mapping dimensions exist
         defined_dims = set(dimensions.keys())
         for vtype, scores in mapping.items():
-            used_dims = {k for k in scores.keys() if k != "description"}
+            used_dims = {k for k in scores.keys() if k != "description"}  # noqa: SIM118
             unknown = used_dims - defined_dims
             if unknown:
                 issues.append(f"Violation '{vtype}' references unknown dimensions: {unknown}")
@@ -162,7 +163,7 @@ class TaxonomyValidator:
         # Check for unused dimensions
         used_dims = set()
         for scores in mapping.values():
-            used_dims.update(k for k in scores.keys() if k != "description")
+            used_dims.update(k for k in scores.keys() if k != "description")  # noqa: SIM118
         unused = defined_dims - used_dims
         if unused:
             warnings.append(f"Unused dimensions: {unused}")
@@ -178,7 +179,7 @@ class TaxonomyValidator:
             },
         }
 
-    def export_schema(self, output_path: Optional[str] = None) -> str:
+    def export_schema(self, output_path: str | None = None) -> str:
         """Export taxonomy JSON schema.
 
         Args:
@@ -194,7 +195,7 @@ class TaxonomyValidator:
 
         return schema_str
 
-    def load_and_validate(self, taxonomy_path: str) -> Dict[str, Any]:
+    def load_and_validate(self, taxonomy_path: str) -> dict[str, Any]:
         """Load and validate taxonomy file.
 
         Args:
@@ -218,7 +219,7 @@ class IndustryTaxonomyManager:
         """
         self.base_taxonomy_path = Path(base_taxonomy_path)
         self.validator = TaxonomyValidator()
-        self.industry_taxonomies: Dict[str, Dict[str, Any]] = {}
+        self.industry_taxonomies: dict[str, dict[str, Any]] = {}
         self._load_industry_taxonomies()
 
     def _load_industry_taxonomies(self):
@@ -231,7 +232,7 @@ class IndustryTaxonomyManager:
                 industry = taxonomy.get("industry", "general")
                 self.industry_taxonomies[industry] = taxonomy
 
-    def get_taxonomy_for_industry(self, industry: str) -> Dict[str, Any]:
+    def get_taxonomy_for_industry(self, industry: str) -> dict[str, Any]:
         """Get taxonomy for specific industry.
 
         Args:
@@ -253,9 +254,9 @@ class IndustryTaxonomyManager:
         self,
         industry: str,
         base_version: str = "1.0",
-        additional_dimensions: Optional[Dict[str, Any]] = None,
-        additional_mappings: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        additional_dimensions: dict[str, Any] | None = None,
+        additional_mappings: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Create industry-specific taxonomy from base.
 
         Args:
@@ -288,7 +289,7 @@ class IndustryTaxonomyManager:
 
         return industry_taxonomy
 
-    def save_industry_taxonomy(self, taxonomy: Dict[str, Any], industry: str):
+    def save_industry_taxonomy(self, taxonomy: dict[str, Any], industry: str):
         """Save industry-specific taxonomy.
 
         Args:

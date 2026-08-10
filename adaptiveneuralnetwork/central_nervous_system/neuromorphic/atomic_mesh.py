@@ -9,14 +9,12 @@ Węzły:
   - RecyclerBall:     kula utylizacyjna dla anomalii
 """
 
+import math
+from enum import IntEnum
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import math
-from typing import Optional, List, Dict, Tuple
-from enum import IntEnum
-from dataclasses import dataclass, field
-
 
 # =============================================================================
 # PRIORYTET PAKIETU
@@ -86,7 +84,7 @@ class TransitNode(nn.Module):
             return DataPriority.LOW
         return DataPriority.NORMAL
 
-    def forward(self, signal: torch.Tensor) -> Tuple[torch.Tensor, DataPriority, torch.Tensor]:
+    def forward(self, signal: torch.Tensor) -> tuple[torch.Tensor, DataPriority, torch.Tensor]:
         """
         Przetwarza sygnal i zwraca:
         - przefiltrowany sygnal
@@ -126,7 +124,7 @@ class TransitNode(nn.Module):
         self.throughput += filtered.abs().mean().detach()
         return filtered, priority, route_weights
 
-    def get_stats(self) -> Dict:
+    def get_stats(self) -> dict:
         return {
             "node_id": self.node_id,
             "routed_fast": self.routed_fast,
@@ -179,7 +177,7 @@ class GrapheneMesh(nn.Module):
         self.aggregator = nn.Linear(dim, dim, bias=False)
 
         # Bufor anomalii (do RecyclerBall)
-        self.anomaly_buffer: List[torch.Tensor] = []
+        self.anomaly_buffer: list[torch.Tensor] = []
         self.max_anomaly_buffer = 16
 
     def _build_hexagonal_adjacency(self, n: int) -> torch.Tensor:
@@ -205,7 +203,7 @@ class GrapheneMesh(nn.Module):
                 adj[nb, i] = 1.0
         return adj
 
-    def forward(self, signal: torch.Tensor) -> Tuple[torch.Tensor, Dict]:
+    def forward(self, signal: torch.Tensor) -> tuple[torch.Tensor, dict]:
         """
         Przepuszcza sygnal przez siatke grafenowa.
 
@@ -271,7 +269,7 @@ class GrapheneMesh(nn.Module):
 
         return output, stats
 
-    def flush_anomalies(self) -> Optional[torch.Tensor]:
+    def flush_anomalies(self) -> torch.Tensor | None:
         """Zwraca zebrane anomalie do RecyclerBall i czysci bufor."""
         if not self.anomaly_buffer:
             return None
@@ -304,10 +302,10 @@ class RecyclerBall(nn.Module):
         )
 
         # Kolekcja anomalii
-        self.anomaly_log: List[Dict] = []
+        self.anomaly_log: list[dict] = []
         self.total_recycled = 0
 
-    def forward(self, anomaly_signal: torch.Tensor) -> Dict:
+    def forward(self, anomaly_signal: torch.Tensor) -> dict:
         """
         Przyjmuje anomalie, izoluje, loguje.
         Zwraca raport diagnostyczny (NIE sygnal do sieci).
@@ -339,7 +337,7 @@ class RecyclerBall(nn.Module):
         self.total_recycled += 1
         return report
 
-    def get_summary(self) -> Dict:
+    def get_summary(self) -> dict:
         if not self.anomaly_log:
             return {"total_recycled": 0, "avg_severity": 0.0}
         avg_sev = sum(r["severity"] for r in self.anomaly_log) / len(self.anomaly_log)
@@ -362,14 +360,14 @@ class NeuralAtom(nn.Module):
     Kazda przestrzen miedzy warstwami ma wlasna siatke wezlow.
     """
 
-    def __init__(self, atom_config: Dict):
+    def __init__(self, atom_config: dict):
         super().__init__()
         self.atom_id = atom_config.get("atom_id", "atom_0")
         self.dim = atom_config.get("dim", 16)
 
         # Import warstw z V5
         from adaptiveneuralnetwork.central_nervous_system.neuromorphic.layered_fusion_network import (
-            LayeredFusionNetwork
+            LayeredFusionNetwork,
         )
 
         # Fuzyjne jadro (serce + warstwy kul)
@@ -389,8 +387,8 @@ class NeuralAtom(nn.Module):
         # Kula utylizacyjna
         self.recycler = RecyclerBall(dim=32)
 
-    def forward(self, external_signal: Optional[torch.Tensor] = None,
-                time_steps: int = 3) -> Dict:
+    def forward(self, external_signal: torch.Tensor | None = None,
+                time_steps: int = 3) -> dict:
         """Pelny przebieg przez atom."""
         stats = {"atom_id": self.atom_id, "mesh_stats": []}
 
@@ -417,7 +415,7 @@ class NeuralAtom(nn.Module):
         stats["heart_metrics"] = history.get("heart_metrics", [])
 
         # 3. Anomalie z siatek miedzy warstwami (przekaz do recyclera)
-        for mesh, name in [(self.mesh_w0w1, "w0w1"), (self.mesh_w1w2, "w1w2")]:
+        for mesh, name in [(self.mesh_w0w1, "w0w1"), (self.mesh_w1w2, "w1w2")]:  # noqa: B007
             a = mesh.flush_anomalies()
             if a is not None:
                 self.recycler(a)
@@ -443,7 +441,7 @@ if __name__ == "__main__":
     for label, energy in [("Normalny", 1.0), ("High", 15.0), ("Atak", 500.0)]:
         sig = torch.randn(1, 16) * energy
         out, priority, route_w = node(sig)
-        print("  %-10s energia=%-8.1f priorytet=%-12s route=%s" % (
+        print("  %-10s energia=%-8.1f priorytet=%-12s route=%s" % (  # noqa: UP031
             label, energy, priority.name, route_w.detach().numpy().round(2)
         ))
 
@@ -454,9 +452,9 @@ if __name__ == "__main__":
     sig_attack = torch.randn(1, 16) * 500.0
     out_n, stats_n = mesh(sig_normal)
     out_a, stats_a = mesh(sig_attack)
-    print("  Normalny: fast=%d, normal=%d, quarantine=%d" % (
+    print("  Normalny: fast=%d, normal=%d, quarantine=%d" % (  # noqa: UP031
         stats_n["fast_count"], stats_n["normal_count"], stats_n["quarantine_count"]))
-    print("  Atak:     fast=%d, normal=%d, quarantine=%d, anomaly_buf=%d" % (
+    print("  Atak:     fast=%d, normal=%d, quarantine=%d, anomaly_buf=%d" % (  # noqa: UP031
         stats_a["fast_count"], stats_a["normal_count"],
         stats_a["quarantine_count"], stats_a["anomaly_buffer_size"]))
 
@@ -465,13 +463,14 @@ if __name__ == "__main__":
     recycler = RecyclerBall(dim=16)
     anomaly = torch.randn(1, 16) * 200.0
     report = recycler(anomaly)
-    print("  Energia: %.1f | Severity: %.3f | Akcja: %s" % (
+    print("  Energia: %.1f | Severity: %.3f | Akcja: %s" % (  # noqa: UP031
         report["energy"], report["severity"], report["action"]))
     print("  Summary:", recycler.get_summary())
 
     # --- Test 4: Pelny NeuralAtom ---
     print("\n[4] NeuralAtom — pelny cykl atomowy")
-    import sys, types
+    import sys
+    import types
 
     # Patch dla brakujacych modulow ekosystemu
     for mod in ['adaptiveneuralnetwork', 'adaptiveneuralnetwork.core',
@@ -494,7 +493,8 @@ if __name__ == "__main__":
     eco.CognitiveRCD = FakeRCD
 
     # Patch layered_fusion_network
-    import importlib.util, os
+    import importlib.util
+    import os
     base = os.path.dirname(os.path.abspath(__file__))
     spec = importlib.util.spec_from_file_location(
         'adaptiveneuralnetwork.central_nervous_system.neuromorphic.layered_fusion_network',
@@ -511,9 +511,9 @@ if __name__ == "__main__":
     # Spokojny sygnal
     sig = torch.randn(1, 16) * 0.8
     result = atom(external_signal=sig, time_steps=2)
-    print("  Atom: %s" % result["atom_id"])
+    print("  Atom: %s" % result["atom_id"])  # noqa: UP031
     print("  Recycler:", result["recycler_summary"])
     if result["heart_metrics"]:
         hm = result["heart_metrics"][-1]
-        print("  Serce energia: %.4f" % hm["heart_amplitude"])
-        print("  Fuzja:         %.4f" % hm["fusion_energy"])
+        print("  Serce energia: %.4f" % hm["heart_amplitude"])  # noqa: UP031
+        print("  Fuzja:         %.4f" % hm["fusion_energy"])  # noqa: UP031

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from typing import Generator
+from collections.abc import Generator
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
@@ -37,7 +37,7 @@ def get_db() -> Generator[Session, None, None]:
     
     Yields:
         Database session
-    """
+    """  # noqa: W293
     db = SessionLocal()
     try:
         yield db

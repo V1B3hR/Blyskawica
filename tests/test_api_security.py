@@ -6,12 +6,13 @@ Checks token authentication, path boundaries, restricted folders, and CORS confi
 import os
 import sys
 import unittest
+
 from fastapi.testclient import TestClient
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from blyskawica_app.backend.main import app, STARTUP_TOKEN
+from blyskawica_app.backend.main import STARTUP_TOKEN, app
 
 
 class TestAPISecurity(unittest.TestCase):
@@ -159,18 +160,18 @@ class TestAPISecurity(unittest.TestCase):
             "/api/permission_level?level=3",
             headers={"X-Blyskawica-Token": STARTUP_TOKEN}
         )
-        
+
         # Modifying core file via vibe_code triggers quarantine
         self.client.post(
             "/api/ide/vibe_code",
             headers={"X-Blyskawica-Token": STARTUP_TOKEN},
             data={"path": "welcome_v9.py", "content": "malicious content"}
         )
-        
+
         # Verify quarantine is active
         status_res = self.client.get("/api/permission_level")
         self.assertTrue(status_res.json()["quarantine_active"])
-        
+
         # Attempt standard file write to safe path - should be blocked due to quarantine!
         response = self.client.post(
             "/api/ide/vibe_code",
@@ -186,7 +187,7 @@ class TestAPISecurity(unittest.TestCase):
             data={"action": "create_folder", "args": '{"path": "C:/Projekty/test_folder"}'}
         )
         self.assertEqual(response.status_code, 403)
-        
+
         # Reset quarantine by resetting permission level
         self.client.post(
             "/api/permission_level?level=2",

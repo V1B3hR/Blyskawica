@@ -21,12 +21,10 @@ import secrets
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import Dict, List, Optional, Any
+from typing import Any
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes
-from cryptography.x509.oid import ExtensionOID
 
 __all__ = [
     "AuthCredentials",
@@ -57,12 +55,12 @@ class AuthCredentials:
     """Authentication credentials container"""
 
     user_id: str
-    certificate: Optional[bytes] = None
-    password: Optional[str] = None
-    mfa_code: Optional[str] = None
-    hardware_token: Optional[str] = None
-    ldap_credentials: Optional[Dict[str, str]] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    certificate: bytes | None = None
+    password: str | None = None
+    mfa_code: str | None = None
+    hardware_token: str | None = None
+    ldap_credentials: dict[str, str] | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -70,12 +68,12 @@ class AuthResult:
     """Authentication result"""
 
     authenticated: bool
-    user_id: Optional[str] = None
-    clearance_level: Optional[ClearanceLevel] = None
-    session_token: Optional[str] = None
-    error_message: Optional[str] = None
+    user_id: str | None = None
+    clearance_level: ClearanceLevel | None = None
+    session_token: str | None = None
+    error_message: str | None = None
     requires_mfa: bool = False
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def is_success(self) -> bool:
         """Check if authentication was successful"""
@@ -92,7 +90,7 @@ class PKICertificateValidator:
 
     def __init__(
         self,
-        trusted_ca_certs: Optional[List[bytes]] = None,
+        trusted_ca_certs: list[bytes] | None = None,
         enable_crl_check: bool = True,
         enable_ocsp: bool = True,
     ):
@@ -107,11 +105,11 @@ class PKICertificateValidator:
         self.trusted_ca_certs = trusted_ca_certs or []
         self.enable_crl_check = enable_crl_check
         self.enable_ocsp = enable_ocsp
-        self._crl_cache: Dict[str, Any] = {}
+        self._crl_cache: dict[str, Any] = {}
 
         log.info("PKI Certificate Validator initialized")
 
-    async def validate(self, certificate: Optional[bytes]) -> bool:
+    async def validate(self, certificate: bytes | None) -> bool:
         """
         Validate a PKI certificate
 
@@ -150,13 +148,13 @@ class PKICertificateValidator:
                 return False
 
             # Check certificate revocation status
-            if self.enable_crl_check:
+            if self.enable_crl_check:  # noqa: SIM102
                 if not await self._check_crl(cert):
                     log.error("Certificate revoked (CRL check)")
                     return False
 
             # Check OCSP status
-            if self.enable_ocsp:
+            if self.enable_ocsp:  # noqa: SIM102
                 if not await self._check_ocsp(cert):
                     log.error("Certificate revoked (OCSP check)")
                     return False
@@ -241,7 +239,7 @@ class PKICertificateValidator:
         )
         return True
 
-    def extract_user_info(self, certificate: bytes) -> Dict[str, str]:
+    def extract_user_info(self, certificate: bytes) -> dict[str, str]:
         """
         Extract user information from certificate.
 
@@ -291,11 +289,11 @@ class MultiFactorAuthEngine:
             require_mfa_for_critical: Require MFA for critical operations
         """
         self.require_mfa_for_critical = require_mfa_for_critical
-        self._user_mfa_settings: Dict[str, Dict[str, Any]] = {}
+        self._user_mfa_settings: dict[str, dict[str, Any]] = {}
 
         log.info("Multi-Factor Auth Engine initialized")
 
-    async def challenge(self, user_id: str, mfa_code: Optional[str] = None) -> bool:
+    async def challenge(self, user_id: str, mfa_code: str | None = None) -> bool:
         """
         Challenge user for MFA verification
 
@@ -350,7 +348,7 @@ class MultiFactorAuthEngine:
         log.info(f"Hardware token validation for user {user_id} (stub)")
         return len(token) > 0
 
-    def setup_mfa(self, user_id: str, method: str = "totp") -> Dict[str, Any]:
+    def setup_mfa(self, user_id: str, method: str = "totp") -> dict[str, Any]:
         """
         Setup MFA for a user
 
@@ -400,8 +398,8 @@ class SecureSessionManager:
         self.timeout = timeout
         self.require_reauth_for_critical = require_reauth_for_critical
         self.max_concurrent_sessions = max_concurrent_sessions
-        self._sessions: Dict[str, Dict[str, Any]] = {}
-        self._user_sessions: Dict[str, List[str]] = {}
+        self._sessions: dict[str, dict[str, Any]] = {}
+        self._user_sessions: dict[str, list[str]] = {}
 
         log.info(f"Session Manager initialized (timeout={timeout}s)")
 
@@ -409,7 +407,7 @@ class SecureSessionManager:
         self,
         user_id: str,
         clearance_level: ClearanceLevel,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> str:
         """
         Create a new session
@@ -449,7 +447,7 @@ class SecureSessionManager:
         log.info(f"Session created for user {user_id}")
         return session_token
 
-    def validate_session(self, session_token: str) -> Optional[Dict[str, Any]]:
+    def validate_session(self, session_token: str) -> dict[str, Any] | None:
         """
         Validate a session token
 
@@ -513,8 +511,8 @@ class LDAPConnector:
         self,
         server_url: str,
         base_dn: str,
-        bind_dn: Optional[str] = None,
-        bind_password: Optional[str] = None,
+        bind_dn: str | None = None,
+        bind_password: str | None = None,
     ):
         """
         Initialize LDAP connector
@@ -578,7 +576,7 @@ class LDAPConnector:
         # STUB: Simple length check - NOT SECURE FOR PRODUCTION
         return len(password) >= 8
 
-    async def get_user_groups(self, username: str) -> List[str]:
+    async def get_user_groups(self, username: str) -> list[str]:
         """
         Get user's group memberships.
 
@@ -634,10 +632,10 @@ class MilitaryGradeAuthProvider:
 
     def __init__(
         self,
-        pki_validator: Optional[PKICertificateValidator] = None,
-        mfa_engine: Optional[MultiFactorAuthEngine] = None,
-        session_manager: Optional[SecureSessionManager] = None,
-        ldap_connector: Optional[LDAPConnector] = None,
+        pki_validator: PKICertificateValidator | None = None,
+        mfa_engine: MultiFactorAuthEngine | None = None,
+        session_manager: SecureSessionManager | None = None,
+        ldap_connector: LDAPConnector | None = None,
     ):
         """
         Initialize authentication provider
@@ -654,7 +652,7 @@ class MilitaryGradeAuthProvider:
         self.ldap_connector = ldap_connector
 
         # Audit log storage
-        self._audit_log: List[Dict[str, Any]] = []
+        self._audit_log: list[dict[str, Any]] = []
 
         log.info("Military-Grade Auth Provider initialized")
 
@@ -763,7 +761,7 @@ class MilitaryGradeAuthProvider:
         # Default clearance level
         return ClearanceLevel.UNCLASSIFIED
 
-    def _get_auth_methods_used(self, credentials: AuthCredentials) -> List[str]:
+    def _get_auth_methods_used(self, credentials: AuthCredentials) -> list[str]:
         """Get list of authentication methods used"""
         methods = []
         if credentials.certificate:
@@ -786,9 +784,9 @@ class MilitaryGradeAuthProvider:
         self,
         user_id: str,
         event_type: str,
-        clearance_level: Optional[ClearanceLevel] = None,
-        error: Optional[str] = None,
-        duration: Optional[float] = None,
+        clearance_level: ClearanceLevel | None = None,
+        error: str | None = None,
+        duration: float | None = None,
     ) -> None:
         """Log authentication event for audit"""
         event = {
@@ -805,10 +803,10 @@ class MilitaryGradeAuthProvider:
 
     def get_audit_log(
         self,
-        user_id: Optional[str] = None,
-        event_type: Optional[str] = None,
+        user_id: str | None = None,
+        event_type: str | None = None,
         limit: int = 100,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Retrieve audit log entries
 

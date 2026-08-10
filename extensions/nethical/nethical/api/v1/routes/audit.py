@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import hashlib
 from datetime import datetime, timezone
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
@@ -27,26 +27,26 @@ router = APIRouter(prefix="/audit", tags=["Audit Logs"])
 
 class AuditLogResponse(BaseModel):
     """Audit log response model."""
-    
+
     id: int
     log_id: str
     event_type: str
-    agent_id: Optional[str]
-    action: Optional[str]
-    outcome: Optional[str]
-    threat_type: Optional[str]
-    threat_level: Optional[str]
-    risk_score: Optional[float]
+    agent_id: str | None
+    action: str | None
+    outcome: str | None
+    threat_type: str | None
+    threat_level: str | None
+    risk_score: float | None
     details: dict[str, Any]
-    merkle_hash: Optional[str]
-    previous_hash: Optional[str]
+    merkle_hash: str | None
+    previous_hash: str | None
     timestamp: str
     verified: bool
 
 
 class AuditLogListResponse(BaseModel):
     """Paginated list of audit logs."""
-    
+
     logs: list[AuditLogResponse]
     total: int
     page: int
@@ -56,16 +56,16 @@ class AuditLogListResponse(BaseModel):
 
 class MerkleNode(BaseModel):
     """Merkle tree node."""
-    
+
     hash: str
-    left: Optional[str] = None
-    right: Optional[str] = None
-    log_id: Optional[str] = None
+    left: str | None = None
+    right: str | None = None
+    log_id: str | None = None
 
 
 class MerkleTreeResponse(BaseModel):
     """Merkle tree structure response."""
-    
+
     root_hash: str
     total_logs: int
     tree_height: int
@@ -75,7 +75,7 @@ class MerkleTreeResponse(BaseModel):
 
 class VerifyMerkleProofRequest(BaseModel):
     """Request to verify Merkle proof."""
-    
+
     log_id: str = Field(..., description="Log ID to verify")
     merkle_path: list[tuple[str, str]] = Field(
         ...,
@@ -85,7 +85,7 @@ class VerifyMerkleProofRequest(BaseModel):
 
 class VerifyMerkleProofResponse(BaseModel):
     """Merkle proof verification response."""
-    
+
     log_id: str
     verified: bool
     root_hash: str
@@ -99,11 +99,11 @@ async def get_audit_logs(
     current_user: Annotated[User, Depends(require_auditor_or_admin)],
     page: int = Query(1, ge=1, description="Page number"),
     per_page: int = Query(50, ge=1, le=100, description="Items per page"),
-    agent_id: Optional[str] = Query(None, description="Filter by agent ID"),
-    event_type: Optional[str] = Query(None, description="Filter by event type"),
-    threat_level: Optional[str] = Query(None, description="Filter by threat level"),
-    from_date: Optional[str] = Query(None, description="Start date (ISO 8601)"),
-    to_date: Optional[str] = Query(None, description="End date (ISO 8601)"),
+    agent_id: str | None = Query(None, description="Filter by agent ID"),
+    event_type: str | None = Query(None, description="Filter by event type"),
+    threat_level: str | None = Query(None, description="Filter by threat level"),
+    from_date: str | None = Query(None, description="Start date (ISO 8601)"),
+    to_date: str | None = Query(None, description="End date (ISO 8601)"),
 ) -> AuditLogListResponse:
     """Get audit logs with pagination and filtering.
     
@@ -122,9 +122,9 @@ async def get_audit_logs(
         
     Returns:
         Paginated list of audit logs
-    """
+    """  # noqa: W293
     query = db.query(AuditLog)
-    
+
     # Apply filters
     if agent_id:
         query = query.filter(AuditLog.agent_id == agent_id)
@@ -137,7 +137,7 @@ async def get_audit_logs(
             from_dt = datetime.fromisoformat(from_date.replace('Z', '+00:00'))
             query = query.filter(AuditLog.timestamp >= from_dt)
         except ValueError:
-            raise HTTPException(
+            raise HTTPException(  # noqa: B904
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="Invalid from_date format. Use ISO 8601 format."
             )
@@ -146,17 +146,17 @@ async def get_audit_logs(
             to_dt = datetime.fromisoformat(to_date.replace('Z', '+00:00'))
             query = query.filter(AuditLog.timestamp <= to_dt)
         except ValueError:
-            raise HTTPException(
+            raise HTTPException(  # noqa: B904
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="Invalid to_date format. Use ISO 8601 format."
             )
-    
+
     # Get total count
     total = query.count()
-    
+
     # Apply pagination and ordering (most recent first)
     logs = query.order_by(AuditLog.timestamp.desc()).offset((page - 1) * per_page).limit(per_page).all()
-    
+
     return AuditLogListResponse(
         logs=[AuditLogResponse(**log.to_dict()) for log in logs],
         total=total,
@@ -186,14 +186,14 @@ async def get_audit_log(
         
     Raises:
         HTTPException: 404 if log not found
-    """
+    """  # noqa: W293
     log = db.query(AuditLog).filter(AuditLog.log_id == log_id).first()
     if not log:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Audit log '{log_id}' not found"
         )
-    
+
     return AuditLogResponse(**log.to_dict())
 
 
@@ -205,12 +205,12 @@ def build_merkle_tree(logs: list[AuditLog]) -> tuple[str, list[MerkleNode]]:
         
     Returns:
         Tuple of (root_hash, nodes)
-    """
+    """  # noqa: W293
     if not logs:
         return ("", [])
-    
+
     nodes = []
-    
+
     # Create leaf nodes
     leaf_hashes = []
     for log in logs:
@@ -219,7 +219,7 @@ def build_merkle_tree(logs: list[AuditLog]) -> tuple[str, list[MerkleNode]]:
         ).hexdigest()
         leaf_hashes.append(leaf_hash)
         nodes.append(MerkleNode(hash=leaf_hash, log_id=log.log_id))
-    
+
     # Build tree level by level
     current_level = leaf_hashes
     while len(current_level) > 1:
@@ -227,13 +227,13 @@ def build_merkle_tree(logs: list[AuditLog]) -> tuple[str, list[MerkleNode]]:
         for i in range(0, len(current_level), 2):
             left = current_level[i]
             right = current_level[i + 1] if i + 1 < len(current_level) else left
-            
+
             parent_hash = hashlib.sha256(f"{left}{right}".encode()).hexdigest()
             next_level.append(parent_hash)
             nodes.append(MerkleNode(hash=parent_hash, left=left, right=right))
-        
+
         current_level = next_level
-    
+
     root_hash = current_level[0] if current_level else ""
     return (root_hash, nodes)
 
@@ -255,19 +255,19 @@ async def get_merkle_tree(
         
     Returns:
         Merkle tree structure
-    """
+    """  # noqa: W293
     # Get recent logs
     logs = db.query(AuditLog).order_by(AuditLog.timestamp.desc()).limit(limit).all()
-    
+
     # Build Merkle tree
     root_hash, nodes = build_merkle_tree(logs)
-    
+
     # Calculate tree height
     tree_height = 0
     if logs:
         import math
         tree_height = math.ceil(math.log2(len(logs))) + 1
-    
+
     return MerkleTreeResponse(
         root_hash=root_hash,
         total_logs=len(logs),
@@ -297,7 +297,7 @@ async def verify_merkle_proof(
         
     Raises:
         HTTPException: 404 if log not found
-    """
+    """  # noqa: W293
     # Get the log
     log = db.query(AuditLog).filter(AuditLog.log_id == request.log_id).first()
     if not log:
@@ -305,26 +305,26 @@ async def verify_merkle_proof(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Audit log '{request.log_id}' not found"
         )
-    
+
     # Compute leaf hash
     current_hash = hashlib.sha256(
         f"{log.log_id}:{log.timestamp}:{log.event_type}".encode()
     ).hexdigest()
-    
+
     # Traverse Merkle path
     for sibling_hash, direction in request.merkle_path:
         if direction == "left":
             current_hash = hashlib.sha256(f"{sibling_hash}{current_hash}".encode()).hexdigest()
         else:
             current_hash = hashlib.sha256(f"{current_hash}{sibling_hash}".encode()).hexdigest()
-    
+
     # Get current root hash
     recent_logs = db.query(AuditLog).order_by(AuditLog.timestamp.desc()).limit(100).all()
     root_hash, _ = build_merkle_tree(recent_logs)
-    
+
     # Verify
     verified = current_hash == root_hash
-    
+
     return VerifyMerkleProofResponse(
         log_id=request.log_id,
         verified=verified,

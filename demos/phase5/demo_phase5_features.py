@@ -22,7 +22,7 @@ print("=" * 70)
 print("\n1. ☁️ Kubernetes Deployment")
 print("-" * 40)
 
-from adaptiveneuralnetwork.production.deployment import (
+from adaptiveneuralnetwork.production.deployment import (  # noqa: E402
     AutoScaler,
     DeploymentConfig,
     KubernetesDeployment,
@@ -69,7 +69,7 @@ print(f"✓ Scaling recommendation: {scaling_recommendation} replicas")
 print("\n2. 🚀 Model Serving Infrastructure")
 print("-" * 40)
 
-from adaptiveneuralnetwork.production.serving import ModelServer, ServingConfig
+from adaptiveneuralnetwork.production.serving import ModelServer, ServingConfig  # noqa: E402
 
 # Create serving configuration
 serving_config = ServingConfig(
@@ -97,7 +97,10 @@ print("✓ Model server ready for predictions")
 print("\n3. 💾 Database Integration")
 print("-" * 40)
 
-from adaptiveneuralnetwork.production.database import DatabaseConfig, HybridDatabaseManager
+from adaptiveneuralnetwork.production.database import (  # noqa: E402
+    DatabaseConfig,
+    HybridDatabaseManager,
+)
 
 # Create database configuration
 db_config = DatabaseConfig(
@@ -132,7 +135,7 @@ except Exception as e:
 print("\n4. 📨 Message Queue Integration")
 print("-" * 40)
 
-from adaptiveneuralnetwork.production.messaging import (
+from adaptiveneuralnetwork.production.messaging import (  # noqa: E402
     MessagingConfig,
     MetricsMessage,
     PredictionMessage,
@@ -166,7 +169,7 @@ print(f"  • Metrics message: {metrics_msg['type']}")
 print("\n5. 🔐 Authentication & Authorization")
 print("-" * 40)
 
-from adaptiveneuralnetwork.production.auth import AuthConfig, MultiAuthManager
+from adaptiveneuralnetwork.production.auth import AuthConfig, MultiAuthManager  # noqa: E402
 
 # Create auth configuration
 auth_config = AuthConfig(
@@ -209,8 +212,8 @@ print(f"✓ Password authentication: {'Success' if auth_result else 'Failed'}")
 print("\n6. 🔌 Plugin Architecture")
 print("-" * 40)
 
-from adaptiveneuralnetwork.api.config import AdaptiveConfig
-from adaptiveneuralnetwork.ecosystem.plugins import (
+from adaptiveneuralnetwork.api.config import AdaptiveConfig  # noqa: E402
+from adaptiveneuralnetwork.ecosystem.plugins import (  # noqa: E402
     ExampleEnhancementPlugin,
     ExampleMetricsPlugin,
     PluginManager,
@@ -243,7 +246,7 @@ print(f"✓ Plugin system operational with {len(status)} plugins")
 print("\n7. 📚 SDK Development")
 print("-" * 40)
 
-from adaptiveneuralnetwork.ecosystem.sdk import AdaptiveNeuralNetworkSDK, SDKConfig
+from adaptiveneuralnetwork.ecosystem.sdk import AdaptiveNeuralNetworkSDK, SDKConfig  # noqa: E402
 
 # Create SDK configuration
 sdk_config = SDKConfig(
@@ -268,8 +271,11 @@ print("✓ Batch predictor created for efficient processing")
 print("\n8. 🔗 Framework Integrations")
 print("-" * 40)
 
-from adaptiveneuralnetwork.api.model import AdaptiveModel
-from adaptiveneuralnetwork.ecosystem.integrations import PyTorchIntegration, TensorFlowIntegration
+from adaptiveneuralnetwork.api.model import AdaptiveModel  # noqa: E402
+from adaptiveneuralnetwork.ecosystem.integrations import (  # noqa: E402
+    PyTorchIntegration,
+    TensorFlowIntegration,
+)
 
 # Create sample model
 model = AdaptiveModel(config)
@@ -308,7 +314,10 @@ except ImportError:
 print("\n9. 👥 Community Contribution System")
 print("-" * 40)
 
-from adaptiveneuralnetwork.ecosystem.contrib import ContributionManager, ContributionType
+from adaptiveneuralnetwork.ecosystem.contrib import (  # noqa: E402
+    ContributionManager,
+    ContributionType,
+)
 
 # Initialize contribution manager
 with tempfile.TemporaryDirectory() as temp_dir:

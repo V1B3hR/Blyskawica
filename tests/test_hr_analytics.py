@@ -18,7 +18,11 @@ from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from adaptiveneuralnetwork.scripts.runsimulation import load_hr_analytics_data, run_hr_analytics_training, save_training_artifacts
+from adaptiveneuralnetwork.scripts.runsimulation import (
+    load_hr_analytics_data,
+    run_hr_analytics_training,
+    save_training_artifacts,
+)
 
 
 class TestHRAnalytics(unittest.TestCase):

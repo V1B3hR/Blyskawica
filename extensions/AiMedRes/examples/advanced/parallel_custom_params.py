@@ -20,15 +20,15 @@ def run_demo():
     print()
     print("is fully functional and working correctly.")
     print()
-    
+
     # Change to repo root
     repo_root = Path(__file__).parent
     import os
     os.chdir(repo_root)
-    
+
     print("Running command with dry-run flag to show what would execute...")
     print()
-    
+
     cmd = [
         sys.executable, "run_all_training.py",
         "--parallel",
@@ -38,14 +38,14 @@ def run_demo():
         "--dry-run",
         "--only", "als", "alzheimers", "parkinsons"  # Limit to 3 jobs for demo
     ]
-    
+
     print(f"Command: {' '.join(cmd)}")
     print()
     print("=" * 80)
-    
+
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
     output = result.stdout + result.stderr
-    
+
     # Print relevant output
     for line in output.split('\n'):
         # Print important lines
@@ -54,10 +54,10 @@ def run_demo():
             '📊', '✅', '⚠️', 'epochs 80', 'folds 5'
         ]):
             print(line)
-    
+
     print()
     print("=" * 80)
-    
+
     if result.returncode == 0:
         print("\n✅ SUCCESS: Demonstration completed successfully!")
         print("\nKey features validated:")

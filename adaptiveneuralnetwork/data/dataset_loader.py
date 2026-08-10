@@ -6,18 +6,21 @@ Provides facilities to:
 3. Integrate PyTorch training with Elastic Weight Consolidation (EWC) to mitigate catastrophic forgetting.
 """
 
-import os
 import json
+import os
+
 import numpy as np
+
 try:
     import pandas as pd
     _HAS_PANDAS = True
 except (ImportError, AttributeError):
     _HAS_PANDAS = False
+from typing import Any
+
 import torch
 import torch.nn as nn
-from torch.utils.data import Dataset, DataLoader
-from typing import Union, List, Dict, Any, Tuple
+from torch.utils.data import DataLoader, Dataset
 
 # Import the SynapticConsolidation mechanism from continual learning
 from adaptiveneuralnetwork.applications.continual_learning import SynapticConsolidation
@@ -25,7 +28,7 @@ from adaptiveneuralnetwork.applications.continual_learning import SynapticConsol
 # Detect Parquet reading capability via pyarrow
 _HAS_PYARROW = False
 try:
-    import pyarrow
+    import pyarrow  # noqa: F401
     _HAS_PYARROW = True
 except ImportError:
     pass
@@ -36,15 +39,15 @@ class DatasetLoader:
     Utility loader for reading datasets in JSON, JSONL, and Parquet formats.
     """
     @staticmethod
-    def load_file(file_path: str) -> List[Dict[str, Any]]:
+    def load_file(file_path: str) -> list[dict[str, Any]]:
         """
         Loads a file (JSON, JSONL, or Parquet) and returns it as a list of dictionaries (records).
         """
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"File not found: {file_path}")
-            
+
         ext = os.path.splitext(file_path)[1].lower()
-        
+
         if ext == '.parquet':
             if not _HAS_PANDAS:
                 raise ImportError("Pandas package is required to read Parquet files, but it is currently unavailable or incompatible on this system.")
@@ -52,17 +55,17 @@ class DatasetLoader:
                 raise ImportError("PyArrow package is required to read Parquet files. Please install pyarrow.")
             df = pd.read_parquet(file_path)
             return df.to_dict('records')
-            
+
         elif ext == '.jsonl':
             samples = []
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding='utf-8') as f:
                 for line in f:
                     if line.strip():
                         samples.append(json.loads(line))
             return samples
-            
+
         elif ext == '.json':
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding='utf-8') as f:
                 data = json.load(f)
             if isinstance(data, list):
                 return data
@@ -80,15 +83,15 @@ class ContinuousLearningDataset(Dataset):
     Converts list of dictionaries containing features and targets into PyTorch tensors.
     """
     def __init__(
-        self, 
-        samples: List[Dict[str, Any]], 
-        feature_keys: List[str] = None, 
-        target_key: str = None, 
+        self,
+        samples: list[dict[str, Any]],
+        feature_keys: list[str] = None,
+        target_key: str = None,
         device: str = None
     ):
         self.samples = samples
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
-        
+
         if not samples:
             self.features = torch.empty((0, 1), device=self.device)
             self.targets = torch.empty(0, dtype=torch.long, device=self.device)
@@ -97,7 +100,7 @@ class ContinuousLearningDataset(Dataset):
             return
 
         first_sample = samples[0]
-        
+
         # Determine target key if not provided
         if target_key is None:
             for k in ['label', 'target', 'class', 'Attrition', 'y']:
@@ -110,7 +113,7 @@ class ContinuousLearningDataset(Dataset):
         # Determine feature keys (exclude non-numeric and the target key)
         if feature_keys is None:
             feature_keys = [
-                k for k, v in first_sample.items() 
+                k for k, v in first_sample.items()
                 if k != target_key and isinstance(v, (int, float, bool, np.number))
             ]
 
@@ -119,12 +122,12 @@ class ContinuousLearningDataset(Dataset):
 
         features_list = []
         targets_list = []
-        
+
         for sample in samples:
             # Vector of features
             feat_vec = [float(sample.get(k, 0.0)) for k in self.feature_keys]
             features_list.append(feat_vec)
-            
+
             # Target labels mapping
             val = sample.get(self.target_key, 0)
             if isinstance(val, str):
@@ -138,7 +141,7 @@ class ContinuousLearningDataset(Dataset):
     def __len__(self) -> int:
         return len(self.samples)
 
-    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
+    def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
         return self.features[idx], self.targets[idx]
 
 
@@ -152,7 +155,7 @@ class EWCTrainer:
         self.ewc_strength = ewc_strength
         self.device = next(model.parameters()).device
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
-        
+
         # Instantiate SynapticConsolidation
         self.consolidation = SynapticConsolidation(self.model)
 
@@ -162,31 +165,31 @@ class EWCTrainer:
         """
         self.model.train()
         total_loss = 0.0
-        
+
         if criterion is None:
             criterion = nn.CrossEntropyLoss()
-            
+
         for batch_data, batch_targets in data_loader:
             self.optimizer.zero_grad()
-            
+
             # Map batch to target device
             x = batch_data.to(self.device)
             y = batch_targets.to(self.device)
-            
+
             outputs = self.model(x)
             task_loss = criterion(outputs, y)
-            
+
             # Compute EWC consolidation loss
             ewc_loss = self.consolidation.consolidation_loss(self.ewc_strength)
-            
+
             # Combined Loss
             loss = task_loss + ewc_loss
-            
+
             loss.backward()
             self.optimizer.step()
-            
+
             total_loss += loss.item()
-            
+
         return total_loss / len(data_loader) if len(data_loader) > 0 else 0.0
 
     def consolidate_task(self, data_loader: DataLoader, num_samples: int = 1000):

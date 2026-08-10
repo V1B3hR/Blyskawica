@@ -124,7 +124,7 @@ class AnomalyDetector(BaseSensor):
     def _monitor_anomalies(self):
         """Internal monitoring loop"""
         # Try to start Zeek if available
-        zeek_available = self._start_zeek()
+        zeek_available = self._start_zeek()  # noqa: F841
 
         while not self._stop_flag:
             try:

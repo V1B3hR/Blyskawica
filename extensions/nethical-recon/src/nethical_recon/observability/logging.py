@@ -7,7 +7,7 @@ for audit, security, and operational concerns.
 
 import logging
 import sys
-from typing import Any, Dict, Optional
+from typing import Any
 
 import structlog
 from structlog.types import EventDict, Processor
@@ -38,7 +38,7 @@ def add_log_level(logger: Any, method_name: str, event_dict: EventDict) -> Event
     return event_dict
 
 
-def configure_logging(level: str = "INFO", json_logs: bool = True, output_file: Optional[str] = None) -> None:
+def configure_logging(level: str = "INFO", json_logs: bool = True, output_file: str | None = None) -> None:
     """
     Configure structured logging for the application.
 

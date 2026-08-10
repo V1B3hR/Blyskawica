@@ -11,7 +11,7 @@ Advanced evolutionary extension of Network for
 Usage:
     python -m core.evolving_adaptive_clock [--seed INT] [--generations INT] [--pop_size INT]
 
-"""
+"""  # noqa: W291
 
 import argparse
 import copy
@@ -167,7 +167,10 @@ class TunedAdaptiveFieldNetwork:
 
         # Import time series tracking function
         try:
-            from adaptiveneuralnetwork.central_nervous_system.time_series_tracker import TimeSeriesTracker, track_node_automatically
+            from adaptiveneuralnetwork.central_nervous_system.time_series_tracker import (
+                TimeSeriesTracker,
+                track_node_automatically,  # noqa: F401
+            )
         except ImportError:
             logger.warning("Could not import time series tracker")
             enable_time_series = False
@@ -257,7 +260,9 @@ class TunedAdaptiveFieldNetwork:
             # Record time series data
             if self.enable_time_series:
                 try:
-                    from adaptiveneuralnetwork.central_nervous_system.time_series_tracker import track_node_automatically
+                    from adaptiveneuralnetwork.central_nervous_system.time_series_tracker import (
+                        track_node_automatically,
+                    )
                     track_node_automatically(self.time_series_tracker, node, self.time)
                 except (ImportError, NameError) as e:
                     logger.warning(f"Could not track node data: {e}")
@@ -286,7 +291,7 @@ class TunedAdaptiveFieldNetwork:
         """Apply external signal changes to node state variables"""
         from adaptiveneuralnetwork.api_integration.signal_adapter import StateVariable
 
-        for signal_source, changes in external_signals.items():
+        for signal_source, changes in external_signals.items():  # noqa: B007
             for state_var, value in changes.items():
                 try:
                     if state_var == StateVariable.ENERGY:
@@ -427,7 +432,7 @@ class TunedAdaptiveFieldNetwork:
 
         # Communication activity
         plt.subplot(2, 2, 4)
-        figure = self.time_series_tracker.compare_nodes(node_ids, "communication_count", time_range_hours)
+        figure = self.time_series_tracker.compare_nodes(node_ids, "communication_count", time_range_hours)  # noqa: F841
 
         plt.tight_layout()
 
@@ -447,7 +452,9 @@ class TunedAdaptiveFieldNetwork:
 
         if self.enable_time_series:
             # Export time series data for all nodes
-            from adaptiveneuralnetwork.central_nervous_system.time_series_tracker import TimeSeriesQuery
+            from adaptiveneuralnetwork.central_nervous_system.time_series_tracker import (
+                TimeSeriesQuery,
+            )
 
             query = TimeSeriesQuery(
                 node_ids=[node.node_id for node in self.nodes],
@@ -652,7 +659,7 @@ def mutate(genome: dict[str, Any], mutation_rate: float = 0.15, mutation_strengt
                     g["per_cell"].append(copy.deepcopy(random.choice(g["per_cell"])))
             else:
                 g["per_cell"] = g["per_cell"][:new_n]
-    for i, per in enumerate(g["per_cell"]):
+    for i, per in enumerate(g["per_cell"]):  # noqa: B007
         if random.random() < mutation_rate:
             per["calm"] = float(max(0.05, per.get("calm", 1.0) * np.random.uniform(1 - mutation_strength, 1 + mutation_strength)))
         if random.random() < mutation_rate:
@@ -733,7 +740,7 @@ class EvolutionEngine:
         time_manager = get_time_manager()
         time_manager.reset()  # Reset for clean evaluation
 
-        for t in range(ticks):
+        for t in range(ticks):  # noqa: B007
             stimuli = list(np.random.uniform(0.0, 9.0, size=network.num_cells))
             network.network_tick(stimuli)
 
@@ -775,7 +782,7 @@ class EvolutionEngine:
                     s = sum(obj[m] for m in pareto_metrics)
                     scores.append((s, idx))
                 scores_sorted = sorted(scores, key=lambda x: x[0], reverse=True)
-                for s, idx in scores_sorted:
+                for s, idx in scores_sorted:  # noqa: B007
                     if idx not in survivors:
                         survivors.append(idx)
                     if len(survivors) >= self.survivor_count:
@@ -817,7 +824,7 @@ class EvolutionEngine:
                 injections = int(np.ceil((self.diversity_threshold - div) / (self.diversity_threshold + 1e-9) * self.pop_size))
                 injections = max(1, injections)
                 logging.info(f"Low diversity ({div:.4f}) -> injecting {injections} random genomes.")
-                for i in range(injections):
+                for i in range(injections):  # noqa: B007
                     new_population[random.randrange(len(new_population))] = random_genome(self.min_cells, self.max_cells)
             self.population_genomes = new_population
             self.population_networks = [AdaptiveClockNetwork(g) for g in self.population_genomes]
@@ -857,8 +864,8 @@ def main():
         random_seed=args.seed,
     )
 
-    history = engine.run()
-    final_scores = []
+    history = engine.run()  # noqa: F841
+    final_scores = []  # noqa: F841
     final_networks = [AdaptiveClockNetwork(g, runtime_adapt=False) for g in engine.population_genomes]
     engine_eval_results = []
     for i, net in enumerate(final_networks):

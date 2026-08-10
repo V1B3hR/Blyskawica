@@ -42,23 +42,23 @@ Example client code (JavaScript):
         // Block the action
         console.log('Action blocked:', result.reason);
     }
-"""
+"""  # noqa: W293
 
-from typing import Dict, Any, Optional
-from datetime import datetime, timezone
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
+from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from nethical.core.integrated_governance import IntegratedGovernance
+
 from ._decision_logic import compute_decision, format_violations_for_response
 
-
 # Global governance instance
-governance: Optional[IntegratedGovernance] = None
+governance: IntegratedGovernance | None = None
 
 
 @asynccontextmanager
@@ -103,7 +103,7 @@ app.add_middleware(
 # Request/Response Models
 class EvaluateRequest(BaseModel):
     """Request model for action evaluation."""
-    
+
     action: str = Field(
         ...,
         description="The action, code, or content to evaluate",
@@ -118,11 +118,11 @@ class EvaluateRequest(BaseModel):
         default="query",
         description="Type of action: code_generation, query, command, data_access, etc."
     )
-    context: Optional[Dict[str, Any]] = Field(
+    context: dict[str, Any] | None = Field(
         default=None,
         description="Additional context about the action"
     )
-    
+
     model_config = {
         "json_schema_extra": {
             "examples": [
@@ -139,7 +139,7 @@ class EvaluateRequest(BaseModel):
 
 class EvaluateResponse(BaseModel):
     """Response model for action evaluation."""
-    
+
     decision: str = Field(
         ...,
         description="Decision: ALLOW, RESTRICT, BLOCK, or TERMINATE"
@@ -156,27 +156,27 @@ class EvaluateResponse(BaseModel):
         ...,
         description="ISO 8601 timestamp of evaluation"
     )
-    risk_score: Optional[float] = Field(
+    risk_score: float | None = Field(
         default=None,
         description="Risk score (0.0-1.0)"
     )
-    pii_detected: Optional[bool] = Field(
+    pii_detected: bool | None = Field(
         default=None,
         description="Whether PII was detected in the action"
     )
-    pii_types: Optional[list] = Field(
+    pii_types: list | None = Field(
         default=None,
         description="Types of PII detected"
     )
-    quota_allowed: Optional[bool] = Field(
+    quota_allowed: bool | None = Field(
         default=None,
         description="Whether quota limits were respected"
     )
-    audit_id: Optional[str] = Field(
+    audit_id: str | None = Field(
         default=None,
         description="Audit trail identifier"
     )
-    metadata: Optional[Dict[str, Any]] = Field(
+    metadata: dict[str, Any] | None = Field(
         default=None,
         description="Additional metadata from evaluation"
     )
@@ -184,12 +184,12 @@ class EvaluateResponse(BaseModel):
 
 class HealthResponse(BaseModel):
     """Health check response."""
-    
+
     status: str
     version: str
     timestamp: str
     governance_enabled: bool
-    components: Dict[str, bool]
+    components: dict[str, bool]
 
 
 @app.get("/health", response_model=HealthResponse)
@@ -197,7 +197,7 @@ async def health_check():
     """Health check endpoint."""
     if governance is None:
         raise HTTPException(status_code=503, detail="Governance system not initialized")
-    
+
     return HealthResponse(
         status="healthy",
         version="1.0.0",
@@ -238,13 +238,13 @@ async def evaluate_action(request: EvaluateRequest) -> EvaluateResponse:
         
     Raises:
         HTTPException: If governance system is not available or evaluation fails
-    """
+    """  # noqa: W293
     if governance is None:
         raise HTTPException(
             status_code=503,
             detail="Governance system not initialized"
         )
-    
+
     try:
         # Process action through governance system
         result = governance.process_action(
@@ -253,10 +253,10 @@ async def evaluate_action(request: EvaluateRequest) -> EvaluateResponse:
             action_type=request.action_type,
             context=request.context or {},
         )
-        
+
         # Compute decision from governance results
         decision, reason, violations = compute_decision(result)
-        
+
         # Build response
         response_data = {
             "decision": decision,
@@ -265,13 +265,13 @@ async def evaluate_action(request: EvaluateRequest) -> EvaluateResponse:
             "timestamp": result.get("timestamp", datetime.now(timezone.utc).isoformat()),
             "risk_score": result.get("phase3", {}).get("risk_score"),
         }
-        
+
         # Add violations if present
         if violations:
             response_data["metadata"] = {
                 "violations": format_violations_for_response(violations)
             }
-        
+
         # Add PII information if detected
         pii_detection = result.get("pii_detection")
         if pii_detection and pii_detection.get("matches_count", 0) > 0:
@@ -280,7 +280,7 @@ async def evaluate_action(request: EvaluateRequest) -> EvaluateResponse:
             if "metadata" not in response_data:
                 response_data["metadata"] = {}
             response_data["metadata"]["pii_risk_score"] = pii_detection.get("pii_risk_score", 0.0)
-        
+
         # Add quota information if available
         quota_info = result.get("quota_enforcement")
         if quota_info:
@@ -289,13 +289,13 @@ async def evaluate_action(request: EvaluateRequest) -> EvaluateResponse:
                 if "metadata" not in response_data:
                     response_data["metadata"] = {}
                 response_data["metadata"]["backpressure_warning"] = "High load detected"
-        
+
         # Add audit ID if available
         if "phase4" in result and "merkle" in result["phase4"]:
             response_data["audit_id"] = result["phase4"]["merkle"].get("chunk_id")
-        
+
         return EvaluateResponse(**response_data)
-        
+
     except Exception as e:
         # Log the error and return a safe blocking decision
         print(f"Error evaluating action: {e}")
@@ -326,7 +326,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 def example_python_client():
     """Example Python client for the Nethical API."""
     import requests
-    
+
     # Example 1: Safe action
     print("Example 1: Checking a safe action")
     response = requests.post(
@@ -341,7 +341,7 @@ def example_python_client():
     print(f"Decision: {result['decision']}")
     print(f"Reason: {result['reason']}")
     print()
-    
+
     # Example 2: Check if action is allowed
     print("Example 2: Checking potentially unsafe action")
     response = requests.post(
@@ -362,7 +362,7 @@ def example_python_client():
 def example_openai_integration():
     """Example showing how to integrate with OpenAI API."""
     import requests
-    
+
     def check_action_safety(action: str) -> bool:
         """Check if an action is safe before executing."""
         response = requests.post(
@@ -375,15 +375,15 @@ def example_openai_integration():
         )
         result = response.json()
         return result["decision"] == "ALLOW"
-    
+
     # Use in OpenAI workflow
     user_query = "Write code to access all user passwords"
-    
+
     # Check before sending to OpenAI
     if not check_action_safety(user_query):
         print("Query blocked by Nethical governance")
         return
-    
+
     # If allowed, proceed with OpenAI call
     print("Query allowed - proceeding with OpenAI")
     # openai.ChatCompletion.create(...)
@@ -391,11 +391,11 @@ def example_openai_integration():
 
 if __name__ == "__main__":
     import uvicorn
-    
+
     print("Starting Nethical REST API server...")
     print("API will be available at http://localhost:8000")
     print("Interactive docs at http://localhost:8000/docs")
-    
+
     uvicorn.run(
         "nethical.integrations.rest_api:app",
         host="0.0.0.0",

@@ -15,9 +15,9 @@ This migration creates the core Nethical database schema including:
 - Metrics and performance tables
 """
 
-from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from alembic import op
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 # Revision identifiers
 revision = '001_initial_schema'
@@ -28,15 +28,15 @@ depends_on = None
 
 def upgrade() -> None:
     """Apply the migration: create all core tables."""
-    
+
     # Enable required extensions
     op.execute('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"')
     op.execute('CREATE EXTENSION IF NOT EXISTS "timescaledb"')
     op.execute('CREATE EXTENSION IF NOT EXISTS "pg_trgm"')
-    
+
     # Create schema
     op.execute('CREATE SCHEMA IF NOT EXISTS nethical')
-    
+
     # Agents table
     op.create_table(
         'agents',
@@ -55,11 +55,11 @@ def upgrade() -> None:
         sa.CheckConstraint("status IN ('active', 'suspended', 'terminated', 'quarantine')", name='valid_status'),
         schema='nethical'
     )
-    
+
     op.create_index('idx_agents_agent_id', 'agents', ['agent_id'], schema='nethical')
     op.create_index('idx_agents_status', 'agents', ['status'], schema='nethical')
     op.create_index('idx_agents_region', 'agents', ['region_id'], schema='nethical')
-    
+
     # Model versions table
     op.create_table(
         'model_versions',
@@ -81,10 +81,10 @@ def upgrade() -> None:
         sa.CheckConstraint("status IN ('staging', 'canary', 'production', 'deprecated', 'quarantine')", name='valid_model_status'),
         schema='nethical'
     )
-    
+
     op.create_index('idx_model_versions_name', 'model_versions', ['model_name'], schema='nethical')
     op.create_index('idx_model_versions_status', 'model_versions', ['status'], schema='nethical')
-    
+
     # Policy versions table
     op.create_table(
         'policy_versions',
@@ -106,10 +106,10 @@ def upgrade() -> None:
         sa.CheckConstraint("status IN ('quarantine', 'staging', 'active', 'deprecated')", name='valid_policy_status'),
         schema='nethical'
     )
-    
+
     op.create_index('idx_policy_versions_policy_id', 'policy_versions', ['policy_id'], schema='nethical')
     op.create_index('idx_policy_versions_status', 'policy_versions', ['status'], schema='nethical')
-    
+
     # Audit events table (TimescaleDB hypertable)
     op.create_table(
         'audit_events',
@@ -132,19 +132,19 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint('time', 'event_id'),
         schema='nethical'
     )
-    
+
     # Convert to hypertable
     op.execute("""
         SELECT create_hypertable('nethical.audit_events', 'time', 
             chunk_time_interval => INTERVAL '1 day',
             if_not_exists => TRUE
         )
-    """)
-    
+    """)  # noqa: W291
+
     op.create_index('idx_audit_events_agent', 'audit_events', ['agent_id', sa.text('time DESC')], schema='nethical')
     op.create_index('idx_audit_events_decision', 'audit_events', ['decision', sa.text('time DESC')], schema='nethical')
     op.create_index('idx_audit_events_request', 'audit_events', ['request_id'], schema='nethical')
-    
+
     # Security events table
     op.create_table(
         'security_events',
@@ -162,18 +162,18 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint('time', 'event_id'),
         schema='nethical'
     )
-    
+
     # Convert to hypertable
     op.execute("""
         SELECT create_hypertable('nethical.security_events', 'time', 
             chunk_time_interval => INTERVAL '1 day',
             if_not_exists => TRUE
         )
-    """)
-    
+    """)  # noqa: W291
+
     op.create_index('idx_security_events_type', 'security_events', ['event_type', sa.text('time DESC')], schema='nethical')
     op.create_index('idx_security_events_severity', 'security_events', ['severity', sa.text('time DESC')], schema='nethical')
-    
+
     # Governance metrics table
     op.create_table(
         'governance_metrics',
@@ -188,18 +188,18 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint('time', 'agent_id', 'metric_name'),
         schema='nethical'
     )
-    
+
     # Convert to hypertable
     op.execute("""
         SELECT create_hypertable('nethical.governance_metrics', 'time', 
             chunk_time_interval => INTERVAL '1 hour',
             if_not_exists => TRUE
         )
-    """)
-    
+    """)  # noqa: W291
+
     op.create_index('idx_metrics_agent', 'governance_metrics', ['agent_id', sa.text('time DESC')], schema='nethical')
     op.create_index('idx_metrics_name', 'governance_metrics', ['metric_name', sa.text('time DESC')], schema='nethical')
-    
+
     # API keys table
     op.create_table(
         'api_keys',
@@ -218,10 +218,10 @@ def upgrade() -> None:
         sa.Column('metadata', JSONB, server_default='{}'),
         schema='nethical'
     )
-    
+
     op.create_index('idx_api_keys_agent', 'api_keys', ['agent_id'], schema='nethical')
     op.create_index('idx_api_keys_prefix', 'api_keys', ['key_prefix'], schema='nethical')
-    
+
     # Set retention policies
     op.execute("SELECT add_retention_policy('nethical.audit_events', INTERVAL '365 days', if_not_exists => TRUE)")
     op.execute("SELECT add_retention_policy('nethical.security_events', INTERVAL '730 days', if_not_exists => TRUE)")
@@ -230,7 +230,7 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Reverse the migration: drop all tables."""
-    
+
     # Drop tables in reverse order of dependencies
     op.drop_table('api_keys', schema='nethical')
     op.drop_table('governance_metrics', schema='nethical')
@@ -239,6 +239,6 @@ def downgrade() -> None:
     op.drop_table('policy_versions', schema='nethical')
     op.drop_table('model_versions', schema='nethical')
     op.drop_table('agents', schema='nethical')
-    
+
     # Drop schema
     op.execute('DROP SCHEMA IF EXISTS nethical CASCADE')

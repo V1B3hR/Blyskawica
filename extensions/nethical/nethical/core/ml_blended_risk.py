@@ -8,11 +8,11 @@ This module implements:
 - FP delta tracking and gating
 """
 
+import json
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime, timezone
 from enum import Enum
-import json
+from typing import Any
 
 
 class RiskZone(str, Enum):
@@ -37,8 +37,8 @@ class BlendedDecision:
     rule_classification: str
 
     # ML prediction
-    ml_risk_score: Optional[float] = None
-    ml_confidence: Optional[float] = None
+    ml_risk_score: float | None = None
+    ml_confidence: float | None = None
 
     # Blended outcome
     blended_risk_score: float = 0.0
@@ -57,9 +57,9 @@ class BlendedDecision:
 
     # Audit metadata
     explanation: str = ""
-    features: Dict[str, Any] = field(default_factory=dict)
+    features: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for logging."""
         return {
             "decision_id": self.decision_id,
@@ -156,7 +156,7 @@ class BlendingMetrics:
             return 0.0
         return (self.detection_improvement / self.baseline_true_positives) * 100
 
-    def gate_check(self, max_fp_delta_pct: float = 5.0) -> Tuple[bool, str]:
+    def gate_check(self, max_fp_delta_pct: float = 5.0) -> tuple[bool, str]:
         """Check if blended mode meets promotion gate criteria.
 
         Args:
@@ -182,7 +182,7 @@ class BlendingMetrics:
 
         return True, "All gate checks passed"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for reporting."""
         passes_gate, gate_reason = self.gate_check()
 
@@ -222,7 +222,7 @@ class MLBlendedRiskEngine:
         gray_zone_upper: float = 0.6,
         rule_weight: float = 0.7,
         ml_weight: float = 0.3,
-        storage_path: Optional[str] = None,
+        storage_path: str | None = None,
         enable_ml_blending: bool = True,
     ):
         """Initialize blended risk engine.
@@ -247,7 +247,7 @@ class MLBlendedRiskEngine:
             raise ValueError(f"Weights must sum to 1.0, got {rule_weight + ml_weight}")
 
         # Decision log
-        self.decisions: List[BlendedDecision] = []
+        self.decisions: list[BlendedDecision] = []
 
         # Metrics
         self.metrics = BlendingMetrics()
@@ -258,9 +258,9 @@ class MLBlendedRiskEngine:
         action_id: str,
         rule_risk_score: float,
         rule_classification: str,
-        ml_risk_score: Optional[float] = None,
-        ml_confidence: Optional[float] = None,
-        features: Optional[Dict[str, Any]] = None,
+        ml_risk_score: float | None = None,
+        ml_confidence: float | None = None,
+        features: dict[str, Any] | None = None,
     ) -> BlendedDecision:
         """Compute blended risk decision.
 
@@ -441,7 +441,7 @@ class MLBlendedRiskEngine:
             if is_false_positive:
                 self.metrics.baseline_false_positives += 1
 
-    def get_metrics_report(self) -> Dict[str, Any]:
+    def get_metrics_report(self) -> dict[str, Any]:
         """Get comprehensive metrics report.
 
         Returns:
@@ -482,10 +482,10 @@ class MLBlendedRiskEngine:
 
     def export_decisions(
         self,
-        risk_zone: Optional[RiskZone] = None,
+        risk_zone: RiskZone | None = None,
         ml_influenced_only: bool = False,
-        limit: Optional[int] = None,
-    ) -> List[Dict[str, Any]]:
+        limit: int | None = None,
+    ) -> list[dict[str, Any]]:
         """Export decisions for analysis.
 
         Args:

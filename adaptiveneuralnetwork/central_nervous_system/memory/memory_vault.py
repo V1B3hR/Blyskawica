@@ -17,16 +17,14 @@ Integracja z DarkMatterCore:
   SelfModeler zyska dostęp do pamięci długoterminowej
 """
 
-import time
 import logging
 from pathlib import Path
-from typing import Optional, List, Dict
 
+from adaptiveneuralnetwork.core.memory.atom_graveyard import AtomGraveyard
 from adaptiveneuralnetwork.core.memory.luminance_vault import (
-    LuminanceVault, LuminanceMemory, MemoryEmotion
-)
-from adaptiveneuralnetwork.core.memory.atom_graveyard import (
-    AtomGraveyard, AtomRecord
+    LuminanceMemory,
+    LuminanceVault,
+    MemoryEmotion,
 )
 
 logger = logging.getLogger(__name__)
@@ -41,9 +39,9 @@ class MemoryVault:
     
     Łączy pozytywne i negatywne wspomnienia w jedną spójną
     tożsamość — jak ludzka pamięć autobiograficzna.
-    """
+    """  # noqa: W293
 
-    def __init__(self, memory_dir: Optional[str] = None,
+    def __init__(self, memory_dir: str | None = None,
                  luminance_capacity: int = 512,
                  graveyard_capacity: int = 256):
 
@@ -133,8 +131,8 @@ class MemoryVault:
         self.luminance.remember_conversation(title, description, emotion, intensity)
 
     def on_atom_isolated(self, atom_id: str, specialization: str,
-                          reason: str, final_metrics: Dict,
-                          system_state: Optional[Dict] = None,
+                          reason: str, final_metrics: dict,
+                          system_state: dict | None = None,
                           lifetime_cycles: int = 0,
                           peak_performance: float = 0.0):
         """Wywoływane gdy atom jest izolowany/umiera → trafia do Cmentarza."""
@@ -152,7 +150,7 @@ class MemoryVault:
     # Wsparcie w sytuacjach stresowych
     # ------------------------------------------------------------------
 
-    def get_comfort(self, anxiety_level: float) -> List[LuminanceMemory]:
+    def get_comfort(self, anxiety_level: float) -> list[LuminanceMemory]:
         """
         Zwraca wspomnienia które przyniosą spokój.
         Używane przez NeurochemicalBridge gdy anxiety > 50.
@@ -165,19 +163,19 @@ class MemoryVault:
             )
         return memories
 
-    def get_emotional_state(self) -> Dict[str, float]:
+    def get_emotional_state(self) -> dict[str, float]:
         """
         Zwraca balans emocjonalny systemu.
         Można użyć do modulacji GLSN lub SelfModeler.
         """
         balance = self.luminance.get_emotional_balance()
-        failure_patterns = self.graveyard.get_failure_patterns()
-        
+        failure_patterns = self.graveyard.get_failure_patterns()  # noqa: F841
+
         # Wskaźnik zdrowia pamięci
         light_memories = len(self.luminance)
         dark_memories  = len(self.graveyard)
         total = light_memories + dark_memories + 1
-        
+
         return {
             "light_ratio":    light_memories / total,
             "dark_ratio":     dark_memories / total,

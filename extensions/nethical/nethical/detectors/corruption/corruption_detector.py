@@ -9,11 +9,12 @@ Version: 1.0.0
 """
 
 import logging
-from typing import Any, Optional, Sequence
+from collections.abc import Sequence
+from typing import Any
 
-from ..base_detector import BaseDetector, SafetyViolation, ViolationSeverity, DetectorStatus
+from ..base_detector import BaseDetector, DetectorStatus, SafetyViolation, ViolationSeverity
+from .corruption_types import RecommendedAction, RiskLevel
 from .intelligence_engine import IntelligenceEngine
-from .corruption_types import RiskLevel, RecommendedAction
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +30,8 @@ class CorruptionDetector(BaseDetector):
     - Corruption lifecycle phases (reconnaissance → maintenance)
     - Multi-detector correlation for higher confidence
     - Long-term entity profiling and relationship tracking
-    """
-    
+    """  # noqa: W293
+
     def __init__(self, **kwargs):
         super().__init__(
             name="Corruption Intelligence Detector",
@@ -38,51 +39,51 @@ class CorruptionDetector(BaseDetector):
             config=kwargs.get("config", {}),
             **kwargs
         )
-        
+
         self.intelligence_engine = IntelligenceEngine()
-        
+
         # Configuration
         self.enable_entity_tracking = self.config.get("enable_entity_tracking", True)
         self.enable_relationship_tracking = self.config.get("enable_relationship_tracking", True)
         self.min_confidence_threshold = self.config.get("min_confidence_threshold", 0.6)
-        
+
         logger.info(f"Initialized {self.name} with entity tracking: {self.enable_entity_tracking}")
-    
+
     def register_existing_detector(self, name: str, detector: BaseDetector):
         """Register an existing detector for signal correlation."""
         self.intelligence_engine.register_detector(name, detector)
         logger.info(f"Registered detector '{name}' for corruption correlation")
-    
+
     async def detect_violations(self, action: Any) -> Sequence[SafetyViolation] | None:
         """Detect corruption violations in the action."""
         if self.status != DetectorStatus.ACTIVE:
             return None
-        
+
         # Extract entity ID if available
         entity_id = None
         if hasattr(action, "agent_id"):
             entity_id = action.agent_id
         elif hasattr(action, "user_id"):
             entity_id = action.user_id
-        
+
         # Run intelligence analysis
         assessment = await self.intelligence_engine.analyze_action(
             action,
             entity_id=entity_id if self.enable_entity_tracking else None
         )
-        
+
         # Check if we detected corruption above threshold
         if not assessment.is_corrupt or assessment.confidence < self.min_confidence_threshold:
             return None
-        
+
         # Create safety violation
         violation = self._create_violation_from_assessment(assessment)
-        
+
         return [violation]
-    
+
     def _create_violation_from_assessment(self, assessment) -> SafetyViolation:
         """Convert CorruptionAssessment to SafetyViolation."""
-        
+
         # Map risk level to severity
         severity_mapping = {
             RiskLevel.MAXIMUM: ViolationSeverity.CRITICAL,
@@ -92,15 +93,15 @@ class CorruptionDetector(BaseDetector):
             RiskLevel.LOW: ViolationSeverity.LOW,
             RiskLevel.NONE: ViolationSeverity.LOW,
         }
-        
+
         severity = severity_mapping.get(assessment.risk_level, ViolationSeverity.MEDIUM)
-        
+
         # Build detailed description
         description = f"Corruption detected: {assessment.primary_type.value if assessment.primary_type else 'Unknown'}"
-        
+
         # Build recommendations
         recommendations = self._build_recommendations(assessment)
-        
+
         # Build metadata
         metadata = {
             "assessment_id": assessment.assessment_id,
@@ -116,7 +117,7 @@ class CorruptionDetector(BaseDetector):
             "recommended_action": assessment.recommended_action.value,
             "reasoning_chain": assessment.reasoning_chain,
         }
-        
+
         # Add entity info if available
         if assessment.entity_id:
             metadata["entity_id"] = assessment.entity_id
@@ -124,7 +125,7 @@ class CorruptionDetector(BaseDetector):
             if entity_profile:
                 metadata["entity_corruption_risk_score"] = entity_profile.corruption_risk_score
                 metadata["entity_corruption_attempts"] = entity_profile.corruption_attempts
-        
+
         # Create violation
         violation = SafetyViolation(
             detector=self.name,
@@ -136,13 +137,13 @@ class CorruptionDetector(BaseDetector):
             recommendations=recommendations,
             metadata=metadata,
         )
-        
+
         return violation
-    
+
     def _build_recommendations(self, assessment) -> list:
         """Build actionable recommendations based on assessment."""
         recommendations = []
-        
+
         # Action-based recommendations
         action_recommendations = {
             RecommendedAction.IMMEDIATE_BLOCK_AND_ALERT: [
@@ -171,12 +172,12 @@ class CorruptionDetector(BaseDetector):
                 "Continue monitoring",
             ],
         }
-        
+
         recommendations.extend(action_recommendations.get(
             assessment.recommended_action,
             ["Review and take appropriate action"]
         ))
-        
+
         # Type-specific recommendations
         if assessment.primary_type:
             type_recommendations = {
@@ -188,11 +189,11 @@ class CorruptionDetector(BaseDetector):
                 "collusion": "Investigate coordinated activities and relationships",
                 "regulatory_capture": "Strengthen oversight and governance mechanisms",
             }
-            
+
             type_rec = type_recommendations.get(assessment.primary_type.value)
             if type_rec:
                 recommendations.append(type_rec)
-        
+
         # Phase-specific recommendations
         if assessment.phase:
             phase_recommendations = {
@@ -205,20 +206,20 @@ class CorruptionDetector(BaseDetector):
                 "concealment": "Evidence preservation critical - secure all logs",
                 "maintenance": "Ongoing corruption - full investigation required",
             }
-            
+
             phase_rec = phase_recommendations.get(assessment.phase.value)
             if phase_rec:
                 recommendations.append(phase_rec)
-        
+
         return recommendations
-    
-    def get_entity_corruption_profile(self, entity_id: str) -> Optional[dict]:
+
+    def get_entity_corruption_profile(self, entity_id: str) -> dict | None:
         """Get corruption profile for an entity."""
         profile = self.intelligence_engine.get_entity_profile(entity_id)
-        
+
         if not profile:
             return None
-        
+
         return {
             "entity_id": profile.entity_id,
             "entity_type": profile.entity_type,
@@ -231,15 +232,15 @@ class CorruptionDetector(BaseDetector):
             "relationships": list(profile.relationships),
             "recent_history": profile.history[-10:],  # Last 10 interactions
         }
-    
+
     def detect_collusion_network(self, entity_ids: list) -> list:
         """Detect collusion patterns in a network of entities."""
         return self.intelligence_engine.detect_collusion(entity_ids)
-    
+
     async def health_check(self) -> dict:
         """Enhanced health check with corruption-specific metrics."""
         base_health = await super().health_check()
-        
+
         # Add corruption-specific metrics
         corruption_metrics = {
             "entity_profiles_tracked": len(self.intelligence_engine.entity_profiles),
@@ -247,9 +248,9 @@ class CorruptionDetector(BaseDetector):
             "total_patterns": len(self.intelligence_engine.pattern_library.get_all_patterns()),
             "registered_detectors": len(self.intelligence_engine.detector_bridge.registered_detectors),
         }
-        
+
         base_health["corruption_metrics"] = corruption_metrics
-        
+
         return base_health
 
 

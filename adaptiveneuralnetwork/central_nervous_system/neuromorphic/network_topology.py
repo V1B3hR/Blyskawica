@@ -14,16 +14,20 @@ Enhancements:
 """
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Optional, Dict
+from typing import Any
 
 import numpy as np
 import torch
 import torch.nn as nn
 
 from .advanced_neurons import (
-    AdaptiveThresholdNeuron, MultiCompartmentNeuron,
-    NeuronV3Config, BurstingNeuron, InhibitoryNeuron
+    AdaptiveThresholdNeuron,
+    BurstingNeuron,
+    InhibitoryNeuron,
+    MultiCompartmentNeuron,
+    NeuronV3Config,
 )
 
 logger = logging.getLogger(__name__)
@@ -109,7 +113,7 @@ class PopulationLayer(nn.Module):
         # Create neurons based on type
         self.neurons = nn.ModuleList()
         neuron_cls = self.SUPPORTED_NEURON_TYPES.get(neuron_type, AdaptiveThresholdNeuron)
-        for i in range(population_size):
+        for i in range(population_size):  # noqa: B007
             if neuron_type == "multi_compartment":
                 neuron = neuron_cls(neuron_config, num_dendrites=4)
             else:
@@ -137,7 +141,7 @@ class PopulationLayer(nn.Module):
         external_input: torch.Tensor,
         current_time: float | None = None,
         dt: float | None = None,
-        modulatory_config: Optional[Dict[str, Any]] = None
+        modulatory_config: dict[str, Any] | None = None
     ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
         """
         Process population dynamics.
@@ -157,7 +161,7 @@ class PopulationLayer(nn.Module):
 
         # 0. Detect actual device dynamically
         device = external_input.device
-        
+
         # Detach persistent state from previous batches to prevent graph leakage
         self.population_activity = self.population_activity.detach()
         self.activity_history = self.activity_history.detach()
@@ -172,7 +176,7 @@ class PopulationLayer(nn.Module):
             # Ensure input_data is 2D and matches source_size
             if external_input.dim() > 2:
                 external_input = external_input.view(batch_size, -1)
-            
+
             # RealisticDelays armor is internal, just call it
             delayed_input = self.synaptic_delays(external_input, dt)
         else:
@@ -195,16 +199,16 @@ class PopulationLayer(nn.Module):
             weights = self.lateral_weights.to(device)
             mask = self.inhibition_mask.to(device)
             activity = self.population_activity.to(device)
-            
+
             prev_act = activity.unsqueeze(0).expand(batch_size, -1)
             # Use matmul for explicit control [batch, population]
             lateral_inhibition_raw = torch.matmul(prev_act, weights * mask)
-            
+
             # Match dimensionality of delayed_input (might be 3D)
             if delayed_input.dim() == 3:
                 # [batch, population] -> [batch, 1, population] then broadcast
                 lateral_inhibition_raw = lateral_inhibition_raw.unsqueeze(1)
-            
+
             lateral_input -= lateral_inhibition_raw
 
         recurrent_input = torch.zeros_like(delayed_input)
@@ -213,7 +217,7 @@ class PopulationLayer(nn.Module):
             prev_act = activity.unsqueeze(0).expand(batch_size, -1)
             # Ensure weights are on device
             rec_weights = self.recurrent_weights.to(device)
-            
+
             # Recurrent Armor
             if prev_act.size(-1) != rec_weights.size(1):
                  if prev_act.size(-1) < rec_weights.size(1):
@@ -221,35 +225,35 @@ class PopulationLayer(nn.Module):
                      prev_act = torch.cat([prev_act, padding], dim=-1)
                  else:
                      prev_act = prev_act[..., :rec_weights.size(1)]
-            
+
             import torch.nn.functional as F
             rec_raw = F.linear(prev_act, rec_weights)
-            
+
             # Match dimensionality of delayed_input
             if delayed_input.dim() == 3:
                 rec_raw = rec_raw.unsqueeze(1)
-                
+
             recurrent_input = rec_raw
 
         homeo_bias = self.homeo_bias.unsqueeze(0) if self.homeostasis else 0.0
 
         # 4. Fuse into total_input with Structural Shielding
         total_input = delayed_input + lateral_input + recurrent_input + homeo_bias
-            
+
         # Dimensional Armor: Ensure external_input matches expected input_size
         # (Wait, TopologyLayer doesn't store input_size explicitly, but used it for delays)
         # We'll armor based on the neuron count if it's supposed to be 1:1, or let it pass to components.
         # But we MUST protect the recurrent/lateral projections.
-        
+
         # Apply cognitive fluidity modulation (Phase 7.3)
         if modulatory_config:
             gain = modulatory_config.get('gain_scale', 1.0)
             sparsity_threshold = modulatory_config.get('sparsity_threshold', 0.0)
             metabolic_gate = modulatory_config.get('metabolic_gate', 1.0) # Metabolic gating (0.0 to 1.0)
-            
+
             # Attentional narrowing: Scale input and prune low-activity signals
             total_input = total_input * gain
-            
+
             # Metabolic gating: simulate neuron shutdown due to low energy
             if metabolic_gate < 0.9:
                 # Disables a percentage of neurons proportional to lack of energy
@@ -257,8 +261,8 @@ class PopulationLayer(nn.Module):
                 total_input = total_input * gate_mask
 
             if sparsity_threshold > 0:
-                total_input = torch.where(torch.abs(total_input) < sparsity_threshold, 
-                                          torch.zeros_like(total_input), 
+                total_input = torch.where(torch.abs(total_input) < sparsity_threshold,
+                                          torch.zeros_like(total_input),
                                           total_input)
 
         for i, neuron in enumerate(self.neurons):
@@ -286,13 +290,13 @@ class PopulationLayer(nn.Module):
                 # Standard neurons expect [batch, 1]
                 neuron_input = sig[:, 0:1]
                 spikes, states = neuron(neuron_input, current_time, dt)
-            
+
             # Ensure spikes is [batch, 1] for storage in population buffer
             if spikes.dim() > 2:
                 spikes = spikes.view(batch_size, -1)[:, 0:1]
             elif spikes.dim() == 2 and spikes.size(1) > 1:
                 spikes = spikes[:, 0:1]
-                
+
             population_spikes[:, i:i+1] = spikes
             neuron_states.append(states)
 
@@ -419,10 +423,10 @@ class RealisticDelays(nn.Module):
         """
         if dt is None:
             dt = 0.001
-            
+
         # 0. Detect actual device dynamically
         device = input_spikes.device
-        
+
         # Detach persistent buffer from previous batches
         self.spike_buffer = self.spike_buffer.detach()
 
@@ -447,21 +451,21 @@ class RealisticDelays(nn.Module):
         # Calculate delay steps for all synapses [source, target]
         eff_source_size = min(source_size, self.source_size)
         eff_target_size = self.target_size
-        
+
         delay_steps = (self.delays[:eff_source_size, :eff_target_size].to(device) / dt).long()
-        
+
         # Get buffer indices for each source neuron [source, target]
         buffer_indices = (current_idx - delay_steps) % self.spike_buffer.size(0)
-        
+
         # Gather delayed spikes from buffer using advanced indexing
         source_indices = torch.arange(eff_source_size, device=input_spikes.device).unsqueeze(1).expand(-1, eff_target_size)
-        
+
         # Gather result: [eff_source, eff_target]
         gathered_spikes = self.spike_buffer[buffer_indices, source_indices]
-        
+
         # 4. Aggregate contributions for each target
         delayed_spikes_base = gathered_spikes.sum(dim=0) # [eff_target_size]
-        
+
         # 5. Dimension Guard: Ensure output matches self.target_size
         if delayed_spikes_base.size(0) < self.target_size:
             padding = torch.zeros(self.target_size - delayed_spikes_base.size(0), device=input_spikes.device)
@@ -564,8 +568,8 @@ class DynamicConnectivity(nn.Module):
             dt = 0.001
 
         device = pre_spikes.device
-        batch_size = pre_spikes.size(0)
-        
+        batch_size = pre_spikes.size(0)  # noqa: F841
+
         # Detach persistent buffers from previous batches
         self.pre_activity = self.pre_activity.detach()
         self.post_activity = self.post_activity.detach()
@@ -778,7 +782,7 @@ class HierarchicalNetwork(nn.Module):
         current_input = input_spikes.to(device)
         # Pass through subnetworks if present
         if self.subnetworks and subnetwork_inputs:
-            for submodule, sub_input in zip(self.subnetworks, subnetwork_inputs):
+            for submodule, sub_input in zip(self.subnetworks, subnetwork_inputs):  # noqa: B905
                 _ = submodule(sub_input.to(device))
 
         # Forward pass through hierarchical layers
@@ -814,7 +818,7 @@ class HierarchicalNetwork(nn.Module):
                 current_time,
                 dt
             )
-            delayed_feedback = fb_delay(fb_current, dt)
+            delayed_feedback = fb_delay(fb_current, dt)  # noqa: F841
             # Optionally integrate feedback for next timestep or runtime state
 
         # Recurrent connections (optional)
@@ -834,16 +838,16 @@ class HierarchicalNetwork(nn.Module):
         for i in range(len(layer_outputs) - 1):
             act_i = layer_outputs[i].mean(dim=0)
             act_next = layer_outputs[i+1].mean(dim=0)
-            
+
             if act_i.size(0) == act_next.size(0):
                 corr = torch.corrcoef(torch.stack([act_i, act_next]))[0, 1]
             else:
                 # If sizes differ, correlate their scalar means as a fallback for coherence tracking
                 # or use a simplified cross-layer activity ratio
                 corr = torch.min(act_i.mean(), act_next.mean()) / (torch.max(act_i.mean(), act_next.mean()) + 1e-6)
-            
+
             activity_correlations.append(corr)
-            
+
         if activity_correlations:
             self.network_coherence = torch.stack(activity_correlations).mean()
         else:

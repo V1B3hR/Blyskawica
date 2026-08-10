@@ -26,7 +26,7 @@ class ModelBuilder:
         Args:
             registry: Layer registry to use (defaults to global registry)
             seed: Random seed for reproducible initialization (localized)
-        """
+        """  # noqa: W293
         self.registry = registry if registry is not None else layer_registry
         self.seed = seed
 
@@ -53,7 +53,7 @@ class ModelBuilder:
                     {"type": "linear", "in_features": 20, "out_features": 5}
                 ]
             }
-        """
+        """  # noqa: W293
         # Handle local seed if specified
         model_seed = config.get('seed', self.seed)
         if model_seed is not None:
@@ -84,7 +84,7 @@ class ModelBuilder:
             
         Returns:
             Constructed PyTorch module
-        """
+        """  # noqa: W293
         config_path = Path(config_path)
 
         if not config_path.exists():
@@ -111,7 +111,7 @@ class ModelBuilder:
             
         Returns:
             Instantiated layer module
-        """
+        """  # noqa: W293
         layer_spec = layer_spec.copy()  # Don't modify original
         layer_type = layer_spec.pop('type')
 
@@ -131,7 +131,7 @@ class ModelBuilder:
         Set random seed locally for this model construction.
         
         This ensures reproducible initialization without affecting global state.
-        """
+        """  # noqa: W293
         torch.manual_seed(seed)
         if torch.cuda.is_available():
             torch.cuda.manual_seed(seed)

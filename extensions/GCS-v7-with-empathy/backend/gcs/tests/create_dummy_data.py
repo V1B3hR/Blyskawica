@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def create_test_graph(path):
     adj = np.eye(4, dtype=np.float32)
     np.savez(path, adjacency_matrix=adj)

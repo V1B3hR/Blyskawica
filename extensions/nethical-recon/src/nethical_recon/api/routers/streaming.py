@@ -7,7 +7,7 @@ FastAPI router for event streaming endpoints.
 import logging
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from nethical_recon.streaming import EventStreamManager
@@ -84,7 +84,7 @@ async def get_streaming_statistics():
         return {"success": True, "data": stats}
     except Exception as e:
         logger.error(f"Failed to get streaming statistics: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))  # noqa: B904
 
 
 @router.post("/publish")
@@ -109,7 +109,7 @@ async def publish_event(request: PublishEventRequest):
         }
     except Exception as e:
         logger.error(f"Failed to publish event: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))  # noqa: B904
 
 
 @router.post("/subscribe")
@@ -134,7 +134,7 @@ async def subscribe_to_topic(request: SubscribeRequest):
         }
     except Exception as e:
         logger.error(f"Failed to subscribe to topic: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))  # noqa: B904
 
 
 @router.get("/backends")
@@ -186,4 +186,4 @@ async def check_streaming_health():
         return {"success": True, "data": health}
     except Exception as e:
         logger.error(f"Failed to check streaming health: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))  # noqa: B904

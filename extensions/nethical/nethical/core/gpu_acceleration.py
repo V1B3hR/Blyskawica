@@ -6,7 +6,8 @@ PyTorch CUDA support when available.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 import numpy as np
 
 logger = logging.getLogger(__name__)
@@ -35,7 +36,7 @@ def is_gpu_available() -> bool:
     return torch.cuda.is_available()
 
 
-def get_gpu_info() -> Dict[str, Any]:
+def get_gpu_info() -> dict[str, Any]:
     """
     Get GPU device information.
 
@@ -149,7 +150,7 @@ class GPUAcceleratedInference:
         return tensor.detach().numpy()
 
     def batch_inference(
-        self, model: Any, inputs: np.ndarray, batch_size: Optional[int] = None
+        self, model: Any, inputs: np.ndarray, batch_size: int | None = None
     ) -> np.ndarray:
         """
         Perform batch inference with automatic batching.
@@ -218,7 +219,7 @@ class GPUAcceleratedInference:
 
     def benchmark_throughput(
         self, model: Any, input_shape: tuple, num_iterations: int = 100
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """
         Benchmark inference throughput.
 
@@ -270,7 +271,7 @@ class GPUAcceleratedInference:
             "iterations": num_iterations,
         }
 
-    def get_memory_usage(self) -> Dict[str, float]:
+    def get_memory_usage(self) -> dict[str, float]:
         """
         Get GPU memory usage.
 
@@ -329,7 +330,7 @@ class GPUBatchProcessor:
         return self.inference_engine.batch_inference(model, features)
 
     def process_embeddings_batch(
-        self, texts: List[str], embedding_model: Any, tokenizer: Any
+        self, texts: list[str], embedding_model: Any, tokenizer: Any
     ) -> np.ndarray:
         """
         Process batch of text embeddings.
@@ -361,7 +362,7 @@ class GPUBatchProcessor:
 
         return self.inference_engine.to_numpy(embeddings)
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """
         Get processor statistics.
 

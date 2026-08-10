@@ -7,7 +7,7 @@ such as risk profiles, ML model predictions, and policy configurations.
 
 import json
 import logging
-from typing import Any, Optional, Dict, List
+from typing import Any
 
 try:
     import redis
@@ -36,7 +36,7 @@ class RedisCache:
         host: str = "localhost",
         port: int = 6379,
         db: int = 0,
-        password: Optional[str] = None,
+        password: str | None = None,
         default_ttl: int = 300,  # 5 minutes default
         max_connections: int = 50,
         socket_timeout: int = 5,
@@ -57,7 +57,7 @@ class RedisCache:
         """
         self.enabled = enabled and REDIS_AVAILABLE
         self.default_ttl = default_ttl
-        self._fallback_cache: Dict[str, Any] = {}
+        self._fallback_cache: dict[str, Any] = {}
 
         if not REDIS_AVAILABLE:
             logger.warning("Redis not available. Install redis-py with: pip install redis")
@@ -89,7 +89,7 @@ class RedisCache:
             logger.warning(f"Failed to connect to Redis: {e}. Using fallback cache.")
             self.enabled = False
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         """
         Get value from cache.
 
@@ -117,7 +117,7 @@ class RedisCache:
             logger.error(f"Redis get error for key {key}: {e}")
             return self._fallback_cache.get(key)
 
-    def set(self, key: str, value: Any, ttl: Optional[int] = None) -> bool:
+    def set(self, key: str, value: Any, ttl: int | None = None) -> bool:
         """
         Set value in cache with optional TTL.
 
@@ -216,7 +216,7 @@ class RedisCache:
             self._fallback_cache[key] = new_value
             return new_value
 
-    def get_multiple(self, keys: List[str]) -> Dict[str, Any]:
+    def get_multiple(self, keys: list[str]) -> dict[str, Any]:
         """
         Get multiple values from cache.
 
@@ -232,7 +232,7 @@ class RedisCache:
         try:
             values = self.client.mget(keys)
             result = {}
-            for key, value in zip(keys, values):
+            for key, value in zip(keys, values):  # noqa: B905
                 if value is None:
                     result[key] = None
                 else:
@@ -246,7 +246,7 @@ class RedisCache:
             logger.error(f"Redis mget error: {e}")
             return {k: self._fallback_cache.get(k) for k in keys}
 
-    def set_multiple(self, mapping: Dict[str, Any], ttl: Optional[int] = None) -> bool:
+    def set_multiple(self, mapping: dict[str, Any], ttl: int | None = None) -> bool:
         """
         Set multiple values in cache.
 
@@ -278,7 +278,7 @@ class RedisCache:
 
             # Set TTL for each key if specified
             if ttl:
-                for key in serialized.keys():
+                for key in serialized:
                     pipe.expire(key, ttl)
 
             pipe.execute()
@@ -307,7 +307,7 @@ class RedisCache:
             logger.error(f"Redis clear error: {e}")
             return False
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """
         Get cache statistics.
 
@@ -332,7 +332,7 @@ class RedisCache:
             logger.error(f"Redis stats error: {e}")
             return {"enabled": True, "type": "redis", "error": str(e)}
 
-    def _calculate_hit_rate(self, info: Dict[str, Any]) -> float:
+    def _calculate_hit_rate(self, info: dict[str, Any]) -> float:
         """Calculate cache hit rate."""
         hits = info.get("keyspace_hits", 0)
         misses = info.get("keyspace_misses", 0)

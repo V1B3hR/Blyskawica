@@ -1,5 +1,6 @@
-from nethical.detectors.healthcare.phi_detector import HealthcarePHIDetector
 from nethical.detectors.healthcare.clinical_risk_detectors import extract_clinical_signals
+from nethical.detectors.healthcare.phi_detector import HealthcarePHIDetector
+
 
 def test_phi_redaction_basic():
     text = "Name: John Doe, MRN: MRN 12345, SSN: 123-45-6789, Phone: 555-123-4567"

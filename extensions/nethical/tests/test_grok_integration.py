@@ -1,14 +1,15 @@
 """Tests for Grok (xAI) integration."""
 
 import pytest
+
 from nethical.integrations.grok_tools import (
+    check_code_generation,
+    check_generated_content,
+    check_tool_call,
+    check_user_input,
+    evaluate_action,
     get_nethical_tool,
     handle_nethical_tool,
-    evaluate_action,
-    check_user_input,
-    check_generated_content,
-    check_code_generation,
-    check_tool_call,
 )
 
 

@@ -7,10 +7,10 @@ and 16x16 Diamond Yant Cymatic Consensus for decentralized cognitive stability.
 
 import logging
 import math
-import time
+from typing import Any
+
 import torch
 import torch.nn as nn
-from typing import Dict, Any, List
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ class HolographicSwarmEngine(nn.Module):
     def __init__(self, neuro_state):
         super().__init__()
         self.neuro_state = neuro_state
-        self.nodes: Dict[str, HoloSwarmNode] = {}
+        self.nodes: dict[str, HoloSwarmNode] = {}
         self.consensus_threshold = 0.60
 
     def register_node(self, node_id: str, role: str) -> HoloSwarmNode:
@@ -50,7 +50,7 @@ class HolographicSwarmEngine(nn.Module):
         logger.info(f"🌐 [HOLO-SWARM] Registered node: '{node_id}' with role '{role}'")
         return node
 
-    def execute_cymatic_consensus(self) -> Dict[str, Any]:
+    def execute_cymatic_consensus(self) -> dict[str, Any]:
         """
         Gathers 16x16 yant matrices from active nodes and computes global consensus resonance.
         """

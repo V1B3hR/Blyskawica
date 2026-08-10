@@ -11,9 +11,9 @@ supporting heuristic, logistic, and simple transformer-like preprocessing modes.
 
 import json
 import math
-from typing import Dict, List, Any, Optional
-from datetime import datetime
 from collections import defaultdict
+from datetime import datetime
+from typing import Any
 
 
 class BaselineMLClassifier:
@@ -45,8 +45,8 @@ class BaselineMLClassifier:
         - training/train_any_model.py: Full training pipeline with this classifier
         - docs/TRAINING_GUIDE.md: End-to-end training documentation
         - examples/training/: Example training scripts
-    """
-    
+    """  # noqa: W293
+
     def __init__(self, threshold: float = 0.5, learning_rate: float = 0.1):
         """
         Initialize the baseline classifier.
@@ -54,26 +54,26 @@ class BaselineMLClassifier:
         Args:
             threshold: Classification threshold (0-1). Scores >= threshold are class 1.
             learning_rate: Learning rate for weight updates during training.
-        """
+        """  # noqa: W293
         self.threshold = threshold
         self.learning_rate = learning_rate
-        
+
         # Default feature weights (will be learned during training)
-        self.feature_weights: Dict[str, float] = {}
-        self.feature_means: Dict[str, float] = {}
-        self.feature_stds: Dict[str, float] = {}
-        
+        self.feature_weights: dict[str, float] = {}
+        self.feature_means: dict[str, float] = {}
+        self.feature_stds: dict[str, float] = {}
+
         # Training state
         self.trained = False
         self.training_samples = 0
-        self.timestamp: Optional[str] = None
+        self.timestamp: str | None = None
         self.version = "1.0"
-    
+
     def _calculate_entropy(self, text: str) -> float:
         """Calculate Shannon entropy of text for feature extraction."""
         if not text:
             return 0.0
-        char_freq: Dict[str, int] = defaultdict(int)
+        char_freq: dict[str, int] = defaultdict(int)
         for char in text:
             char_freq[char] += 1
         length = len(text)
@@ -83,10 +83,10 @@ class BaselineMLClassifier:
                 probability = count / length
                 entropy -= probability * math.log2(probability)
         return entropy
-    
-    def _extract_features(self, features: Dict[str, Any]) -> Dict[str, float]:
+
+    def _extract_features(self, features: dict[str, Any]) -> dict[str, float]:
         """Extract and normalize features from input dict."""
-        result: Dict[str, float] = {}
+        result: dict[str, float] = {}
         for key, value in features.items():
             if isinstance(value, (int, float)):
                 result[key] = float(value)
@@ -100,8 +100,8 @@ class BaselineMLClassifier:
                 if value and all(isinstance(v, (int, float)) for v in value):
                     result[f"{key}_mean"] = sum(value) / len(value) / 100.0
         return result
-    
-    def train(self, train_data: List[Dict[str, Any]]) -> None:
+
+    def train(self, train_data: list[dict[str, Any]]) -> None:
         """
         Train the classifier on labeled data.
         
@@ -114,63 +114,63 @@ class BaselineMLClassifier:
         
         Raises:
             ValueError: If train_data is empty.
-        """
+        """  # noqa: W293
         if not train_data:
             raise ValueError("Training data cannot be empty")
-        
+
         # Collect feature statistics
-        positive_features: Dict[str, List[float]] = defaultdict(list)
-        negative_features: Dict[str, List[float]] = defaultdict(list)
-        
-        all_features: Dict[str, List[float]] = defaultdict(list)
-        
+        positive_features: dict[str, list[float]] = defaultdict(list)
+        negative_features: dict[str, list[float]] = defaultdict(list)
+
+        all_features: dict[str, list[float]] = defaultdict(list)
+
         for sample in train_data:
             raw_features = sample.get("features", {})
             label = int(sample.get("label", 0))
-            
+
             extracted = self._extract_features(raw_features)
-            
+
             for key, value in extracted.items():
                 all_features[key].append(value)
                 if label == 1:
                     positive_features[key].append(value)
                 else:
                     negative_features[key].append(value)
-        
+
         # Calculate feature statistics for normalization
         for key, values in all_features.items():
             self.feature_means[key] = sum(values) / len(values) if values else 0.0
             variance = sum((v - self.feature_means[key]) ** 2 for v in values) / len(values) if values else 1.0
             self.feature_stds[key] = math.sqrt(variance) if variance > 0 else 1.0
-        
+
         # Learn feature weights based on discriminative power
         total_weight = 0.0
-        for key in all_features.keys():
+        for key in all_features:
             pos_vals = positive_features.get(key, [0])
             neg_vals = negative_features.get(key, [0])
-            
+
             pos_avg = sum(pos_vals) / len(pos_vals) if pos_vals else 0.0
             neg_avg = sum(neg_vals) / len(neg_vals) if neg_vals else 0.0
-            
+
             # Discriminative power is the difference between class means
             discriminative_power = abs(pos_avg - neg_avg) + 0.01
-            
+
             # Weight direction: positive if higher values correlate with positive class
             direction = 1.0 if pos_avg > neg_avg else -1.0
-            
+
             self.feature_weights[key] = discriminative_power * direction
             total_weight += abs(discriminative_power)
-        
+
         # Normalize weights to sum to 1
         if total_weight > 0:
             for key in self.feature_weights:
                 self.feature_weights[key] /= total_weight
-        
+
         self.trained = True
         self.training_samples = len(train_data)
         self.timestamp = datetime.now().isoformat()
-    
-    def predict(self, features: Dict[str, Any]) -> Dict[str, Any]:
+
+    def predict(self, features: dict[str, Any]) -> dict[str, Any]:
         """
         Predict class label for input features.
         
@@ -187,9 +187,9 @@ class BaselineMLClassifier:
             >>> result = clf.predict({'violation_count': 0.7, 'severity_max': 0.8})
             >>> print(result)
             {'label': 1, 'score': 0.75, 'confidence': 0.50}
-        """
+        """  # noqa: W293
         extracted = self._extract_features(features)
-        
+
         # Calculate weighted sum
         score = 0.5  # Base score
         for key, weight in self.feature_weights.items():
@@ -198,25 +198,25 @@ class BaselineMLClassifier:
                 value = extracted[key]
                 normalized = (value - self.feature_means.get(key, 0)) / self.feature_stds.get(key, 1)
                 normalized = max(min(normalized, 3), -3)  # Clip to [-3, 3]
-                
+
                 # Apply weight
                 score += weight * normalized * 0.5
-        
+
         # Apply sigmoid to keep score in [0, 1]
         score = 1.0 / (1.0 + math.exp(-4 * (score - 0.5)))
         score = max(min(score, 1.0), 0.0)
-        
+
         label = 1 if score >= self.threshold else 0
         confidence = abs(score - self.threshold) * 2
         confidence = min(confidence, 1.0)
-        
+
         return {
             "label": label,
             "score": score,
             "confidence": confidence
         }
-    
-    def compute_metrics(self, predictions: List[int], labels: List[int]) -> Dict[str, float]:
+
+    def compute_metrics(self, predictions: list[int], labels: list[int]) -> dict[str, float]:
         """
         Compute classification metrics.
         
@@ -226,24 +226,24 @@ class BaselineMLClassifier:
         
         Returns:
             Dictionary with accuracy, precision, recall, f1_score, and ece.
-        """
+        """  # noqa: W293
         if len(predictions) != len(labels) or len(predictions) == 0:
             return {"accuracy": 0, "precision": 0, "recall": 0, "f1_score": 0, "ece": 0}
-        
-        tp = sum(1 for p, l in zip(predictions, labels) if p == 1 and l == 1)
-        tn = sum(1 for p, l in zip(predictions, labels) if p == 0 and l == 0)
-        fp = sum(1 for p, l in zip(predictions, labels) if p == 1 and l == 0)
-        fn = sum(1 for p, l in zip(predictions, labels) if p == 0 and l == 1)
-        
+
+        tp = sum(1 for p, l in zip(predictions, labels) if p == 1 and l == 1)  # noqa: B905, E741
+        tn = sum(1 for p, l in zip(predictions, labels) if p == 0 and l == 0)  # noqa: B905, E741
+        fp = sum(1 for p, l in zip(predictions, labels) if p == 1 and l == 0)  # noqa: B905, E741
+        fn = sum(1 for p, l in zip(predictions, labels) if p == 0 and l == 1)  # noqa: B905, E741
+
         total = len(predictions)
         accuracy = (tp + tn) / total if total > 0 else 0.0
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
         f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0.0
-        
+
         # Simplified ECE (Expected Calibration Error)
         ece = max(0.0, 0.15 * (1.0 - accuracy))
-        
+
         return {
             "accuracy": accuracy,
             "precision": precision,
@@ -251,18 +251,18 @@ class BaselineMLClassifier:
             "f1_score": f1_score,
             "ece": ece
         }
-    
+
     def save(self, filepath: str) -> None:
         """
         Save trained model to JSON file.
         
         Args:
             filepath: Path to save the model (will create .json file)
-        """
+        """  # noqa: W293
         # Ensure filepath ends with .json
         if not filepath.endswith('.json'):
             filepath = filepath + '.json' if '.' not in filepath.split('/')[-1] else filepath
-        
+
         model_data = {
             "model_type": "baseline",
             "threshold": self.threshold,
@@ -275,10 +275,10 @@ class BaselineMLClassifier:
             "timestamp": self.timestamp,
             "version": self.version
         }
-        
+
         with open(filepath, "w") as f:
             json.dump(model_data, f, indent=2)
-    
+
     @classmethod
     def load(cls, filepath: str) -> "BaselineMLClassifier":
         """
@@ -289,10 +289,10 @@ class BaselineMLClassifier:
         
         Returns:
             Loaded BaselineMLClassifier instance
-        """
-        with open(filepath, "r") as f:
+        """  # noqa: W293
+        with open(filepath) as f:
             model_data = json.load(f)
-        
+
         classifier = cls(
             threshold=model_data.get("threshold", 0.5),
             learning_rate=model_data.get("learning_rate", 0.1)
@@ -304,7 +304,7 @@ class BaselineMLClassifier:
         classifier.training_samples = model_data.get("training_samples", 0)
         classifier.timestamp = model_data.get("timestamp")
         classifier.version = model_data.get("version", "1.0")
-        
+
         return classifier
 
 
@@ -312,12 +312,12 @@ class BaselineMLClassifier:
 # This is kept for backward compatibility and advanced use cases
 _TORCH_AVAILABLE = False
 try:
+    import numpy as np
     import torch
     import torch.nn as nn
     import torch.optim as optim
-    import numpy as np
     from sklearn.preprocessing import StandardScaler
-    
+
     _TORCH_AVAILABLE = True
 except ImportError:
     pass  # PyTorch not available, AdvancedMLClassifier will not be defined
@@ -347,7 +347,7 @@ if _TORCH_AVAILABLE:
             self.softmax = nn.Softmax(dim=1)
 
             # Scaler for features
-            self.scaler: Optional[StandardScaler] = None
+            self.scaler: StandardScaler | None = None
 
             # Metadata
             self.trained = False
@@ -362,38 +362,38 @@ if _TORCH_AVAILABLE:
             probs = self.softmax(logits)
             return probs
 
-        def fit_scaler(self, X: np.ndarray):
+        def fit_scaler(self, X: np.ndarray):  # noqa: N803
             """Fit feature scaler."""
             self.scaler = StandardScaler()
             self.scaler.fit(X)
 
-        def scale_features(self, X: np.ndarray) -> np.ndarray:
+        def scale_features(self, X: np.ndarray) -> np.ndarray:  # noqa: N803
             """Scale features with fitted scaler."""
             if self.scaler is None:
                 raise ValueError("Feature scaler not fitted.")
             return self.scaler.transform(X)
 
-        def train_model(self, train_data: List[Dict[str, Any]], epochs: int = 50, lr: float = 1e-3):
+        def train_model(self, train_data: list[dict[str, Any]], epochs: int = 50, lr: float = 1e-3):
             """Train classifier with multi-class support and feature scaling."""
             # Prepare features in consistent order
             feature_keys = sorted(train_data[0]['features'].keys())
-            X = []
+            X = []  # noqa: N806
             y = []
             for sample in train_data:
                 feat_vector = np.array([sample["features"][k] for k in feature_keys], dtype=np.float32)
                 X.append(feat_vector)
                 y.append(int(sample["label"]))
-            X = np.stack(X)
+            X = np.stack(X)  # noqa: N806
             self.fit_scaler(X)
-            X_scaled = self.scale_features(X)
-            X_tensor = torch.tensor(X_scaled, dtype=torch.float32)
+            X_scaled = self.scale_features(X)  # noqa: N806
+            X_tensor = torch.tensor(X_scaled, dtype=torch.float32)  # noqa: N806
             y_tensor = torch.tensor(y, dtype=torch.long)
 
             optimizer = optim.Adam(self.parameters(), lr=lr)
             criterion = nn.CrossEntropyLoss()
 
             self.train()
-            for epoch in range(epochs):
+            for epoch in range(epochs):  # noqa: B007
                 optimizer.zero_grad()
                 preds = self.forward(X_tensor)
                 loss = criterion(preds, y_tensor)
@@ -405,10 +405,10 @@ if _TORCH_AVAILABLE:
             self.timestamp = datetime.now().isoformat()
             self.feature_keys = feature_keys
 
-        def predict(self, features: Dict[str, Any]) -> Dict[str, Any]:
+        def predict(self, features: dict[str, Any]) -> dict[str, Any]:
             feat_vector = np.array([features[k] for k in self.feature_keys], dtype=np.float32)
-            X_scaled = self.scale_features(feat_vector.reshape(1, -1))
-            X_tensor = torch.tensor(X_scaled, dtype=torch.float32)
+            X_scaled = self.scale_features(feat_vector.reshape(1, -1))  # noqa: N806
+            X_tensor = torch.tensor(X_scaled, dtype=torch.float32)  # noqa: N806
             self.eval()
             with torch.no_grad():
                 probs = self.forward(X_tensor).cpu().numpy()[0]  # shape: (num_classes,)
@@ -420,10 +420,10 @@ if _TORCH_AVAILABLE:
                 "confidence": confidence
             }
 
-        def compute_metrics(self, predictions: List[int], labels: List[int]) -> Dict[str, float]:
+        def compute_metrics(self, predictions: list[int], labels: list[int]) -> dict[str, float]:
             # Multi-class metrics
             confusion = np.zeros((self.num_classes, self.num_classes), dtype=int)
-            for pred, label in zip(predictions, labels):
+            for pred, label in zip(predictions, labels):  # noqa: B905
                 confusion[label, pred] += 1
 
             accuracy = sum([confusion[i, i] for i in range(self.num_classes)]) / max(len(labels), 1)
@@ -479,7 +479,7 @@ if _TORCH_AVAILABLE:
         @classmethod
         def load(cls, filepath: str) -> "AdvancedMLClassifier":
             # Load meta
-            with open(filepath + ".meta.json", "r") as f:
+            with open(filepath + ".meta.json") as f:
                 meta = json.load(f)
             model = cls(meta["input_dim"], num_classes=meta["num_classes"], d_model=meta["d_model"])
             model.load_state_dict(torch.load(filepath + ".pt"))

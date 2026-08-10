@@ -3,12 +3,13 @@ Micro-Phase Scheduler for Adaptive Neural Network.
 
 Handles fine-grained subconscious rhythms (sub-phases) within 
 major phases (Active, Sleep, etc.).
-"""
+"""  # noqa: W291
+
+from enum import Enum
 
 import torch
 import torch.nn as nn
-from enum import Enum
-from typing import Dict, Any
+
 
 class MicroPhase(Enum):
     # ACTIVE sub-phases
@@ -38,17 +39,17 @@ class MicroPhaseScheduler(nn.Module):
         super().__init__()
         self.num_nodes = num_nodes
         self.device = torch.device(device)
-        
+
         # Buffer for current node micro-phases
         self.register_buffer("node_phases", torch.zeros(num_nodes, dtype=torch.long))
         self.register_buffer("phase_timer", torch.zeros(num_nodes))
-        
+
     def step(self, major_phase: int = 0, *args, **kwargs):
         """Update micro-phases based on major phase context (polymorphic)."""
         major_phase_val = major_phase
         if 'major_phases' in kwargs:
             major_phase_val = kwargs['major_phases']
-            
+
         if hasattr(major_phase_val, "dim") and major_phase_val.dim() > 0:
             major_phase_val = int(major_phase_val.view(-1)[0].item())
         else:
@@ -60,10 +61,10 @@ class MicroPhaseScheduler(nn.Module):
         # Biologically inspired transitions
         with torch.no_grad():
             self.phase_timer += 1.0
-            
+
             # Simple heuristic: change micro-phase every 50 steps
             change_mask = (self.phase_timer >= 50.0)
-            
+
             if change_mask.any():
                 if major_phase_val == 0:  # ACTIVE
                     new_phases = torch.randint(0, 2, (change_mask.sum().item(),), device=self.device)
@@ -71,10 +72,10 @@ class MicroPhaseScheduler(nn.Module):
                     new_phases = torch.randint(3, 7, (change_mask.sum().item(),), device=self.device)
                 else:
                     new_phases = torch.zeros(change_mask.sum().item(), dtype=torch.long, device=self.device)
-                
+
                 self.node_phases[change_mask] = new_phases
                 self.phase_timer[change_mask] = 0.0
-                
+
         return self.node_phases
 
     def reset(self) -> None:
@@ -82,7 +83,7 @@ class MicroPhaseScheduler(nn.Module):
         self.node_phases.zero_()
         self.phase_timer.zero_()
 
-    def get_micro_phase_distribution(self) -> Dict[str, float]:
+    def get_micro_phase_distribution(self) -> dict[str, float]:
         """Get the distribution of micro-phases across nodes."""
         dist = {}
         for phase in MicroPhase:
@@ -90,13 +91,13 @@ class MicroPhaseScheduler(nn.Module):
             dist[phase.name] = float(count)
         return dist
 
-    def get_sleep_cycle_stats(self) -> Dict[str, float]:
+    def get_sleep_cycle_stats(self) -> dict[str, float]:
         """Get sleep cycle stats (e.g. ratios, transition times)."""
         total = float(self.num_nodes) if self.num_nodes > 0 else 1.0
         rem_count = (self.node_phases == MicroPhase.REM.value).sum().item()
         deep_count = (self.node_phases == MicroPhase.DEEP_SLEEP.value).sum().item()
         light_count = (self.node_phases == MicroPhase.LIGHT_SLEEP.value).sum().item()
-        
+
         return {
             "rem_ratio": rem_count / total,
             "deep_sleep_ratio": deep_count / total,

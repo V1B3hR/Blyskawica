@@ -4,7 +4,8 @@ Security Headers Middleware
 Adds security headers to all HTTP responses for enhanced protection.
 """
 
-from typing import Any, Callable, Dict, Optional
+from collections.abc import Callable
+from typing import Any
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
@@ -24,7 +25,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     - Referrer-Policy: Controls referrer information
     - Permissions-Policy: Controls browser features
     - Cache-Control: Controls caching behavior for sensitive data
-    """
+    """  # noqa: W293
 
     DEFAULT_HEADERS = {
         "X-Content-Type-Options": "nosniff",
@@ -41,8 +42,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         hsts_max_age: int = 31536000,
         hsts_include_subdomains: bool = True,
         hsts_preload: bool = False,
-        content_security_policy: Optional[str] = None,
-        custom_headers: Optional[Dict[str, str]] = None,
+        content_security_policy: str | None = None,
+        custom_headers: dict[str, str] | None = None,
         cache_control: str = "no-store, no-cache, must-revalidate, private",
     ) -> None:
         """
@@ -57,7 +58,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             content_security_policy: Custom CSP header value
             custom_headers: Additional custom headers to add
             cache_control: Cache-Control header value
-        """
+        """  # noqa: W293
         super().__init__(app)
         self.enable_hsts = enable_hsts
         self.hsts_max_age = hsts_max_age
@@ -139,8 +140,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 def create_security_middleware(
     enable_hsts: bool = True,
-    custom_csp: Optional[str] = None,
-    additional_headers: Optional[Dict[str, str]] = None,
+    custom_csp: str | None = None,
+    additional_headers: dict[str, str] | None = None,
 ) -> type:
     """
     Factory function to create a configured SecurityHeadersMiddleware.
@@ -152,7 +153,7 @@ def create_security_middleware(
     
     Returns:
         Configured middleware class
-    """
+    """  # noqa: W293
 
     class ConfiguredSecurityMiddleware(SecurityHeadersMiddleware):
         def __init__(self, app: Any) -> None:

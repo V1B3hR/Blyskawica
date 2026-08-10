@@ -128,7 +128,7 @@ class KillChainAnalyzer:
             Classified kill chain event or None if not relevant
         """
         timestamp = event.get("timestamp", datetime.utcnow())
-        event_type = event.get("event_type", "")
+        event_type = event.get("event_type", "")  # noqa: F841
         source = event.get("source", "")
         target = event.get("target", "")
 
@@ -209,7 +209,7 @@ class KillChainAnalyzer:
     def _classify_event_phase(self, event: dict[str, Any]) -> KillChainPhase | None:
         """Classify an event to a kill chain phase"""
         event_type = event.get("event_type", "").lower()
-        details = event.get("details", {})
+        details = event.get("details", {})  # noqa: F841
 
         # Reconnaissance indicators
         if any(

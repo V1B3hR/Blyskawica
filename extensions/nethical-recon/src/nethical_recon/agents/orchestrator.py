@@ -5,14 +5,15 @@ Manages playbook execution, job dependencies, and workflow orchestration.
 """
 
 import asyncio
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any
 from uuid import UUID, uuid4
 
 
-class JobStatus(str, Enum):
+class JobStatus(str, Enum):  # noqa: UP042
     """Status of orchestrated jobs"""
 
     PENDING = "pending"
@@ -28,7 +29,7 @@ class JobDependency:
     """Dependency between jobs"""
 
     job_id: UUID
-    depends_on: List[UUID] = field(default_factory=list)
+    depends_on: list[UUID] = field(default_factory=list)
     wait_for_all: bool = True  # True: wait for all deps, False: wait for any
 
 
@@ -39,14 +40,14 @@ class OrchestratedJob:
     id: UUID
     name: str
     playbook_name: str
-    parameters: Dict[str, Any] = field(default_factory=dict)
+    parameters: dict[str, Any] = field(default_factory=dict)
     status: JobStatus = JobStatus.PENDING
-    dependencies: List[UUID] = field(default_factory=list)
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    result: Optional[Any] = None
-    error: Optional[str] = None
+    dependencies: list[UUID] = field(default_factory=list)
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    result: Any | None = None
+    error: str | None = None
 
 
 class JobOrchestrator:
@@ -58,10 +59,10 @@ class JobOrchestrator:
     """
 
     def __init__(self):
-        self.jobs: Dict[UUID, OrchestratedJob] = {}
-        self.dependencies: Dict[UUID, JobDependency] = {}
-        self.playbook_engine: Optional["PlaybookEngine"] = None
-        self._running_jobs: Set[UUID] = set()
+        self.jobs: dict[UUID, OrchestratedJob] = {}
+        self.dependencies: dict[UUID, JobDependency] = {}
+        self.playbook_engine: PlaybookEngine | None = None
+        self._running_jobs: set[UUID] = set()
 
     def set_playbook_engine(self, engine: "PlaybookEngine"):
         """Set playbook engine for job execution"""
@@ -70,9 +71,9 @@ class JobOrchestrator:
     def create_job(
         self,
         playbook_name: str,
-        parameters: Dict[str, Any],
-        dependencies: Optional[List[UUID]] = None,
-        job_id: Optional[UUID] = None,
+        parameters: dict[str, Any],
+        dependencies: list[UUID] | None = None,
+        job_id: UUID | None = None,
     ) -> UUID:
         """
         Create orchestrated job.
@@ -104,7 +105,7 @@ class JobOrchestrator:
 
         return job_id
 
-    def create_workflow(self, workflow: List[Dict[str, Any]]) -> List[UUID]:
+    def create_workflow(self, workflow: list[dict[str, Any]]) -> list[UUID]:
         """
         Create workflow with multiple dependent jobs.
 
@@ -126,7 +127,7 @@ class JobOrchestrator:
         """
         job_ids = []
 
-        for i, job_def in enumerate(workflow):
+        for i, job_def in enumerate(workflow):  # noqa: B007
             # Resolve dependency indices to job IDs
             deps = []
             if "depends_on" in job_def:
@@ -168,7 +169,7 @@ class JobOrchestrator:
 
         # Execute job
         job.status = JobStatus.RUNNING
-        job.started_at = datetime.now(timezone.utc)
+        job.started_at = datetime.now(UTC)
         self._running_jobs.add(job_id)
 
         try:
@@ -176,20 +177,20 @@ class JobOrchestrator:
 
             job.status = JobStatus.COMPLETED
             job.result = result
-            job.completed_at = datetime.now(timezone.utc)
+            job.completed_at = datetime.now(UTC)
 
             return result
 
         except Exception as e:
             job.status = JobStatus.FAILED
             job.error = str(e)
-            job.completed_at = datetime.now(timezone.utc)
+            job.completed_at = datetime.now(UTC)
             raise
 
         finally:
             self._running_jobs.discard(job_id)
 
-    async def execute_workflow(self, job_ids: List[UUID]) -> Dict[UUID, Any]:
+    async def execute_workflow(self, job_ids: list[UUID]) -> dict[UUID, Any]:
         """
         Execute workflow of jobs respecting dependencies.
 
@@ -223,7 +224,7 @@ class JobOrchestrator:
             tasks = [self.execute_job(job_id) for job_id in ready]
             job_results = await asyncio.gather(*tasks, return_exceptions=True)
 
-            for job_id, result in zip(ready, job_results):
+            for job_id, result in zip(ready, job_results):  # noqa: B905
                 if isinstance(result, Exception):
                     results[job_id] = {"error": str(result)}
                 else:
@@ -253,7 +254,7 @@ class JobOrchestrator:
 
         return True
 
-    def get_job_status(self, job_id: UUID) -> Optional[JobStatus]:
+    def get_job_status(self, job_id: UUID) -> JobStatus | None:
         """Get job status"""
         job = self.jobs.get(job_id)
         return job.status if job else None
@@ -274,7 +275,7 @@ class PlaybookEngine:
     """
 
     def __init__(self):
-        self.playbooks: Dict[str, Callable] = {}
+        self.playbooks: dict[str, Callable] = {}
 
     def register_playbook(self, name: str, playbook: Callable):
         """
@@ -286,7 +287,7 @@ class PlaybookEngine:
         """
         self.playbooks[name] = playbook
 
-    async def execute_playbook(self, name: str, parameters: Dict[str, Any]) -> Any:
+    async def execute_playbook(self, name: str, parameters: dict[str, Any]) -> Any:
         """
         Execute playbook by name.
 
@@ -307,6 +308,6 @@ class PlaybookEngine:
         else:
             return playbook(**parameters)
 
-    def list_playbooks(self) -> List[str]:
+    def list_playbooks(self) -> list[str]:
         """List registered playbooks"""
         return list(self.playbooks.keys())

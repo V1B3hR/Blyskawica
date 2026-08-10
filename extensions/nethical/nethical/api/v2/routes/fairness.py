@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Optional
 
 from fastapi import APIRouter, Query
 from pydantic import BaseModel, Field
@@ -26,7 +25,7 @@ router = APIRouter()
 
 class FairnessMetric(BaseModel):
     """A single fairness metric."""
-    
+
     metric_name: str = Field(..., description="Name of the fairness metric")
     value: float = Field(..., description="Metric value (0.0-1.0, where 1.0 is perfectly fair)")
     threshold: float = Field(..., description="Acceptable threshold")
@@ -36,7 +35,7 @@ class FairnessMetric(BaseModel):
 
 class GroupFairness(BaseModel):
     """Fairness metrics for a specific group."""
-    
+
     group_id: str = Field(..., description="Group identifier")
     group_name: str = Field(..., description="Human-readable group name")
     sample_size: int = Field(..., description="Number of decisions in sample")
@@ -52,7 +51,7 @@ class GroupFairness(BaseModel):
 
 class FairnessReport(BaseModel):
     """Complete fairness report."""
-    
+
     report_id: str = Field(..., description="Report identifier")
     overall_fairness_score: float = Field(
         ...,
@@ -75,7 +74,7 @@ class FairnessReport(BaseModel):
 
 class FairnessAuditRequest(BaseModel):
     """Request to trigger a fairness audit."""
-    
+
     scope: str = Field(
         default="all",
         description="Audit scope: all, agent, action_type",
@@ -86,7 +85,7 @@ class FairnessAuditRequest(BaseModel):
         le=365,
         description="Number of days to include in audit",
     )
-    groups: Optional[list[str]] = Field(
+    groups: list[str] | None = Field(
         default=None,
         description="Specific groups to include",
     )
@@ -98,7 +97,7 @@ class FairnessAuditRequest(BaseModel):
 
 class FairnessAuditResponse(BaseModel):
     """Response after triggering a fairness audit."""
-    
+
     audit_id: str = Field(..., description="Audit identifier")
     status: str = Field(..., description="pending, running, completed")
     estimated_duration_seconds: int = Field(..., description="Estimated completion time")
@@ -199,15 +198,15 @@ async def get_fairness_metrics(
         
     Returns:
         FairnessReport with current metrics
-    """
+    """  # noqa: W293
     now = datetime.now(timezone.utc)
-    
+
     metrics = _generate_sample_fairness_metrics()
     groups = _generate_sample_groups()
-    
+
     # Calculate overall score
     overall_score = sum(m.value for m in metrics) / len(metrics) if metrics else 0.0
-    
+
     # Generate recommendations
     recommendations = []
     for metric in metrics:
@@ -219,14 +218,14 @@ async def get_fairness_metrics(
             recommendations.append(
                 f"Action required on {metric.metric_name}: value {metric.value:.2f} below threshold {metric.threshold:.2f}"
             )
-    
+
     # Check for group disparities
     for group in groups:
         if group.disparity_index < 0.90 or group.disparity_index > 1.10:
-            recommendations.append(
+            recommendations.append(  # noqa: PERF401
                 f"Review treatment of {group.group_name}: disparity index {group.disparity_index:.2f}"
             )
-    
+
     return FairnessReport(
         report_id=str(uuid.uuid4()),
         overall_fairness_score=overall_score,
@@ -242,7 +241,7 @@ async def get_fairness_metrics(
 
 @router.get("/fairness/groups", response_model=list[GroupFairness])
 async def get_fairness_by_groups(
-    group_type: Optional[str] = Query(None, description="Filter by group type"),
+    group_type: str | None = Query(None, description="Filter by group type"),
 ) -> list[GroupFairness]:
     """Get fairness metrics broken down by groups.
     
@@ -254,12 +253,12 @@ async def get_fairness_by_groups(
         
     Returns:
         List of GroupFairness records
-    """
+    """  # noqa: W293
     groups = _generate_sample_groups()
-    
+
     if group_type:
         groups = [g for g in groups if group_type.lower() in g.group_id.lower()]
-    
+
     return groups
 
 
@@ -280,16 +279,16 @@ async def trigger_fairness_audit(
         
     Returns:
         FairnessAuditResponse with audit tracking info
-    """
+    """  # noqa: W293
     audit_id = str(uuid.uuid4())
-    
+
     # Estimate duration based on scope
     estimated_seconds = 30  # Base time
     if request.scope == "all":
         estimated_seconds = 60
     if request.period_days > 30:
         estimated_seconds += (request.period_days - 30) * 2
-    
+
     return FairnessAuditResponse(
         audit_id=audit_id,
         status="pending",

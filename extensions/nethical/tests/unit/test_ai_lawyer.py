@@ -10,20 +10,18 @@ Author: Nethical Core Team
 Version: 1.0.0
 """
 
+from datetime import datetime
+
 import pytest
-import asyncio
-from datetime import datetime, timedelta, timezone
-from typing import Optional
 
 from nethical.core.compliance.ai_lawyer import (
     AILawyer,
+    AuditContext,
     ReviewDecision,
     ReviewResult,
     ViolationSeverity,
-    AuditContext,
 )
 from nethical.core.kill_switch import KillSwitchProtocol
-
 
 # ========================== Test ReviewDecision Enum ==========================
 
@@ -348,7 +346,7 @@ class TestKillSwitchIntegration:
         assert result.severity == ViolationSeverity.SEVERE
         # Kill switch should be triggered
         assert result.kill_switch_triggered is True
-        
+
         # Verify statistics
         stats = ai_lawyer.get_statistics()
         assert stats["kill_switch_activations"] >= 1

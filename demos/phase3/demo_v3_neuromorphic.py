@@ -38,7 +38,9 @@ from adaptiveneuralnetwork.central_nervous_system.neuromorphic_v3 import (
 )
 
 # Import configurations
-from adaptiveneuralnetwork.central_nervous_system.neuromorphic_v3.advanced_neurons import NeuronV3Config
+from adaptiveneuralnetwork.central_nervous_system.neuromorphic_v3.advanced_neurons import (
+    NeuronV3Config,
+)
 from adaptiveneuralnetwork.central_nervous_system.neuromorphic_v3.plasticity import STDPConfig
 
 # Import hardware backends
@@ -120,7 +122,9 @@ def demo_temporal_coding():
     print("\n⏱️  TEMPORAL CODING DEMO")
     print("=" * 50)
 
-    from adaptiveneuralnetwork.central_nervous_system.neuromorphic_v3.temporal_coding import TemporalConfig
+    from adaptiveneuralnetwork.central_nervous_system.neuromorphic_v3.temporal_coding import (
+        TemporalConfig,
+    )
 
     # Temporal pattern encoder
     print("\n1. Temporal Pattern Encoding:")

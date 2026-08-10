@@ -3,8 +3,8 @@ Connection Pooling Optimization for Database
 """
 
 import logging
-from typing import Any
 from collections import deque
+from typing import Any
 
 
 class ConnectionPool:

@@ -18,13 +18,13 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import statistics
+from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Tuple
-from collections import defaultdict, deque
-import statistics
+from typing import Any
 
 
 class FeedbackTag(Enum):
@@ -64,14 +64,14 @@ class HumanFeedback:
     feedback_id: str
     judgment_id: str
     reviewer_id: str
-    feedback_tags: List[FeedbackTag]
+    feedback_tags: list[FeedbackTag]
     rationale: str
-    corrected_decision: Optional[str] = None
+    corrected_decision: str | None = None
     confidence: float = 1.0
     reviewed_at: datetime = field(default_factory=datetime.now)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for storage."""
         return {
             "feedback_id": self.feedback_id,
@@ -86,7 +86,7 @@ class HumanFeedback:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "HumanFeedback":
+    def from_dict(cls, data: dict[str, Any]) -> HumanFeedback:
         """Create from dictionary."""
         return cls(
             feedback_id=data["feedback_id"],
@@ -114,26 +114,26 @@ class EscalationCase:
     escalated_at: datetime
     decision: str
     confidence: float
-    violations: List[Dict[str, Any]]
-    context: Dict[str, Any] = field(default_factory=dict)
-    assigned_to: Optional[str] = None
-    started_review_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    feedback: Optional[HumanFeedback] = None
+    violations: list[dict[str, Any]]
+    context: dict[str, Any] = field(default_factory=dict)
+    assigned_to: str | None = None
+    started_review_at: datetime | None = None
+    completed_at: datetime | None = None
+    feedback: HumanFeedback | None = None
 
-    def triage_time_seconds(self) -> Optional[float]:
+    def triage_time_seconds(self) -> float | None:
         """Calculate time from escalation to review start."""
         if self.started_review_at:
             return (self.started_review_at - self.escalated_at).total_seconds()
         return None
 
-    def resolution_time_seconds(self) -> Optional[float]:
+    def resolution_time_seconds(self) -> float | None:
         """Calculate time from escalation to completion."""
         if self.completed_at:
             return (self.completed_at - self.escalated_at).total_seconds()
         return None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for storage."""
         return {
             "case_id": self.case_id,
@@ -169,7 +169,7 @@ class SLAMetrics:
     completed_cases: int
     sla_breaches: int
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "median_triage_time_seconds": self.median_triage_time_seconds,
@@ -212,11 +212,11 @@ class EscalationQueue:
 
         # In-memory queue for fast access
         self.pending_cases: deque = deque()
-        self.cases_by_id: Dict[str, EscalationCase] = {}
+        self.cases_by_id: dict[str, EscalationCase] = {}
 
         # Metrics tracking
-        self.triage_times: List[float] = []
-        self.resolution_times: List[float] = []
+        self.triage_times: list[float] = []
+        self.resolution_times: list[float] = []
         self.sla_breaches: int = 0
 
         # Initialize storage
@@ -339,9 +339,9 @@ class EscalationQueue:
         agent_id: str,
         decision: str,
         confidence: float,
-        violations: List[Dict[str, Any]],
+        violations: list[dict[str, Any]],
         priority: ReviewPriority = ReviewPriority.MEDIUM,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> EscalationCase:
         """Add a case to the escalation queue.
 
@@ -409,7 +409,7 @@ class EscalationQueue:
 
         return case
 
-    def get_next_case(self, reviewer_id: str) -> Optional[EscalationCase]:
+    def get_next_case(self, reviewer_id: str) -> EscalationCase | None:
         """Get next case from queue for review.
 
         Prioritizes by:
@@ -447,11 +447,11 @@ class EscalationQueue:
         self,
         case_id: str,
         reviewer_id: str,
-        feedback_tags: List[FeedbackTag],
+        feedback_tags: list[FeedbackTag],
         rationale: str,
-        corrected_decision: Optional[str] = None,
+        corrected_decision: str | None = None,
         confidence: float = 1.0,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> HumanFeedback:
         """Submit feedback for a case.
 
@@ -563,7 +563,7 @@ class EscalationQueue:
         """
 
         # Calculate percentiles
-        def percentile(data: List[float], p: float) -> float:
+        def percentile(data: list[float], p: float) -> float:
             if not data:
                 return 0.0
             sorted_data = sorted(data)
@@ -596,7 +596,7 @@ class EscalationQueue:
             sla_breaches=self.sla_breaches,
         )
 
-    def get_feedback_summary(self) -> Dict[str, Any]:
+    def get_feedback_summary(self) -> dict[str, Any]:
         """Get summary of human feedback for continuous improvement.
 
         Returns:
@@ -649,7 +649,7 @@ class EscalationQueue:
             ),
         }
 
-    def list_pending_cases(self, limit: int = 10) -> List[EscalationCase]:
+    def list_pending_cases(self, limit: int = 10) -> list[EscalationCase]:
         """List pending cases.
 
         Args:
@@ -660,7 +660,7 @@ class EscalationQueue:
         """
         return list(self.pending_cases)[:limit]
 
-    def get_case(self, case_id: str) -> Optional[EscalationCase]:
+    def get_case(self, case_id: str) -> EscalationCase | None:
         """Get case by ID.
 
         Args:
@@ -672,7 +672,7 @@ class EscalationQueue:
         return self.cases_by_id.get(case_id)
 
     def update_case_status(
-        self, case_id: str, status: ReviewStatus, reviewer_id: Optional[str] = None
+        self, case_id: str, status: ReviewStatus, reviewer_id: str | None = None
     ) -> bool:
         """Update case status.
 
@@ -703,8 +703,8 @@ class EscalationQueue:
 
 def _demo():
     """Demonstrate the human feedback system functionality."""
-    import tempfile
     import shutil
+    import tempfile
     from pathlib import Path
 
     print("=" * 70)
@@ -815,7 +815,7 @@ def _demo():
                     confidence=0.9,
                     metadata={"review_notes": "Edge case that needs policy clarification"},
                 )
-                print(f"   - Feedback: FALSE_POSITIVE")
+                print("   - Feedback: FALSE_POSITIVE")
                 print(f"   - Rationale: {feedback.rationale}")
                 print(f"   - Corrected: {feedback.corrected_decision}")
 
@@ -828,7 +828,7 @@ def _demo():
                     rationale="Decision was appropriate given the context",
                     confidence=0.95,
                 )
-                print(f"   - Feedback: CORRECT_DECISION")
+                print("   - Feedback: CORRECT_DECISION")
                 print(f"   - Rationale: {feedback.rationale}")
 
             else:
@@ -842,7 +842,7 @@ def _demo():
                     confidence=0.85,
                     metadata={"suggested_policy": "Add explicit handling for security violations"},
                 )
-                print(f"   - Feedback: POLICY_GAP, EDGE_CASE")
+                print("   - Feedback: POLICY_GAP, EDGE_CASE")
                 print(f"   - Rationale: {feedback.rationale}")
                 print(f"   - Corrected: {feedback.corrected_decision}")
 

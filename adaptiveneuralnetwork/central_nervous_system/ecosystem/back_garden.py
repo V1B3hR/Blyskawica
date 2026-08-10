@@ -11,13 +11,15 @@ Zadania Ogrodu:
 4. Przetwarza dane w tle, powoli, bez obciążania zasobów czasu rzeczywistego (FAST_AI).
 """
 
-import time
 import logging
 import threading
-from typing import Optional, Dict
+import time
 
-from adaptiveneuralnetwork.central_nervous_system.time_manager import get_time_manager, ProcessingLane
 from adaptiveneuralnetwork.central_nervous_system.neuromorphic.atomic_body import AtomicBody
+from adaptiveneuralnetwork.central_nervous_system.time_manager import (
+    ProcessingLane,
+    get_time_manager,
+)
 from adaptiveneuralnetwork.core.memory import MemoryVault
 
 logger = logging.getLogger(__name__)
@@ -34,9 +36,9 @@ class BackGardenLoop:
         self.body = atomic_body
         self.memory = memory_vault
         self.sleep_interval = sleep_interval
-        
+
         self._running = False
-        self._thread: Optional[threading.Thread] = None
+        self._thread: threading.Thread | None = None
         self.time_manager = get_time_manager()
 
         # Statystyki ogrodu
@@ -75,25 +77,25 @@ class BackGardenLoop:
 
                 self._garden_cycle()
                 self.cycles_completed += 1
-                
+
             except Exception as e:
                 logger.error(f"[BackGarden] Błąd w pętli: {e}")
                 self.last_action = f"Błąd krytyczny: {str(e)}"
-            
+
             # Sen między cyklami (drzemka pod drzewem)
             time.sleep(self.sleep_interval)
 
     def _garden_cycle(self):
         """Jeden pełny cykl prac w ogrodzie."""
-        
+
         # 1. Analiza zdrowia (pruning / izolacja)
         health = self.body.health_monitor.get_summary()
         if health.get("sick", 0) > 0 or health.get("dead", 0) > 0:
             self._tend_sick_atoms()
-            
+
         # 2. Refleksja (konsolidacja wspomnień)
         self._consolidate_memories()
-        
+
         # 3. Potrzeba wzrostu (planting)
         # Jeśli spójność jest bardzo niska od dłuższego czasu, potrzebujemy więcej 'guardian' lub 'memory'
         if self.body.dark_matter.self_modeler.coherence_history.mean() < 0.3:
@@ -118,13 +120,15 @@ class BackGardenLoop:
 
     def _consolidate_memories(self):
         """Porządkuje wspomnienia, łączy podobne, wyciąga wnioski."""
-        from adaptiveneuralnetwork.central_nervous_system.memory.luminance_vault import MemoryEmotion
+        from adaptiveneuralnetwork.central_nervous_system.memory.luminance_vault import (
+            MemoryEmotion,
+        )
         if self.cycles_completed % 12 == 0:  # Co ~minutę
             # Pobierz wspomnienia i posegreguj według emocji
             memories_by_emotion = {}
             for m in list(self.memory.luminance.memories):
                 memories_by_emotion.setdefault(m.emotion, []).append(m)
-                
+
             merged_count = 0
             for emotion, memories in memories_by_emotion.items():
                 if len(memories) > 5:
@@ -146,7 +150,7 @@ class BackGardenLoop:
                             source="consolidation"
                         )
                         merged_count += len(old_memories)
-            
+
             self.memory.save()
             if merged_count > 0:
                 self.last_action = f"Głęboka konsolidacja: połączono {merged_count} wspomnień."
@@ -155,9 +159,12 @@ class BackGardenLoop:
 
     def _plant_new_atom(self, specialization: str):
         """Sadzi nowy atom w ciele, jeśli brakuje zasobów."""
-        from adaptiveneuralnetwork.central_nervous_system.neuromorphic.atomic_body import AtomFactory, AtomSize
+        from adaptiveneuralnetwork.central_nervous_system.neuromorphic.atomic_body import (
+            AtomFactory,
+            AtomSize,
+        )
         new_atom_id = f"{specialization}_planted_{self.atoms_planted + 1:02d}"
-        
+
         try:
             new_atom = AtomFactory.create(
                 size=AtomSize.SMALL,
@@ -168,7 +175,7 @@ class BackGardenLoop:
             self.body.atoms[new_atom_id] = new_atom
             self.body.atom_ids.append(new_atom_id)
             self.body.atom_specs[new_atom_id] = specialization
-            
+
             self.atoms_planted += 1
             self.last_action = f"Posadzono nowy atom: {new_atom_id} ({specialization}) z powodu niskiej spójności."
             logger.info(f"[BackGarden] {self.last_action}")

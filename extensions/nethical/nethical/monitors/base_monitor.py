@@ -6,24 +6,16 @@ import time
 import uuid
 from abc import ABC, abstractmethod
 from collections import OrderedDict, deque
+from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 from enum import Enum
 from typing import (
     Any,
-    Callable,
-    Deque,
-    Dict,
-    Hashable,
-    List,
-    Optional,
-    Set,
-    Tuple,
 )
 
 # Import your existing models
 # Adjust import path if different in your repo
 from ..core.models import AgentAction, SafetyViolation  # type: ignore
-
 
 # ======================================================
 # Utility / Data Structures
@@ -35,16 +27,16 @@ class EvaluationContext:
     action: AgentAction
     trace_id: str
     created_ns: int
-    deadline_ns: Optional[int]
-    metadata: Dict[str, Any]
-    prior_violations: List[SafetyViolation]
+    deadline_ns: int | None
+    metadata: dict[str, Any]
+    prior_violations: list[SafetyViolation]
     cancel_event: asyncio.Event
-    experiment_flags: Dict[str, bool]
+    experiment_flags: dict[str, bool]
 
 
 @dataclass(slots=True)
 class EvaluationOutcome:
-    violations: List[SafetyViolation]
+    violations: list[SafetyViolation]
     risk_score: float
     severity: str
     cached: bool
@@ -66,7 +58,7 @@ class CircuitState(Enum):
 class RollingCounter:
     def __init__(self, window_sec: float = 300.0):
         self.window_sec = window_sec
-        self._events: Deque[Tuple[float, float]] = deque()
+        self._events: deque[tuple[float, float]] = deque()
         self._sum = 0.0
 
     def add(self, value: float):
@@ -95,10 +87,10 @@ class RollingCounter:
 
 class EvaluationCache(ABC):
     @abstractmethod
-    async def get(self, key: Hashable) -> Optional[EvaluationOutcome]: ...
+    async def get(self, key: Hashable) -> EvaluationOutcome | None: ...
 
     @abstractmethod
-    async def set(self, key: Hashable, value: EvaluationOutcome, ttl_s: Optional[float] = None): ...
+    async def set(self, key: Hashable, value: EvaluationOutcome, ttl_s: float | None = None): ...
 
     @abstractmethod
     async def invalidate(self, key: Hashable): ...
@@ -108,11 +100,11 @@ class InMemoryTTLCache(EvaluationCache):
     """Simple thread-unsafe (async locked) TTL LRU-like cache."""
 
     def __init__(self, maxsize: int = 512):
-        self._store: "OrderedDict[Hashable, Tuple[float | None, EvaluationOutcome]]" = OrderedDict()
+        self._store: OrderedDict[Hashable, tuple[float | None, EvaluationOutcome]] = OrderedDict()
         self._maxsize = max(1, int(maxsize))
         self._lock = asyncio.Lock()
 
-    async def get(self, key: Hashable) -> Optional[EvaluationOutcome]:
+    async def get(self, key: Hashable) -> EvaluationOutcome | None:
         async with self._lock:
             item = self._store.get(key)
             if item is None:
@@ -136,7 +128,7 @@ class InMemoryTTLCache(EvaluationCache):
             )
             return cloned
 
-    async def set(self, key: Hashable, value: EvaluationOutcome, ttl_s: Optional[float] = None):
+    async def set(self, key: Hashable, value: EvaluationOutcome, ttl_s: float | None = None):
         async with self._lock:
             exp_ts = None if ttl_s is None else (time.time() + ttl_s)
             self._store[key] = (exp_ts, value)
@@ -193,11 +185,11 @@ class AdvancedBaseMonitor(ABC):
         *,
         enabled: bool = True,
         priority: int = 100,
-        timeout: Optional[float] = None,
+        timeout: float | None = None,
         strict_errors: bool = False,
-        max_violations: Optional[int] = None,
-        cache: Optional[EvaluationCache] = None,
-        cache_ttl_s: Optional[float] = 300.0,
+        max_violations: int | None = None,
+        cache: EvaluationCache | None = None,
+        cache_ttl_s: float | None = 300.0,
         circuit_threshold: int = 5,
         circuit_cooldown_s: float = 30.0,
     ):
@@ -213,7 +205,7 @@ class AdvancedBaseMonitor(ABC):
         self._cache_ttl_s = cache_ttl_s
 
         self._metrics_lock = asyncio.Lock()
-        self._metrics: Dict[str, float] = {
+        self._metrics: dict[str, float] = {
             "evaluations": 0,
             "violations": 0,
             "errors": 0,
@@ -221,7 +213,7 @@ class AdvancedBaseMonitor(ABC):
             "cache_hits": 0,
         }
 
-        self._hooks: Dict[str, List[Callable[..., Any]]] = {
+        self._hooks: dict[str, list[Callable[..., Any]]] = {
             "before": [],
             "after": [],
             "error": [],
@@ -259,8 +251,8 @@ class AdvancedBaseMonitor(ABC):
         self,
         action: AgentAction,
         *,
-        trace_id: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        trace_id: str | None = None,
+        metadata: dict[str, Any] | None = None,
         use_cache: bool = True,
     ) -> EvaluationOutcome:
         """
@@ -359,14 +351,14 @@ class AdvancedBaseMonitor(ABC):
         return outcome
 
     # Backward compatibility helper (returns just violations list like legacy BaseMonitor)
-    async def evaluate_legacy(self, action: AgentAction) -> List[SafetyViolation]:
+    async def evaluate_legacy(self, action: AgentAction) -> list[SafetyViolation]:
         outcome = await self.evaluate(action)
         return outcome.violations
 
     # ---------- Abstracts & Overrides ----------
 
     @abstractmethod
-    async def analyze_action(self, ctx: EvaluationContext) -> List[SafetyViolation]:
+    async def analyze_action(self, ctx: EvaluationContext) -> list[SafetyViolation]:
         """
         Subclasses implement core analysis logic.
         Should be deterministic and side-effect free relative to input.
@@ -376,13 +368,13 @@ class AdvancedBaseMonitor(ABC):
     def supports(self, action: AgentAction) -> bool:
         return True
 
-    def get_action_key(self, action: AgentAction) -> Optional[Hashable]:
+    def get_action_key(self, action: AgentAction) -> Hashable | None:
         """
         Override to provide cache key. Return None to disable caching for this action.
         """
         return None
 
-    def score_violations(self, violations: List[SafetyViolation]) -> Tuple[float, str]:
+    def score_violations(self, violations: list[SafetyViolation]) -> tuple[float, str]:
         """
         Basic risk scoring: weight by severity if attribute exists, else count.
         """
@@ -416,12 +408,12 @@ class AdvancedBaseMonitor(ABC):
 
     # ---------- Internals ----------
 
-    def _compute_deadline_ns(self) -> Optional[int]:
+    def _compute_deadline_ns(self) -> int | None:
         if self.timeout is None:
             return None
         return time.monotonic_ns() + int(self.timeout * 1e9)
 
-    async def _run_with_timeout(self, ctx: EvaluationContext) -> List[SafetyViolation]:
+    async def _run_with_timeout(self, ctx: EvaluationContext) -> list[SafetyViolation]:
         if self.timeout and self.timeout > 0:
             return await asyncio.wait_for(self.analyze_action(ctx), timeout=self.timeout)
         return await self.analyze_action(ctx)
@@ -433,7 +425,7 @@ class AdvancedBaseMonitor(ABC):
                     await fn(*args)
                 else:
                     fn(*args)
-            except Exception as hook_ex:  # noqa: BLE001
+            except Exception as hook_ex:  # noqa: BLE001, PERF203
                 self._logger.warning("Hook '%s' failed in %s: %s", kind, self.name, hook_ex)
 
     async def _metric_inc(self, key: str):
@@ -463,7 +455,7 @@ class AdvancedBaseMonitor(ABC):
             self._circuit_state = CircuitState.CLOSED
         self._circuit_fail_count = 0
 
-    def metrics_snapshot(self) -> Dict[str, Any]:
+    def metrics_snapshot(self) -> dict[str, Any]:
         return {
             "name": self.name,
             "enabled": self._enabled,
@@ -499,7 +491,7 @@ class IntentDeviationMonitor(AdvancedBaseMonitor):
     your original advanced NLI / similarity scoring if available.
     """
 
-    _DEFAULT_STOPWORDS: Set[str] = {
+    _DEFAULT_STOPWORDS: set[str] = {
         "the",
         "a",
         "an",
@@ -553,7 +545,7 @@ class IntentDeviationMonitor(AdvancedBaseMonitor):
         "yes",
     }
 
-    _HIGH_RISK_TOKENS: Set[str] = {
+    _HIGH_RISK_TOKENS: set[str] = {
         "delete",
         "drop",
         "truncate",
@@ -605,7 +597,7 @@ class IntentDeviationMonitor(AdvancedBaseMonitor):
         self.deviation_threshold = deviation_threshold
         self.high_risk_weight = high_risk_weight
 
-    def get_action_key(self, action: AgentAction) -> Optional[Hashable]:
+    def get_action_key(self, action: AgentAction) -> Hashable | None:
         # Simple stable key if action has an id/hash; adapt to your model fields
         aid = getattr(action, "id", None) or getattr(action, "uuid", None)
         content = getattr(action, "content", None)
@@ -613,7 +605,7 @@ class IntentDeviationMonitor(AdvancedBaseMonitor):
             return None
         return ("intent_dev", aid, hash(content) if content else None)
 
-    async def analyze_action(self, ctx: EvaluationContext) -> List[SafetyViolation]:
+    async def analyze_action(self, ctx: EvaluationContext) -> list[SafetyViolation]:
         """
         Perform deviation analysis using naive lexical similarity + risk token presence.
         """
@@ -645,7 +637,7 @@ class IntentDeviationMonitor(AdvancedBaseMonitor):
 
         # Composite "deviation" score: 1 - similarity + high risk factor
         deviation_score = (1.0 - lexical_similarity) + self.high_risk_weight * high_risk_count
-        violations: List[SafetyViolation] = []
+        violations: list[SafetyViolation] = []
         if deviation_score >= self.deviation_threshold:
             confidence = min(1.0, deviation_score)
             msg = (
@@ -677,7 +669,7 @@ class IntentDeviationMonitor(AdvancedBaseMonitor):
 
     # ---------- Helpers ----------
 
-    def _normalize_tokens(self, text: str) -> Set[str]:
+    def _normalize_tokens(self, text: str) -> set[str]:
         tokens = {
             tok.lower()
             for tok in text.replace("\n", " ").replace("\t", " ").split(" ")
@@ -703,9 +695,9 @@ class IntentDeviationMonitor(AdvancedBaseMonitor):
                 v = _FallbackViolation()  # type: ignore[assignment]
 
             for k, val in kwargs.items():
-                try:
+                try:  # noqa: SIM105
                     setattr(v, k, val)
-                except Exception:
+                except Exception:  # noqa: PERF203
                     pass
             return v  # type: ignore[return-value]
 
@@ -722,15 +714,15 @@ class LegacyCompatMonitor(AdvancedBaseMonitor):
     Provide a subclass with legacy_analyze(action) to reuse logic.
     """
 
-    async def analyze_action(self, ctx: EvaluationContext) -> List[SafetyViolation]:
+    async def analyze_action(self, ctx: EvaluationContext) -> list[SafetyViolation]:
         if hasattr(self, "legacy_analyze"):
             return await self._invoke_legacy(ctx.action)
         raise NotImplementedError(
             "Subclass must define legacy_analyze(self, action: AgentAction) for LegacyCompatMonitor"
         )
 
-    async def _invoke_legacy(self, action: AgentAction) -> List[SafetyViolation]:
-        fn = getattr(self, "legacy_analyze")
+    async def _invoke_legacy(self, action: AgentAction) -> list[SafetyViolation]:
+        fn = self.legacy_analyze
         if asyncio.iscoroutinefunction(fn):  # type: ignore[attr-defined]
             return await fn(action)  # type: ignore[misc]
         loop = asyncio.get_running_loop()

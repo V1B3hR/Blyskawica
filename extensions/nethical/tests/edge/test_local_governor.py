@@ -7,15 +7,12 @@ Target: <10ms p99 latency
 
 import time
 
-import pytest
-
-from nethical.edge.local_governor import EdgeGovernor, EdgeDecision, DecisionType
-from nethical.edge.policy_cache import PolicyCache, CachedPolicy
-from nethical.edge.fast_detector import FastDetector, DetectionResult
-from nethical.edge.safe_defaults import SafeDefaults
-from nethical.edge.predictive_engine import PredictiveEngine
-from nethical.edge.context_fingerprint import compute_fingerprint
 from nethical.edge.circuit_breaker import CircuitBreaker, CircuitState
+from nethical.edge.context_fingerprint import compute_fingerprint
+from nethical.edge.fast_detector import FastDetector
+from nethical.edge.local_governor import DecisionType, EdgeDecision, EdgeGovernor
+from nethical.edge.policy_cache import CachedPolicy, PolicyCache
+from nethical.edge.predictive_engine import PredictiveEngine
 
 
 class TestEdgeGovernor:
@@ -333,7 +330,7 @@ class TestCircuitBreaker:
     def test_recovery(self):
         """Test circuit recovery through half-open state."""
         from nethical.edge.circuit_breaker import CircuitConfig
-        
+
         config = CircuitConfig(
             failure_threshold=3,
             recovery_timeout_seconds=0.1,  # Fast recovery for testing

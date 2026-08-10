@@ -4,9 +4,7 @@ Bioart Translator Module
 Complete, reversible translator for DNA-based encoding with real-world usability
 """
 
-from typing import Union, Optional, Dict, Any, List
-import sys
-import os
+from typing import Any, Dict, List, Union
 
 # Handle both relative and absolute imports
 try:
@@ -20,7 +18,7 @@ class BioartTranslator:
     Comprehensive translator for converting between text, binary, and DNA sequences.
     Provides a clean, user-friendly API for real-world applications.
     """
-    
+
     def __init__(self):
         """Initialize the translator with DNA encoder"""
         self.encoder = DNAEncoder()
@@ -30,11 +28,11 @@ class BioartTranslator:
             'modifications': 0,
             'validations': 0
         }
-    
+
     # ======================================
     # TEXT TO DNA TRANSLATION
     # ======================================
-    
+
     def text_to_dna(self, text: str) -> str:
         """
         Convert text string to DNA sequence
@@ -48,15 +46,15 @@ class BioartTranslator:
         Example:
             >>> translator.text_to_dna("Hello")
             'UACAUCUUUCGAUCGAUCGA'
-        """
+        """  # noqa: W293
         try:
             byte_data = text.encode('utf-8')
             dna_sequence = self.encoder.encode_bytes(byte_data)
             self.stats['translations'] += 1
             return dna_sequence
         except Exception as e:
-            raise ValueError(f"Failed to convert text to DNA: {e}")
-    
+            raise ValueError(f"Failed to convert text to DNA: {e}")  # noqa: B904
+
     def dna_to_text(self, dna_sequence: str) -> str:
         """
         Convert DNA sequence back to text string
@@ -70,21 +68,21 @@ class BioartTranslator:
         Example:
             >>> translator.dna_to_text('UACAUCUUUCGAUCGAUCGA')
             'Hello'
-        """
+        """  # noqa: W293
         try:
             byte_data = self.encoder.decode_dna(dna_sequence)
             text = bytes(byte_data).decode('utf-8')
             self.stats['reversals'] += 1
             return text
         except UnicodeDecodeError:
-            raise ValueError("DNA sequence does not represent valid UTF-8 text")
+            raise ValueError("DNA sequence does not represent valid UTF-8 text")  # noqa: B904
         except Exception as e:
-            raise ValueError(f"Failed to convert DNA to text: {e}")
-    
+            raise ValueError(f"Failed to convert DNA to text: {e}")  # noqa: B904
+
     # ======================================
     # BINARY TO DNA TRANSLATION
     # ======================================
-    
+
     def binary_to_dna(self, data: Union[bytes, bytearray, List[int]]) -> str:
         """
         Convert binary data to DNA sequence
@@ -98,14 +96,14 @@ class BioartTranslator:
         Example:
             >>> translator.binary_to_dna(b'\\x48\\x65\\x6c\\x6c\\x6f')
             'UACAUCUUUCGAUCGAUCGA'
-        """
+        """  # noqa: W293
         try:
             dna_sequence = self.encoder.encode_bytes(data)
             self.stats['translations'] += 1
             return dna_sequence
         except Exception as e:
-            raise ValueError(f"Failed to convert binary to DNA: {e}")
-    
+            raise ValueError(f"Failed to convert binary to DNA: {e}")  # noqa: B904
+
     def dna_to_binary(self, dna_sequence: str) -> bytes:
         """
         Convert DNA sequence to binary data
@@ -119,18 +117,18 @@ class BioartTranslator:
         Example:
             >>> translator.dna_to_binary('UACAUCUUUCGAUCGAUCGA')
             b'Hello'
-        """
+        """  # noqa: W293
         try:
             byte_data = self.encoder.decode_dna(dna_sequence)
             self.stats['reversals'] += 1
             return bytes(byte_data)
         except Exception as e:
-            raise ValueError(f"Failed to convert DNA to binary: {e}")
-    
+            raise ValueError(f"Failed to convert DNA to binary: {e}")  # noqa: B904
+
     # ======================================
     # FILE OPERATIONS
     # ======================================
-    
+
     def file_to_dna(self, filename: str) -> str:
         """
         Convert entire file to DNA sequence
@@ -140,7 +138,7 @@ class BioartTranslator:
             
         Returns:
             DNA sequence representing the file contents
-        """
+        """  # noqa: W293
         try:
             with open(filename, 'rb') as f:
                 data = f.read()
@@ -148,10 +146,10 @@ class BioartTranslator:
             self.stats['translations'] += 1
             return dna_sequence
         except FileNotFoundError:
-            raise FileNotFoundError(f"File not found: {filename}")
+            raise FileNotFoundError(f"File not found: {filename}")  # noqa: B904
         except Exception as e:
-            raise ValueError(f"Failed to convert file to DNA: {e}")
-    
+            raise ValueError(f"Failed to convert file to DNA: {e}")  # noqa: B904
+
     def dna_to_file(self, dna_sequence: str, filename: str) -> None:
         """
         Convert DNA sequence to file
@@ -159,19 +157,19 @@ class BioartTranslator:
         Args:
             dna_sequence: DNA sequence to decode
             filename: Path to output file
-        """
+        """  # noqa: W293
         try:
             byte_data = self.encoder.decode_dna(dna_sequence)
             with open(filename, 'wb') as f:
                 f.write(bytes(byte_data))
             self.stats['reversals'] += 1
         except Exception as e:
-            raise ValueError(f"Failed to write DNA to file: {e}")
-    
+            raise ValueError(f"Failed to write DNA to file: {e}")  # noqa: B904
+
     # ======================================
     # DNA SEQUENCE MODIFICATION
     # ======================================
-    
+
     def modify_nucleotide(self, dna_sequence: str, position: int, new_nucleotide: str) -> str:
         """
         Modify a single nucleotide in a DNA sequence
@@ -183,18 +181,18 @@ class BioartTranslator:
             
         Returns:
             Modified DNA sequence
-        """
+        """  # noqa: W293
         if position < 0 or position >= len(dna_sequence):
             raise ValueError(f"Position {position} out of range for sequence of length {len(dna_sequence)}")
-        
+
         if new_nucleotide.upper() not in ['A', 'U', 'C', 'G']:
             raise ValueError(f"Invalid nucleotide: {new_nucleotide}")
-        
+
         seq_list = list(dna_sequence.upper())
         seq_list[position] = new_nucleotide.upper()
         self.stats['modifications'] += 1
         return ''.join(seq_list)
-    
+
     def insert_sequence(self, dna_sequence: str, position: int, insert_seq: str) -> str:
         """
         Insert a DNA sequence at a specific position
@@ -206,19 +204,19 @@ class BioartTranslator:
             
         Returns:
             Modified DNA sequence
-        """
+        """  # noqa: W293
         if position < 0 or position > len(dna_sequence):
             raise ValueError(f"Position {position} out of range for sequence of length {len(dna_sequence)}")
-        
+
         # Validate insert sequence
         for nucleotide in insert_seq.upper():
             if nucleotide not in ['A', 'U', 'C', 'G']:
                 raise ValueError(f"Invalid nucleotide in insert sequence: {nucleotide}")
-        
+
         modified = dna_sequence[:position] + insert_seq.upper() + dna_sequence[position:]
         self.stats['modifications'] += 1
         return modified
-    
+
     def delete_sequence(self, dna_sequence: str, start: int, length: int) -> str:
         """
         Delete a portion of DNA sequence
@@ -230,17 +228,17 @@ class BioartTranslator:
             
         Returns:
             Modified DNA sequence
-        """
+        """  # noqa: W293
         if start < 0 or start >= len(dna_sequence):
             raise ValueError(f"Start position {start} out of range")
-        
+
         if start + length > len(dna_sequence):
-            raise ValueError(f"Deletion extends beyond sequence length")
-        
+            raise ValueError("Deletion extends beyond sequence length")
+
         modified = dna_sequence[:start] + dna_sequence[start + length:]
         self.stats['modifications'] += 1
         return modified
-    
+
     def replace_sequence(self, dna_sequence: str, start: int, length: int, new_seq: str) -> str:
         """
         Replace a portion of DNA sequence with new sequence
@@ -253,23 +251,23 @@ class BioartTranslator:
             
         Returns:
             Modified DNA sequence
-        """
+        """  # noqa: W293
         if start < 0 or start >= len(dna_sequence):
             raise ValueError(f"Start position {start} out of range")
-        
+
         # Validate new sequence
         for nucleotide in new_seq.upper():
             if nucleotide not in ['A', 'U', 'C', 'G']:
                 raise ValueError(f"Invalid nucleotide in new sequence: {nucleotide}")
-        
+
         modified = dna_sequence[:start] + new_seq.upper() + dna_sequence[start + length:]
         self.stats['modifications'] += 1
         return modified
-    
+
     # ======================================
     # VALIDATION AND VERIFICATION
     # ======================================
-    
+
     def validate_dna(self, dna_sequence: str) -> bool:
         """
         Validate that a string is a valid DNA sequence
@@ -279,16 +277,16 @@ class BioartTranslator:
             
         Returns:
             True if valid, False otherwise
-        """
+        """  # noqa: W293
         try:
             for nucleotide in dna_sequence.upper():
                 if nucleotide not in ['A', 'U', 'C', 'G']:
                     return False
             self.stats['validations'] += 1
             return True
-        except:
+        except:  # noqa: E722
             return False
-    
+
     def verify_reversibility(self, data: Union[str, bytes]) -> Dict[str, Any]:
         """
         Verify that data can be converted to DNA and back without loss
@@ -298,7 +296,7 @@ class BioartTranslator:
             
         Returns:
             Dictionary with verification results
-        """
+        """  # noqa: W293
         result = {
             'success': False,
             'original_size': 0,
@@ -307,7 +305,7 @@ class BioartTranslator:
             'match': False,
             'error': None
         }
-        
+
         try:
             # Convert to bytes if string
             if isinstance(data, str):
@@ -316,30 +314,30 @@ class BioartTranslator:
             else:
                 original_bytes = data
                 result['original_size'] = len(original_bytes)
-            
+
             # Convert to DNA
             dna_sequence = self.encoder.encode_bytes(original_bytes)
             result['dna_size'] = len(dna_sequence)
-            
+
             # Convert back
             restored_bytes = bytes(self.encoder.decode_dna(dna_sequence))
             result['restored_size'] = len(restored_bytes)
-            
+
             # Verify match
             result['match'] = (original_bytes == restored_bytes)
             result['success'] = result['match']
-            
+
             self.stats['validations'] += 1
-            
+
         except Exception as e:
             result['error'] = str(e)
-        
+
         return result
-    
+
     # ======================================
     # UTILITY FUNCTIONS
     # ======================================
-    
+
     def get_sequence_info(self, dna_sequence: str) -> Dict[str, Any]:
         """
         Get information about a DNA sequence
@@ -349,7 +347,7 @@ class BioartTranslator:
             
         Returns:
             Dictionary with sequence information
-        """
+        """  # noqa: W293
         info = {
             'length': len(dna_sequence),
             'byte_capacity': len(dna_sequence) // 4,
@@ -358,21 +356,21 @@ class BioartTranslator:
             'nucleotide_counts': {},
             'gc_content': 0.0
         }
-        
+
         if info['is_valid']:
             seq_upper = dna_sequence.upper()
             for nucleotide in ['A', 'U', 'C', 'G']:
                 count = seq_upper.count(nucleotide)
                 info['nucleotide_counts'][nucleotide] = count
-            
+
             # Calculate GC content
             total = len(dna_sequence)
             gc_count = info['nucleotide_counts'].get('G', 0) + info['nucleotide_counts'].get('C', 0)
             if total > 0:
                 info['gc_content'] = (gc_count / total) * 100
-        
+
         return info
-    
+
     def format_dna(self, dna_sequence: str, width: int = 80, group_size: int = 4) -> str:
         """
         Format DNA sequence for display
@@ -384,29 +382,29 @@ class BioartTranslator:
             
         Returns:
             Formatted DNA sequence
-        """
+        """  # noqa: W293
         formatted = []
         for i in range(0, len(dna_sequence), group_size):
             chunk = dna_sequence[i:i+group_size]
             formatted.append(chunk)
-        
+
         # Join with spaces and wrap at width
         grouped = ' '.join(formatted)
         lines = []
         for i in range(0, len(grouped), width):
             lines.append(grouped[i:i+width])
-        
+
         return '\n'.join(lines)
-    
+
     def get_stats(self) -> Dict[str, int]:
         """
         Get translator usage statistics
         
         Returns:
             Dictionary with usage stats
-        """
+        """  # noqa: W293
         return self.stats.copy()
-    
+
     def reset_stats(self) -> None:
         """Reset usage statistics"""
         self.stats = {

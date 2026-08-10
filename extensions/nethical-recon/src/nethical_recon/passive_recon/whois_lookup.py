@@ -3,7 +3,6 @@
 import socket
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
 
 
 @dataclass
@@ -11,15 +10,15 @@ class WHOISResult:
     """Represents WHOIS query result."""
 
     domain: str
-    registrar: Optional[str] = None
-    creation_date: Optional[datetime] = None
-    expiration_date: Optional[datetime] = None
-    updated_date: Optional[datetime] = None
+    registrar: str | None = None
+    creation_date: datetime | None = None
+    expiration_date: datetime | None = None
+    updated_date: datetime | None = None
     nameservers: list[str] = None
     status: list[str] = None
     emails: list[str] = None
-    organization: Optional[str] = None
-    raw_response: Optional[str] = None
+    organization: str | None = None
+    raw_response: str | None = None
 
     def __post_init__(self):
         if self.nameservers is None:
@@ -145,7 +144,7 @@ class WHOISLookup:
 
         return result
 
-    def get_domain_age_days(self, result: WHOISResult) -> Optional[int]:
+    def get_domain_age_days(self, result: WHOISResult) -> int | None:
         """Calculate domain age in days.
 
         Args:

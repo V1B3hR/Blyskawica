@@ -347,7 +347,7 @@ class CounterfactualReasoner:
         """Generate multiple counterfactual scenarios for a decision"""
 
         scenarios = []
-        current_time = time.time()
+        current_time = time.time()  # noqa: F841
 
         # Generate scenarios using different templates
         template_names = list(self.scenario_templates.keys())
@@ -759,7 +759,7 @@ class NaturalLanguageExplainer:
         decision_id = decision_data.get("decision_id", "unknown")
 
         # Extract key information
-        decision = str(decision_data.get("decision", "unknown decision"))
+        decision = str(decision_data.get("decision", "unknown decision"))  # noqa: F841
         confidence = decision_data.get("confidence", 0.5)
         reasoning_chain = decision_data.get("reasoning_chain", [])
         ethical_factors = decision_data.get("ethical_factors", [])
@@ -1056,7 +1056,7 @@ class DecisionTransparencySystem:
             "transparency_metrics": {
                 "attention_entropy": attention_map.attention_entropy,
                 "explanation_readability": np.mean([exp.readability_score for exp in explanations.values()]),
-                "counterfactual_diversity": len(set(s.explanation for s in counterfactual_scenarios)),
+                "counterfactual_diversity": len(set(s.explanation for s in counterfactual_scenarios)),  # noqa: C401
                 "overall_transparency_score": self._calculate_transparency_score(attention_map, counterfactual_scenarios, explanations)
             }
         }
@@ -1117,7 +1117,7 @@ class DecisionTransparencySystem:
 
         # Counterfactual diversity score
         if scenarios:
-            unique_explanations = len(set(s.explanation for s in scenarios))
+            unique_explanations = len(set(s.explanation for s in scenarios))  # noqa: C401
             counterfactual_score = min(1.0, unique_explanations / 5.0)  # Normalize to max 5
         else:
             counterfactual_score = 0.0
@@ -1199,7 +1199,7 @@ class DecisionTransparencySystem:
 
         for log in self.transparency_logs.values():
             explanations = log["natural_language_explanations"]
-            for exp_type, explanation in explanations.items():
+            for exp_type, explanation in explanations.items():  # noqa: B007
                 readability_scores.append(explanation["readability_score"])
                 explanation_lengths.append(len(explanation["explanation_text"]))
 

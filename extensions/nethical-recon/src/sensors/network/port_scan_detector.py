@@ -150,7 +150,7 @@ class PortScanDetector(BaseSensor):
         with self._lock:
             for ip, attempts in self._connection_attempts.items():
                 # Count unique ports
-                unique_ports = set(port for port, _ in attempts)
+                unique_ports = set(port for port, _ in attempts)  # noqa: C401
 
                 # If unique port count exceeds threshold, it's a scan
                 if len(unique_ports) >= self.port_threshold:
@@ -167,14 +167,14 @@ class PortScanDetector(BaseSensor):
         """
         with self._lock:
             attempts = self._connection_attempts.get(scanner_ip, [])
-            unique_ports = set(port for port, _ in attempts)
+            unique_ports = set(port for port, _ in attempts)  # noqa: C401
 
             # Calculate scan characteristics
             scan_info = {
                 "scanner_ip": scanner_ip,
                 "unique_ports": len(unique_ports),
                 "total_attempts": len(attempts),
-                "ports": sorted(list(unique_ports))[:20],  # First 20 ports
+                "ports": sorted(list(unique_ports))[:20],  # First 20 ports  # noqa: C414
                 "time_window": self.time_window,
             }
 
@@ -217,7 +217,7 @@ class PortScanDetector(BaseSensor):
         with self._lock:
             scanner_stats = []
             for ip, attempts in self._connection_attempts.items():
-                unique_ports = len(set(port for port, _ in attempts))
+                unique_ports = len(set(port for port, _ in attempts))  # noqa: C401
                 scanner_stats.append((ip, unique_ports))
 
             # Sort by port count descending

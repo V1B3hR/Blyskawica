@@ -10,10 +10,10 @@ This module implements:
 import hashlib
 import json
 import time
-from pathlib import Path
-from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Optional
 
 
 @dataclass
@@ -23,7 +23,7 @@ class MerkleNode:
     hash_value: str
     left: Optional["MerkleNode"] = None
     right: Optional["MerkleNode"] = None
-    data: Optional[Dict[str, Any]] = None
+    data: dict[str, Any] | None = None
 
 
 @dataclass
@@ -31,13 +31,13 @@ class AuditChunk:
     """Chunk of audit events with Merkle root."""
 
     chunk_id: str
-    events: List[Dict[str, Any]] = field(default_factory=list)
-    merkle_root: Optional[str] = None
+    events: list[dict[str, Any]] = field(default_factory=list)
+    merkle_root: str | None = None
     created_at: datetime = field(default_factory=datetime.utcnow)
-    finalized_at: Optional[datetime] = None
+    finalized_at: datetime | None = None
     event_count: int = 0
     anchored: bool = False
-    anchor_location: Optional[str] = None
+    anchor_location: str | None = None
 
 
 class MerkleAnchor:
@@ -48,7 +48,7 @@ class MerkleAnchor:
         storage_path: str = "audit_logs",
         chunk_size: int = 1000,
         hash_algorithm: str = "sha256",
-        s3_bucket: Optional[str] = None,
+        s3_bucket: str | None = None,
         enable_object_lock: bool = False,
     ):
         """Initialize Merkle anchor system.
@@ -68,13 +68,13 @@ class MerkleAnchor:
         self.enable_object_lock = enable_object_lock
 
         # Current chunk being built
-        self.current_chunk: Optional[AuditChunk] = None
+        self.current_chunk: AuditChunk | None = None
 
         # Finalized chunks
-        self.finalized_chunks: Dict[str, AuditChunk] = {}
+        self.finalized_chunks: dict[str, AuditChunk] = {}
 
         # Merkle roots index
-        self.merkle_roots: Dict[str, str] = {}  # chunk_id -> root
+        self.merkle_roots: dict[str, str] = {}  # chunk_id -> root
 
         # Initialize first chunk
         self._create_new_chunk()
@@ -105,7 +105,7 @@ class MerkleAnchor:
         else:
             raise ValueError(f"Unsupported hash algorithm: {self.hash_algorithm}")
 
-    def _build_merkle_tree(self, events: List[Dict[str, Any]]) -> MerkleNode:
+    def _build_merkle_tree(self, events: list[dict[str, Any]]) -> MerkleNode:
         """Build Merkle tree from events.
 
         Args:
@@ -136,7 +136,7 @@ class MerkleAnchor:
                 left = current_level[i]
 
                 # Handle odd number of nodes - duplicate last node
-                if i + 1 >= len(current_level):
+                if i + 1 >= len(current_level):  # noqa: SIM108
                     right = left
                 else:
                     right = current_level[i + 1]
@@ -152,7 +152,7 @@ class MerkleAnchor:
 
         return current_level[0]
 
-    def add_event(self, event_data: Dict[str, Any]) -> bool:
+    def add_event(self, event_data: dict[str, Any]) -> bool:
         """Add event to current chunk.
 
         Args:
@@ -245,7 +245,7 @@ class MerkleAnchor:
         chunk.anchor_location = f"s3://{self.s3_bucket}/{chunk.chunk_id}.json"
 
     def verify_event(
-        self, event_id: str, expected_merkle_root: str, chunk_id: Optional[str] = None
+        self, event_id: str, expected_merkle_root: str, chunk_id: str | None = None
     ) -> bool:
         """Verify event integrity against Merkle root.
 
@@ -301,8 +301,8 @@ class MerkleAnchor:
         return computed_root == chunk.merkle_root
 
     def get_merkle_proof(
-        self, event_id: str, chunk_id: Optional[str] = None
-    ) -> Optional[List[str]]:
+        self, event_id: str, chunk_id: str | None = None
+    ) -> list[str] | None:
         """Get Merkle proof for event verification.
 
         Args:
@@ -342,7 +342,7 @@ class MerkleAnchor:
         proof = []
         return proof
 
-    def get_chunk_info(self, chunk_id: str) -> Optional[Dict[str, Any]]:
+    def get_chunk_info(self, chunk_id: str) -> dict[str, Any] | None:
         """Get information about a chunk.
 
         Args:
@@ -365,15 +365,15 @@ class MerkleAnchor:
             "anchor_location": chunk.anchor_location,
         }
 
-    def list_chunks(self) -> List[Dict[str, Any]]:
+    def list_chunks(self) -> list[dict[str, Any]]:
         """List all finalized chunks.
 
         Returns:
             List of chunk information dictionaries
         """
-        return [self.get_chunk_info(chunk_id) for chunk_id in self.finalized_chunks.keys()]
+        return [self.get_chunk_info(chunk_id) for chunk_id in self.finalized_chunks.keys()]  # noqa: SIM118
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get system statistics.
 
         Returns:

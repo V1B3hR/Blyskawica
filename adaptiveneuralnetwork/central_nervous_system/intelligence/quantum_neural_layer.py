@@ -14,14 +14,14 @@ Parameter Shift Rule (PSR):
   Wymaga 2 ewaluacji obwodu na parametr — działa na rzeczywistym sprzęcie.
 """
 
-import math
 import logging
-from typing import Optional, List, Tuple
+import math
 
+import numpy as np
 import torch
 import torch.nn as nn
+
 from adaptiveneuralnetwork.cognitive_tools.ground_loop_isolator import GroundLoopIsolator
-import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -44,14 +44,13 @@ except ImportError:
     _AER_AVAILABLE = False
 
 try:
-    from qiskit_ibm_runtime import QiskitRuntimeService, EstimatorV2 as IBMEstimator
     from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
+    from qiskit_ibm_runtime import EstimatorV2 as IBMEstimator, QiskitRuntimeService  # noqa: F401
     _IBM_AVAILABLE = True
 except ImportError:
     _IBM_AVAILABLE = False
 
 def get_workspace_root():
-    import os
     from pathlib import Path
     current = Path(__file__).resolve()
     for parent in current.parents:
@@ -122,7 +121,7 @@ class QuantumNeuralLayer(nn.Module):
                  n_layers: int = 2,
                  backend: str = "aer",
                  shots: int = 1024,
-                 ibm_service: Optional[object] = None,
+                 ibm_service: object | None = None,
                  use_gli_stabilization: bool = True):
         """
         Args:
@@ -422,7 +421,6 @@ def run_qml_training_demo(n_steps: int = 20, backend: str = "aer") -> dict:
 
 
 if __name__ == "__main__":
-    import sys
     import json
 
     logging.basicConfig(level=logging.WARNING)

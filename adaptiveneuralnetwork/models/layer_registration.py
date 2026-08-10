@@ -38,9 +38,11 @@ def register_adaptive_layers():
     """Register adaptive neural network layers with the global layer registry."""
 
     try:
-        from adaptiveneuralnetwork.central_nervous_system.dynamics import AdaptiveDynamics
-        from adaptiveneuralnetwork.central_nervous_system.nodes import NodeState
-        from adaptiveneuralnetwork.central_nervous_system.phases import PhaseScheduler
+        from adaptiveneuralnetwork.central_nervous_system.dynamics import (
+            AdaptiveDynamics,  # noqa: F401
+        )
+        from adaptiveneuralnetwork.central_nervous_system.nodes import NodeState  # noqa: F401
+        from adaptiveneuralnetwork.central_nervous_system.phases import PhaseScheduler  # noqa: F401
 
         # Note: These aren't typical nn.Module layers but can be wrapped if needed
         # For now, we'll skip auto-registration since they require specific initialization

@@ -22,12 +22,12 @@ Usage:
     
     # Query with PII redaction
     results = connector.query([0.1, 0.2, ...], top_k=10)
-"""
+"""  # noqa: W293
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from .base import VectorStoreProvider, VectorSearchResult
+from .base import VectorSearchResult, VectorStoreProvider
 
 logger = logging.getLogger(__name__)
 
@@ -48,13 +48,13 @@ class PineconeConnector(VectorStoreProvider):
     - PII detection and redaction on query results
     - Audit logging for all operations
     - Namespace support for multi-tenancy
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
-        api_key: Optional[str] = None,
-        environment: Optional[str] = None,
-        index_name: Optional[str] = None,
+        api_key: str | None = None,
+        environment: str | None = None,
+        index_name: str | None = None,
         enable_governance: bool = True,
         enable_pii_detection: bool = True,
         enable_audit_logging: bool = True,
@@ -72,26 +72,26 @@ class PineconeConnector(VectorStoreProvider):
         Raises:
             ImportError: If pinecone-client is not installed
             ValueError: If required parameters are missing
-        """
+        """  # noqa: W293
         super().__init__(enable_governance, enable_pii_detection, enable_audit_logging)
-        
+
         if not PINECONE_AVAILABLE:
             raise ImportError("Pinecone not installed. Install with: pip install pinecone-client>=3.0.0")
-        
+
         self.api_key = api_key
         self.environment = environment
         self.index_name = index_name
         self._index = None
-        
+
         # Initialize Pinecone
         self._init_pinecone()
-    
+
     def _init_pinecone(self):
         """Initialize Pinecone client and index."""
         try:
             # Initialize Pinecone (v3.0.0+ uses new API)
             pinecone.init(api_key=self.api_key, environment=self.environment)
-            
+
             if self.index_name:
                 self._index = pinecone.Index(self.index_name)
                 logger.info(f"Connected to Pinecone index: {self.index_name}")
@@ -100,20 +100,20 @@ class PineconeConnector(VectorStoreProvider):
         except Exception as e:
             logger.error(f"Failed to initialize Pinecone: {e}")
             raise
-    
+
     def connect(self, index_name: str):
         """Connect to a specific Pinecone index.
         
         Args:
             index_name: Name of the index to connect to
-        """
+        """  # noqa: W293
         self.index_name = index_name
         self._index = pinecone.Index(index_name)
         logger.info(f"Connected to Pinecone index: {index_name}")
-    
+
     def upsert(
         self,
-        vectors: List[Dict[str, Any]],
+        vectors: list[dict[str, Any]],
         namespace: str = "",
     ) -> int:
         """Upsert vectors with governance checks on metadata.
@@ -131,10 +131,10 @@ class PineconeConnector(VectorStoreProvider):
         Raises:
             ValueError: If governance check fails
             ConnectionError: If Pinecone connection fails
-        """
+        """  # noqa: W293
         if not self._index:
             raise ConnectionError("Not connected to any Pinecone index")
-        
+
         # Check governance on metadata
         if self.enable_governance:
             for vec in vectors:
@@ -145,7 +145,7 @@ class PineconeConnector(VectorStoreProvider):
                         f"Governance check failed for vector {vec.get('id')}: "
                         f"{check_result.get('reason')}"
                     )
-        
+
         # Upsert to Pinecone
         try:
             # Pinecone expects tuples or dicts in specific format
@@ -157,31 +157,31 @@ class PineconeConnector(VectorStoreProvider):
                     vec.get("metadata", {}),
                 )
                 pinecone_vectors.append(pinecone_vec)
-            
+
             response = self._index.upsert(vectors=pinecone_vectors, namespace=namespace)
             upserted_count = response.get("upserted_count", len(vectors))
-            
+
             # Audit log
             self._audit_log("upsert", {
                 "namespace": namespace,
                 "count": upserted_count,
                 "index": self.index_name,
             })
-            
+
             return upserted_count
         except Exception as e:
             logger.error(f"Pinecone upsert failed: {e}")
-            raise ConnectionError(f"Failed to upsert vectors: {e}")
-    
+            raise ConnectionError(f"Failed to upsert vectors: {e}")  # noqa: B904
+
     def query(
         self,
-        vector: List[float],
+        vector: list[float],
         top_k: int = 10,
-        filter: Optional[Dict[str, Any]] = None,
+        filter: dict[str, Any] | None = None,
         namespace: str = "",
         include_metadata: bool = True,
         include_values: bool = False,
-    ) -> List[VectorSearchResult]:
+    ) -> list[VectorSearchResult]:
         """Query vectors with PII redaction on results.
         
         Args:
@@ -197,10 +197,10 @@ class PineconeConnector(VectorStoreProvider):
             
         Raises:
             ConnectionError: If Pinecone connection fails
-        """
+        """  # noqa: W293
         if not self._index:
             raise ConnectionError("Not connected to any Pinecone index")
-        
+
         try:
             # Query Pinecone
             response = self._index.query(
@@ -211,12 +211,12 @@ class PineconeConnector(VectorStoreProvider):
                 include_metadata=include_metadata,
                 include_values=include_values,
             )
-            
+
             # Convert to VectorSearchResult with PII redaction
             results = []
             for match in response.get("matches", []):
                 metadata = match.get("metadata", {})
-                
+
                 # Redact PII from metadata
                 if self.enable_pii_detection and metadata:
                     pii_result = self._detect_pii(metadata)
@@ -224,7 +224,7 @@ class PineconeConnector(VectorStoreProvider):
                         logger.info(f"PII detected in vector {match['id']}, redacting")
                         # Note: For structured metadata, we keep structure but redact values
                         # This is a simplified implementation
-                
+
                 result = VectorSearchResult(
                     id=match["id"],
                     score=match["score"],
@@ -233,7 +233,7 @@ class PineconeConnector(VectorStoreProvider):
                     payload={},
                 )
                 results.append(result)
-            
+
             # Audit log
             self._audit_log("query", {
                 "namespace": namespace,
@@ -241,15 +241,15 @@ class PineconeConnector(VectorStoreProvider):
                 "results_count": len(results),
                 "index": self.index_name,
             })
-            
+
             return results
         except Exception as e:
             logger.error(f"Pinecone query failed: {e}")
-            raise ConnectionError(f"Failed to query vectors: {e}")
-    
+            raise ConnectionError(f"Failed to query vectors: {e}")  # noqa: B904
+
     def delete(
         self,
-        ids: List[str],
+        ids: list[str],
         namespace: str = "",
     ) -> int:
         """Delete vectors with audit logging.
@@ -263,14 +263,14 @@ class PineconeConnector(VectorStoreProvider):
             
         Raises:
             ConnectionError: If Pinecone connection fails
-        """
+        """  # noqa: W293
         if not self._index:
             raise ConnectionError("Not connected to any Pinecone index")
-        
+
         try:
             # Delete from Pinecone
             self._index.delete(ids=ids, namespace=namespace)
-            
+
             # Audit log
             self._audit_log("delete", {
                 "namespace": namespace,
@@ -278,20 +278,20 @@ class PineconeConnector(VectorStoreProvider):
                 "ids": ids[:10],  # Log first 10 IDs
                 "index": self.index_name,
             })
-            
+
             return len(ids)
         except Exception as e:
             logger.error(f"Pinecone delete failed: {e}")
-            raise ConnectionError(f"Failed to delete vectors: {e}")
-    
-    def health_check(self) -> Dict[str, Any]:
+            raise ConnectionError(f"Failed to delete vectors: {e}")  # noqa: B904
+
+    def health_check(self) -> dict[str, Any]:
         """Check health of Pinecone connection.
         
         Returns:
             Health check result with status and details
-        """
+        """  # noqa: W293
         base_health = super().health_check()
-        
+
         try:
             if self._index:
                 stats = self._index.describe_index_stats()
@@ -312,5 +312,5 @@ class PineconeConnector(VectorStoreProvider):
                 "status": "error",
                 "error": str(e),
             })
-        
+
         return base_health

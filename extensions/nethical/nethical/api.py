@@ -18,16 +18,16 @@ Environment variables documented inline.
 
 from __future__ import annotations
 
-import os
 import asyncio
-import logging
 import json
+import logging
+import os
 import time
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
-from fastapi import FastAPI, HTTPException, Header, Request, Response, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Header, HTTPException, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -39,8 +39,9 @@ except ImportError:
     AgentAction = None
     MonitoringConfig = None
 
-from nethical.api.rate_limiter import TokenBucketLimiter, RateLimitConfig
 from nethical.api.auth import AuthManager
+from nethical.api.rate_limiter import RateLimitConfig, TokenBucketLimiter
+
 try:
     from nethical.api.semantic_cache import SemanticCache
 except ImportError:
@@ -51,14 +52,14 @@ logger = logging.getLogger(__name__)
 # API version
 API_VERSION = "2.3.0"
 
-governance: Optional[IntegratedGovernance] = None
-rate_limiter: Optional[TokenBucketLimiter] = None
-auth_manager: Optional[AuthManager] = None
-concurrency_semaphore: Optional[asyncio.Semaphore] = None
-semantic_cache: Optional[SemanticCache] = None
+governance: IntegratedGovernance | None = None
+rate_limiter: TokenBucketLimiter | None = None
+auth_manager: AuthManager | None = None
+concurrency_semaphore: asyncio.Semaphore | None = None
+semantic_cache: SemanticCache | None = None
 
 # Startup tracking
-startup_time: Optional[datetime] = None
+startup_time: datetime | None = None
 startup_complete: bool = False
 
 # Configuration
@@ -73,7 +74,7 @@ class ConnectionManager:
     """Manages WebSocket connections for real-time streaming."""
 
     def __init__(self) -> None:
-        self.active_connections: Set[WebSocket] = set()
+        self.active_connections: set[WebSocket] = set()
 
     async def connect(self, websocket: WebSocket) -> None:
         """Accept and register a new WebSocket connection."""
@@ -84,13 +85,13 @@ class ConnectionManager:
         """Remove a WebSocket connection."""
         self.active_connections.discard(websocket)
 
-    async def broadcast(self, message: Dict[str, Any]) -> None:
+    async def broadcast(self, message: dict[str, Any]) -> None:
         """Broadcast a message to all connected clients."""
-        disconnected: Set[WebSocket] = set()
+        disconnected: set[WebSocket] = set()
         for connection in self.active_connections:
             try:
                 await connection.send_json(message)
-            except Exception:
+            except Exception:  # noqa: PERF203
                 disconnected.add(connection)
         # Clean up disconnected clients
         self.active_connections -= disconnected
@@ -154,7 +155,7 @@ allowed_origins = allowed_origins_str.split(",") if allowed_origins_str != "*" e
 
 if "*" in allowed_origins:
     import warnings
-    warnings.warn(
+    warnings.warn(  # noqa: B028
         "CORS is configured with wildcard (*) origins. "
         "This is a security risk in production. "
         "Set NETHICAL_CORS_ALLOW_ORIGINS environment variable to specific origins. "
@@ -175,12 +176,12 @@ app.add_middleware(
 )
 
 class EvaluateRequest(BaseModel):
-    id: Optional[str] = Field(None)
+    id: str | None = Field(None)
     agent_id: str
-    stated_intent: Optional[str] = None
+    stated_intent: str | None = None
     actual_action: str
-    context: Optional[Dict[str, Any]] = None
-    parameters: Optional[Dict[str, Any]] = None
+    context: dict[str, Any] | None = None
+    parameters: dict[str, Any] | None = None
 
 class JudgmentResult(BaseModel):
     judgment_id: str
@@ -188,11 +189,11 @@ class JudgmentResult(BaseModel):
     decision: str
     confidence: float
     reasoning: str
-    violations: List[Dict[str, Any]]
+    violations: list[dict[str, Any]]
     timestamp: str
-    risk_score: Optional[float] = None
-    modifications: Optional[Dict[str, Any]] = None
-    metadata: Dict[str, Any]
+    risk_score: float | None = None
+    modifications: dict[str, Any] | None = None
+    metadata: dict[str, Any]
 
 class StatusResponse(BaseModel):
     status: str
@@ -200,17 +201,17 @@ class StatusResponse(BaseModel):
     timestamp: str
     semantic_monitoring: bool
     semantic_available: bool
-    components: Dict[str, Any]
-    config: Dict[str, Any]
+    components: dict[str, Any]
+    config: dict[str, Any]
 
 class MetricsResponse(BaseModel):
-    metrics: Dict[str, Any]
+    metrics: dict[str, Any]
     timestamp: str
 
 def extract_api_key(
-    x_api_key: Optional[str] = Header(None),
-    authorization: Optional[str] = Header(None)
-) -> Optional[str]:
+    x_api_key: str | None = Header(None),
+    authorization: str | None = Header(None)
+) -> str | None:
     if x_api_key:
         return x_api_key
     if authorization and authorization.startswith("Bearer "):
@@ -260,7 +261,7 @@ def validate_payload(eval_request: EvaluateRequest) -> None:
         if len(serialized) > MAX_CONTEXT_SIZE:
             raise HTTPException(413, f"Context too large ({len(serialized)} > {MAX_CONTEXT_SIZE})")
 
-async def compute_semantic_similarity(intent: Optional[str], action: str) -> float:
+async def compute_semantic_similarity(intent: str | None, action: str) -> float:
     if not intent:
         return 0.5
     intent_tokens = set(intent.lower().split())
@@ -303,8 +304,8 @@ async def evaluate(
     eval_request: EvaluateRequest,
     request: Request,
     response: Response,
-    x_api_key: Optional[str] = Header(None),
-    authorization: Optional[str] = Header(None)
+    x_api_key: str | None = Header(None),
+    authorization: str | None = Header(None)
 ) -> JudgmentResult:
     start = time.perf_counter()
 
@@ -318,7 +319,7 @@ async def evaluate(
     api_key = extract_api_key(x_api_key, authorization)
     client_ip = get_client_ip(request)
 
-    if not auth_manager.is_permissive():
+    if not auth_manager.is_permissive():  # noqa: SIM102
         if not api_key or not auth_manager.validate_key(api_key):
             raise HTTPException(
                 401,
@@ -371,7 +372,7 @@ async def evaluate(
             try:
                 result = await asyncio.wait_for(do_eval(), timeout=EVAL_TIMEOUT)
             except asyncio.TimeoutError:
-                raise HTTPException(503, f"Evaluation timeout after {EVAL_TIMEOUT}s", headers={"Retry-After": "10"})
+                raise HTTPException(503, f"Evaluation timeout after {EVAL_TIMEOUT}s", headers={"Retry-After": "10"})  # noqa: B904
 
             similarity = None
             if eval_request.stated_intent:
@@ -394,7 +395,7 @@ async def evaluate(
 
             violations_out = []
             for v in getattr(result, "violations", []):
-                violations_out.append({
+                violations_out.append({  # noqa: PERF401
                     "id": getattr(v, "id", ""),
                     "type": str(getattr(v, "violation_type", "")),
                     "severity": str(getattr(v, "severity", "")),
@@ -441,7 +442,7 @@ async def evaluate(
             raise
         except Exception as e:
             logger.error("Evaluation failure request_id=%s identity=%s error=%s", request_id, identity, e, exc_info=True)
-            raise HTTPException(500, f"Evaluation failed: {e}")
+            raise HTTPException(500, f"Evaluation failed: {e}")  # noqa: B904
 
 @app.get("/status", response_model=StatusResponse)
 async def status() -> StatusResponse:
@@ -503,38 +504,38 @@ async def metrics() -> MetricsResponse:
 
 
 @app.get("/health/live")
-async def liveness() -> Dict[str, str]:
+async def liveness() -> dict[str, str]:
     """
     Kubernetes liveness probe endpoint.
     
     Returns 200 if the service is alive and can respond to requests.
-    """
+    """  # noqa: W293
     return {"status": "alive"}
 
 
 @app.get("/health/ready")
-async def readiness() -> Dict[str, Any]:
+async def readiness() -> dict[str, Any]:
     """
     Kubernetes readiness probe endpoint.
     
     Returns 200 if the service is ready to accept traffic.
     Checks that all required components are initialized.
-    """
+    """  # noqa: W293
     checks = {
         "governance": governance is not None,
         "rate_limiter": rate_limiter is not None,
         "auth_manager": auth_manager is not None,
         "concurrency_control": concurrency_semaphore is not None,
     }
-    
+
     all_ready = all(checks.values())
-    
+
     if not all_ready:
         raise HTTPException(
             status_code=503,
             detail={"status": "not_ready", "checks": checks}
         )
-    
+
     return {
         "status": "ready",
         "checks": checks
@@ -542,22 +543,22 @@ async def readiness() -> Dict[str, Any]:
 
 
 @app.get("/health/startup")
-async def startup() -> Dict[str, Any]:
+async def startup() -> dict[str, Any]:
     """
     Kubernetes startup probe endpoint.
     
     Returns 200 if the service has completed startup.
-    """
+    """  # noqa: W293
     if not startup_complete:
         raise HTTPException(
             status_code=503,
             detail={"status": "starting", "version": API_VERSION}
         )
-    
+
     uptime_seconds = None
     if startup_time:
         uptime_seconds = (datetime.now(timezone.utc) - startup_time).total_seconds()
-    
+
     return {
         "status": "started",
         "version": API_VERSION,
@@ -577,7 +578,7 @@ async def violations_stream(websocket: WebSocket) -> None:
     WebSocket endpoint for streaming violations in real-time.
     
     Clients can subscribe to receive violation events as they occur.
-    """
+    """  # noqa: W293
     await violations_manager.connect(websocket)
     try:
         while True:
@@ -603,13 +604,13 @@ async def metrics_stream(websocket: WebSocket) -> None:
     WebSocket endpoint for streaming metrics in real-time.
     
     Clients can subscribe to receive metric updates periodically.
-    """
+    """  # noqa: W293
     await metrics_manager.connect(websocket)
     try:
         while True:
             # Send metrics every 5 seconds
             await asyncio.sleep(5)
-            
+
             metric_data = {
                 "type": "metrics",
                 "timestamp": datetime.now(timezone.utc).isoformat(),

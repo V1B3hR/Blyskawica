@@ -6,11 +6,10 @@ Supports Cloudflare Workers KV, AWS ElastiCache Global, etc.
 Target: <50ms latency globally
 """
 
-import json
 import logging
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -33,9 +32,9 @@ class L3Config:
     consistency: str = "eventual"
 
     # Provider-specific config
-    cloudflare_account_id: Optional[str] = None
-    cloudflare_api_token: Optional[str] = None
-    aws_region: Optional[str] = None
+    cloudflare_account_id: str | None = None
+    cloudflare_api_token: str | None = None
+    aws_region: str | None = None
 
 
 class L3GlobalCache:
@@ -51,7 +50,7 @@ class L3GlobalCache:
     Target: <50ms global latency
     """
 
-    def __init__(self, config: Optional[L3Config] = None):
+    def __init__(self, config: L3Config | None = None):
         """
         Initialize L3GlobalCache.
 
@@ -61,7 +60,7 @@ class L3GlobalCache:
         self.config = config or L3Config()
 
         # In-memory fallback
-        self._memory_cache: Dict[str, tuple] = {}
+        self._memory_cache: dict[str, tuple] = {}
 
         # Metrics
         self._hits = 0
@@ -72,7 +71,7 @@ class L3GlobalCache:
             f"L3GlobalCache initialized: provider={self.config.provider}"
         )
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         """
         Get value from global cache.
 
@@ -95,7 +94,7 @@ class L3GlobalCache:
         self,
         key: str,
         value: Any,
-        ttl: Optional[int] = None,
+        ttl: int | None = None,
     ) -> bool:
         """
         Set value in global cache.
@@ -135,7 +134,7 @@ class L3GlobalCache:
         return self._memory_delete(key)
 
     # Memory fallback implementation
-    def _memory_get(self, key: str) -> Optional[Any]:
+    def _memory_get(self, key: str) -> Any | None:
         """In-memory get implementation."""
         if key not in self._memory_cache:
             self._misses += 1
@@ -164,7 +163,7 @@ class L3GlobalCache:
         return False
 
     # Cloudflare Workers KV implementation (stub)
-    def _cloudflare_get(self, key: str) -> Optional[Any]:
+    def _cloudflare_get(self, key: str) -> Any | None:
         """Cloudflare KV get (requires httpx/requests)."""
         try:
             # In production, would use Cloudflare API
@@ -185,7 +184,7 @@ class L3GlobalCache:
             return False
 
     # AWS ElastiCache implementation (stub)
-    def _aws_get(self, key: str) -> Optional[Any]:
+    def _aws_get(self, key: str) -> Any | None:
         """AWS ElastiCache get."""
         try:
             return self._memory_get(key)
@@ -203,7 +202,7 @@ class L3GlobalCache:
             self._errors += 1
             return False
 
-    def mget(self, keys: List[str]) -> Dict[str, Any]:
+    def mget(self, keys: list[str]) -> dict[str, Any]:
         """
         Get multiple values.
 
@@ -222,8 +221,8 @@ class L3GlobalCache:
 
     def mset(
         self,
-        items: Dict[str, Any],
-        ttl: Optional[int] = None,
+        items: dict[str, Any],
+        ttl: int | None = None,
     ) -> bool:
         """
         Set multiple values.
@@ -263,7 +262,7 @@ class L3GlobalCache:
         """Clear all entries."""
         self._memory_cache.clear()
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get cache metrics."""
         total = self._hits + self._misses
         return {

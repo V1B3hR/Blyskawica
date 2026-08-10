@@ -55,7 +55,7 @@ class DifficultyController:
             
         Returns:
             True if difficulty was adjusted, False otherwise
-        """
+        """  # noqa: W293
         self.performance_history.append(performance)
         self.steps_since_adjustment += 1
 
@@ -141,7 +141,7 @@ class SyntheticTaskGenerator(TaskGenerator):
             
         Returns:
             Dictionary containing task data and labels
-        """
+        """  # noqa: W293
         batch_size = 32
 
         # Create data with difficulty-dependent noise
@@ -207,7 +207,7 @@ class CurriculumLearningSystem:
         
         Returns:
             Dictionary with training metrics
-        """
+        """  # noqa: W293
         self.episode += 1
         current_difficulty = self.difficulty_controller.get_difficulty()
 
@@ -269,7 +269,7 @@ class CurriculumLearningSystem:
             
         Returns:
             Evaluation metrics
-        """
+        """  # noqa: W293
         self.model.eval()
 
         # Test at different difficulty levels
@@ -329,7 +329,7 @@ def create_curriculum_system(
         
     Returns:
         Configured curriculum learning system
-    """
+    """  # noqa: W293
     if config is None:
         config = CurriculumConfig()
 
@@ -356,11 +356,11 @@ def train_with_curriculum(
         
     Returns:
         Training results and metrics
-    """
+    """  # noqa: W293
     curriculum_system = create_curriculum_system(model, input_dim, output_dim, config)
 
     training_metrics = []
-    for episode in range(num_episodes):
+    for episode in range(num_episodes):  # noqa: B007
         metrics = curriculum_system.train_episode()
         training_metrics.append(metrics)
 

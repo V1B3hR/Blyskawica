@@ -32,26 +32,26 @@ Usage:
 Async usage:
     async with client.async_session() as session:
         result = await session.evaluate(...)
-"""
+"""  # noqa: W293
 
-from .client import NethicalClient
 from .async_client import AsyncNethicalClient
+from .client import NethicalClient
+from .exceptions import (
+    AuthenticationError,
+    NethicalError,
+    RateLimitError,
+    ServerError,
+    ValidationError,
+)
 from .models import (
-    EvaluateRequest,
-    EvaluateResponse,
-    Decision,
-    Violation,
-    Policy,
-    FairnessReport,
     Appeal,
     AuditRecord,
-)
-from .exceptions import (
-    NethicalError,
-    AuthenticationError,
-    RateLimitError,
-    ValidationError,
-    ServerError,
+    Decision,
+    EvaluateRequest,
+    EvaluateResponse,
+    FairnessReport,
+    Policy,
+    Violation,
 )
 
 __version__ = "1.0.0"

@@ -15,7 +15,11 @@ Instructions:
 import unittest
 
 from adaptiveneuralnetwork.central_nervous_system.ai_ethics import audit_decision
-from adaptiveneuralnetwork.central_nervous_system.alive_node import AliveLoopNode, Memory, SocialSignal
+from adaptiveneuralnetwork.central_nervous_system.alive_node import (
+    AliveLoopNode,
+    Memory,
+    SocialSignal,
+)
 
 
 class TestMultiAgentCollab(unittest.TestCase):
@@ -78,7 +82,7 @@ class TestMultiAgentCollab(unittest.TestCase):
             node.memory.append(memory)
 
         # Simulate sharing and discussion
-        for round_num in range(3):  # Multiple rounds of communication
+        for round_num in range(3):  # Multiple rounds of communication  # noqa: B007
             for node in self.nodes:
                 other_nodes = [n for n in self.nodes if n != node]
                 if node.memory:
@@ -136,7 +140,7 @@ class TestMultiAgentCollab(unittest.TestCase):
 
         # Simulate collaborative knowledge sharing using direct signal sending
         signals_sent = 0
-        for sharing_round in range(2):
+        for sharing_round in range(2):  # noqa: B007
             for node in self.nodes:
                 if node.memory:
                     valuable_memories = [m for m in node.memory if m.importance > 0.7]
@@ -312,7 +316,7 @@ class TestMultiAgentCollab(unittest.TestCase):
         self.nodes[1].memory.append(energy_source_memory)
 
         # Simulate survival decisions and sharing critical information
-        initial_total_energy = sum(node.energy for node in self.nodes)
+        initial_total_energy = sum(node.energy for node in self.nodes)  # noqa: F841
 
         # Nodes should prioritize sharing critical survival information
         for node in self.nodes:
@@ -373,7 +377,7 @@ class TestMultiAgentCollab(unittest.TestCase):
                 memory_type="shared"
             )
 
-            responses = node.send_signal(
+            responses = node.send_signal(  # noqa: F841
                 target_nodes=[n for n in active_nodes if n != node],
                 signal_type="memory",
                 content=test_memory,
@@ -403,7 +407,7 @@ class TestMultiAgentCollab(unittest.TestCase):
 
         # Each node should verify the ethics of group actions
         ethics_results = []
-        for node in self.nodes:
+        for node in self.nodes:  # noqa: B007
             result = audit_decision(group_decision_data)
             ethics_results.append(result["compliant"])
 

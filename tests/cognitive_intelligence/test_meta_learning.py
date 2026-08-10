@@ -50,7 +50,7 @@ class TestMetaLearning(unittest.TestCase):
             min_distance = float('inf')
             predicted_label = None
 
-            for class_name, examples in support_set.items():
+            for class_name, examples in support_set.items():  # noqa: B007
                 for example in examples:
                     distance = sum((a - b) ** 2 for a, b in zip(test_features, example["features"], strict=False))
                     if distance < min_distance:
@@ -120,7 +120,7 @@ class TestMetaLearning(unittest.TestCase):
 
         # Calculate learning efficiency improvement
         vision_tasks = [task for task in learning_tasks if task["domain"] == "vision"]
-        nlp_tasks = [task for task in learning_tasks if task["domain"] == "nlp"]
+        nlp_tasks = [task for task in learning_tasks if task["domain"] == "nlp"]  # noqa: F841
 
         # Test vision domain learning improvement
         if len(vision_tasks) >= 2:
@@ -210,7 +210,7 @@ class TestMetaLearning(unittest.TestCase):
         total_tests = 0
 
         for domain in test_domains:
-            for strategy_type, strategy_name in meta_strategies.items():
+            for strategy_type, strategy_name in meta_strategies.items():  # noqa: B007
                 if test_strategy_generalization(strategy_name, domain):
                     generalization_success += 1
                 total_tests += 1

@@ -26,16 +26,17 @@ Version: 1.0.0
 
 from __future__ import annotations
 
+import functools
+import hashlib
 import logging
-import time
 import threading
+import time
 from collections import deque
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Generic
-import hashlib
-import functools
+from typing import Any, Generic, TypeVar
 
 __all__ = [
     "LatencyLevel",
@@ -109,7 +110,7 @@ class LatencyBudget:
         else:
             return LatencyLevel.NORMAL
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "name": self.name,
@@ -136,9 +137,9 @@ class LatencyMetric:
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     operation: str = "inference"
     level: LatencyLevel = LatencyLevel.NORMAL
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "latency_ms": self.latency_ms,
@@ -177,7 +178,7 @@ class LatencyStats:
     std_ms: float = 0.0
     window_seconds: float = 0.0
 
-    def to_dict(self) -> Dict[str, float]:
+    def to_dict(self) -> dict[str, float]:
         """Convert to dictionary."""
         return {
             "count": self.count,
@@ -213,7 +214,7 @@ class LatencyAlert:
     operation: str
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     message: str = ""
-    recommendations: List[str] = field(default_factory=list)
+    recommendations: list[str] = field(default_factory=list)
 
     def __post_init__(self):
         """Generate default message if not provided."""
@@ -223,7 +224,7 @@ class LatencyAlert:
                 f"{self.latency_ms:.1f}ms exceeded {self.threshold_ms:.1f}ms threshold"
             )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "level": self.level.value,
@@ -247,9 +248,9 @@ class LatencyMonitor:
 
     def __init__(
         self,
-        budget: Optional[LatencyBudget] = None,
+        budget: LatencyBudget | None = None,
         window_size: int = 1000,
-        alert_callback: Optional[Callable[[LatencyAlert], None]] = None,
+        alert_callback: Callable[[LatencyAlert], None] | None = None,
     ):
         """Initialize latency monitor.
 
@@ -278,7 +279,7 @@ class LatencyMonitor:
         self,
         latency_ms: float,
         operation: str = "inference",
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> LatencyMetric:
         """Record a latency measurement.
 
@@ -366,7 +367,7 @@ class LatencyMonitor:
             except Exception as e:
                 log.error(f"Alert callback failed: {e}")
 
-    def get_stats(self, window_seconds: Optional[float] = None) -> LatencyStats:
+    def get_stats(self, window_seconds: float | None = None) -> LatencyStats:
         """Get latency statistics.
 
         Args:
@@ -422,7 +423,7 @@ class LatencyMonitor:
                 window_seconds=window_seconds or 0.0,
             )
 
-    def get_recent_alerts(self, limit: int = 10) -> List[LatencyAlert]:
+    def get_recent_alerts(self, limit: int = 10) -> list[LatencyAlert]:
         """Get recent alerts.
 
         Args:
@@ -434,7 +435,7 @@ class LatencyMonitor:
         with self._lock:
             return list(self._alerts)[-limit:]
 
-    def get_health_status(self) -> Dict[str, Any]:
+    def get_health_status(self) -> dict[str, Any]:
         """Get overall health status.
 
         Returns:
@@ -499,7 +500,7 @@ class InferenceCache(Generic[T]):
         self.max_size = max_size
         self.ttl_seconds = ttl_seconds
 
-        self._cache: Dict[str, Tuple[T, float]] = {}
+        self._cache: dict[str, tuple[T, float]] = {}
         self._access_order: deque[str] = deque()
         self._lock = threading.RLock()
 
@@ -529,7 +530,7 @@ class InferenceCache(Generic[T]):
 
         return hashlib.sha256(data).hexdigest()[:32]
 
-    def get(self, inputs: Any) -> Optional[T]:
+    def get(self, inputs: Any) -> T | None:
         """Get cached result for inputs.
 
         Args:
@@ -589,7 +590,7 @@ class InferenceCache(Generic[T]):
             self._access_order.clear()
         log.info("InferenceCache cleared")
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get cache statistics.
 
         Returns:
@@ -611,7 +612,7 @@ class InferenceCache(Generic[T]):
 
 def latency_tracked(
     monitor: LatencyMonitor,
-    operation: Optional[str] = None,
+    operation: str | None = None,
 ) -> Callable:
     """Decorator to track function latency.
 
@@ -643,7 +644,7 @@ def latency_tracked(
 
 def with_latency_budget(
     budget: LatencyBudget,
-    on_violation: Optional[Callable[[float], Any]] = None,
+    on_violation: Callable[[float], Any] | None = None,
 ) -> Callable:
     """Decorator to enforce latency budget on function.
 

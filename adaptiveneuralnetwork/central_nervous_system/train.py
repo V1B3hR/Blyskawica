@@ -35,7 +35,7 @@ except ImportError:
 # --- Import project modules ---
 try:
     from adaptiveneuralnetwork.training.training_utils import (
-        create_synthetic_dataset,
+        create_synthetic_dataset,  # noqa: F401
         save_results,
         train_dataset,
     )

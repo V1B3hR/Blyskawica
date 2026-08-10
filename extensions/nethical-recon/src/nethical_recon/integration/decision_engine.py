@@ -6,12 +6,12 @@ for security findings and alerts.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
-class RiskLevel(str, Enum):
+class RiskLevel(str, Enum):  # noqa: UP042
     """Risk level classification"""
 
     CRITICAL = "critical"
@@ -21,7 +21,7 @@ class RiskLevel(str, Enum):
     INFO = "info"
 
 
-class ConfidenceLevel(str, Enum):
+class ConfidenceLevel(str, Enum):  # noqa: UP042
     """Confidence in assessment"""
 
     CONFIRMED = "confirmed"
@@ -38,10 +38,10 @@ class RiskScore:
     overall_score: float  # 0-100
     risk_level: RiskLevel
     confidence: ConfidenceLevel
-    factors: Dict[str, float] = field(default_factory=dict)
-    calculated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    factors: dict[str, float] = field(default_factory=dict)
+    calculated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
         return {
             "overall_score": self.overall_score,
@@ -56,12 +56,12 @@ class RiskScore:
 class ThreatContext:
     """Threat intelligence context"""
 
-    ip_reputation: Optional[str] = None
+    ip_reputation: str | None = None
     known_malicious: bool = False
-    threat_actors: List[str] = field(default_factory=list)
-    attack_patterns: List[str] = field(default_factory=list)
-    cve_ids: List[str] = field(default_factory=list)
-    cvss_score: Optional[float] = None
+    threat_actors: list[str] = field(default_factory=list)
+    attack_patterns: list[str] = field(default_factory=list)
+    cve_ids: list[str] = field(default_factory=list)
+    cvss_score: float | None = None
     exploit_available: bool = False
     actively_exploited: bool = False
 
@@ -87,11 +87,11 @@ class DecisionEngine:
         self,
         severity: str,
         asset_criticality: str = "medium",
-        cvss_score: Optional[float] = None,
+        cvss_score: float | None = None,
         exploit_available: bool = False,
         actively_exploited: bool = False,
         exposure_level: str = "internal",
-        threat_context: Optional[ThreatContext] = None,
+        threat_context: ThreatContext | None = None,
     ) -> RiskScore:
         """
         Calculate comprehensive risk score.
@@ -197,7 +197,7 @@ class DecisionEngine:
             ConfidenceLevel.HIGH,
         ]
 
-    def should_block(self, risk_score: RiskScore, threat_context: Optional[ThreatContext] = None) -> bool:
+    def should_block(self, risk_score: RiskScore, threat_context: ThreatContext | None = None) -> bool:
         """Decide if asset/IP should be blocked"""
         # Block if critical + actively exploited or confirmed malicious
         if risk_score.risk_level == RiskLevel.CRITICAL:
@@ -205,7 +205,7 @@ class DecisionEngine:
                 return True
         return False
 
-    def recommend_action(self, risk_score: RiskScore, threat_context: Optional[ThreatContext] = None) -> str:
+    def recommend_action(self, risk_score: RiskScore, threat_context: ThreatContext | None = None) -> str:
         """Recommend action based on risk score"""
         if self.should_block(risk_score, threat_context):
             return "immediate_block"

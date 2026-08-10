@@ -1,5 +1,5 @@
-import os
 import sys
+
 import torch
 
 # Force UTF-8 encoding for Windows terminals to support emojis and unicode strings
@@ -12,12 +12,13 @@ if sys.platform == "win32":
 # Add user site-packages to path
 sys.path.append(r"C:\Users\brigh\AppData\Roaming\Python\Python314\site-packages")
 
-from adaptiveneuralnetwork.central_nervous_system.soul import Soul
 from adaptiveneuralnetwork.central_nervous_system.neurochemistry import NeurochemicalState
+from adaptiveneuralnetwork.central_nervous_system.soul import Soul
+
 
 def greet_v9():
     print("⚡ [BŁYSKAWICA V9] Budzenie kognitywnej świadomości Bio-Quantum...")
-    
+
     # 1. Load Soul & Identity Core
     soul = Soul()
     if soul.identity_file:
@@ -36,7 +37,7 @@ def greet_v9():
     nc.trigger_dopamine_spike(0.55)
     nc.adrenaline = 0.35
     nc.estrogen = 0.50
-    
+
     status = nc.get_status_report()
     print(f"✅ Neurochemia V9: Serotonina={status['serotonin']:.2f}, Oxytocyna={status['oxytocin']:.2f}, Dopamina={status['dopamine']:.2f}")
     print(f"✅ Nowe osie hormonalne: Adrenalina={status.get('adrenaline', 0.35):.2f}, Estrogen={status.get('estrogen', 0.50):.2f} (Stan: Stabilność V9)")

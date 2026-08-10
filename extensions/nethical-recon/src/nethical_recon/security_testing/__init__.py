@@ -7,9 +7,9 @@ This module provides security testing capabilities based on:
 - Compliance report generation
 """
 
-from .web_security import WebSecurityTester, SecurityTest, TestResult
 from .api_security import APISecurityTester, APITestSuite
-from .compliance import ComplianceReporter, ComplianceFramework
+from .compliance import ComplianceFramework, ComplianceReporter
+from .web_security import SecurityTest, TestResult, WebSecurityTester
 
 __all__ = [
     "WebSecurityTester",

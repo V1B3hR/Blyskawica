@@ -142,7 +142,7 @@ class EnergyAwareAdam(EnergyAwareOptimizer):
         adaptive_lrs = self.compute_adaptive_lr(base_lr)
 
         for group in self.param_groups:
-            for i, param in enumerate(group['params']):
+            for i, param in enumerate(group['params']):  # noqa: B007
                 if param.grad is None:
                     continue
 
@@ -253,7 +253,7 @@ class EnergyAwareSGD(EnergyAwareOptimizer):
             dampening = group['dampening']
             nesterov = group['nesterov']
 
-            for i, param in enumerate(group['params']):
+            for i, param in enumerate(group['params']):  # noqa: B007
                 if param.grad is None:
                     continue
 
@@ -466,7 +466,7 @@ def create_energy_aware_optimizer(
         
     Returns:
         Configured energy-aware optimizer
-    """
+    """  # noqa: W293
     optimizer_classes = {
         'adam': EnergyAwareAdam,
         'sgd': EnergyAwareSGD,

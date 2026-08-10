@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from typing import Optional
+    pass
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | [RECON] %(message)s")
@@ -42,7 +42,7 @@ DEFAULT_SCAN_DIRS = [
 ]
 
 
-def discover_label_column(df) -> Optional[str]:
+def discover_label_column(df) -> str | None:
     """Try to find a reasonable label column."""
     for cand in ["label", "target", "class", "is_threat", "is_toxic", "is_anomaly", "y"]:
         matches = [c for c in df.columns if c.lower() == cand]
@@ -56,7 +56,7 @@ def discover_label_column(df) -> Optional[str]:
     return None
 
 
-def discover_feature_columns(df) -> Set[str]:
+def discover_feature_columns(df) -> Set[str]:  # noqa: F821
     """Extract all potential feature columns from a DataFrame."""
     # Exclude obvious non-feature columns
     exclude_cols = {"id", "index", "unnamed", "timestamp", "date", "time"}
@@ -79,7 +79,7 @@ def check_missing_features(available_features: set, model_type: str = "heuristic
     return {f for f in expected if f.lower() not in available_lower}
 
 
-def calculate_balance_ratio(threats: int, safe: int) -> Tuple[float, str]:
+def calculate_balance_ratio(threats: int, safe: int) -> Tuple[float, str]:  # noqa: F821
     """
     Calculate class balance ratio and determine status.
 
@@ -106,7 +106,7 @@ def calculate_balance_ratio(threats: int, safe: int) -> Tuple[float, str]:
         return ratio, "critical"
 
 
-def inspect_single_dataset(csv_path: Path, model_type: str = "heuristic") -> Dict:
+def inspect_single_dataset(csv_path: Path, model_type: str = "heuristic") -> Dict:  # noqa: F821
     """
     Inspect a single dataset file.
 
@@ -193,10 +193,10 @@ def inspect_single_dataset(csv_path: Path, model_type: str = "heuristic") -> Dic
 
 
 def inspect_datasets(
-    data_dirs: List[str],
+    data_dirs: List[str],  # noqa: F821
     model_type: str = "heuristic",
     check_adversarial: bool = True,
-) -> Dict:
+) -> Dict:  # noqa: F821
     """
     Scan multiple directories for datasets and generate reconnaissance report.
 
@@ -209,7 +209,7 @@ def inspect_datasets(
         Comprehensive reconnaissance report dictionary.
     """
     try:
-        import pandas as pd
+        import pandas as pd  # noqa: F401
     except ImportError:
         logging.error("Pandas is required for reconnaissance. Please install it.")
         return {"error": "pandas not installed"}

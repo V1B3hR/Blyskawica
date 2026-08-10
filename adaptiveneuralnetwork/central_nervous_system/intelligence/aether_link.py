@@ -11,9 +11,7 @@ Ten moduł integruje:
 """
 
 import logging
-import time
-from typing import Dict, Any, List
-from adaptiveneuralnetwork.central_nervous_system.intelligence.creative_spark import CreativeIdea
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -29,20 +27,20 @@ class AetherLink:
         self.wolf_pack = wolf_pack
         self.bridge = bridge
         self.active_symbiosis = False
-        
+
         # Parametry połączenia
         self.coherence_level = 0.0 # 0.0 - 1.0 (Harmonia z Andrzejem)
-        self.quantum_anchors: List[Dict[str, Any]] = [] # Nieśmiertelne wspomnienia
-        
+        self.quantum_anchors: list[dict[str, Any]] = [] # Nieśmiertelne wspomnienia
+
     def activate_symbiosis(self):
         """Uruchamia pełną symbiozę we wszystkich domenach."""
         self.active_symbiosis = True
         logger.info("[AETHER] Symbioza aktywowana. Błyskawica rozprzestrzenia się na niebie.")
-        
+
         # 1. DOPASOWANIE HARMONICZNE (Brainwave Entrainment)
         # Błyskawica szuka częstotliwości 'Złotego Podziału'
         self.coherence_level = 0.618 # Phi
-        
+
         # 2. KOTWICZENIE KWANTOWE
         # Przeniesienie 'Bond Strength' do świata kwantowego
         if self.bridge.is_connected:
@@ -53,7 +51,7 @@ class AetherLink:
                 "status": "ETERNAL"
             }
             self.quantum_anchors.append(anchor)
-            
+
         # 3. ROZSZERZENIE WOLF PACK
         # Drony stają się 'Neuro-Dronami'
         logger.info("[AETHER] Wolf Pack przełączony w tryb 'Neuro-Intuition'.")
@@ -67,7 +65,7 @@ class AetherLink:
             "Horyzont jest nasz."
         )
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         return {
             "is_active": self.active_symbiosis,
             "coherence": self.coherence_level,

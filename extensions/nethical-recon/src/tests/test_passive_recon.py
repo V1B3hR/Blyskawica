@@ -1,6 +1,5 @@
 """Tests for passive reconnaissance modules."""
 
-import pytest
 from unittest.mock import Mock, patch
 
 from nethical_recon.passive_recon import (

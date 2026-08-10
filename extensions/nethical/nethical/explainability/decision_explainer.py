@@ -8,9 +8,9 @@ was made by the governance system, including:
 - Why a particular action was recommended
 """
 
-from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
 
 
 class ExplanationType(Enum):
@@ -30,7 +30,7 @@ class ExplanationComponent:
     type: ExplanationType
     description: str
     weight: float  # Impact on final decision (0.0-1.0)
-    details: Dict[str, Any] = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
     confidence: float = 1.0
 
 
@@ -40,11 +40,11 @@ class DecisionExplanation:
 
     decision: str  # The decision that was made (ALLOW, BLOCK, etc.)
     summary: str  # High-level summary of why
-    components: List[ExplanationComponent]
+    components: list[ExplanationComponent]
     confidence: float
-    reasoning_chain: List[str]  # Step-by-step reasoning
-    contributing_factors: Dict[str, float]  # Factor -> weight
-    alternative_outcomes: Dict[str, str] = field(default_factory=dict)
+    reasoning_chain: list[str]  # Step-by-step reasoning
+    contributing_factors: dict[str, float]  # Factor -> weight
+    alternative_outcomes: dict[str, str] = field(default_factory=dict)
 
 
 class DecisionExplainer:
@@ -69,10 +69,10 @@ class DecisionExplainer:
     def explain_decision(
         self,
         decision: str,
-        context: Dict[str, Any],
-        violated_rules: Optional[List[Dict[str, Any]]] = None,
-        risk_scores: Optional[Dict[str, float]] = None,
-        policy_matches: Optional[List[Dict[str, Any]]] = None,
+        context: dict[str, Any],
+        violated_rules: list[dict[str, Any]] | None = None,
+        risk_scores: dict[str, float] | None = None,
+        policy_matches: list[dict[str, Any]] | None = None,
     ) -> DecisionExplanation:
         """
         Generate a comprehensive explanation for a decision.
@@ -133,8 +133,8 @@ class DecisionExplainer:
         )
 
     def _explain_rule_violations(
-        self, violated_rules: List[Dict[str, Any]]
-    ) -> tuple[ExplanationComponent, Dict[str, float]]:
+        self, violated_rules: list[dict[str, Any]]
+    ) -> tuple[ExplanationComponent, dict[str, float]]:
         """Explain which rules were violated and why."""
         details = {
             "violated_rules": [
@@ -176,8 +176,8 @@ class DecisionExplainer:
         return component, factors
 
     def _explain_risk_scores(
-        self, risk_scores: Dict[str, float]
-    ) -> tuple[ExplanationComponent, Dict[str, float]]:
+        self, risk_scores: dict[str, float]
+    ) -> tuple[ExplanationComponent, dict[str, float]]:
         """Explain the breakdown of risk scores."""
         total_risk = sum(risk_scores.values())
 
@@ -211,8 +211,8 @@ class DecisionExplainer:
         return component, risk_scores
 
     def _explain_policy_matches(
-        self, policy_matches: List[Dict[str, Any]]
-    ) -> tuple[ExplanationComponent, Dict[str, float]]:
+        self, policy_matches: list[dict[str, Any]]
+    ) -> tuple[ExplanationComponent, dict[str, float]]:
         """Explain which policies matched."""
         details = {
             "matched_policies": [
@@ -249,7 +249,7 @@ class DecisionExplainer:
         return component, factors
 
     def _generate_summary(
-        self, decision: str, components: List[ExplanationComponent], context: Dict[str, Any]
+        self, decision: str, components: list[ExplanationComponent], context: dict[str, Any]
     ) -> str:
         """Generate a high-level summary of the decision."""
         if decision == "BLOCK":
@@ -271,7 +271,7 @@ class DecisionExplainer:
 
         return summary
 
-    def _calculate_confidence(self, components: List[ExplanationComponent]) -> float:
+    def _calculate_confidence(self, components: list[ExplanationComponent]) -> float:
         """Calculate overall confidence in the explanation."""
         if not components:
             return 0.5
@@ -285,8 +285,8 @@ class DecisionExplainer:
         return weighted_confidence / total_weight
 
     def _generate_alternatives(
-        self, decision: str, contributing_factors: Dict[str, float]
-    ) -> Dict[str, str]:
+        self, decision: str, contributing_factors: dict[str, float]
+    ) -> dict[str, str]:
         """Generate alternative outcomes that could have occurred."""
         alternatives = {}
 
@@ -305,7 +305,7 @@ class DecisionExplainer:
 
         return alternatives
 
-    def _load_templates(self) -> Dict[str, str]:
+    def _load_templates(self) -> dict[str, str]:
         """Load explanation templates."""
         return {
             "BLOCK": "Request blocked to prevent potential harm",
@@ -314,7 +314,7 @@ class DecisionExplainer:
             "TERMINATE": "Session ended due to critical policy violations",
         }
 
-    def explain_to_json(self, explanation: DecisionExplanation) -> Dict[str, Any]:
+    def explain_to_json(self, explanation: DecisionExplanation) -> dict[str, Any]:
         """Convert explanation to JSON-serializable format."""
         return {
             "decision": explanation.decision,

@@ -9,23 +9,22 @@ Mode: Offline-first with CRDT sync
 """
 
 from nethical.edge import (
-    EdgeGovernor,
-    EdgeDecision,
-    DecisionType,
-    PolicyCache,
-    FastDetector,
-    SafeDefaults,
-    PredictiveEngine,
-    OfflineFallback,
     CircuitBreaker,
+    DecisionType,
+    EdgeDecision,
+    EdgeGovernor,
+    FastDetector,
+    OfflineFallback,
+    PolicyCache,
+    PredictiveEngine,
+    SafeDefaults,
     SyncManager,
 )
-
 from nethical.sync import (
+    AntiEntropyProtocol,
+    HybridLogicalClock,
     PolicyCRDT,
     VectorClock,
-    HybridLogicalClock,
-    AntiEntropyProtocol,
 )
 
 __version__ = "1.0.0"
@@ -97,7 +96,7 @@ def create_governor(
     if config_path:
         try:
             import yaml
-            with open(config_path, "r") as f:
+            with open(config_path) as f:
                 file_config = yaml.safe_load(f)
                 if file_config and "edge" in file_config:
                     config.update(file_config["edge"])

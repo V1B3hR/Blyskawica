@@ -5,9 +5,9 @@ and improve performance for high-throughput scenarios.
 """
 
 import sqlite3
-from queue import Queue, Empty
 from contextlib import contextmanager
 from pathlib import Path
+from queue import Empty, Queue
 
 
 class SQLiteConnectionPool:
@@ -22,8 +22,8 @@ class SQLiteConnectionPool:
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM table")
             results = cursor.fetchall()
-    """
-    
+    """  # noqa: W293
+
     def __init__(self, db_path: str, pool_size: int = 10, timeout: float = 30.0):
         """Initialize connection pool.
         
@@ -31,28 +31,28 @@ class SQLiteConnectionPool:
             db_path: Path to SQLite database file
             pool_size: Number of connections to maintain in pool
             timeout: Timeout in seconds when waiting for a connection
-        """
+        """  # noqa: W293
         self.db_path = db_path
         self.pool_size = pool_size
         self.timeout = timeout
         self.pool: Queue = Queue(maxsize=pool_size)
         self._closed = False
-        
+
         # Ensure database directory exists
         db_file = Path(db_path)
         db_file.parent.mkdir(parents=True, exist_ok=True)
-        
+
         # Initialize pool with connections
         for _ in range(pool_size):
             conn = self._create_connection()
             self.pool.put(conn)
-    
+
     def _create_connection(self) -> sqlite3.Connection:
         """Create a new database connection.
         
         Returns:
             SQLite connection configured for pooling
-        """
+        """  # noqa: W293
         conn = sqlite3.connect(
             self.db_path,
             check_same_thread=False,  # Allow connection sharing across threads
@@ -63,7 +63,7 @@ class SQLiteConnectionPool:
         # Set reasonable timeout
         conn.execute(f"PRAGMA busy_timeout={int(self.timeout * 1000)}")
         return conn
-    
+
     @contextmanager
     def get_connection(self):
         """Get a connection from the pool (context manager).
@@ -73,38 +73,38 @@ class SQLiteConnectionPool:
             
         Raises:
             RuntimeError: If pool is closed or connection timeout occurs
-        """
+        """  # noqa: W293
         if self._closed:
             raise RuntimeError("Connection pool is closed")
-        
+
         conn = None
         try:
             # Get connection from pool with timeout
             conn = self.pool.get(timeout=self.timeout)
             yield conn
         except Empty:
-            raise RuntimeError(f"Connection pool timeout after {self.timeout} seconds")
+            raise RuntimeError(f"Connection pool timeout after {self.timeout} seconds")  # noqa: B904
         finally:
             # Return connection to pool
             if conn is not None and not self._closed:
                 self.pool.put(conn)
-    
+
     def close(self):
         """Close all connections in the pool.
         
         This should be called when shutting down the application.
-        """
+        """  # noqa: W293
         self._closed = True
-        
+
         # Close all connections
         while not self.pool.empty():
             try:
                 conn = self.pool.get_nowait()
                 conn.close()
-            except (Empty, Exception):
+            except (Empty, Exception):  # noqa: PERF203
                 # Ignore errors during shutdown
                 pass
-    
+
     def __del__(self):
         """Cleanup on garbage collection."""
         if not self._closed:

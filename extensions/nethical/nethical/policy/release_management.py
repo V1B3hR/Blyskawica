@@ -10,14 +10,14 @@ Production Readiness Checklist - Section 11: Release & Change
 - Canary deployment config
 """
 
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Dict, List, Optional, Any
-from enum import Enum
-from pathlib import Path
+import hashlib
 import json
 import logging
-import hashlib
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from enum import Enum
+from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -35,14 +35,14 @@ class PolicyVersion:
     """A versioned policy snapshot"""
     version: str
     name: str
-    content: Dict[str, Any]
+    content: dict[str, Any]
     checksum: str
     created_at: datetime
     created_by: str
     description: str = ""
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    
-    def to_dict(self) -> Dict[str, Any]:
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
         return {
             "version": self.version,
@@ -62,12 +62,12 @@ class CanaryConfig:
     canary_percentage: float  # 0-100
     duration_minutes: int
     success_threshold: float  # 0-1
-    metrics_to_monitor: List[str]
+    metrics_to_monitor: list[str]
     auto_promote: bool = False
     auto_rollback: bool = True
     rollback_on_error_rate: float = 0.05  # 5%
-    
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
         return {
             "canary_percentage": self.canary_percentage,
@@ -87,11 +87,11 @@ class Deployment:
     policy_version: str
     stage: DeploymentStage
     started_at: datetime
-    completed_at: Optional[datetime] = None
+    completed_at: datetime | None = None
     status: str = "in_progress"  # in_progress, success, failed, rolled_back
-    metrics: Dict[str, float] = field(default_factory=dict)
-    canary_config: Optional[CanaryConfig] = None
-    rollback_version: Optional[str] = None
+    metrics: dict[str, float] = field(default_factory=dict)
+    canary_config: CanaryConfig | None = None
+    rollback_version: str | None = None
     notes: str = ""
 
 
@@ -111,8 +111,8 @@ class PolicyPack:
         >>> pack.deploy_canary("1.0.0", canary_percentage=10)
         >>> pack.promote_to_production("1.0.0")
         >>> pack.rollback_to_version("0.9.0")
-    """
-    
+    """  # noqa: W293
+
     def __init__(self, pack_name: str, storage_dir: str = "./nethical_policy_packs"):
         """
         Initialize policy pack.
@@ -120,31 +120,31 @@ class PolicyPack:
         Args:
             pack_name: Name of the policy pack
             storage_dir: Directory for storing policy versions
-        """
+        """  # noqa: W293
         self.pack_name = pack_name
         self.storage_dir = Path(storage_dir) / pack_name
         self.storage_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Version storage
-        self._versions: Dict[str, PolicyVersion] = {}
-        self._current_version: Optional[str] = None
-        self._production_version: Optional[str] = None
-        self._canary_version: Optional[str] = None
-        
+        self._versions: dict[str, PolicyVersion] = {}
+        self._current_version: str | None = None
+        self._production_version: str | None = None
+        self._canary_version: str | None = None
+
         # Deployment history
-        self._deployments: List[Deployment] = []
-        
+        self._deployments: list[Deployment] = []
+
         # Load existing versions
         self._load_versions()
-        
+
         logger.info(f"Policy pack '{pack_name}' initialized at {storage_dir}")
-    
+
     def _load_versions(self):
         """Load existing versions from storage"""
         versions_file = self.storage_dir / "versions.jsonl"
         if versions_file.exists():
             try:
-                with open(versions_file, 'r') as f:
+                with open(versions_file) as f:
                     for line in f:
                         data = json.loads(line)
                         version = PolicyVersion(
@@ -161,12 +161,12 @@ class PolicyPack:
                 logger.info(f"Loaded {len(self._versions)} versions")
             except Exception as e:
                 logger.error(f"Failed to load versions: {e}")
-        
+
         # Load deployment state
         state_file = self.storage_dir / "state.json"
         if state_file.exists():
             try:
-                with open(state_file, 'r') as f:
+                with open(state_file) as f:
                     state = json.load(f)
                     self._current_version = state.get("current_version")
                     self._production_version = state.get("production_version")
@@ -178,13 +178,13 @@ class PolicyPack:
                 )
             except Exception as e:
                 logger.error(f"Failed to load state: {e}")
-    
+
     def _save_version(self, version: PolicyVersion):
         """Save a version to storage"""
         versions_file = self.storage_dir / "versions.jsonl"
         with open(versions_file, 'a') as f:
             f.write(json.dumps(version.to_dict()) + '\n')
-    
+
     def _save_state(self):
         """Save current state"""
         state = {
@@ -196,19 +196,19 @@ class PolicyPack:
         state_file = self.storage_dir / "state.json"
         with open(state_file, 'w') as f:
             json.dump(state, f, indent=2)
-    
-    def _calculate_checksum(self, content: Dict[str, Any]) -> str:
+
+    def _calculate_checksum(self, content: dict[str, Any]) -> str:
         """Calculate checksum for policy content"""
         content_str = json.dumps(content, sort_keys=True)
         return hashlib.sha256(content_str.encode()).hexdigest()
-    
+
     def create_version(
         self,
         version: str,
-        content: Dict[str, Any],
+        content: dict[str, Any],
         created_by: str,
         description: str = "",
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: dict[str, Any] | None = None
     ) -> PolicyVersion:
         """
         Create a new policy version.
@@ -222,12 +222,12 @@ class PolicyPack:
         
         Returns:
             Created PolicyVersion
-        """
+        """  # noqa: W293
         if version in self._versions:
             raise ValueError(f"Version {version} already exists")
-        
+
         checksum = self._calculate_checksum(content)
-        
+
         policy_version = PolicyVersion(
             version=version,
             name=self.pack_name,
@@ -238,40 +238,40 @@ class PolicyPack:
             description=description,
             metadata=metadata or {}
         )
-        
+
         self._versions[version] = policy_version
         self._save_version(policy_version)
-        
+
         # Set as current if this is the first version
         if not self._current_version:
             self._current_version = version
             self._save_state()
-        
+
         logger.info(
             f"Created policy version {version} for pack '{self.pack_name}', "
             f"checksum: {checksum[:8]}..."
         )
-        
+
         return policy_version
-    
-    def get_version(self, version: str) -> Optional[PolicyVersion]:
+
+    def get_version(self, version: str) -> PolicyVersion | None:
         """Get a specific version"""
         return self._versions.get(version)
-    
-    def list_versions(self) -> List[PolicyVersion]:
+
+    def list_versions(self) -> list[PolicyVersion]:
         """List all versions"""
         return sorted(
             self._versions.values(),
             key=lambda v: v.created_at,
             reverse=True
         )
-    
+
     def deploy_canary(
         self,
         version: str,
         canary_percentage: float = 10.0,
         duration_minutes: int = 60,
-        metrics_to_monitor: Optional[List[str]] = None,
+        metrics_to_monitor: list[str] | None = None,
         auto_promote: bool = False,
         auto_rollback: bool = True
     ) -> Deployment:
@@ -288,13 +288,13 @@ class PolicyPack:
         
         Returns:
             Deployment record
-        """
+        """  # noqa: W293
         if version not in self._versions:
             raise ValueError(f"Version {version} not found")
-        
+
         if not 0 <= canary_percentage <= 100:
             raise ValueError("Canary percentage must be between 0 and 100")
-        
+
         canary_config = CanaryConfig(
             canary_percentage=canary_percentage,
             duration_minutes=duration_minutes,
@@ -307,7 +307,7 @@ class PolicyPack:
             auto_promote=auto_promote,
             auto_rollback=auto_rollback
         )
-        
+
         deployment = Deployment(
             deployment_id=f"deploy-{datetime.now().strftime('%Y%m%d%H%M%S')}",
             policy_version=version,
@@ -316,18 +316,18 @@ class PolicyPack:
             canary_config=canary_config,
             rollback_version=self._production_version
         )
-        
+
         self._canary_version = version
         self._deployments.append(deployment)
         self._save_state()
-        
+
         logger.info(
             f"Deployed version {version} to canary ({canary_percentage}% traffic) "
             f"for {duration_minutes} minutes"
         )
-        
+
         return deployment
-    
+
     def promote_to_production(self, version: str) -> Deployment:
         """
         Promote a version to production.
@@ -337,10 +337,10 @@ class PolicyPack:
         
         Returns:
             Deployment record
-        """
+        """  # noqa: W293
         if version not in self._versions:
             raise ValueError(f"Version {version} not found")
-        
+
         deployment = Deployment(
             deployment_id=f"deploy-{datetime.now().strftime('%Y%m%d%H%M%S')}",
             policy_version=version,
@@ -349,25 +349,25 @@ class PolicyPack:
             rollback_version=self._production_version,
             status="success"
         )
-        
+
         deployment.completed_at = datetime.now(timezone.utc)
-        
+
         # Update versions
         old_production = self._production_version
         self._production_version = version
         self._current_version = version
         self._canary_version = None  # Clear canary
-        
+
         self._deployments.append(deployment)
         self._save_state()
-        
+
         logger.info(
             f"Promoted version {version} to production "
             f"(previous: {old_production})"
         )
-        
+
         return deployment
-    
+
     def rollback_to_version(self, version: str, reason: str = "") -> Deployment:
         """
         Rollback to a previous version.
@@ -378,10 +378,10 @@ class PolicyPack:
         
         Returns:
             Deployment record
-        """
+        """  # noqa: W293
         if version not in self._versions:
             raise ValueError(f"Version {version} not found")
-        
+
         deployment = Deployment(
             deployment_id=f"rollback-{datetime.now().strftime('%Y%m%d%H%M%S')}",
             policy_version=version,
@@ -391,100 +391,100 @@ class PolicyPack:
             status="success",
             notes=reason
         )
-        
+
         deployment.completed_at = datetime.now(timezone.utc)
-        
+
         # Update versions
         old_production = self._production_version
         self._production_version = version
         self._current_version = version
-        
+
         self._deployments.append(deployment)
         self._save_state()
-        
+
         logger.warning(
             f"Rolled back from version {old_production} to {version}. "
             f"Reason: {reason}"
         )
-        
+
         return deployment
-    
-    def get_current_policy(self) -> Optional[Dict[str, Any]]:
+
+    def get_current_policy(self) -> dict[str, Any] | None:
         """Get current policy content"""
         if not self._current_version:
             return None
         version = self._versions.get(self._current_version)
         return version.content if version else None
-    
-    def get_production_policy(self) -> Optional[Dict[str, Any]]:
+
+    def get_production_policy(self) -> dict[str, Any] | None:
         """Get production policy content"""
         if not self._production_version:
             return None
         version = self._versions.get(self._production_version)
         return version.content if version else None
-    
-    def get_canary_policy(self) -> Optional[Dict[str, Any]]:
+
+    def get_canary_policy(self) -> dict[str, Any] | None:
         """Get canary policy content"""
         if not self._canary_version:
             return None
         version = self._versions.get(self._canary_version)
         return version.content if version else None
-    
+
     def test_rollback(self) -> bool:
         """
         Test rollback procedure by simulating a rollback.
         
         Returns:
             True if rollback test succeeds
-        """
+        """  # noqa: W293
         if not self._production_version:
             logger.warning("No production version to test rollback")
             return False
-        
+
         # Find a previous version
         versions = self.list_versions()
         if len(versions) < 2:
             logger.warning("Need at least 2 versions to test rollback")
             return False
-        
+
         current = self._production_version
-        
+
         # Find previous version
         previous = None
         for v in versions:
             if v.version != current:
                 previous = v.version
                 break
-        
+
         if not previous:
             logger.error("Could not find previous version for rollback test")
             return False
-        
+
         try:
             # Simulate rollback
             logger.info(f"Testing rollback from {current} to {previous}")
-            
+
             # Verify versions exist
             if current not in self._versions or previous not in self._versions:
                 logger.error("Version verification failed")
                 return False
-            
+
             # Verify content can be loaded
             current_policy = self._versions[current].content
             previous_policy = self._versions[previous].content
-            
+
             if not current_policy or not previous_policy:
                 logger.error("Policy content verification failed")
                 return False
-            
+
             logger.info(f"Rollback test successful: {current} -> {previous}")
             return True
-            
+
         except Exception as e:
             logger.error(f"Rollback test failed: {e}")
             return False
-    
-    def get_deployment_history(self) -> List[Dict[str, Any]]:
+
+    def get_deployment_history(self) -> list[dict[str, Any]]:
         """Get deployment history"""
         return [
             {
@@ -499,8 +499,8 @@ class PolicyPack:
             }
             for d in self._deployments
         ]
-    
-    def get_status(self) -> Dict[str, Any]:
+
+    def get_status(self) -> dict[str, Any]:
         """Get current status"""
         return {
             "pack_name": self.pack_name,

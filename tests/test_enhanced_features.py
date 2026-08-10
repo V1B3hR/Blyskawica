@@ -4,7 +4,7 @@ Test cases for the enhanced adaptive neural network features:
 2. Anxiety overwhelm safety protocol  
 3. Time series tracking
 4. Security and privacy features
-"""
+"""  # noqa: W291
 
 import os
 
@@ -28,8 +28,15 @@ from adaptiveneuralnetwork.api_integration.signal_adapter import (
     StateVariable,
 )
 from adaptiveneuralnetwork.central_nervous_system.alive_node import AliveLoopNode
-from adaptiveneuralnetwork.central_nervous_system.network import Capacitor, TunedAdaptiveFieldNetwork
-from adaptiveneuralnetwork.central_nervous_system.time_series_tracker import TimeSeriesQuery, TimeSeriesTracker, track_node_automatically
+from adaptiveneuralnetwork.central_nervous_system.network import (
+    Capacitor,
+    TunedAdaptiveFieldNetwork,
+)
+from adaptiveneuralnetwork.central_nervous_system.time_series_tracker import (
+    TimeSeriesQuery,
+    TimeSeriesTracker,
+    track_node_automatically,
+)
 
 
 class TestSignalAdapter(unittest.TestCase):
@@ -134,7 +141,7 @@ class TestAnxietyOverwhelmProtocol(unittest.TestCase):
         print(f"Node1 can send help: {self.node1.can_send_help_signal()}")
         print(f"Node1 is overwhelmed: {self.node1.check_anxiety_overwhelm()}")
 
-        responded_nodes = self.node1.send_help_signal(nearby_nodes)
+        responded_nodes = self.node1.send_help_signal(nearby_nodes)  # noqa: F841
 
         # Should have sent help signals
         self.assertGreater(self.node1.help_signals_sent, 0)
@@ -217,7 +224,7 @@ class TestTimeSeriesTracking(unittest.TestCase):
         # Clean up temporary database
         try:
             os.unlink(self.db_file.name)
-        except:
+        except:  # noqa: E722
             pass
 
     def test_node_state_recording(self):
@@ -399,7 +406,7 @@ class TestEnhancedNetwork(unittest.TestCase):
     def test_network_status_reporting(self):
         """Test comprehensive network status reporting"""
         # Step the network a few times to generate data
-        for i in range(5):
+        for i in range(5):  # noqa: B007
             self.network.step()
 
         status = self.network.get_network_status()
@@ -416,7 +423,7 @@ class TestEnhancedNetwork(unittest.TestCase):
     def test_time_series_integration(self):
         """Test time series tracking integration"""
         # Step the network multiple times
-        for i in range(10):
+        for i in range(10):  # noqa: B007
             self.network.step()
 
         # Check that time series data was recorded

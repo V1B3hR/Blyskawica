@@ -1,7 +1,9 @@
-import unittest
 import json
-from adaptiveneuralnetwork.immune_system.wolf_teeth import WolfTeethDefenseEngine
+import unittest
+
 from adaptiveneuralnetwork.central_nervous_system.alive_node import AliveLoopNode
+from adaptiveneuralnetwork.immune_system.wolf_teeth import WolfTeethDefenseEngine
+
 
 class TestWolfTeethDefense(unittest.TestCase):
     def setUp(self):
@@ -34,20 +36,20 @@ class TestWolfTeethDefense(unittest.TestCase):
     def test_integration_in_alive_node(self):
         """Test if the AliveLoopNode correctly handles threat detection"""
         node = AliveLoopNode(position=[0,0], velocity=[0,0])
-        
+
         # Manually trigger attack detection
         # Initially, 0 suspicious events, threat is 0.0 -> Deploy Bait
         node.suspicious_events.clear()
         wolf_response = node.handle_attack_detection()
-        
+
         self.assertIsNotNone(wolf_response)
         data = json.loads(wolf_response)
         self.assertIn("metadata", data)
-        
+
         # Let's stress it: add 10 suspicious events
         for i in range(10):
             node.record_suspicious_event(f"anomaly_{i}")
-            
+
         wolf_response_high = node.handle_attack_detection()
         self.assertIsNotNone(wolf_response_high)
         # Threat level should be high enough to hit Dissolve (10 / (3*2) = 1.66 -> clip to 1.0)

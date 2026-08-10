@@ -13,7 +13,7 @@ This script demonstrates the complete implementation of the 0.4.0 roadmap:
 - Streaming datasets
 - Graph/spatial reasoning
 - Automated benchmark table generation
-"""
+"""  # noqa: W291
 
 import tempfile
 from pathlib import Path
@@ -27,9 +27,9 @@ print("=" * 60)
 print("\n1. 📊 ONNX Export & Model Introspection")
 print("-" * 40)
 
-from adaptiveneuralnetwork.api.config import AdaptiveConfig
-from adaptiveneuralnetwork.api.model import AdaptiveModel
-from adaptiveneuralnetwork.utils.onnx_export import (
+from adaptiveneuralnetwork.api.config import AdaptiveConfig  # noqa: E402
+from adaptiveneuralnetwork.api.model import AdaptiveModel  # noqa: E402
+from adaptiveneuralnetwork.utils.onnx_export import (  # noqa: E402
     ModelIntrospection,
     export_model_with_introspection,
 )
@@ -54,7 +54,7 @@ with tempfile.TemporaryDirectory() as temp_dir:
 print("\n2. 🎯 Reproducibility Harness")
 print("-" * 40)
 
-from adaptiveneuralnetwork.utils.reproducibility import ReproducibilityHarness
+from adaptiveneuralnetwork.utils.reproducibility import ReproducibilityHarness  # noqa: E402
 
 harness = ReproducibilityHarness(master_seed=42, strict_mode=False)
 
@@ -69,7 +69,9 @@ print(f"✓ Environment captured: Python {harness.environment.python_version.spl
 print("\n3. ⚡ Energy-Aware Optimizers")
 print("-" * 40)
 
-from adaptiveneuralnetwork.training.energy_optimizers import create_energy_aware_optimizer
+from adaptiveneuralnetwork.training.energy_optimizers import (  # noqa: E402
+    create_energy_aware_optimizer,  # noqa: E402
+)
 
 optimizer = create_energy_aware_optimizer(
     'adam', model.parameters(), model.node_state, model.phase_scheduler, lr=0.01
@@ -92,7 +94,7 @@ print(f"✓ Adaptation history entries: {len(optimizer.adaptation_history)}")
 print("\n4. 🔌 Plugin System")
 print("-" * 40)
 
-from adaptiveneuralnetwork.central_nervous_system.plugin_system import (
+from adaptiveneuralnetwork.central_nervous_system.plugin_system import (  # noqa: E402
     ConsolidationPhase,
     CreativePhase,
     PluginManager,
@@ -119,9 +121,9 @@ print(f"✓ Applied plugins with {results['summary']['total_modifications']} mod
 print("\n5. 🧠 Enhanced Continual Learning")
 print("-" * 40)
 
-from torch.utils.data import TensorDataset
+from torch.utils.data import TensorDataset  # noqa: E402
 
-from adaptiveneuralnetwork.training.enhanced_continual import (
+from adaptiveneuralnetwork.training.enhanced_continual import (  # noqa: E402
     DomainShiftConfig,
     ProgressiveDomainShift,
 )
@@ -150,7 +152,10 @@ for stage in range(len(domain_shift.stage_datasets)):
 print("\n6. ✂️ Adaptive Pruning & Self-Healing")
 print("-" * 40)
 
-from adaptiveneuralnetwork.central_nervous_system.adaptive_pruning import NodeLifecycleManager, PruningConfig
+from adaptiveneuralnetwork.central_nervous_system.adaptive_pruning import (  # noqa: E402
+    NodeLifecycleManager,
+    PruningConfig,
+)
 
 prune_config = PruningConfig(
     activity_threshold=0.1,
@@ -162,7 +167,7 @@ prune_config = PruningConfig(
 lifecycle_manager = NodeLifecycleManager(model.node_state, config=prune_config)
 
 # Simulate some steps
-for i in range(10):
+for i in range(10):  # noqa: B007
     results = lifecycle_manager.step(current_performance=0.8)
 
 print(f"✓ Node lifecycle manager created with {lifecycle_manager.num_nodes} nodes")
@@ -173,7 +178,10 @@ print(f"✓ Node health distribution: {results['node_health']}")
 print("\n7. 🌐 Distributed Training")
 print("-" * 40)
 
-from adaptiveneuralnetwork.training.distributed import DistributedConfig, DistributedTrainer
+from adaptiveneuralnetwork.training.distributed import (  # noqa: E402
+    DistributedConfig,
+    DistributedTrainer,
+)
 
 dist_config = DistributedConfig(world_size=1, rank=0, backend='gloo')
 trainer = DistributedTrainer(model, dist_config)
@@ -193,7 +201,10 @@ print(f"✓ Training dataloader: {len(train_loader)} batches")
 print("\n8. 📡 Streaming Datasets")
 print("-" * 40)
 
-from adaptiveneuralnetwork.data.streaming_datasets import StreamingConfig, UnifiedDatasetManager
+from adaptiveneuralnetwork.data.streaming_datasets import (  # noqa: E402
+    StreamingConfig,
+    UnifiedDatasetManager,
+)
 
 manager = UnifiedDatasetManager()
 
@@ -210,7 +221,7 @@ print(f"✓ Unified dataloader: {stream_loader.batch_size} batch size")
 
 # Test streaming
 stream_count = 0
-for batch in stream_loader:
+for batch in stream_loader:  # noqa: B007
     stream_count += 1
     if stream_count >= 3:
         break

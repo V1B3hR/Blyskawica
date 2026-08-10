@@ -17,7 +17,7 @@ import pickle
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 # Setup logging
 logging.basicConfig(
@@ -35,12 +35,12 @@ class ModelDeploymentError(Exception):
 
 class ModelDeployer:
     """Handles safe deployment of ML models with validation gates"""
-    
+
     def __init__(
         self,
         model_path: str,
         deployment_mode: str = 'shadow',
-        validation_dataset: Optional[str] = None,
+        validation_dataset: str | None = None,
         rollout_percentage: int = 10,
         environment: str = 'staging'
     ):
@@ -49,27 +49,27 @@ class ModelDeployer:
         self.validation_dataset = validation_dataset
         self.rollout_percentage = rollout_percentage
         self.environment = environment
-        
+
         # Validate inputs
         if not self.model_path.exists():
             raise ModelDeploymentError(f"Model path does not exist: {model_path}")
-        
+
         if deployment_mode not in ['shadow', 'canary', 'full']:
             raise ModelDeploymentError(f"Invalid deployment mode: {deployment_mode}")
-        
+
         if not 0 < rollout_percentage <= 100:
             raise ModelDeploymentError(f"Invalid rollout percentage: {rollout_percentage}")
-    
-    def validate_model(self) -> Dict[str, Any]:
+
+    def validate_model(self) -> dict[str, Any]:
         """Run pre-deployment validation checks"""
         logging.info("Running pre-deployment validation...")
-        
+
         validation_results = {
             'timestamp': datetime.now(timezone.utc).isoformat(),
             'model_path': str(self.model_path),
             'checks': {}
         }
-        
+
         # Check 1: Model file integrity
         try:
             model_files = list(self.model_path.glob("*.pkl")) + list(self.model_path.glob("*.pt"))
@@ -87,7 +87,7 @@ class ModelDeployer:
             }
             logging.error(f"✗ File integrity check failed: {e}")
             raise
-        
+
         # Check 2: Model metadata exists
         try:
             metadata_files = list(self.model_path.glob("*_metrics.json"))
@@ -109,7 +109,7 @@ class ModelDeployer:
                 'status': 'warning',
                 'error': str(e)
             }
-        
+
         # Check 3: Model loadable
         try:
             for model_file in model_files[:1]:  # Test first model only
@@ -127,27 +127,27 @@ class ModelDeployer:
                 'error': str(e)
             }
             logging.error(f"✗ Model loading failed: {e}")
-            raise ModelDeploymentError(f"Cannot load model: {e}")
-        
+            raise ModelDeploymentError(f"Cannot load model: {e}")  # noqa: B904
+
         # Check 4: Performance metrics meet thresholds
         try:
             config_path = Path(".github/workflows/config/training-schedule.json")
             if config_path.exists():
-                with open(config_path, 'r') as f:
+                with open(config_path) as f:
                     config = json.load(f)
                 thresholds = config.get('performance_thresholds', {})
-                
+
                 # Check metrics if available
                 if metadata_files:
-                    with open(metadata_files[0], 'r') as f:
+                    with open(metadata_files[0]) as f:
                         metrics = json.load(f)
-                    
+
                     accuracy = metrics.get('accuracy', 0)
                     ece = metrics.get('ece', 1.0)
-                    
+
                     min_accuracy = thresholds.get('accuracy_min', 0.85)
                     max_ece = thresholds.get('ece_max', 0.08)
-                    
+
                     if accuracy < min_accuracy:
                         raise ModelDeploymentError(
                             f"Accuracy {accuracy:.4f} below threshold {min_accuracy}"
@@ -156,7 +156,7 @@ class ModelDeployer:
                         raise ModelDeploymentError(
                             f"ECE {ece:.4f} above threshold {max_ece}"
                         )
-                    
+
                     validation_results['checks']['performance_thresholds'] = {
                         'status': 'passed',
                         'accuracy': accuracy,
@@ -185,30 +185,30 @@ class ModelDeployer:
                 'status': 'warning',
                 'error': str(e)
             }
-        
+
         validation_results['overall_status'] = 'passed'
         return validation_results
-    
-    def deploy_shadow(self) -> Dict[str, Any]:
+
+    def deploy_shadow(self) -> dict[str, Any]:
         """Deploy in shadow mode (no actual traffic routing)"""
         logging.info("Deploying in SHADOW mode...")
-        
+
         deployment_result = {
             'mode': 'shadow',
             'timestamp': datetime.now(timezone.utc).isoformat(),
             'environment': self.environment,
             'status': 'success'
         }
-        
+
         logging.info(f"Shadow deployment to {self.environment} completed")
         logging.info("Models are staged but not serving traffic")
-        
+
         return deployment_result
-    
-    def deploy_canary(self) -> Dict[str, Any]:
+
+    def deploy_canary(self) -> dict[str, Any]:
         """Deploy with canary rollout"""
         logging.info(f"Deploying in CANARY mode ({self.rollout_percentage}% traffic)...")
-        
+
         deployment_result = {
             'mode': 'canary',
             'rollout_percentage': self.rollout_percentage,
@@ -216,16 +216,16 @@ class ModelDeployer:
             'environment': self.environment,
             'status': 'success'
         }
-        
+
         logging.info(f"Canary deployment to {self.environment} completed")
         logging.info(f"Routing {self.rollout_percentage}% of traffic to new models")
-        
+
         return deployment_result
-    
-    def deploy_full(self) -> Dict[str, Any]:
+
+    def deploy_full(self) -> dict[str, Any]:
         """Deploy with full traffic"""
         logging.info("Deploying in FULL mode (100% traffic)...")
-        
+
         deployment_result = {
             'mode': 'full',
             'rollout_percentage': 100,
@@ -233,17 +233,17 @@ class ModelDeployer:
             'environment': self.environment,
             'status': 'success'
         }
-        
+
         logging.info(f"Full deployment to {self.environment} completed")
         logging.info("All traffic now routed to new models")
-        
+
         return deployment_result
-    
-    def deploy(self) -> Dict[str, Any]:
+
+    def deploy(self) -> dict[str, Any]:
         """Execute deployment based on mode"""
         # Run validation first
         validation_results = self.validate_model()
-        
+
         # Execute deployment
         if self.deployment_mode == 'shadow':
             deployment_results = self.deploy_shadow()
@@ -251,20 +251,20 @@ class ModelDeployer:
             deployment_results = self.deploy_canary()
         else:  # full
             deployment_results = self.deploy_full()
-        
+
         # Combine results
         final_results = {
             'validation': validation_results,
             'deployment': deployment_results,
             'model_path': str(self.model_path)
         }
-        
+
         # Save deployment record
         record_path = Path(f"deployment_record_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.json")
         with open(record_path, 'w') as f:
             json.dump(final_results, f, indent=2)
         logging.info(f"Deployment record saved to: {record_path}")
-        
+
         return final_results
 
 
@@ -307,9 +307,9 @@ def main():
         action='store_true',
         help="Only run validation, do not deploy"
     )
-    
+
     args = parser.parse_args()
-    
+
     try:
         deployer = ModelDeployer(
             model_path=args.model_path,
@@ -318,7 +318,7 @@ def main():
             rollout_percentage=args.rollout_percentage,
             environment=args.environment
         )
-        
+
         if args.validate_only:
             logging.info("Running validation only (--validate-only flag set)")
             results = deployer.validate_model()
@@ -326,10 +326,10 @@ def main():
         else:
             results = deployer.deploy()
             print(json.dumps(results, indent=2))
-        
+
         logging.info("Deployment completed successfully")
         return 0
-    
+
     except ModelDeploymentError as e:
         logging.error(f"Deployment failed: {e}")
         return 1

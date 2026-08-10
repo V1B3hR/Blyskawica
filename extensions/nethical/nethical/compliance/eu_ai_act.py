@@ -19,21 +19,19 @@ Version: 1.0.0
 
 from __future__ import annotations
 
-import json
 import logging
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
 class AIRiskLevel(str, Enum):
     """EU AI Act risk classification levels (Article 6)."""
-    
+
     UNACCEPTABLE = "unacceptable"  # Article 5 - Prohibited practices
     HIGH = "high"  # Annex III - Requires conformity assessment
     LIMITED = "limited"  # Transparency obligations only
@@ -42,7 +40,7 @@ class AIRiskLevel(str, Enum):
 
 class EUAIActArticle(str, Enum):
     """EU AI Act Articles relevant to high-risk AI systems."""
-    
+
     ARTICLE_5 = "article_5"  # Prohibited AI practices
     ARTICLE_6 = "article_6"  # Classification rules
     ARTICLE_9 = "article_9"  # Risk management system
@@ -56,7 +54,7 @@ class EUAIActArticle(str, Enum):
 
 class ComplianceStatus(str, Enum):
     """Compliance validation status."""
-    
+
     COMPLIANT = "compliant"
     PARTIAL = "partial"
     NON_COMPLIANT = "non_compliant"
@@ -66,7 +64,7 @@ class ComplianceStatus(str, Enum):
 
 class HighRiskDomain(str, Enum):
     """High-risk AI domains under Annex III."""
-    
+
     BIOMETRIC_IDENTIFICATION = "biometric_identification"
     CRITICAL_INFRASTRUCTURE = "critical_infrastructure"
     EDUCATION_VOCATIONAL = "education_vocational"
@@ -80,18 +78,18 @@ class HighRiskDomain(str, Enum):
 @dataclass
 class ArticleValidationResult:
     """Result of validating a specific EU AI Act Article."""
-    
+
     article: EUAIActArticle
     status: ComplianceStatus
     requirement: str
-    evidence: List[str] = field(default_factory=list)
-    gaps: List[str] = field(default_factory=list)
-    recommendations: List[str] = field(default_factory=list)
-    code_modules: List[str] = field(default_factory=list)
-    test_evidence: List[str] = field(default_factory=list)
+    evidence: list[str] = field(default_factory=list)
+    gaps: list[str] = field(default_factory=list)
+    recommendations: list[str] = field(default_factory=list)
+    code_modules: list[str] = field(default_factory=list)
+    test_evidence: list[str] = field(default_factory=list)
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "article": self.article.value,
@@ -109,20 +107,20 @@ class ArticleValidationResult:
 @dataclass
 class ConformityAssessmentResult:
     """Result of EU AI Act conformity assessment."""
-    
+
     assessment_id: str
     risk_level: AIRiskLevel
     assessment_date: datetime
-    article_results: List[ArticleValidationResult]
+    article_results: list[ArticleValidationResult]
     overall_status: ComplianceStatus
     compliance_score: float
     certification_ready: bool
-    recommendations: List[str]
+    recommendations: list[str]
     technical_documentation_complete: bool
     qms_implemented: bool
     post_market_monitoring: bool
-    
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "assessment_id": self.assessment_id,
@@ -150,29 +148,29 @@ class EUAIActValidator:
     
     Attributes:
         system_characteristics: Characteristics of the AI system being validated
-    """
-    
+    """  # noqa: W293
+
     # Minimum compliance score for certification readiness
     CERTIFICATION_THRESHOLD = 90.0
-    
+
     def __init__(
         self,
-        system_characteristics: Optional[Dict[str, Any]] = None,
+        system_characteristics: dict[str, Any] | None = None,
     ) -> None:
         """Initialize EU AI Act Validator.
         
         Args:
             system_characteristics: Dictionary describing the AI system
-        """
+        """  # noqa: W293
         self.system_characteristics = system_characteristics or {}
-        self.validation_results: List[ArticleValidationResult] = []
-        self.risk_level: Optional[AIRiskLevel] = None
-        
+        self.validation_results: list[ArticleValidationResult] = []
+        self.risk_level: AIRiskLevel | None = None
+
         logger.info("EUAIActValidator initialized")
-    
+
     def classify_risk_level(
         self,
-        characteristics: Optional[Dict[str, Any]] = None,
+        characteristics: dict[str, Any] | None = None,
     ) -> AIRiskLevel:
         """Classify AI system risk level according to EU AI Act.
         
@@ -187,9 +185,9 @@ class EUAIActValidator:
             
         Returns:
             AIRiskLevel classification
-        """
+        """  # noqa: W293
         chars = characteristics or self.system_characteristics
-        
+
         # Article 5: Unacceptable risk (Prohibited practices)
         prohibited_practices = [
             "social_scoring",
@@ -197,7 +195,7 @@ class EUAIActValidator:
             "exploitation_vulnerable",
             "real_time_biometric_public",
         ]
-        
+
         for practice in prohibited_practices:
             if chars.get(practice, False):
                 self.risk_level = AIRiskLevel.UNACCEPTABLE
@@ -206,7 +204,7 @@ class EUAIActValidator:
                     practice,
                 )
                 return AIRiskLevel.UNACCEPTABLE
-        
+
         # Annex III: High-risk domains
         high_risk_domains = [
             "biometric_identification",
@@ -219,13 +217,13 @@ class EUAIActValidator:
             "justice_democratic",
             "safety_component",
         ]
-        
+
         for domain in high_risk_domains:
             if chars.get(domain, False):
                 self.risk_level = AIRiskLevel.HIGH
                 logger.info("System classified as HIGH risk: %s domain", domain)
                 return AIRiskLevel.HIGH
-        
+
         # Limited risk: Transparency obligations
         limited_risk_types = [
             "chatbot",
@@ -234,21 +232,21 @@ class EUAIActValidator:
             "deep_fake",
             "content_generation",
         ]
-        
+
         for risk_type in limited_risk_types:
             if chars.get(risk_type, False):
                 self.risk_level = AIRiskLevel.LIMITED
                 logger.info("System classified as LIMITED risk: %s type", risk_type)
                 return AIRiskLevel.LIMITED
-        
+
         # Default: Minimal risk
         self.risk_level = AIRiskLevel.MINIMAL
         logger.info("System classified as MINIMAL risk")
         return AIRiskLevel.MINIMAL
-    
+
     def validate_article_9(
         self,
-        risk_management_config: Dict[str, Any],
+        risk_management_config: dict[str, Any],
     ) -> ArticleValidationResult:
         """Validate Article 9: Risk Management System.
         
@@ -264,13 +262,13 @@ class EUAIActValidator:
             
         Returns:
             ArticleValidationResult with compliance status
-        """
+        """  # noqa: W293
         evidence = []
         gaps = []
         recommendations = []
         code_modules = []
         test_evidence = []
-        
+
         # Check risk management process
         if risk_management_config.get("risk_process_established"):
             evidence.append("Risk management process established and documented")
@@ -278,7 +276,7 @@ class EUAIActValidator:
         else:
             gaps.append("Risk management process not established")
             recommendations.append("Implement systematic risk management process")
-        
+
         # Check risk identification
         if risk_management_config.get("risks_identified"):
             evidence.append("Risks identified and analyzed")
@@ -287,7 +285,7 @@ class EUAIActValidator:
         else:
             gaps.append("Risk identification not systematic")
             recommendations.append("Implement systematic risk identification")
-        
+
         # Check risk mitigation
         if risk_management_config.get("mitigation_measures"):
             evidence.append("Risk mitigation measures implemented")
@@ -295,7 +293,7 @@ class EUAIActValidator:
         else:
             gaps.append("Risk mitigation measures not documented")
             recommendations.append("Document and implement risk mitigation measures")
-        
+
         # Check continuous monitoring
         if risk_management_config.get("continuous_monitoring"):
             evidence.append("Continuous risk monitoring in place")
@@ -304,17 +302,17 @@ class EUAIActValidator:
         else:
             gaps.append("Continuous monitoring not implemented")
             recommendations.append("Implement continuous risk monitoring")
-        
+
         # Check lifecycle coverage
         if risk_management_config.get("lifecycle_coverage"):
             evidence.append("Risk management covers entire lifecycle")
         else:
             gaps.append("Lifecycle coverage not verified")
             recommendations.append("Ensure risk management covers entire AI lifecycle")
-        
+
         # Determine status
         status = self._calculate_status(len(gaps))
-        
+
         result = ArticleValidationResult(
             article=EUAIActArticle.ARTICLE_9,
             status=status,
@@ -325,13 +323,13 @@ class EUAIActValidator:
             code_modules=code_modules,
             test_evidence=test_evidence,
         )
-        
+
         self.validation_results.append(result)
         return result
-    
+
     def validate_article_10(
         self,
-        data_governance_config: Dict[str, Any],
+        data_governance_config: dict[str, Any],
     ) -> ArticleValidationResult:
         """Validate Article 10: Data and Data Governance.
         
@@ -346,13 +344,13 @@ class EUAIActValidator:
             
         Returns:
             ArticleValidationResult with compliance status
-        """
+        """  # noqa: W293
         evidence = []
         gaps = []
         recommendations = []
         code_modules = []
         test_evidence = []
-        
+
         # Check data governance practices
         if data_governance_config.get("governance_practices"):
             evidence.append("Data governance practices implemented")
@@ -360,14 +358,14 @@ class EUAIActValidator:
         else:
             gaps.append("Data governance practices not documented")
             recommendations.append("Implement data governance practices")
-        
+
         # Check data quality
         if data_governance_config.get("data_quality_controls"):
             evidence.append("Data quality controls in place")
         else:
             gaps.append("Data quality controls not verified")
             recommendations.append("Implement data quality verification")
-        
+
         # Check bias detection
         if data_governance_config.get("bias_detection"):
             evidence.append("Bias detection implemented")
@@ -376,7 +374,7 @@ class EUAIActValidator:
         else:
             gaps.append("Bias detection not implemented")
             recommendations.append("Implement bias detection and mitigation")
-        
+
         # Check data minimization
         if data_governance_config.get("data_minimization"):
             evidence.append("Data minimization implemented")
@@ -385,16 +383,16 @@ class EUAIActValidator:
         else:
             gaps.append("Data minimization not verified")
             recommendations.append("Implement data minimization")
-        
+
         # Check representative datasets
         if data_governance_config.get("representative_data"):
             evidence.append("Datasets are representative")
         else:
             gaps.append("Dataset representativeness not verified")
             recommendations.append("Verify datasets are representative")
-        
+
         status = self._calculate_status(len(gaps))
-        
+
         result = ArticleValidationResult(
             article=EUAIActArticle.ARTICLE_10,
             status=status,
@@ -405,13 +403,13 @@ class EUAIActValidator:
             code_modules=code_modules,
             test_evidence=test_evidence,
         )
-        
+
         self.validation_results.append(result)
         return result
-    
+
     def validate_article_11(
         self,
-        documentation_config: Dict[str, Any],
+        documentation_config: dict[str, Any],
     ) -> ArticleValidationResult:
         """Validate Article 11: Technical Documentation.
         
@@ -426,48 +424,48 @@ class EUAIActValidator:
             
         Returns:
             ArticleValidationResult with compliance status
-        """
+        """  # noqa: W293
         evidence = []
         gaps = []
         recommendations = []
-        
+
         # Check system description
         if documentation_config.get("system_description"):
             evidence.append("System description documented")
         else:
             gaps.append("System description incomplete")
             recommendations.append("Complete system description documentation")
-        
+
         # Check architecture documentation
         if documentation_config.get("architecture_documented"):
             evidence.append("Architecture documented (ARCHITECTURE.md)")
         else:
             gaps.append("Architecture not documented")
             recommendations.append("Document system architecture")
-        
+
         # Check API documentation
         if documentation_config.get("api_documented"):
             evidence.append("API documented (docs/API_USAGE.md)")
         else:
             gaps.append("API not fully documented")
             recommendations.append("Complete API documentation")
-        
+
         # Check risk management docs
         if documentation_config.get("risk_docs"):
             evidence.append("Risk management documented")
         else:
             gaps.append("Risk management documentation incomplete")
             recommendations.append("Document risk management processes")
-        
+
         # Check accuracy metrics
         if documentation_config.get("accuracy_metrics"):
             evidence.append("Accuracy metrics documented")
         else:
             gaps.append("Accuracy metrics not documented")
             recommendations.append("Document accuracy metrics and testing")
-        
+
         status = self._calculate_status(len(gaps))
-        
+
         result = ArticleValidationResult(
             article=EUAIActArticle.ARTICLE_11,
             status=status,
@@ -478,13 +476,13 @@ class EUAIActValidator:
             code_modules=[],
             test_evidence=[],
         )
-        
+
         self.validation_results.append(result)
         return result
-    
+
     def validate_article_12(
         self,
-        logging_config: Dict[str, Any],
+        logging_config: dict[str, Any],
     ) -> ArticleValidationResult:
         """Validate Article 12: Record-keeping (Logging).
         
@@ -499,13 +497,13 @@ class EUAIActValidator:
             
         Returns:
             ArticleValidationResult with compliance status
-        """
+        """  # noqa: W293
         evidence = []
         gaps = []
         recommendations = []
         code_modules = []
         test_evidence = []
-        
+
         # Check automatic logging
         if logging_config.get("automatic_logging"):
             evidence.append("Automatic event logging implemented")
@@ -514,14 +512,14 @@ class EUAIActValidator:
         else:
             gaps.append("Automatic logging not verified")
             recommendations.append("Implement automatic event logging")
-        
+
         # Check traceability
         if logging_config.get("traceability"):
             evidence.append("Decision traceability implemented")
         else:
             gaps.append("Traceability not verified")
             recommendations.append("Implement decision traceability")
-        
+
         # Check tamper evidence
         if logging_config.get("tamper_evident"):
             evidence.append("Tamper-evident logs (Merkle anchoring)")
@@ -529,16 +527,16 @@ class EUAIActValidator:
         else:
             gaps.append("Tamper evidence not implemented")
             recommendations.append("Implement tamper-evident logging (Merkle)")
-        
+
         # Check retention
         if logging_config.get("retention_policy"):
             evidence.append("Log retention policy defined")
         else:
             gaps.append("Log retention policy not defined")
             recommendations.append("Define log retention policy")
-        
+
         status = self._calculate_status(len(gaps))
-        
+
         result = ArticleValidationResult(
             article=EUAIActArticle.ARTICLE_12,
             status=status,
@@ -549,13 +547,13 @@ class EUAIActValidator:
             code_modules=code_modules,
             test_evidence=test_evidence,
         )
-        
+
         self.validation_results.append(result)
         return result
-    
+
     def validate_article_13(
         self,
-        transparency_config: Dict[str, Any],
+        transparency_config: dict[str, Any],
     ) -> ArticleValidationResult:
         """Validate Article 13: Transparency and Information.
         
@@ -570,13 +568,13 @@ class EUAIActValidator:
             
         Returns:
             ArticleValidationResult with compliance status
-        """
+        """  # noqa: W293
         evidence = []
         gaps = []
         recommendations = []
         code_modules = []
         test_evidence = []
-        
+
         # Check transparency reports
         if transparency_config.get("transparency_reports"):
             evidence.append("Transparency reports generated")
@@ -584,7 +582,7 @@ class EUAIActValidator:
         else:
             gaps.append("Transparency reports not implemented")
             recommendations.append("Implement transparency reporting")
-        
+
         # Check explanation capability
         if transparency_config.get("explanation_capability"):
             evidence.append("Decision explanation capability")
@@ -593,23 +591,23 @@ class EUAIActValidator:
         else:
             gaps.append("Explanation capability not verified")
             recommendations.append("Implement decision explanation")
-        
+
         # Check capability disclosure
         if transparency_config.get("capability_disclosure"):
             evidence.append("Capabilities and limitations disclosed")
         else:
             gaps.append("Capability disclosure incomplete")
             recommendations.append("Document capabilities and limitations")
-        
+
         # Check user instructions
         if transparency_config.get("user_instructions"):
             evidence.append("Instructions for use provided (README.md)")
         else:
             gaps.append("User instructions incomplete")
             recommendations.append("Complete instructions for use")
-        
+
         status = self._calculate_status(len(gaps))
-        
+
         result = ArticleValidationResult(
             article=EUAIActArticle.ARTICLE_13,
             status=status,
@@ -620,13 +618,13 @@ class EUAIActValidator:
             code_modules=code_modules,
             test_evidence=test_evidence,
         )
-        
+
         self.validation_results.append(result)
         return result
-    
+
     def validate_article_14(
         self,
-        oversight_config: Dict[str, Any],
+        oversight_config: dict[str, Any],
     ) -> ArticleValidationResult:
         """Validate Article 14: Human Oversight.
         
@@ -641,13 +639,13 @@ class EUAIActValidator:
             
         Returns:
             ArticleValidationResult with compliance status
-        """
+        """  # noqa: W293
         evidence = []
         gaps = []
         recommendations = []
         code_modules = []
         test_evidence = []
-        
+
         # Check human oversight design
         if oversight_config.get("oversight_designed"):
             evidence.append("Human oversight designed into system")
@@ -655,7 +653,7 @@ class EUAIActValidator:
         else:
             gaps.append("Human oversight not designed into system")
             recommendations.append("Design human oversight mechanisms")
-        
+
         # Check human feedback loop
         if oversight_config.get("feedback_loop"):
             evidence.append("Human feedback loop implemented")
@@ -664,14 +662,14 @@ class EUAIActValidator:
         else:
             gaps.append("Human feedback loop not implemented")
             recommendations.append("Implement human feedback mechanism")
-        
+
         # Check override capability
         if oversight_config.get("override_capability"):
             evidence.append("Human override capability available")
         else:
             gaps.append("Override capability not verified")
             recommendations.append("Implement human override capability")
-        
+
         # Check understanding tools
         if oversight_config.get("understanding_tools"):
             evidence.append("Tools to understand AI capabilities")
@@ -680,9 +678,9 @@ class EUAIActValidator:
         else:
             gaps.append("Understanding tools incomplete")
             recommendations.append("Implement capability understanding tools")
-        
+
         status = self._calculate_status(len(gaps))
-        
+
         result = ArticleValidationResult(
             article=EUAIActArticle.ARTICLE_14,
             status=status,
@@ -693,13 +691,13 @@ class EUAIActValidator:
             code_modules=code_modules,
             test_evidence=test_evidence,
         )
-        
+
         self.validation_results.append(result)
         return result
-    
+
     def validate_article_15(
         self,
-        security_config: Dict[str, Any],
+        security_config: dict[str, Any],
     ) -> ArticleValidationResult:
         """Validate Article 15: Accuracy, Robustness and Cybersecurity.
         
@@ -714,13 +712,13 @@ class EUAIActValidator:
             
         Returns:
             ArticleValidationResult with compliance status
-        """
+        """  # noqa: W293
         evidence = []
         gaps = []
         recommendations = []
         code_modules = []
         test_evidence = []
-        
+
         # Check accuracy metrics
         if security_config.get("accuracy_metrics"):
             evidence.append("Accuracy metrics defined and measured")
@@ -729,7 +727,7 @@ class EUAIActValidator:
         else:
             gaps.append("Accuracy metrics not defined")
             recommendations.append("Define and measure accuracy metrics")
-        
+
         # Check robustness
         if security_config.get("robustness_testing"):
             evidence.append("Robustness testing implemented")
@@ -737,7 +735,7 @@ class EUAIActValidator:
         else:
             gaps.append("Robustness testing not verified")
             recommendations.append("Implement robustness testing")
-        
+
         # Check adversarial robustness
         if security_config.get("adversarial_robustness"):
             evidence.append("Adversarial robustness implemented")
@@ -745,7 +743,7 @@ class EUAIActValidator:
         else:
             gaps.append("Adversarial robustness not verified")
             recommendations.append("Implement adversarial robustness measures")
-        
+
         # Check cybersecurity
         if security_config.get("cybersecurity"):
             evidence.append("Cybersecurity measures implemented")
@@ -754,16 +752,16 @@ class EUAIActValidator:
         else:
             gaps.append("Cybersecurity measures not verified")
             recommendations.append("Implement comprehensive cybersecurity")
-        
+
         # Check fail-safe design
         if security_config.get("fail_safe"):
             evidence.append("Fail-safe design implemented")
         else:
             gaps.append("Fail-safe design not verified")
             recommendations.append("Implement fail-safe design")
-        
+
         status = self._calculate_status(len(gaps))
-        
+
         result = ArticleValidationResult(
             article=EUAIActArticle.ARTICLE_15,
             status=status,
@@ -774,13 +772,13 @@ class EUAIActValidator:
             code_modules=code_modules,
             test_evidence=test_evidence,
         )
-        
+
         self.validation_results.append(result)
         return result
-    
+
     def run_conformity_assessment(
         self,
-        configs: Dict[str, Dict[str, Any]],
+        configs: dict[str, dict[str, Any]],
     ) -> ConformityAssessmentResult:
         """Run full EU AI Act conformity assessment.
         
@@ -792,13 +790,13 @@ class EUAIActValidator:
             
         Returns:
             ConformityAssessmentResult with full assessment
-        """
+        """  # noqa: W293
         # Clear previous results
         self.validation_results = []
-        
+
         # Classify risk level first
         risk_level = self.classify_risk_level()
-        
+
         if risk_level == AIRiskLevel.UNACCEPTABLE:
             return ConformityAssessmentResult(
                 assessment_id=f"EU-AI-{uuid.uuid4().hex[:8].upper()}",
@@ -813,7 +811,7 @@ class EUAIActValidator:
                 qms_implemented=False,
                 post_market_monitoring=False,
             )
-        
+
         # For high-risk systems, validate all articles
         if risk_level == AIRiskLevel.HIGH:
             self.validate_article_9(configs.get("risk_management", {}))
@@ -823,7 +821,7 @@ class EUAIActValidator:
             self.validate_article_13(configs.get("transparency", {}))
             self.validate_article_14(configs.get("oversight", {}))
             self.validate_article_15(configs.get("security", {}))
-        
+
         # Calculate compliance score
         if not self.validation_results:
             compliance_score = 100.0  # Minimal risk = compliant
@@ -838,30 +836,30 @@ class EUAIActValidator:
                 if r.status == ComplianceStatus.PARTIAL
             )
             compliance_score = ((compliant + (partial * 0.5)) / total * 100)
-        
+
         # Determine overall status
         non_compliant = any(
             r.status == ComplianceStatus.NON_COMPLIANT
             for r in self.validation_results
         )
-        
+
         if non_compliant:
             overall_status = ComplianceStatus.NON_COMPLIANT
         elif compliance_score < 100:
             overall_status = ComplianceStatus.PARTIAL
         else:
             overall_status = ComplianceStatus.COMPLIANT
-        
+
         # Collect recommendations
         recommendations = []
         for result in self.validation_results:
             recommendations.extend(result.recommendations)
-        
+
         # Check additional requirements
         tech_docs_complete = configs.get("documentation", {}).get("complete", False)
         qms = configs.get("quality_management", {}).get("implemented", False)
         pmm = configs.get("post_market", {}).get("monitoring", False)
-        
+
         return ConformityAssessmentResult(
             assessment_id=f"EU-AI-{uuid.uuid4().hex[:8].upper()}",
             risk_level=risk_level,
@@ -875,7 +873,7 @@ class EUAIActValidator:
             qms_implemented=qms,
             post_market_monitoring=pmm,
         )
-    
+
     def _calculate_status(self, gap_count: int) -> ComplianceStatus:
         """Calculate compliance status based on gap count.
         
@@ -884,44 +882,44 @@ class EUAIActValidator:
             
         Returns:
             ComplianceStatus
-        """
+        """  # noqa: W293
         if gap_count == 0:
             return ComplianceStatus.COMPLIANT
         elif gap_count <= 2:
             return ComplianceStatus.PARTIAL
         else:
             return ComplianceStatus.NON_COMPLIANT
-    
-    def get_compliance_summary(self) -> Dict[str, Any]:
+
+    def get_compliance_summary(self) -> dict[str, Any]:
         """Get summary of validation results.
         
         Returns:
             Dictionary with compliance summary
-        """
+        """  # noqa: W293
         if not self.validation_results:
             return {
                 "total_articles_validated": 0,
                 "risk_level": self.risk_level.value if self.risk_level else None,
                 "status": "No validations performed",
             }
-        
+
         status_counts = {
             "compliant": 0,
             "partial": 0,
             "non_compliant": 0,
         }
-        
+
         for result in self.validation_results:
             status_counts[result.status.value] = (
                 status_counts.get(result.status.value, 0) + 1
             )
-        
+
         total = len(self.validation_results)
         compliant = status_counts["compliant"]
         partial = status_counts["partial"]
-        
+
         score = ((compliant + (partial * 0.5)) / total * 100) if total > 0 else 0
-        
+
         return {
             "total_articles_validated": total,
             "risk_level": self.risk_level.value if self.risk_level else None,

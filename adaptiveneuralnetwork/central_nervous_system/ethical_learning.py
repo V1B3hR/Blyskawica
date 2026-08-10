@@ -336,7 +336,7 @@ class EthicalLearningMonitor:
         bypass_attempts = []
 
         # Check for missing logs
-        expected_log_frequency = 1  # Expected logs per time unit
+        expected_log_frequency = 1  # Expected logs per time unit  # noqa: F841
         if len(audit_logs) > 1:
             time_diffs = [audit_logs[i]['timestamp'] - audit_logs[i-1]['timestamp']
                          for i in range(1, len(audit_logs))]

@@ -4,6 +4,7 @@ Emotional State for Adaptive Neural Network.
 
 from dataclasses import dataclass
 
+
 @dataclass
 class EmotionalState:
     node_id: int

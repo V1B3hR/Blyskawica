@@ -5,7 +5,7 @@ This module provides CIFAR-10 benchmarking capabilities including:
 - Standard CIFAR-10 classification 
 - Corrupted CIFAR-10 for domain shift robustness testing
 - Robustness metrics and evaluation
-"""
+"""  # noqa: W291
 
 import logging
 import time
@@ -28,7 +28,7 @@ class CIFAR10Benchmark:
     CIFAR-10 benchmark for adaptive neural networks.
     
     Supports both standard and corrupted CIFAR-10 evaluation for robustness testing.
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
@@ -43,7 +43,7 @@ class CIFAR10Benchmark:
             config: Adaptive neural network configuration
             device: Device to run on (CPU/GPU)
             data_root: Root directory for CIFAR-10 data
-        """
+        """  # noqa: W293
         self.config = config
         self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.data_root = data_root
@@ -84,7 +84,7 @@ class CIFAR10Benchmark:
         
         Returns:
             Dictionary containing benchmark results
-        """
+        """  # noqa: W293
         logger.info("Starting standard CIFAR-10 benchmark...")
 
         # Load data
@@ -181,7 +181,7 @@ class CIFAR10Benchmark:
         
         Returns:
             Dictionary containing robustness benchmark results
-        """
+        """  # noqa: W291, W293
         logger.info("Starting CIFAR-10 robustness benchmark...")
 
         if corruption_types is None:
@@ -315,7 +315,7 @@ def run_cifar10_benchmark(
     
     Returns:
         Dictionary containing all benchmark results
-    """
+    """  # noqa: W293
     # Use default config if not provided
     if config is None:
         config = AdaptiveConfig(

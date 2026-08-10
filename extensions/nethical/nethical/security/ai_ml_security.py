@@ -16,15 +16,18 @@ Key Features:
 - Differential privacy with epsilon-delta guarantees
 - Federated learning with secure aggregation
 - Explainable AI compliance reporting (GDPR, HIPAA, DoD AI Ethics)
-"""
+"""  # noqa: W291
 
-from typing import Dict, List, Optional, Any, Tuple, Callable, Union
+import logging
+from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from abc import ABC, abstractmethod
+from typing import Any
+
 import numpy as np
-import logging
+
 
 class AdversarialAttackType(Enum):
     """Types of adversarial attacks on ML models."""
@@ -130,8 +133,8 @@ class ChaosAnalysisResult:
     chaos_score: float
     lyapunov_exponent: float
     correlation_dimension: float
-    entropy_measures: Dict[str, float]
-    recurrence_metrics: Dict[str, float]
+    entropy_measures: dict[str, float]
+    recurrence_metrics: dict[str, float]
     fractal_dimension: float
     hurst_exponent: float
     is_adversarial_perturbation: bool
@@ -139,7 +142,7 @@ class ChaosAnalysisResult:
     analysis_method: str = "chaos_quantification"
     timestamp: datetime = field(default_factory=datetime.now)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "is_chaotic": self.is_chaotic,
@@ -163,16 +166,16 @@ class DefensePerturbationResult:
 
     is_robust_adversarial: bool
     robustness_score: float
-    transformations_tested: List[str]
-    transformation_results: Dict[str, Dict[str, Any]]
-    vulnerable_transformations: List[str]
-    robust_transformations: List[str]
+    transformations_tested: list[str]
+    transformation_results: dict[str, dict[str, Any]]
+    vulnerable_transformations: list[str]
+    robust_transformations: list[str]
     prediction_stability: float
     confidence: float
     detection_method: str = "defense_perturbation"
     timestamp: datetime = field(default_factory=datetime.now)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "is_robust_adversarial": self.is_robust_adversarial,
@@ -194,16 +197,16 @@ class AdversarialDetectionResult:
 
     is_adversarial: bool
     confidence: float
-    attack_type: Optional[AdversarialAttackType]
+    attack_type: AdversarialAttackType | None
     perturbation_magnitude: float
-    original_prediction: Optional[Any] = None
-    adversarial_prediction: Optional[Any] = None
+    original_prediction: Any | None = None
+    adversarial_prediction: Any | None = None
     detection_method: str = "perturbation_analysis"
-    chaos_analysis: Optional[ChaosAnalysisResult] = None
-    defense_perturbation_analysis: Optional[DefensePerturbationResult] = None
+    chaos_analysis: ChaosAnalysisResult | None = None
+    defense_perturbation_analysis: DefensePerturbationResult | None = None
     timestamp: datetime = field(default_factory=datetime.now)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "is_adversarial": self.is_adversarial,
@@ -227,13 +230,13 @@ class PoisoningDetectionResult:
 
     is_poisoned: bool
     confidence: float
-    poisoning_type: Optional[PoisoningType]
+    poisoning_type: PoisoningType | None
     affected_samples: int
     gradient_anomaly_score: float
     detection_method: str = "gradient_analysis"
     timestamp: datetime = field(default_factory=datetime.now)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "is_poisoned": self.is_poisoned,
@@ -271,7 +274,7 @@ class PrivacyBudget:
         """Check if privacy budget is depleted."""
         return self.spent_epsilon >= self.epsilon or self.spent_delta >= self.delta
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "epsilon": self.epsilon,
@@ -291,12 +294,12 @@ class FederatedLearningRound:
 
     round_id: str
     participant_count: int
-    aggregated_weights: Dict[str, Any]
+    aggregated_weights: dict[str, Any]
     validation_accuracy: float
     poisoning_detected: bool = False
     timestamp: datetime = field(default_factory=datetime.now)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "round_id": self.round_id,
@@ -313,14 +316,14 @@ class ExplainabilityReport:
 
     model_id: str
     prediction: Any
-    feature_importance: Dict[str, float]
+    feature_importance: dict[str, float]
     explanation_method: str
-    compliance_frameworks: List[str]
+    compliance_frameworks: list[str]
     human_readable_explanation: str
     confidence_score: float
     timestamp: datetime = field(default_factory=datetime.now)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "model_id": self.model_id,
@@ -354,7 +357,7 @@ class ChaosQuantificationSystem:
     - Fractal Dimension: Box-counting and correlation methods
     - Hurst Exponent: Long-term memory analysis
     - Phase Space Reconstruction: Takens embedding theorem
-    """
+    """  # noqa: W291
 
     def __init__(
         self,
@@ -382,13 +385,13 @@ class ChaosQuantificationSystem:
         self.entropy_threshold = entropy_threshold
         self.recurrence_threshold = recurrence_threshold
         self.min_series_length = min_series_length
-        self.analysis_history: List[ChaosAnalysisResult] = []
-        self._baseline_metrics: Optional[Dict[str, float]] = None
+        self.analysis_history: list[ChaosAnalysisResult] = []
+        self._baseline_metrics: dict[str, float] | None = None
 
     def analyze_input(
         self,
         input_data: np.ndarray,
-        baseline_data: Optional[np.ndarray] = None,
+        baseline_data: np.ndarray | None = None,
     ) -> ChaosAnalysisResult:
         """
         Analyze input data for chaotic perturbations indicative of adversarial attacks.
@@ -518,7 +521,7 @@ class ChaosQuantificationSystem:
 
         Returns:
             Largest Lyapunov exponent
-        """
+        """  # noqa: W291
         try:
             # Phase space reconstruction
             embedded = self._phase_space_reconstruction(series)
@@ -582,7 +585,7 @@ class ChaosQuantificationSystem:
 
         Returns:
             Correlation dimension estimate
-        """
+        """  # noqa: W291
         try:
             embedded = self._phase_space_reconstruction(series)
             n_points = len(embedded)
@@ -646,7 +649,7 @@ class ChaosQuantificationSystem:
         except Exception:
             return 0.0
 
-    def _calculate_entropy_measures(self, series: np.ndarray) -> Dict[str, float]:
+    def _calculate_entropy_measures(self, series: np.ndarray) -> dict[str, float]:
         """
         Calculate multiple entropy measures for chaos detection.
 
@@ -685,7 +688,7 @@ class ChaosQuantificationSystem:
         except Exception:
             return 0.0
 
-    def _approximate_entropy(self, series: np.ndarray, m: int = 2, r: Optional[float] = None) -> float:
+    def _approximate_entropy(self, series: np.ndarray, m: int = 2, r: float | None = None) -> float:
         """
         Calculate Approximate Entropy (ApEn). 
 
@@ -698,7 +701,7 @@ class ChaosQuantificationSystem:
 
         Returns:
             Approximate entropy value
-        """
+        """  # noqa: W291
         try:
             n = len(series)
             if n < 10:
@@ -725,7 +728,7 @@ class ChaosQuantificationSystem:
         except Exception:
             return 0.0
 
-    def _sample_entropy(self, series: np.ndarray, m: int = 2, r: Optional[float] = None) -> float:
+    def _sample_entropy(self, series: np.ndarray, m: int = 2, r: float | None = None) -> float:
         """
         Calculate Sample Entropy (SampEn). 
 
@@ -738,7 +741,7 @@ class ChaosQuantificationSystem:
 
         Returns:
             Sample entropy value
-        """
+        """  # noqa: W291
         try:
             n = len(series)
             if n < 10:
@@ -843,7 +846,7 @@ class ChaosQuantificationSystem:
         except Exception:
             return 0.0
 
-    def _calculate_recurrence_metrics(self, series: np.ndarray) -> Dict[str, float]:
+    def _calculate_recurrence_metrics(self, series: np.ndarray) -> dict[str, float]:
         """
         Calculate Recurrence Quantification Analysis (RQA) metrics.
 
@@ -1085,7 +1088,7 @@ class ChaosQuantificationSystem:
 
         Returns:
             Hurst exponent
-        """
+        """  # noqa: W291
         try:
             n = len(series)
             if n < 20:
@@ -1141,8 +1144,8 @@ class ChaosQuantificationSystem:
         self,
         lyapunov_exp: float,
         corr_dim: float,
-        entropy_measures: Dict[str, float],
-        recurrence_metrics: Dict[str, float],
+        entropy_measures: dict[str, float],
+        recurrence_metrics: dict[str, float],
         fractal_dim: float,
         hurst_exp: float,
     ) -> float:
@@ -1192,10 +1195,10 @@ class ChaosQuantificationSystem:
     def _detect_adversarial_chaos(
         self,
         series: np.ndarray,
-        baseline: Optional[np.ndarray],
+        baseline: np.ndarray | None,
         chaos_score: float,
         lyapunov_exp: float,
-        entropy_measures: Dict[str, float],
+        entropy_measures: dict[str, float],
     ) -> bool:
         """
         Detect if chaos metrics indicate adversarial perturbation.
@@ -1239,7 +1242,7 @@ class ChaosQuantificationSystem:
 
         # Check entropy anomaly
         permutation_entropy = entropy_measures.get("permutation_entropy", 0.5)
-        if permutation_entropy > 0.95 or permutation_entropy < 0.1:
+        if permutation_entropy > 0.95 or permutation_entropy < 0.1:  # noqa: SIM103
             return True
 
         return False
@@ -1248,7 +1251,7 @@ class ChaosQuantificationSystem:
         self,
         chaos_score: float,
         lyapunov_exp: float,
-        entropy_measures: Dict[str, float],
+        entropy_measures: dict[str, float],
         has_baseline: bool,
     ) -> float:
         """Calculate confidence in adversarial detection."""
@@ -1289,7 +1292,7 @@ class ChaosQuantificationSystem:
             "hurst": self._calculate_hurst_exponent(series),
         }
 
-    def get_analysis_statistics(self) -> Dict[str, Any]:
+    def get_analysis_statistics(self) -> dict[str, Any]:
         """Get chaos analysis statistics."""
         if not self.analysis_history:
             return {
@@ -1325,7 +1328,7 @@ class InputTransformation(ABC):
         pass
 
     @abstractmethod
-    def get_default_params(self) -> Dict[str, Any]:
+    def get_default_params(self) -> dict[str, Any]:
         """Get default transformation parameters."""
         pass
 
@@ -1349,7 +1352,7 @@ class GeometricTransformations(InputTransformation):
             return self._shear(data, params.get("shear_factor", 0.1))
         return data
 
-    def get_default_params(self) -> Dict[str, Any]:
+    def get_default_params(self) -> dict[str, Any]:
         return {
             "rotation": {"angle": 5},
             "translation": {"shift": 2},
@@ -1438,7 +1441,7 @@ class IntensityTransformations(InputTransformation):
             return self._histogram_equalization(data)
         return data
 
-    def get_default_params(self) -> Dict[str, Any]:
+    def get_default_params(self) -> dict[str, Any]:
         return {
             "brightness": {"factor": 1.1},
             "contrast": {"factor": 1.2},
@@ -1507,7 +1510,7 @@ class NoiseTransformations(InputTransformation):
             return self._add_poisson_noise(data)
         return data
 
-    def get_default_params(self) -> Dict[str, Any]:
+    def get_default_params(self) -> dict[str, Any]:
         return {
             "gaussian": {"std": 0.01},
             "salt_pepper": {"prob": 0.01},
@@ -1559,7 +1562,7 @@ class FilterTransformations(InputTransformation):
             return self._bilateral_filter(data)
         return data
 
-    def get_default_params(self) -> Dict[str, Any]:
+    def get_default_params(self) -> dict[str, Any]:
         return {
             "gaussian_blur": {"kernel_size": 3},
             "median_filter": {"kernel_size": 3},
@@ -1648,7 +1651,7 @@ class CompressionTransformations(InputTransformation):
             return self._jpeg_simulation(data, params.get("quality", 80))
         return data
 
-    def get_default_params(self) -> Dict[str, Any]:
+    def get_default_params(self) -> dict[str, Any]:
         return {
             "quantization": {"levels": 32},
             "jpeg": {"quality": 80},
@@ -1728,10 +1731,10 @@ class DefensePerturbationSystem:
         self.prediction_stability_threshold = prediction_stability_threshold
         self.robustness_threshold = robustness_threshold
         self.enable_all_transformations = enable_all_transformations
-        self.analysis_history: List[DefensePerturbationResult] = []
+        self.analysis_history: list[DefensePerturbationResult] = []
 
         # Initialize transformation handlers
-        self.transformations: Dict[str, InputTransformation] = {
+        self.transformations: dict[str, InputTransformation] = {
             "geometric": GeometricTransformations(),
             "intensity": IntensityTransformations(),
             "noise": NoiseTransformations(),
@@ -1743,7 +1746,7 @@ class DefensePerturbationSystem:
         self,
         input_data: np.ndarray,
         model_prediction_func: Callable[[np.ndarray], Any],
-        original_prediction: Optional[Any] = None,
+        original_prediction: Any | None = None,
     ) -> DefensePerturbationResult:
         """
         Analyze input for robust adversarial characteristics.
@@ -1760,10 +1763,10 @@ class DefensePerturbationSystem:
             original_prediction = model_prediction_func(input_data)
 
         # Apply transformations and collect results
-        transformation_results: Dict[str, Dict[str, Any]] = {}
-        transformations_tested: List[str] = []
-        vulnerable_transformations: List[str] = []
-        robust_transformations: List[str] = []
+        transformation_results: dict[str, dict[str, Any]] = {}
+        transformations_tested: list[str] = []
+        vulnerable_transformations: list[str] = []
+        robust_transformations: list[str] = []
 
         prediction_changes = 0
         total_tests = 0
@@ -1852,7 +1855,7 @@ class DefensePerturbationSystem:
 
         return min(1.0, base_confidence)
 
-    def get_analysis_statistics(self) -> Dict[str, Any]:
+    def get_analysis_statistics(self) -> dict[str, Any]:
         """Get defense perturbation analysis statistics."""
         if not self.analysis_history:
             return {
@@ -1914,7 +1917,7 @@ class AdversarialDefenseSystem:
         self.enable_chaos_detection = enable_chaos_detection
         self.enable_defense_perturbation = enable_defense_perturbation
         self.enable_input_smoothing = enable_input_smoothing
-        self.detection_history: List[AdversarialDetectionResult] = []
+        self.detection_history: list[AdversarialDetectionResult] = []
 
         # Initialize sub-systems
         if enable_chaos_detection:
@@ -1929,9 +1932,9 @@ class AdversarialDefenseSystem:
 
     def detect_adversarial_example(
         self,
-        input_data: Union[np.ndarray, List, str],
-        model_prediction_func: Optional[Callable] = None,
-        baseline_input: Optional[Union[np.ndarray, List, str]] = None,
+        input_data: np.ndarray | list | str,
+        model_prediction_func: Callable | None = None,
+        baseline_input: np.ndarray | list | str | None = None,
     ) -> AdversarialDetectionResult:
         """
         Detect if input is an adversarial example.
@@ -1959,7 +1962,7 @@ class AdversarialDefenseSystem:
                 adversarial_prediction = model_prediction_func(input_data)
                 if baseline_input is not None:
                     original_prediction = model_prediction_func(baseline_input)
-            except Exception as e:
+            except Exception:
                 logging.exception("Model prediction failed in adversarial example detection.")
 
         # Run chaos analysis if enabled
@@ -1969,7 +1972,7 @@ class AdversarialDefenseSystem:
                 chaos_result = self.chaos_system.analyze_input(
                     input_array, baseline_array
                 )
-            except Exception as e:
+            except Exception:
                 logging.exception("Chaos analysis failed in adversarial example detection.")
 
         # Run defense perturbation if enabled
@@ -1979,7 +1982,7 @@ class AdversarialDefenseSystem:
                 defense_result = self.defense_system.analyze_input(
                     input_array, model_prediction_func, adversarial_prediction
                 )
-            except Exception as e:
+            except Exception:
                 logging.exception("Defense perturbation analysis failed in adversarial example detection.")
 
         # Determine if adversarial
@@ -2012,7 +2015,7 @@ class AdversarialDefenseSystem:
         self.detection_history.append(result)
         return result
 
-    def _to_numpy(self, data: Union[np.ndarray, List, str, None]) -> np.ndarray:
+    def _to_numpy(self, data: np.ndarray | list | str | None) -> np.ndarray:
         """Convert input to numpy array."""
         if data is None:
             return np.array([])
@@ -2024,8 +2027,8 @@ class AdversarialDefenseSystem:
 
     def _calculate_perturbation(
         self,
-        input_data: Union[np.ndarray, List, str],
-        baseline: Optional[Union[np.ndarray, List, str]],
+        input_data: np.ndarray | list | str,
+        baseline: np.ndarray | list | str | None,
     ) -> float:
         """Calculate perturbation magnitude between input and baseline."""
         if baseline is None:
@@ -2052,8 +2055,8 @@ class AdversarialDefenseSystem:
     def _is_adversarial(
         self,
         perturbation_magnitude: float,
-        chaos_result: Optional[ChaosAnalysisResult],
-        defense_result: Optional[DefensePerturbationResult],
+        chaos_result: ChaosAnalysisResult | None,
+        defense_result: DefensePerturbationResult | None,
     ) -> bool:
         """Determine if input is adversarial based on all analyses."""
         # If perturbation is negligible, the input is clean
@@ -2070,7 +2073,7 @@ class AdversarialDefenseSystem:
             return True
 
         # Check defense perturbation
-        if defense_result is not None and defense_result.is_robust_adversarial:
+        if defense_result is not None and defense_result.is_robust_adversarial:  # noqa: SIM103
             return True
 
         return False
@@ -2078,8 +2081,8 @@ class AdversarialDefenseSystem:
     def _calculate_confidence(
         self,
         perturbation_magnitude: float,
-        chaos_result: Optional[ChaosAnalysisResult],
-        defense_result: Optional[DefensePerturbationResult],
+        chaos_result: ChaosAnalysisResult | None,
+        defense_result: DefensePerturbationResult | None,
     ) -> float:
         """Calculate overall detection confidence."""
         confidences = []
@@ -2119,7 +2122,7 @@ class AdversarialDefenseSystem:
         else:
             return AdversarialAttackType.CARLINI_WAGNER
 
-    def get_detection_statistics(self) -> Dict[str, Any]:
+    def get_detection_statistics(self) -> dict[str, Any]:
         """Get detection statistics."""
         if not self.detection_history:
             return {
@@ -2177,16 +2180,16 @@ class ModelPoisoningDetector:
         self.gradient_threshold = gradient_threshold
         self.loss_anomaly_threshold = loss_anomaly_threshold
         self.enable_activation_analysis = enable_activation_analysis
-        self.detection_history: List[PoisoningDetectionResult] = []
-        self._gradient_history: List[np.ndarray] = []
-        self._loss_history: List[float] = []
+        self.detection_history: list[PoisoningDetectionResult] = []
+        self._gradient_history: list[np.ndarray] = []
+        self._loss_history: list[float] = []
 
     def detect_poisoning(
         self,
-        training_batch: List[Any],
-        gradients: Optional[List[float]] = None,
-        loss_values: Optional[List[float]] = None,
-        activations: Optional[np.ndarray] = None,
+        training_batch: list[Any],
+        gradients: list[float] | None = None,
+        loss_values: list[float] | None = None,
+        activations: np.ndarray | None = None,
     ) -> PoisoningDetectionResult:
         """
         Detect poisoning in training data.
@@ -2301,7 +2304,7 @@ class ModelPoisoningDetector:
 
     def _estimate_affected_samples(
         self,
-        training_batch: List[Any],
+        training_batch: list[Any],
         is_poisoned: bool,
     ) -> int:
         """Estimate number of affected samples."""
@@ -2326,7 +2329,7 @@ class ModelPoisoningDetector:
 
         return min(1.0, max_score / (threshold * 2))
 
-    def get_detection_statistics(self) -> Dict[str, Any]:
+    def get_detection_statistics(self) -> dict[str, Any]:
         """Get poisoning detection statistics."""
         if not self.detection_history:
             return {
@@ -2381,14 +2384,14 @@ class DifferentialPrivacyManager:
 
         self.budget = PrivacyBudget(epsilon=epsilon, delta=delta)
         self.mechanism = mechanism
-        self.query_log: List[Dict[str, Any]] = []
+        self.query_log: list[dict[str, Any]] = []
 
     def add_noise(
         self,
         value: float,
         sensitivity: float = 1.0,
-        epsilon_cost: Optional[float] = None,
-    ) -> Tuple[float, bool]:
+        epsilon_cost: float | None = None,
+    ) -> tuple[float, bool]:
         """
         Add differentially private noise to a value.
 
@@ -2447,7 +2450,7 @@ class DifferentialPrivacyManager:
         sigma = sensitivity * np.sqrt(2 * np.log(1.25 / delta)) / epsilon
         return np.random.normal(0, sigma)
 
-    def get_privacy_loss(self) -> Dict[str, float]:
+    def get_privacy_loss(self) -> dict[str, float]:
         """Get current privacy loss."""
         return {
             "epsilon_loss": self.budget.spent_epsilon,
@@ -2464,7 +2467,7 @@ class DifferentialPrivacyManager:
         self.budget.query_count = 0
         self.query_log = []
 
-    def export_audit_log(self) -> List[Dict[str, Any]]:
+    def export_audit_log(self) -> list[dict[str, Any]]:
         """Export privacy query audit log."""
         return self.query_log.copy()
 
@@ -2499,11 +2502,11 @@ class FederatedLearningCoordinator:
         self.min_participants = min_participants
         self.enable_secure_aggregation = enable_secure_aggregation
         self.enable_poisoning_detection = enable_poisoning_detection
-        self.rounds: List[FederatedLearningRound] = []
+        self.rounds: list[FederatedLearningRound] = []
 
     def aggregate_updates(
         self,
-        participant_updates: List[Dict[str, Any]],
+        participant_updates: list[dict[str, Any]],
     ) -> FederatedLearningRound:
         """
         Aggregate participant updates.
@@ -2544,13 +2547,13 @@ class FederatedLearningCoordinator:
         self.rounds.append(round_result)
         return round_result
 
-    def _detect_poisoning(self, updates: List[Dict[str, Any]]) -> bool:
+    def _detect_poisoning(self, updates: list[dict[str, Any]]) -> bool:
         """Detect poisoning in participant updates."""
         # Simple outlier detection based on gradient magnitude
         gradients = []
         for update in updates:
             if "gradients" in update:
-                gradients.append(np.mean(np.abs(update["gradients"])))
+                gradients.append(np.mean(np.abs(update["gradients"])))  # noqa: PERF401
 
         if len(gradients) < 2:
             return False
@@ -2562,13 +2565,13 @@ class FederatedLearningCoordinator:
             return False
 
         # Check for outliers (Z-score > 3)
-        for grad in gradients:
+        for grad in gradients:  # noqa: SIM110
             if abs(grad - mean) > 3 * std:
                 return True
 
         return False
 
-    def _secure_aggregate(self, updates: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _secure_aggregate(self, updates: list[dict[str, Any]]) -> dict[str, Any]:
         """Perform secure aggregation."""
         # Simplified secure aggregation (in practice, use cryptographic protocols)
         return {
@@ -2577,12 +2580,12 @@ class FederatedLearningCoordinator:
             "timestamp": datetime.now().isoformat(),
         }
 
-    def _simple_aggregate(self, updates: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _simple_aggregate(self, updates: list[dict[str, Any]]) -> dict[str, Any]:
         """Perform simple averaging aggregation."""
         all_gradients = []
         for update in updates:
             if "gradients" in update:
-                all_gradients.append(update["gradients"])
+                all_gradients.append(update["gradients"])  # noqa: PERF401
 
         if all_gradients:
             averaged = np.mean(all_gradients, axis=0)
@@ -2593,14 +2596,14 @@ class FederatedLearningCoordinator:
 
         return {"update_count": len(updates)}
 
-    def _calculate_validation_accuracy(self, aggregated: Dict[str, Any]) -> float:
+    def _calculate_validation_accuracy(self, aggregated: dict[str, Any]) -> float:
         """Calculate validation accuracy (simulated)."""
         # Simulated accuracy based on round number
         base_accuracy = 0.5
         round_bonus = min(0.4, len(self.rounds) * 0.05)
         return base_accuracy + round_bonus + np.random.uniform(0, 0.1)
 
-    def get_training_statistics(self) -> Dict[str, Any]:
+    def get_training_statistics(self) -> dict[str, Any]:
         """Get federated training statistics."""
         if not self.rounds:
             return {
@@ -2632,7 +2635,7 @@ class ExplainableAISystem:
 
     def __init__(
         self,
-        compliance_frameworks: Optional[List[str]] = None,
+        compliance_frameworks: list[str] | None = None,
         explanation_method: str = "shap",
     ):
         """
@@ -2644,14 +2647,14 @@ class ExplainableAISystem:
         """
         self.compliance_frameworks = compliance_frameworks or ["GDPR"]
         self.explanation_method = explanation_method
-        self.explanation_history: List[ExplainabilityReport] = []
+        self.explanation_history: list[ExplainabilityReport] = []
 
     def generate_explanation(
         self,
         model_id: str,
-        input_features: Dict[str, Any],
+        input_features: dict[str, Any],
         prediction: Any,
-        model: Optional[Any] = None,
+        model: Any | None = None,
     ) -> ExplainabilityReport:
         """
         Generate explanation for a model prediction.
@@ -2691,16 +2694,16 @@ class ExplainableAISystem:
 
     def _calculate_feature_importance(
         self,
-        features: Dict[str, Any],
-        model: Optional[Any],
-    ) -> Dict[str, float]:
+        features: dict[str, Any],
+        model: Any | None,
+    ) -> dict[str, float]:
         """Calculate feature importance scores."""
         # Simple heuristic: normalize by magnitude
         importance = {}
         total = 0
 
         for name, value in features.items():
-            if isinstance(value, (int, float)):
+            if isinstance(value, (int, float)):  # noqa: SIM108
                 magnitude = abs(float(value))
             else:
                 magnitude = 1.0
@@ -2716,8 +2719,8 @@ class ExplainableAISystem:
 
     def _generate_human_explanation(
         self,
-        features: Dict[str, Any],
-        importance: Dict[str, float],
+        features: dict[str, Any],
+        importance: dict[str, float],
         prediction: Any,
     ) -> str:
         """Generate human-readable explanation."""
@@ -2727,7 +2730,7 @@ class ExplainableAISystem:
         # Build explanation
         explanation_parts = [f"The prediction '{prediction}' was made based on the following factors:"]
 
-        for i, (feature, imp) in enumerate(sorted_features[:3]):
+        for i, (feature, imp) in enumerate(sorted_features[:3]):  # noqa: B007
             value = features.get(feature, "unknown")
             explanation_parts.append(
                 f"- {feature} (value: {value}) contributed {imp*100:.1f}% to the decision"
@@ -2741,7 +2744,7 @@ class ExplainableAISystem:
 
         return "\n".join(explanation_parts)
 
-    def _calculate_confidence_score(self, importance: Dict[str, float]) -> float:
+    def _calculate_confidence_score(self, importance: dict[str, float]) -> float:
         """Calculate confidence in the explanation."""
         if not importance:
             return 0.0
@@ -2754,7 +2757,7 @@ class ExplainableAISystem:
         # If evenly distributed, confidence is medium
         return min(1.0, max_importance + 0.3)
 
-    def export_compliance_report(self) -> Dict[str, Any]:
+    def export_compliance_report(self) -> dict[str, Any]:
         """Export compliance report."""
         if not self.explanation_history:
             return {
@@ -2810,11 +2813,11 @@ class AIMLSecurityManager:
             privacy_epsilon: Privacy epsilon parameter
             privacy_delta: Privacy delta parameter
         """
-        self.adversarial_defense: Optional[AdversarialDefenseSystem] = None
-        self.poisoning_detector: Optional[ModelPoisoningDetector] = None
-        self.privacy_manager: Optional[DifferentialPrivacyManager] = None
-        self.federated_coordinator: Optional[FederatedLearningCoordinator] = None
-        self.explainable_ai: Optional[ExplainableAISystem] = None
+        self.adversarial_defense: AdversarialDefenseSystem | None = None
+        self.poisoning_detector: ModelPoisoningDetector | None = None
+        self.privacy_manager: DifferentialPrivacyManager | None = None
+        self.federated_coordinator: FederatedLearningCoordinator | None = None
+        self.explainable_ai: ExplainableAISystem | None = None
 
         if enable_adversarial_defense:
             self.adversarial_defense = AdversarialDefenseSystem()
@@ -2834,7 +2837,7 @@ class AIMLSecurityManager:
         if enable_explainable_ai:
             self.explainable_ai = ExplainableAISystem()
 
-    def get_security_status(self) -> Dict[str, Any]:
+    def get_security_status(self) -> dict[str, Any]:
         """Get comprehensive security status."""
         status = {
             "adversarial_defense": {
@@ -2875,7 +2878,7 @@ class AIMLSecurityManager:
         }
         return status
 
-    def export_security_report(self) -> Dict[str, Any]:
+    def export_security_report(self) -> dict[str, Any]:
         """Export comprehensive security report."""
         return {
             "timestamp": datetime.now().isoformat(),

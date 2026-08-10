@@ -6,9 +6,7 @@ import os
 from uuid import uuid4
 
 import pytest
-
 from nethical_recon.core.models import (
-    JobStatus,
     ScanJob,
     Target,
     TargetScope,

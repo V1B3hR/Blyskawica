@@ -125,7 +125,11 @@ def job_status(
     from uuid import UUID
 
     from nethical_recon.core.storage import init_database
-    from nethical_recon.core.storage.repository import FindingRepository, ScanJobRepository, ToolRunRepository
+    from nethical_recon.core.storage.repository import (
+        FindingRepository,
+        ScanJobRepository,
+        ToolRunRepository,
+    )
 
     try:
         db = init_database()
@@ -189,9 +193,8 @@ def job_list(
 
         with db.session() as session:
             # Get all jobs (in production, add pagination)
-            from sqlalchemy import select
-
             from nethical_recon.core.storage.models import ScanJobModel
+            from sqlalchemy import select
 
             stmt = select(ScanJobModel).order_by(ScanJobModel.created_at.desc()).limit(limit)
             result = session.execute(stmt)

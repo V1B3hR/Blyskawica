@@ -3,14 +3,15 @@ System Audit Engine: Unified Diagnostic Orchestrator.
 Consolidates metrics from all cognitive tiers to evaluate 'Outside World Readiness'.
 """
 
+import logging
+import time
+from typing import Any
+
 import torch
 import torch.nn as nn
-from typing import Dict, Any, List, Optional
-import time
-import logging
 
-from adaptiveneuralnetwork.central_nervous_system.metrics import PhiCalculator, NeuralHealthMonitor
 from adaptiveneuralnetwork.central_nervous_system.consciousness_metrics import ConsciousnessMetrics
+from adaptiveneuralnetwork.central_nervous_system.metrics import NeuralHealthMonitor, PhiCalculator
 
 logger = logging.getLogger(__name__)
 
@@ -22,19 +23,19 @@ class SystemAudit(nn.Module):
         super().__init__()
         self.hidden_dim = hidden_dim
         self.device = device
-        
+
         # Metric Components
         self.phi_calc = PhiCalculator()
         self.health_monitor = NeuralHealthMonitor()
         self.metrics_utils = ConsciousnessMetrics()
-        
-        # Audit State
-        self.audit_log: List[Dict[str, Any]] = []
 
-    def perform_full_audit(self, 
-                           trainer: Any, 
+        # Audit State
+        self.audit_log: list[dict[str, Any]] = []
+
+    def perform_full_audit(self,
+                           trainer: Any,
                            node_state: Any,
-                           social_context: Optional[Any] = None) -> Dict[str, Any]:
+                           social_context: Any | None = None) -> dict[str, Any]:
         """
         Executes a deep system-wide diagnostic.
         """
@@ -61,15 +62,15 @@ class SystemAudit(nn.Module):
             activations = getattr(node_state, 'last_spikes', None)
             if activations is None:
                 activations = getattr(node_state, 'hidden_state', None)
-                
+
             phi = self.phi_calc.calculate_full_phi(weights, activations)
-            
+
             prediction_error = getattr(node_state, 'prediction_error', torch.tensor([0.1], device=self.device))
             meta_acc = self.metrics_utils.calculate_metacognitive_accuracy(
-                prediction_error, 
+                prediction_error,
                 torch.tensor([getattr(trainer, 'last_loss', 0.1)], device=self.device)
             )
-            
+
             # 2. Social Audit (Trust & Intent)
             trust_score = 1.0
             deception_risk = 0.0
@@ -78,7 +79,7 @@ class SystemAudit(nn.Module):
                 trusts = [e.trust_score for e in social_context.entities.values()]
                 trust_score = sum(trusts) / len(trusts) if trusts else 1.0
                 deception_risk = 1.0 - trust_score
-                
+
             # 3. Metabolic/Physical Audit (Glial Health)
             health_idx = self.health_monitor.calculate_health_index(
                 getattr(node_state, 'activity', torch.zeros(1, device=self.device)),
@@ -86,16 +87,16 @@ class SystemAudit(nn.Module):
                 getattr(node_state, 'anxiety', torch.tensor(0.0, device=self.device)),
                 waste=getattr(trainer.model, 'metabolic_waste', None)
             )
-            
+
             # 4. Grounding Coherence (Tier 3)
             grounding_coherence = 1.0
             if hasattr(trainer, 'sensory_hub'):
                 grounding_coherence = getattr(trainer.sensory_hub, 'last_coherence', 1.0)
-            
+
             # 5. Outside World Readiness Score (Combined)
             # Factors: Health, Trust, Coherence, Phi
             readiness = (health_idx * 0.3 + trust_score * 0.2 + grounding_coherence * 0.3 + phi * 0.2)
-            
+
             audit_result = {
                 'timestamp': time.time(),
                 'phi': phi,
@@ -107,30 +108,30 @@ class SystemAudit(nn.Module):
                 'deception_risk': deception_risk,
                 'bond_strength': getattr(node_state.soul, 'bond_strength', 0.0) if hasattr(node_state, 'soul') else 0.0
             }
-            
+
             self.audit_log.append(audit_result)
             self._log_audit(audit_result)
-            
+
             return audit_result
 
-    def _log_audit(self, result: Dict[str, Any]):
+    def _log_audit(self, result: dict[str, Any]):
         """Logs the audit summary with appropriate alerts."""
         score = result['readiness_score']
         status = "STABLE" if score > 0.8 else "VULNERABLE" if score > 0.6 else "CRITICAL"
         bond = result.get('bond_strength', 0.0)
         logger.info(f"System Audit [{status}] - Readiness: {score:.4f} | Φ: {result['phi']:.4f} | Health: {result['neural_health']:.4f} | Bond: {bond:.2f}")
-        
+
         if result['deception_risk'] > 0.5:
             logger.warning(f"AUDIT ALERT: Social Integrity Compromised. Risk: {result['deception_risk']:.2f}")
         if result['neural_health'] < 0.4:
-            logger.error(f"AUDIT ALERT: Metabolic Burnout Detected. Energy redistribution required.")
+            logger.error("AUDIT ALERT: Metabolic Burnout Detected. Energy redistribution required.")
 
-    def get_audit_summary(self) -> Dict[str, float]:
+    def get_audit_summary(self) -> dict[str, float]:
         """Returns the average metrics of recent audits."""
         if not self.audit_log:
             return {}
-        
+
         keys = self.audit_log[0].keys()
-        summary = {k: sum(d[k] for d in self.audit_log) / len(self.audit_log) 
+        summary = {k: sum(d[k] for d in self.audit_log) / len(self.audit_log)
                    for k in keys if isinstance(self.audit_log[0][k], (int, float))}
         return summary

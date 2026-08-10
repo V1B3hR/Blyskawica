@@ -10,7 +10,7 @@ from .base_store import BaseStore, StoreBackend
 
 try:
     import psycopg2
-    from psycopg2 import sql
+    from psycopg2 import sql  # noqa: F401
     from psycopg2.extras import RealDictCursor
 
     PSYCOPG2_AVAILABLE = True
@@ -142,7 +142,7 @@ class PostgreSQLStore(BaseStore):
                     COALESCE(marker_type, '') || ' ' || 
                     COALESCE(hunter_notes, '')
                 ))
-            """)
+            """)  # noqa: W291
 
             self.connection.commit()
             return True
@@ -359,7 +359,7 @@ class PostgreSQLStore(BaseStore):
                     COALESCE(hunter_notes, '')
                 ) @@ plainto_tsquery('english', %s)
                 ORDER BY timestamp_first_seen DESC
-            """,
+            """,  # noqa: W291
                 (query,),
             )
 

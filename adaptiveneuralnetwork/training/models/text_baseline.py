@@ -22,7 +22,7 @@ class TextClassificationBaseline:
     
     This baseline provides deterministic results and is suitable for smoke tests
     and demonstration of state-modulated behavior in the adaptive neural network.
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
@@ -45,7 +45,7 @@ class TextClassificationBaseline:
             C: Regularization parameter for LogisticRegression
             random_state: Random seed for reproducibility
             verbose: Whether to enable verbose logging
-        """
+        """  # noqa: W293
         self.max_features = max_features
         self.min_df = min_df
         self.max_df = max_df
@@ -69,7 +69,7 @@ class TextClassificationBaseline:
     def _check_dependencies(self):
         """Check if required dependencies are available."""
         try:
-            import sklearn
+            import sklearn  # noqa: F401
             self.has_sklearn = True
         except ImportError:
             self.has_sklearn = False
@@ -132,7 +132,7 @@ class TextClassificationBaseline:
             
         Returns:
             Dictionary with training metrics
-        """
+        """  # noqa: W293
         if not self.has_sklearn:
             raise ImportError("scikit-learn required for model training")
 
@@ -212,7 +212,7 @@ class TextClassificationBaseline:
             
         Returns:
             Array of predicted labels
-        """
+        """  # noqa: W293
         if not self.is_fitted:
             raise ValueError("Model must be fitted before making predictions")
 
@@ -232,7 +232,7 @@ class TextClassificationBaseline:
             
         Returns:
             Array of prediction probabilities
-        """
+        """  # noqa: W293
         if not self.is_fitted:
             raise ValueError("Model must be fitted before making predictions")
 
@@ -254,7 +254,7 @@ class TextClassificationBaseline:
             
         Returns:
             Dictionary with evaluation metrics
-        """
+        """  # noqa: W293
         if not self.is_fitted:
             raise ValueError("Model must be fitted before evaluation")
 
@@ -267,7 +267,7 @@ class TextClassificationBaseline:
 
         # Make predictions
         predictions = self.predict(texts)
-        probabilities = self.predict_proba(texts)
+        probabilities = self.predict_proba(texts)  # noqa: F841
 
         # Calculate metrics
         accuracy = accuracy_score(labels, predictions)
@@ -304,7 +304,7 @@ class TextClassificationBaseline:
             
         Returns:
             Dictionary mapping class names to top features
-        """
+        """  # noqa: W293
         if not self.is_fitted:
             raise ValueError("Model must be fitted before getting feature importance")
 
@@ -338,7 +338,7 @@ class TextClassificationBaseline:
         
         Args:
             save_path: Path to save the model
-        """
+        """  # noqa: W293
         if not self.is_fitted:
             raise ValueError("Model must be fitted before saving")
 
@@ -373,7 +373,7 @@ class TextClassificationBaseline:
         
         Args:
             model_path: Path to the saved model
-        """
+        """  # noqa: W293
         import pickle
 
         model_path = Path(model_path)
@@ -402,7 +402,7 @@ class TextClassificationBaseline:
         
         Returns:
             Dictionary with model information
-        """
+        """  # noqa: W293
         info = {
             "max_features": self.max_features,
             "min_df": self.min_df,
@@ -440,9 +440,9 @@ def create_demo_baseline(
         
     Returns:
         Tuple of (fitted_model, metrics)
-    """
+    """  # noqa: W291, W293
     try:
-        import pandas as pd
+        import pandas as pd  # noqa: F401
 
         from adaptiveneuralnetwork.training.bitext_dataset import create_synthetic_bitext_data
 

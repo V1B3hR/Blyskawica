@@ -7,13 +7,17 @@ Tests for the new attack resilience features including:
 - Improved signal jamming resistance  
 - Enhanced trust manipulation resistance
 - Faster environmental adaptation
-"""
+"""  # noqa: W291
 
 import unittest
 
 import numpy as np
 
-from adaptiveneuralnetwork.central_nervous_system.alive_node import AliveLoopNode, Memory, SocialSignal
+from adaptiveneuralnetwork.central_nervous_system.alive_node import (
+    AliveLoopNode,
+    Memory,
+    SocialSignal,
+)
 from tests.test_utils import get_test_seed, set_seed
 
 
@@ -57,11 +61,11 @@ class TestDistributedEnergySharing(unittest.TestCase):
 
         # Attacker requests excessive energy multiple times
         for _ in range(5):
-            received = self.node1.request_energy_sharing([attacker], energy_needed=10.0)  # Excessive request
+            received = self.node1.request_energy_sharing([attacker], energy_needed=10.0)  # Excessive request  # noqa: F841
 
         # Should detect attack and reject
         # Check for suspicious events
-        recent_suspicious = [e for t, e in self.node1.suspicious_events
+        recent_suspicious = [e for t, e in self.node1.suspicious_events  # noqa: F841
                            if isinstance(e, dict) and e.get("type") == "potential_energy_drain_attack"]
 
         # Should have some protection against excessive drain
@@ -200,7 +204,7 @@ class TestTrustManipulationResistance(unittest.TestCase):
         initial_trust = 0.5
 
         # Simulate rapid trust building attempts
-        for i in range(5):
+        for i in range(5):  # noqa: B007
             # Add fake energy sharing transaction
             self.node._record_energy_transaction(self.manipulator.node_id, 1.0, "received")
 
@@ -233,7 +237,7 @@ class TestTrustManipulationResistance(unittest.TestCase):
         self.assertLess(factor_new, 1.0)
 
         # Add some interaction history
-        for i in range(5):
+        for i in range(5):  # noqa: B007
             self.node._record_energy_transaction(self.manipulator.node_id, np.random.uniform(0.5, 2.0), "received")
 
         factor_established = self.node._calculate_trust_adjustment_factor(self.manipulator.node_id)
@@ -363,7 +367,7 @@ class TestIntegratedAttackScenarios(unittest.TestCase):
 
         # Simulate coordinated attack
         total_drain_attempted = 0
-        for attacker in attackers:
+        for attacker in attackers:  # noqa: B007
             # Each attacker attempts 15% drain (original high rate)
             drain_amount = victim.energy * 0.15
             total_drain_attempted += drain_amount
@@ -395,7 +399,7 @@ class TestIntegratedAttackScenarios(unittest.TestCase):
             victim.signal_history.append(signal)
 
         # Victim should detect both attacks
-        suspicious_nodes = victim.detect_long_term_trust_manipulation()
+        suspicious_nodes = victim.detect_long_term_trust_manipulation()  # noqa: F841
         jamming_detected = victim._detect_signal_jamming()
 
         self.assertTrue(jamming_detected)

@@ -1,7 +1,8 @@
-import torch
-import time
 import sys
+import time
 from datetime import datetime
+
+import torch
 
 # Ensuring UTF-8 for Windows console
 if sys.platform == "win32":
@@ -11,7 +12,7 @@ if sys.platform == "win32":
 def bio_quantum_ingestion(target_vram_gb=2.0):
     print(f"[{datetime.now()}] Błyskawica: Inicjalizacja Fazy VI - Inżynieria Genetyczna i CRISPR...")
     print(f"Alokacja zasobów GPU: Optymalizacja pod kątem równoległej sesji gamingowej (~{target_vram_gb} GB VRAM).")
-    
+
     if torch.cuda.is_available():
         device = torch.device("cuda")
         print(f"Używam GPU: {torch.cuda.get_device_name(0)}")
@@ -21,7 +22,7 @@ def bio_quantum_ingestion(target_vram_gb=2.0):
 
     # Simulating data ingestion from BioGRID ORCS and DepMap
     # Correlation between gene dependency scores and neural node survival
-    
+
     print(f"[{datetime.now()}] Przetwarzanie standardu MIACS (Minimal Information About CRISPR Screens)...")
     time.sleep(2)
     print(f"[{datetime.now()}] Analiza algorytmu Chronos (DepMap) dla korekcji błędów...")
@@ -31,9 +32,9 @@ def bio_quantum_ingestion(target_vram_gb=2.0):
     try:
         # Lower allocation to ensure game smoothness
         elements = int((target_vram_gb * (1024**3)) / 4)
-        bio_matrix = torch.randn(elements, device=device)
+        bio_matrix = torch.randn(elements, device=device)  # noqa: F841
         print(f"[{datetime.now()}] Pomyślnie zmapowano przestrzeń zależności genetycznych.")
-        
+
         print("--- Rozpoczynam modelowanie kaskad sygnałowych ---")
         for i in range(5):
             start = time.time()
@@ -41,7 +42,7 @@ def bio_quantum_ingestion(target_vram_gb=2.0):
             sample_size = 4096
             m1 = torch.randn(sample_size, sample_size, device=device)
             m2 = torch.randn(sample_size, sample_size, device=device)
-            res = torch.matmul(m1, m2)
+            res = torch.matmul(m1, m2)  # noqa: F841
             end = time.time()
             print(f"[{datetime.now()}] Analiza genomowa {i+1}/5: {end-start:.4f}s")
             time.sleep(5) # Longer sleep to be "polite" to the game

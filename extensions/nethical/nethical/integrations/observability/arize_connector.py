@@ -1,15 +1,16 @@
 """Arize AI integration for Nethical governance observability."""
 
-from .base import ObservabilityProvider, TraceSpan, GovernanceMetrics
-from typing import Dict, Any, Optional
 import logging
+from typing import Any
+
+from .base import GovernanceMetrics, ObservabilityProvider, TraceSpan
 
 logger = logging.getLogger(__name__)
 
 
 class ArizeConnector(ObservabilityProvider):
     """Arize AI integration for Nethical governance observability."""
-    
+
     def __init__(
         self,
         api_key: str,
@@ -24,11 +25,11 @@ class ArizeConnector(ObservabilityProvider):
             space_key: Arize space key
             model_id: Model identifier
             model_version: Model version
-        """
+        """  # noqa: W293
         try:
             from arize.pandas.logger import Client as ArizeClient
-            from arize.utils.types import ModelTypes, Environments
-            
+            from arize.utils.types import Environments, ModelTypes
+
             self.client = ArizeClient(api_key=api_key, space_key=space_key)
             self.model_id = model_id
             self.model_version = model_version
@@ -44,16 +45,16 @@ class ArizeConnector(ObservabilityProvider):
             logger.error(f"Failed to initialize Arize: {e}")
             self.client = None
             self.available = False
-    
+
     def log_trace(self, span: TraceSpan) -> None:
         """Log a trace span with governance data."""
         if not self.available:
             return
-            
+
         try:
             import pandas as pd
-            from arize.utils.types import Schema, EmbeddingColumnNames
-            
+            from arize.utils.types import EmbeddingColumnNames, Schema
+
             # Convert span to dataframe row
             data = {
                 "prediction_id": [span.span_id],
@@ -64,9 +65,9 @@ class ArizeConnector(ObservabilityProvider):
                 "response": [str(span.governance_result)[:1000] if span.governance_result else ""],
                 "latency_ms": [(span.end_time - span.start_time).total_seconds() * 1000 if span.end_time else 0]
             }
-            
+
             df = pd.DataFrame(data)
-            
+
             schema = Schema(
                 prediction_id_column_name="prediction_id",
                 timestamp_column_name="prediction_timestamp",
@@ -81,7 +82,7 @@ class ArizeConnector(ObservabilityProvider):
                     data_column_name="response"
                 )
             )
-            
+
             response = self.client.log(
                 dataframe=df,
                 model_id=self.model_id,
@@ -90,30 +91,31 @@ class ArizeConnector(ObservabilityProvider):
                 environment=self.environment,
                 schema=schema
             )
-            
+
             if response.status_code != 200:
                 logger.error(f"Arize log failed: {response.text}")
-                
+
         except Exception as e:
             logger.error(f"Failed to log trace to Arize: {e}")
-    
+
     def log_governance_event(
         self,
         action: str,
         decision: str,
         risk_score: float,
-        metadata: Dict[str, Any]
+        metadata: dict[str, Any]
     ) -> None:
         """Log a governance evaluation event."""
         if not self.available:
             return
-            
+
         try:
+            import uuid
+            from datetime import datetime
+
             import pandas as pd
             from arize.utils.types import Schema
-            from datetime import datetime
-            import uuid
-            
+
             data = {
                 "prediction_id": [str(uuid.uuid4())],
                 "prediction_timestamp": [datetime.utcnow()],
@@ -123,16 +125,16 @@ class ArizeConnector(ObservabilityProvider):
                 "response": [decision],
                 "risk_score": [risk_score]
             }
-            
+
             df = pd.DataFrame(data)
-            
+
             schema = Schema(
                 prediction_id_column_name="prediction_id",
                 timestamp_column_name="prediction_timestamp",
                 prediction_label_column_name="prediction_label",
                 prediction_score_column_name="prediction_score"
             )
-            
+
             self.client.log(
                 dataframe=df,
                 model_id=self.model_id,
@@ -143,17 +145,18 @@ class ArizeConnector(ObservabilityProvider):
             )
         except Exception as e:
             logger.error(f"Failed to log governance event to Arize: {e}")
-    
+
     def log_metrics(self, metrics: GovernanceMetrics) -> None:
         """Log aggregated governance metrics."""
         if not self.available:
             return
-            
+
         try:
+            import uuid
+
             import pandas as pd
             from arize.utils.types import Schema
-            import uuid
-            
+
             # Log as a single prediction with metrics as features
             data = {
                 "prediction_id": [str(uuid.uuid4())],
@@ -167,14 +170,14 @@ class ArizeConnector(ObservabilityProvider):
                 "latency_p50_ms": [metrics.latency_p50_ms],
                 "latency_p99_ms": [metrics.latency_p99_ms]
             }
-            
+
             df = pd.DataFrame(data)
-            
+
             schema = Schema(
                 prediction_id_column_name="prediction_id",
                 timestamp_column_name="prediction_timestamp"
             )
-            
+
             self.client.log(
                 dataframe=df,
                 model_id=f"{self.model_id}-metrics",
@@ -185,11 +188,11 @@ class ArizeConnector(ObservabilityProvider):
             )
         except Exception as e:
             logger.error(f"Failed to log metrics to Arize: {e}")
-    
+
     def create_dashboard(self, name: str) -> str:
         """Create a governance dashboard."""
         if not self.available:
             return "Arize not available"
-            
+
         # Arize dashboards are created in UI
         return f"https://app.arize.com/organizations/{self.model_id}"

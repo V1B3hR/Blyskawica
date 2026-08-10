@@ -329,7 +329,7 @@ class TestCapacitorInSpace(unittest.TestCase):
         cap2 = CapacitorInSpace(position=[0, 0], capacity=10.0, initial_energy=5.0)
 
         # Both capacitors should behave identically
-        for i in range(5):
+        for i in range(5):  # noqa: B007
             charge_amount = np.random.random() * 2.0
             discharge_amount = np.random.random() * 2.0
 

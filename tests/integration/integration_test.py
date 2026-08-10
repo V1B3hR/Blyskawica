@@ -18,13 +18,15 @@ def create_integrated_system():
     print("=" * 60)
 
     # Import all components
+    from adaptiveneuralnetwork.central_nervous_system.intelligence_benchmark import (
+        IntelligenceBenchmark,
+    )
     from adaptiveneuralnetwork.central_nervous_system.neuromorphic import NeuromorphicConfig
     from adaptiveneuralnetwork.central_nervous_system.phases import Phase, PhaseScheduler
     from adaptiveneuralnetwork.central_nervous_system.precision_phases import (
         MixedPrecisionPhaseManager,
     )
     from adaptiveneuralnetwork.neuromorphic.custom_spike_simulator import CustomSpikeSimulator
-    from adaptiveneuralnetwork.central_nervous_system.intelligence_benchmark import IntelligenceBenchmark
 
     print("\n1. Initializing Core Components...")
 
@@ -104,7 +106,7 @@ def run_integration_simulation(system, num_steps=20):
     from adaptiveneuralnetwork.central_nervous_system.precision_phases import PrecisionLevel
 
     # Unpack system components
-    benchmark = system['intelligence_benchmark']
+    benchmark = system['intelligence_benchmark']  # noqa: F841
     scheduler = system['phase_scheduler']
     precision_mgr = system['precision_manager']
     simulator = system['spike_simulator']

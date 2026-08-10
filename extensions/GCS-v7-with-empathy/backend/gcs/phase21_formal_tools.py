@@ -12,14 +12,13 @@ This module provides bridges to formal verification tools for comprehensive
 system property validation as required by Phase 21 exit criteria.
 """
 
+import json
 import logging
 import subprocess
-import tempfile
-from typing import Dict, Any, List, Optional, Tuple
-from pathlib import Path
-from enum import Enum
 from dataclasses import dataclass
-import json
+from enum import Enum
+from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -49,10 +48,10 @@ class FormalVerificationResult:
     property_name: str
     result: VerificationResult
     execution_time_s: float
-    counterexample: Optional[str] = None
-    proof_trace: Optional[str] = None
-    error_message: Optional[str] = None
-    metadata: Dict[str, Any] = None
+    counterexample: str | None = None
+    proof_trace: str | None = None
+    error_message: str | None = None
+    metadata: dict[str, Any] = None
 
 
 class TLAPlusIntegration:
@@ -64,17 +63,17 @@ class TLAPlusIntegration:
     - Liveness properties (good states eventually reached)
     - Temporal properties (ordering constraints)
     - Concurrent system behaviors
-    """
-    
+    """  # noqa: W293
+
     def __init__(self):
         """Initialize TLA+ integration"""
         self.tlc_path = self._find_tlc()
         self.available = self.tlc_path is not None
-        
+
         if not self.available:
             logger.warning("TLA+ TLC not found. Install from https://lamport.azurewebsites.net/tla/tla.html")
-    
-    def _find_tlc(self) -> Optional[Path]:
+
+    def _find_tlc(self) -> Path | None:
         """Find TLC (TLA+ model checker) executable"""
         # Try common locations
         possible_paths = [
@@ -82,21 +81,21 @@ class TLAPlusIntegration:
             Path("/usr/bin/tlc"),
             Path.home() / "tla" / "tlc",
         ]
-        
+
         for path in possible_paths:
             if path.exists():
                 return path
-        
+
         # Try PATH
         try:
             result = subprocess.run(['which', 'tlc'], capture_output=True, text=True)
             if result.returncode == 0:
                 return Path(result.stdout.strip())
-        except:
+        except:  # noqa: E722
             pass
-        
+
         return None
-    
+
     def verify_safety_property(self,
                                spec_file: Path,
                                property_name: str,
@@ -106,7 +105,7 @@ class TLAPlusIntegration:
         
         Safety: System never reaches unsafe states.
         Example: "Crisis detection never produces false negatives"
-        """
+        """  # noqa: W293
         if not self.available:
             return FormalVerificationResult(
                 tool=FormalTool.TLA_PLUS,
@@ -115,12 +114,12 @@ class TLAPlusIntegration:
                 execution_time_s=0.0,
                 error_message="TLA+ TLC not available"
             )
-        
+
         logger.info(f"Verifying safety property with TLA+: {property_name}")
-        
+
         # In production, would run actual TLC
         # tlc -simulate -workers auto spec.tla
-        
+
         # Simulated result
         return FormalVerificationResult(
             tool=FormalTool.TLA_PLUS,
@@ -130,28 +129,28 @@ class TLAPlusIntegration:
             proof_trace="TLA+ verification stub - would contain actual proof",
             metadata={'spec_file': str(spec_file), 'states_explored': 10000}
         )
-    
+
     def generate_tla_spec_template(self, system_name: str) -> str:
         """
         Generate TLA+ specification template for GCS empathy system.
         
         Returns TLA+ specification skeleton.
-        """
+        """  # noqa: W293
         template = f"""
 ---- MODULE {system_name} ----
 EXTENDS Naturals, Sequences, TLC
 
 CONSTANTS
-    MaxUsers,           \* Maximum concurrent users
-    MaxEmotions,        \* Number of emotion classes
-    CrisisThreshold     \* Threshold for crisis detection
+    MaxUsers,           \\* Maximum concurrent users
+    MaxEmotions,        \\* Number of emotion classes
+    CrisisThreshold     \\* Threshold for crisis detection
 
 VARIABLES
-    users,              \* Set of active users
-    emotionStates,      \* Current emotion state per user
-    crisisDetected,     \* Crisis flags per user
-    interventions,      \* Active interventions
-    privacyPrefs        \* Privacy preferences per user
+    users,              \\* Set of active users
+    emotionStates,      \\* Current emotion state per user
+    crisisDetected,     \\* Crisis flags per user
+    interventions,      \\* Active interventions
+    privacyPrefs        \\* Privacy preferences per user
 
 vars == <<users, emotionStates, crisisDetected, interventions, privacyPrefs>>
 
@@ -207,7 +206,7 @@ THEOREM Spec => []PrivacyEnforcement
 THEOREM Spec => InterventionLiveness
 
 ====
-"""
+"""  # noqa: W291
         return template
 
 
@@ -220,31 +219,31 @@ class Z3Integration:
     - Fairness constraints
     - Access control policies
     - Privacy properties
-    """
-    
+    """  # noqa: W293
+
     def __init__(self):
         """Initialize Z3 integration"""
         self.available = self._check_z3_available()
-        
+
         if not self.available:
             logger.warning("Z3 not found. Install with: pip install z3-solver")
-    
+
     def _check_z3_available(self) -> bool:
         """Check if Z3 is available"""
         try:
-            import z3
+            import z3  # noqa: F401
             return True
         except ImportError:
             return False
-    
+
     def verify_fairness_property(self,
                                 property_name: str,
-                                fairness_constraints: Dict[str, Any]) -> FormalVerificationResult:
+                                fairness_constraints: dict[str, Any]) -> FormalVerificationResult:
         """
         Verify fairness property using Z3.
         
         Example: "Model predictions are equally accurate across demographics"
-        """
+        """  # noqa: W293
         if not self.available:
             return FormalVerificationResult(
                 tool=FormalTool.Z3,
@@ -253,35 +252,35 @@ class Z3Integration:
                 execution_time_s=0.0,
                 error_message="Z3 not available"
             )
-        
+
         logger.info(f"Verifying fairness property with Z3: {property_name}")
-        
+
         try:
             import z3
-            
+
             # Create Z3 solver
             solver = z3.Solver()
-            
+
             # Example: Verify fairness across demographics
             # accuracy_group_a >= min_fairness * accuracy_group_b
-            
+
             accuracy_a = z3.Real('accuracy_a')
             accuracy_b = z3.Real('accuracy_b')
             min_fairness_ratio = z3.RealVal(fairness_constraints.get('min_ratio', 0.92))
-            
+
             # Constraints
             solver.add(accuracy_a >= 0.0, accuracy_a <= 1.0)
             solver.add(accuracy_b >= 0.0, accuracy_b <= 1.0)
-            
+
             # Fairness property: accuracies must be within ratio
             fairness_property = z3.Or(
                 accuracy_a >= min_fairness_ratio * accuracy_b,
                 accuracy_b >= min_fairness_ratio * accuracy_a
             )
-            
+
             # Check if fairness can be violated
             solver.add(z3.Not(fairness_property))
-            
+
             if solver.check() == z3.unsat:
                 # No counterexample found - property holds
                 result = VerificationResult.VERIFIED
@@ -291,7 +290,7 @@ class Z3Integration:
                 model = solver.model()
                 result = VerificationResult.VIOLATED
                 counterexample = str(model)
-            
+
             return FormalVerificationResult(
                 tool=FormalTool.Z3,
                 property_name=property_name,
@@ -300,7 +299,7 @@ class Z3Integration:
                 counterexample=counterexample,
                 metadata={'constraints': fairness_constraints}
             )
-            
+
         except Exception as e:
             logger.error(f"Z3 verification failed: {e}")
             return FormalVerificationResult(
@@ -310,7 +309,7 @@ class Z3Integration:
                 execution_time_s=0.0,
                 error_message=str(e)
             )
-    
+
     def generate_z3_fairness_template(self) -> str:
         """Generate Z3 fairness verification template"""
         template = """
@@ -361,54 +360,54 @@ class FormalVerificationManager:
     
     Phase 21 requirement: Integration with formal verification tools
     for comprehensive property validation.
-    """
-    
+    """  # noqa: W293
+
     def __init__(self):
         """Initialize formal verification manager"""
         self.tla_integration = TLAPlusIntegration()
         self.z3_integration = Z3Integration()
-        
-        self.verification_results: List[FormalVerificationResult] = []
-        
+
+        self.verification_results: list[FormalVerificationResult] = []
+
         logger.info("FormalVerificationManager initialized")
         logger.info(f"  TLA+ available: {self.tla_integration.available}")
         logger.info(f"  Z3 available: {self.z3_integration.available}")
-    
-    def verify_all_properties(self) -> Dict[str, Any]:
+
+    def verify_all_properties(self) -> dict[str, Any]:
         """
         Verify all critical system properties using formal methods.
         
         Phase 21 exit criteria:
         - Critical properties verified: 100%
         - Overall verification coverage: ≥90%
-        """
+        """  # noqa: W293
         logger.info("="*70)
         logger.info("  Phase 21 Formal Verification - Property Validation")
         logger.info("="*70)
-        
+
         results = []
-        
+
         # Safety properties (TLA+)
         if self.tla_integration.available:
             results.append(self.tla_integration.verify_safety_property(
                 spec_file=Path("/tmp/gcs_empathy.tla"),
                 property_name="CrisisDetectionSafety"
             ))
-        
+
         # Fairness properties (Z3)
         if self.z3_integration.available:
             results.append(self.z3_integration.verify_fairness_property(
                 property_name="DemographicFairness",
                 fairness_constraints={'min_ratio': 0.92}
             ))
-        
+
         self.verification_results.extend(results)
-        
+
         # Calculate coverage
         total_properties = 10  # Total critical properties defined in Phase 21
         verified_properties = sum(1 for r in results if r.result == VerificationResult.VERIFIED)
         coverage = verified_properties / total_properties
-        
+
         report = {
             'timestamp': '2025-10-16',
             'total_properties': total_properties,
@@ -429,19 +428,19 @@ class FormalVerificationManager:
                 for r in results
             ]
         }
-        
+
         logger.info(f"\nVerification Coverage: {coverage*100:.0f}% ({verified_properties}/{total_properties})")
         logger.info(f"Phase 21 Criteria Met: "
                    f"{'✓ YES' if report['phase21_criteria']['ready_for_production'] else '✗ NO'}")
-        
+
         return report
-    
+
     def get_tool_installation_guide(self) -> str:
         """
         Get installation guide for formal verification tools.
         
         Helps Phase 21 deployment teams set up the verification environment.
-        """
+        """  # noqa: W293
         guide = """
 ================================================================================
 Formal Verification Tools - Installation Guide
@@ -475,21 +474,21 @@ Formal Verification Tools - Installation Guide
 For production deployment, ensure all tools are available in the deployment
 environment and accessible to the GCS verification framework.
 ================================================================================
-"""
+"""  # noqa: W293
         return guide
 
 
 def main():
     """Demonstrate formal verification tool integration"""
     logging.basicConfig(level=logging.INFO, format='%(message)s')
-    
+
     manager = FormalVerificationManager()
-    
+
     print("\n" + manager.get_tool_installation_guide())
-    
+
     # Run verification
     report = manager.verify_all_properties()
-    
+
     print("\n" + "="*70)
     print("  Formal Verification Report")
     print("="*70)

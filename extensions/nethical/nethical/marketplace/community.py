@@ -23,13 +23,13 @@ import json
 import os
 import threading
 import uuid
-from dataclasses import dataclass, field, asdict
+from collections import Counter, defaultdict
+from collections.abc import Iterable
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from hashlib import sha256
-from typing import Dict, List, Optional, Set, Any, Iterable
-from collections import defaultdict, Counter
-
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Utilities
@@ -87,7 +87,7 @@ class AuditLogger:
     def _load_chain_state(self) -> str:
         if os.path.exists(self._chain_hash_state_path):
             try:
-                with open(self._chain_hash_state_path, "r", encoding="utf-8") as f:
+                with open(self._chain_hash_state_path, encoding="utf-8") as f:
                     return f.read().strip()
             except Exception:
                 return ""
@@ -101,7 +101,7 @@ class AuditLogger:
             # Non-fatal: system continues without persisting state
             pass
 
-    def log_event(self, event_type: str, data: Dict[str, Any]) -> str:
+    def log_event(self, event_type: str, data: dict[str, Any]) -> str:
         with self._lock:
             event = {
                 "ts": utcnow().isoformat(),
@@ -152,7 +152,7 @@ class SubmissionEvent:
     note: str
     actor: str = "system"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "ts": self.ts.isoformat(),
             "status": self.status.value,
@@ -172,9 +172,9 @@ class PluginReview:
     comment: str
     review_date: datetime
     helpful_votes: int = 0
-    helpful_voters: Set[str] = field(default_factory=set)
+    helpful_voters: set[str] = field(default_factory=set)
     moderated: bool = False
-    moderation_reason: Optional[str] = None
+    moderation_reason: str | None = None
 
     def __post_init__(self) -> None:
         if not (1.0 <= self.rating <= 5.0):
@@ -208,11 +208,11 @@ class PluginSubmission:
     author: str
     submission_date: datetime
     status: ReviewStatus
-    reviewer_notes: List[str] = field(default_factory=list)
-    assigned_reviewers: Set[str] = field(default_factory=set)
-    status_history: List[SubmissionEvent] = field(default_factory=list)
-    plugin_version: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    reviewer_notes: list[str] = field(default_factory=list)
+    assigned_reviewers: set[str] = field(default_factory=set)
+    status_history: list[SubmissionEvent] = field(default_factory=list)
+    plugin_version: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def add_note(self, note: str, actor: str = "system") -> None:
         """Add reviewer note."""
@@ -254,11 +254,11 @@ class ContributionTemplate:
     template_id: str
     name: str
     description: str
-    required_files: List[str]
-    guidelines: List[str]
-    examples: Dict[str, str] = field(default_factory=dict)
+    required_files: list[str]
+    guidelines: list[str]
+    examples: dict[str, str] = field(default_factory=dict)
 
-    def validate_submission_files(self, files_present: Iterable[str]) -> Dict[str, Any]:
+    def validate_submission_files(self, files_present: Iterable[str]) -> dict[str, Any]:
         """Validate required files against a provided iterable of filenames."""
         present = set(files_present)
         missing = [f for f in self.required_files if f not in present]
@@ -293,14 +293,14 @@ class _JsonlStore:
             payload["status"] = submission.status.value
             payload["status_history"] = [e.to_dict() for e in submission.status_history]
             # Sets to sorted lists for determinism
-            payload["assigned_reviewers"] = sorted(list(submission.assigned_reviewers))
+            payload["assigned_reviewers"] = sorted(list(submission.assigned_reviewers))  # noqa: C414
             f.write(json.dumps(payload, sort_keys=True) + "\n")
 
     def append_review(self, review: PluginReview) -> None:
         with self._lock, open(self.reviews_path, "a", encoding="utf-8") as f:
             payload = asdict(review)
             payload["review_date"] = review.review_date.isoformat()
-            payload["helpful_voters"] = sorted(list(review.helpful_voters))
+            payload["helpful_voters"] = sorted(list(review.helpful_voters))  # noqa: C414
             f.write(json.dumps(payload, sort_keys=True) + "\n")
 
 
@@ -339,12 +339,12 @@ class CommunityManager:
         _ensure_dir(self.storage_dir)
 
         # In-memory indices
-        self._submissions: Dict[str, PluginSubmission] = {}
-        self._reviews: Dict[str, List[PluginReview]] = defaultdict(list)
-        self._plugin_to_submissions: Dict[str, Set[str]] = defaultdict(set)
+        self._submissions: dict[str, PluginSubmission] = {}
+        self._reviews: dict[str, list[PluginReview]] = defaultdict(list)
+        self._plugin_to_submissions: dict[str, set[str]] = defaultdict(set)
 
         # Stats cache (basic, computed on demand)
-        self._contributor_stats: Dict[str, Dict[str, Any]] = {}
+        self._contributor_stats: dict[str, dict[str, Any]] = {}
 
         # Infra
         self._lock = threading.RLock()
@@ -362,8 +362,8 @@ class CommunityManager:
         plugin_id: str,
         author: str,
         *,
-        plugin_version: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        plugin_version: str | None = None,
+        metadata: dict[str, Any] | None = None,
         actor: str = "author",
     ) -> PluginSubmission:
         """Submit a plugin for review.
@@ -416,17 +416,17 @@ class CommunityManager:
 
         return submission
 
-    def get_submission(self, submission_id: str) -> Optional[PluginSubmission]:
+    def get_submission(self, submission_id: str) -> PluginSubmission | None:
         with self._lock:
             return self._submissions.get(submission_id)
 
     def list_submissions(
         self,
         *,
-        author: Optional[str] = None,
-        plugin_id: Optional[str] = None,
-        status: Optional[ReviewStatus] = None,
-    ) -> List[PluginSubmission]:
+        author: str | None = None,
+        plugin_id: str | None = None,
+        status: ReviewStatus | None = None,
+    ) -> list[PluginSubmission]:
         """List submissions with optional filters."""
         with self._lock:
             subs = list(self._submissions.values())
@@ -539,7 +539,7 @@ class CommunityManager:
         comment: str,
         *,
         moderated: bool = False,
-        moderation_reason: Optional[str] = None,
+        moderation_reason: str | None = None,
     ) -> PluginReview:
         """Add a review for a plugin.
 
@@ -638,7 +638,7 @@ class CommunityManager:
                     return True
         return False
 
-    def get_reviews(self, plugin_id: str, include_moderated: bool = False) -> List[PluginReview]:
+    def get_reviews(self, plugin_id: str, include_moderated: bool = False) -> list[PluginReview]:
         """Get all reviews for a plugin.
 
         Args:
@@ -669,7 +669,7 @@ class CommunityManager:
             return 0.0
         return sum(r.rating for r in reviews) / len(reviews)
 
-    def get_rating_histogram(self, plugin_id: str) -> Dict[int, int]:
+    def get_rating_histogram(self, plugin_id: str) -> dict[int, int]:
         """Return counts of ratings 1..5 for a plugin."""
         hist = Counter(int(round(r.rating)) for r in self.get_reviews(plugin_id))
         return {k: hist.get(k, 0) for k in range(1, 6)}
@@ -678,7 +678,7 @@ class CommunityManager:
     # Stats and Scores
     # --------------------------
 
-    def get_contributor_stats(self, author: str) -> Dict[str, Any]:
+    def get_contributor_stats(self, author: str) -> dict[str, Any]:
         """Get statistics for a contributor.
 
         Args:
@@ -696,7 +696,7 @@ class CommunityManager:
         needs_changes = sum(1 for s in submissions if s.status == ReviewStatus.NEEDS_CHANGES)
 
         # Time-to-approval metrics
-        approval_durations: List[float] = []
+        approval_durations: list[float] = []
         for s in submissions:
             created_ts = next(
                 (e.ts for e in s.status_history if e.status == ReviewStatus.PENDING), None
@@ -734,7 +734,7 @@ class CommunityManager:
             "helpful_votes_per_review": round(helpful_votes_per_review, 4),
         }
 
-    def get_plugin_stats(self, plugin_id: str) -> Dict[str, Any]:
+    def get_plugin_stats(self, plugin_id: str) -> dict[str, Any]:
         """Aggregate stats for a plugin."""
         reviews = self.get_reviews(plugin_id)
         avg = self.get_average_rating(plugin_id)
@@ -817,7 +817,7 @@ class CommunityManager:
     # System status and introspection
     # --------------------------
 
-    def get_system_status(self) -> Dict[str, Any]:
+    def get_system_status(self) -> dict[str, Any]:
         """Return a snapshot of community system status for observability."""
         with self._lock:
             total_submissions = len(self._submissions)

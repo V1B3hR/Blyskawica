@@ -1,10 +1,11 @@
+import logging
+import os
+
 import numpy as np
 import tensorflow as tf
-import logging
 import yaml
-import os
-import time
 from prometheus_client import Counter, Histogram
+
 from .model import GradReverse
 
 # Monitoring metrics
@@ -19,7 +20,7 @@ class GCSInference:
         try:
             with open(config_path) as f:
                 self.config = yaml.safe_load(f)
-        except Exception as e:
+        except Exception:
             logging.critical("Failed to load config file", exc_info=True)
             raise
 
@@ -39,7 +40,7 @@ class GCSInference:
                 custom_objects={"GradReverse": GradReverse},
                 safe_mode=safe_mode
             )
-        except Exception as e:
+        except Exception:
             logging.critical("Model load failed", exc_info=True)
             raise
 
@@ -51,7 +52,7 @@ class GCSInference:
             if not np.allclose(adj, adj.T):
                 logging.warning("Adjacency matrix is not symmetric.")
             self.adj = np.expand_dims(adj, 0)
-        except Exception as e:
+        except Exception:
             logging.critical("Graph load failed", exc_info=True)
             raise
 
@@ -148,7 +149,7 @@ class GCSInference:
                         result = {"error": str(e)}
                     results.append(result)
             return results
-        except Exception as e:
+        except Exception:
             PREDICTION_ERRORS.inc()
             logging.error("Prediction failed", exc_info=True)
             raise

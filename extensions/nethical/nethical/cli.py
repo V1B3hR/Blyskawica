@@ -7,7 +7,7 @@ Command-line interface for the Nethical AI Safety Governance Platform.
 import json
 import os
 import sys
-from typing import Any, Dict, Optional
+from typing import Any
 
 try:
     import click
@@ -131,8 +131,8 @@ def init(config_dir: str, force: bool) -> None:
 def evaluate(
     action: str,
     agent_id: str,
-    intent: Optional[str],
-    context: Optional[str],
+    intent: str | None,
+    context: str | None,
     output: str,
 ) -> None:
     """Evaluate an action against governance policies."""
@@ -143,7 +143,7 @@ def evaluate(
         sys.exit(1)
 
     # Parse context if provided
-    ctx: Dict[str, Any] = {}
+    ctx: dict[str, Any] = {}
     if context:
         try:
             ctx = json.loads(context)
@@ -201,7 +201,7 @@ def evaluate(
         else:
             decision_str = click.style(str(decision), fg="yellow", bold=True)
 
-        click.echo(f"\n📋 Evaluation Result")
+        click.echo("\n📋 Evaluation Result")
         click.echo(f"   Decision: {decision_str}")
         click.echo(f"   Confidence: {confidence:.2%}")
         click.echo(f"   Reasoning: {reasoning}")
@@ -259,7 +259,7 @@ def status(config: str, verbose: bool) -> None:
             module = __import__(module_path, fromlist=[attr])
             getattr(module, attr)
             click.echo(f"   ✅ {module_path}")
-        except ImportError:
+        except ImportError:  # noqa: PERF203
             click.echo(f"   ❌ {module_path} (not installed)")
         except AttributeError:
             click.echo(f"   ⚠️  {module_path} (missing {attr})")
@@ -330,7 +330,7 @@ def serve(host: str, port: int, reload: bool) -> None:
     default=None,
     help="Path to signature file",
 )
-def verify_plugin(plugin_path: str, signature: Optional[str]) -> None:
+def verify_plugin(plugin_path: str, signature: str | None) -> None:
     """Verify a plugin's signature."""
     from nethical.core.plugin_security import PluginVerifier, VerificationStatus
 

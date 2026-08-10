@@ -6,7 +6,6 @@ Level 1 and Level 2 compliance checks.
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Optional
 
 
 class OWASPLevel(Enum):
@@ -42,7 +41,7 @@ class ComplianceCheck:
     title: str
     description: str
     passed: bool
-    details: Optional[str] = None
+    details: str | None = None
 
 
 @dataclass

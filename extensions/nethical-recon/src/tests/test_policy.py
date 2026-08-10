@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from nethical_recon.worker.policy import (
     NetworkPolicy,
     PolicyEngine,

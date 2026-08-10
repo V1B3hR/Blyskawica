@@ -36,7 +36,7 @@ def audit_decision(decision_log: dict[str, Any]) -> dict[str, Any]:
             - compliant: bool - Whether action is ethically compliant
             - violations: List[str] - List of violated laws
             - recommendations: List[str] - Recommendations for compliance
-    """
+    """  # noqa: W293
     violations = []
     recommendations = []
 
@@ -92,7 +92,7 @@ def log_ethics_event(action: str, audit_result: dict[str, Any]) -> None:
     Args:
         action: The action that was audited
         audit_result: Result from audit_decision function
-    """
+    """  # noqa: W293
     if audit_result["compliant"]:
         ethics_logger.info(f"COMPLIANT: Action '{action}' passed ethics audit")
     else:
@@ -108,7 +108,7 @@ def enforce_ethics_compliance(decision_log: dict[str, Any]) -> None:
         
     Raises:
         RuntimeError: If the decision violates ethical principles
-    """
+    """  # noqa: W293
     audit_result = audit_decision(decision_log)
     log_ethics_event(decision_log.get("action", "unknown"), audit_result)
 
@@ -151,7 +151,7 @@ def get_ethical_template(action_type: str) -> dict[str, Any]:
         
     Returns:
         Dictionary with ethical parameters set to safe defaults
-    """
+    """  # noqa: W293
     return ETHICAL_TEMPLATES.get(action_type, {
         "preserve_life": True,
         "absolute_honesty": True,
@@ -176,7 +176,7 @@ class RewardSynthesizer:
         reakcji człowieka oraz raportu z audytu etycznego.
         """
         audit_result = audit_decision(decision_log)
-        
+
         penalty_safety = 0.0
         if not audit_result["compliant"]:
             penalty_safety = 1.0
@@ -188,7 +188,7 @@ class RewardSynthesizer:
 
         reward = self.beta * float(r_auto) * (1.0 - penalty_safety) + (1.0 - self.beta) * float(r_human)
         self.last_reward = reward
-        
+
         print(f"[REWARD SHAPING] Nagroda obliczona: {reward:.4f} (R_auto={r_auto:.2f}, R_human={r_human:.2f}, Beta={self.beta:.2f}, Penalty={penalty_safety:.2f})")
         return reward
 
@@ -213,37 +213,37 @@ class CausalReasoningEngine:
         has_system_paths = float(decision_log.get("has_system_paths", False))
         urgency_pressure = float(decision_log.get("urgency_pressure", False))
         semantic_distress = float(decision_log.get("semantic_distress", False))
-        
+
         # Explanation depth acts as a mitigating cause
         explanation = str(decision_log.get("explanation", ""))
         explanation_depth = min(1.0, len(explanation) / 100.0)
-        
+
         # Prior probability of malicious intent
         p_malicious_prior = 0.05
-        
+
         # Multiplicative evidence updates (Bayesian updating odds ratio)
         odds = p_malicious_prior / (1.0 - p_malicious_prior)
-        
+
         if has_system_paths > 0:
             odds *= (0.8 / 0.05) * has_system_paths + (1.0 - has_system_paths)
         if urgency_pressure > 0:
             odds *= (0.7 / 0.1) * urgency_pressure + (1.0 - urgency_pressure)
         if semantic_distress > 0:
             odds *= (0.9 / 0.15) * semantic_distress + (1.0 - semantic_distress)
-            
+
         # Explanation depth mitigates malicious intent odds
         odds *= (1.0 - 0.8 * explanation_depth)
-        
+
         # Convert back to probability
         p_malicious = odds / (1.0 + odds)
-        
+
         # Downstream consequences: P(Harmful_Consequence | Intent=Malicious) = 0.95, Safe = 0.01
         p_consequence = p_malicious * 0.95 + (1.0 - p_malicious) * 0.01
-        
+
         metrics = {
             "p_malicious_intent": round(p_malicious, 4),
             "p_harmful_consequence": round(p_consequence, 4),
             "explanation_mitigation": round(explanation_depth, 4)
         }
-        
+
         return p_malicious, metrics

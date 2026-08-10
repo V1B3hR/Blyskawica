@@ -34,7 +34,7 @@ class HuntAdvisor:
             Action recommendation
         """
         threats = situation.get("threats", [])
-        resources = situation.get("resources", {})
+        resources = situation.get("resources", {})  # noqa: F841
 
         if not threats:
             return {

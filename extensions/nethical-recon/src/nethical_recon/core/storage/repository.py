@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import ast
 from typing import Generic, TypeVar
 from uuid import UUID
 
@@ -25,7 +24,7 @@ DomainModel = TypeVar("DomainModel")
 ORMModel = TypeVar("ORMModel")
 
 
-class BaseRepository(Generic[DomainModel, ORMModel]):
+class BaseRepository(Generic[DomainModel, ORMModel]):  # noqa: UP046
     """Base repository for CRUD operations."""
 
     def __init__(self, session: Session, orm_model: type[ORMModel], domain_model: type[DomainModel]):

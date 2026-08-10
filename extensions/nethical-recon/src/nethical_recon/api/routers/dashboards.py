@@ -6,13 +6,13 @@ for dashboards and widgets.
 """
 
 import logging
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from nethical_recon.dashboard.builder import DashboardBuilder, WidgetType, WidgetPosition
+from nethical_recon.dashboard.builder import DashboardBuilder, WidgetPosition, WidgetType
 
 logger = logging.getLogger(__name__)
 
@@ -37,9 +37,9 @@ class CreateDashboardRequest(BaseModel):
 class UpdateDashboardRequest(BaseModel):
     """Request to update a dashboard."""
 
-    name: Optional[str] = Field(None, description="Dashboard name")
-    description: Optional[str] = Field(None, description="Dashboard description")
-    is_public: Optional[bool] = Field(None, description="Is dashboard publicly accessible")
+    name: str | None = Field(None, description="Dashboard name")
+    description: str | None = Field(None, description="Dashboard description")
+    is_public: bool | None = Field(None, description="Is dashboard publicly accessible")
 
 
 class AddWidgetRequest(BaseModel):
@@ -48,7 +48,7 @@ class AddWidgetRequest(BaseModel):
     widget_type: str = Field(..., description="Widget type: chart, table, metric, graph, alert_feed")
     title: str = Field(..., description="Widget title")
     data_source: str = Field(..., description="Data source endpoint")
-    position: Optional[dict[str, int]] = Field(None, description="Widget position {x, y, width, height}")
+    position: dict[str, int] | None = Field(None, description="Widget position {x, y, width, height}")
     config: dict[str, Any] = Field(default_factory=dict, description="Widget configuration")
 
 
@@ -88,11 +88,11 @@ async def create_dashboard(request: CreateDashboardRequest):
         }
     except Exception as e:
         logger.error(f"Failed to create dashboard: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))  # noqa: B904
 
 
 @router.get("/list")
-async def list_dashboards(owner: Optional[str] = Query(None, description="Filter by owner")):
+async def list_dashboards(owner: str | None = Query(None, description="Filter by owner")):
     """List all dashboards."""
     try:
         dashboards = dashboard_builder.list_dashboards(owner=owner)
@@ -115,7 +115,7 @@ async def list_dashboards(owner: Optional[str] = Query(None, description="Filter
         }
     except Exception as e:
         logger.error(f"Failed to list dashboards: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))  # noqa: B904
 
 
 @router.get("/{dashboard_id}")
@@ -132,7 +132,7 @@ async def get_dashboard(dashboard_id: UUID):
         raise
     except Exception as e:
         logger.error(f"Failed to get dashboard: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))  # noqa: B904
 
 
 @router.put("/{dashboard_id}")
@@ -161,7 +161,7 @@ async def update_dashboard(dashboard_id: UUID, request: UpdateDashboardRequest):
         raise
     except Exception as e:
         logger.error(f"Failed to update dashboard: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))  # noqa: B904
 
 
 @router.delete("/{dashboard_id}")
@@ -178,7 +178,7 @@ async def delete_dashboard(dashboard_id: UUID):
         raise
     except Exception as e:
         logger.error(f"Failed to delete dashboard: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))  # noqa: B904
 
 
 # Widget Management Endpoints
@@ -192,7 +192,7 @@ async def add_widget(dashboard_id: UUID, request: AddWidgetRequest):
         try:
             widget_type = WidgetType(request.widget_type)
         except ValueError:
-            raise HTTPException(status_code=400, detail=f"Invalid widget type: {request.widget_type}")
+            raise HTTPException(status_code=400, detail=f"Invalid widget type: {request.widget_type}")  # noqa: B904
 
         # Convert position dict to WidgetPosition if provided
         position = None
@@ -228,7 +228,7 @@ async def add_widget(dashboard_id: UUID, request: AddWidgetRequest):
         raise
     except Exception as e:
         logger.error(f"Failed to add widget: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))  # noqa: B904
 
 
 @router.delete("/{dashboard_id}/widgets/{widget_id}")
@@ -245,7 +245,7 @@ async def remove_widget(dashboard_id: UUID, widget_id: UUID):
         raise
     except Exception as e:
         logger.error(f"Failed to remove widget: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))  # noqa: B904
 
 
 @router.put("/{dashboard_id}/widgets/{widget_id}/move")
@@ -269,7 +269,7 @@ async def move_widget(dashboard_id: UUID, widget_id: UUID, request: MoveWidgetRe
         raise
     except Exception as e:
         logger.error(f"Failed to move widget: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))  # noqa: B904
 
 
 @router.post("/{dashboard_id}/layout")
@@ -286,7 +286,7 @@ async def save_layout(dashboard_id: UUID, request: SaveLayoutRequest):
         raise
     except Exception as e:
         logger.error(f"Failed to save layout: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))  # noqa: B904
 
 
 # Widget Templates Endpoint

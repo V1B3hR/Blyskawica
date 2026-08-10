@@ -32,11 +32,11 @@ class PhaseBasedFeatureGenerator:
     
     This component creates phase-specific features that capture different
     aspects of the data based on energy states and transitions.
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
-        phase_window_sizes: list[int] = [3, 5, 7],
+        phase_window_sizes: list[int] = [3, 5, 7],  # noqa: B006
         energy_scaling: bool = True,
         random_state: int = 42
     ):
@@ -339,7 +339,7 @@ class StatisticalTransformationEngine:
                 # Find optimal lambda for Box-Cox transformation
                 _, fitted_lambda = stats.boxcox(series[series > 0])
                 params['lambda'] = fitted_lambda
-            except:
+            except:  # noqa: E722
                 params['lambda'] = 0  # Equivalent to log transform
         elif transform_type == 'log':
             params['shift'] = max(0, -series.min() + 1e-8)  # Ensure positive values
@@ -366,7 +366,7 @@ class StatisticalTransformationEngine:
                     return (positive_series ** lambda_param - 1) / lambda_param
             else:
                 return series
-        except:
+        except:  # noqa: E722
             # Return original series if transformation fails
             return series
 
@@ -408,7 +408,7 @@ class NeuromorphicFeatureEngineer:
         if isinstance(X, np.ndarray):
             X = pd.DataFrame(X, columns=[f'feature_{i}' for i in range(X.shape[1])])
 
-        original_feature_count = X.shape[1]
+        original_feature_count = X.shape[1]  # noqa: F841
 
         # 1. Polynomial features
         if self.config.polynomial_degree > 1 and HAS_SKLEARN:

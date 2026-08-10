@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import os
-from datetime import datetime, timedelta, timezone
-from pathlib import Path
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -14,7 +12,6 @@ from nethical_recon.adapters.nmap_adapter import NmapAdapter
 from nethical_recon.core.models import (
     Finding,
     JobStatus,
-    Target,
     ToolRun,
     ToolStatus,
 )
@@ -27,7 +24,9 @@ from nethical_recon.core.storage.repository import (
     TargetRepository,
     ToolRunRepository,
 )
-from nethical_recon.observability import get_logger, increment_counter, track_findings, track_tool_run
+from nethical_recon.observability import (
+    get_logger,
+)
 from nethical_recon.worker.celery_app import celery_app
 from nethical_recon.worker.policy import get_policy_engine
 
@@ -68,7 +67,7 @@ def run_scan_job(self, job_id: str) -> dict[str, Any]:
 
             # Update job status
             job.status = JobStatus.RUNNING
-            job.started_at = datetime.now(timezone.utc)
+            job.started_at = datetime.now(UTC)
             session.commit()
 
             # Validate with policy engine
@@ -78,7 +77,7 @@ def run_scan_job(self, job_id: str) -> dict[str, Any]:
             if not is_valid:
                 job.status = JobStatus.FAILED
                 job.error_message = "Policy validation failed: " + "; ".join(messages)
-                job.completed_at = datetime.now(timezone.utc)
+                job.completed_at = datetime.now(UTC)
                 session.commit()
                 logger.error(f"Job {job_id} failed policy validation: {messages}")
                 return {"status": "failed", "error": job.error_message}
@@ -116,7 +115,7 @@ def run_scan_job(self, job_id: str) -> dict[str, Any]:
             if job:
                 job.status = JobStatus.FAILED
                 job.error_message = str(e)
-                job.completed_at = datetime.now(timezone.utc)
+                job.completed_at = datetime.now(UTC)
                 session.commit()
         raise
 
@@ -185,8 +184,8 @@ def run_tool(self, job_id: str, tool_name: str, run_id: str, target: str) -> dic
                 command=f"{tool_name} {target}",
                 status=ToolStatus.FAILED,
                 stderr=str(e),
-                started_at=datetime.now(timezone.utc),
-                completed_at=datetime.now(timezone.utc),
+                started_at=datetime.now(UTC),
+                completed_at=datetime.now(UTC),
             )
             tool_repo.create(failed_run)
             session.commit()
@@ -288,7 +287,7 @@ def finalize_job(self, results: list[Any], job_id: str) -> dict[str, Any]:
                 else:
                     job.status = JobStatus.COMPLETED
 
-                job.completed_at = datetime.now(timezone.utc)
+                job.completed_at = datetime.now(UTC)
 
             session.commit()
 
@@ -414,7 +413,7 @@ def update_baselines(self, retention_days: int = 30) -> dict[str, Any]:
             for target in in_scope_targets:
                 try:
                     # Calculate baseline from recent findings
-                    cutoff = datetime.now(timezone.utc) - timedelta(days=retention_days)
+                    cutoff = datetime.now(UTC) - timedelta(days=retention_days)
 
                     # Get all findings related to this target (via tool runs)
                     all_findings = finding_repo.get_all()
@@ -448,7 +447,7 @@ def update_baselines(self, retention_days: int = 30) -> dict[str, Any]:
                             "open_ports_avg": len(unique_ports),
                             "avg_severity": sum(severity_scores) / len(severity_scores) if severity_scores else 0,
                             "finding_count": len(recent_findings),
-                            "updated_at": datetime.now(timezone.utc).isoformat(),
+                            "updated_at": datetime.now(UTC).isoformat(),
                             "retention_days": retention_days,
                         }
 
@@ -497,7 +496,7 @@ def cleanup_old_results(self, retention_days: int = 30) -> dict[str, Any]:
     """
     logger.info(f"Starting cleanup of results older than {retention_days} days")
     db = init_database()
-    cutoff_date = datetime.now(timezone.utc) - timedelta(days=retention_days)
+    cutoff_date = datetime.now(UTC) - timedelta(days=retention_days)
 
     deleted_runs = 0
     deleted_findings = 0

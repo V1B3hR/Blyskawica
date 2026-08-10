@@ -1,5 +1,5 @@
 import logging
-from typing import List, Dict, Any
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -134,10 +134,10 @@ class DeepEducationCurriculum:
         }
         self.stage_order = [MasteryStage.BASIC, MasteryStage.INTERMEDIATE, MasteryStage.ADVANCED, MasteryStage.MASTER]
 
-    def get_stage_report(self) -> Dict[str, str]:
+    def get_stage_report(self) -> dict[str, str]:
         return {domain: info["stage"] for domain, info in self.curriculum.items()}
 
-    def get_detailed_report(self) -> Dict[str, Dict[str, Any]]:
+    def get_detailed_report(self) -> dict[str, dict[str, Any]]:
         report = {}
         for domain, info in self.curriculum.items():
             report[domain] = {
@@ -164,24 +164,24 @@ class DeepEducationCurriculum:
     def advance_stage(self, domain: str):
         """Moves a domain to the next stage of mastery."""
         current = self.curriculum.get(domain)
-        if not current: return
-        
+        if not current: return  # noqa: E701
+
         idx = self.stage_order.index(current["stage"])
         if idx < len(self.stage_order) - 1:
             current["stage"] = self.stage_order[idx + 1]
             logger.info(f"[CURRICULUM] Błyskawica has reached {current['stage']} in {domain}")
 
-    def update_mastery_from_budget(self, confidence_dict: Dict[str, float]) -> List[str]:
+    def update_mastery_from_budget(self, confidence_dict: dict[str, float]) -> list[str]:
         advanced = []
         for domain, confidence in confidence_dict.items():
             current = self.curriculum.get(domain)
             if not current:
                 continue
-            
+
             target_stage = MasteryStage.from_mastery_confidence(confidence)
             target_idx = self.stage_order.index(target_stage)
             current_idx = self.stage_order.index(current["stage"])
-            
+
             if target_idx > current_idx:
                 # Check prerequisites
                 prereqs_met = True
@@ -195,7 +195,7 @@ class DeepEducationCurriculum:
                     if prereq_idx < 1:
                         prereqs_met = False
                         break
-                
+
                 if prereqs_met:
                     current["stage"] = target_stage
                     current["mastery_confidence"] = confidence
@@ -203,9 +203,9 @@ class DeepEducationCurriculum:
             else:
                 # Even if we didn't advance, we can record the confidence
                 current["mastery_confidence"] = max(current.get("mastery_confidence", 0.0), confidence)
-                
+
         return advanced
 
-    def get_phase_domains(self, phase_id: str) -> List[str]:
+    def get_phase_domains(self, phase_id: str) -> list[str]:
         """Returns list of domains for a specific learning phase."""
         return list(self.curriculum.keys())

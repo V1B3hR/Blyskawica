@@ -1,15 +1,15 @@
 """Tests for GPS tracker module."""
 
+from unittest.mock import MagicMock
+
 import pytest
-from datetime import datetime
-from unittest.mock import MagicMock, AsyncMock, patch
 
 from nethical.connectivity.satellite.gps_tracker import (
+    Geofence,
+    GeofenceType,
+    GNSSConstellation,
     GPSTracker,
     Position,
-    GNSSConstellation,
-    GeofenceType,
-    Geofence,
 )
 
 
@@ -188,7 +188,7 @@ class TestGPSTracker:
 
     def test_remove_geofence(self, tracker):
         """Test removing geofence."""
-        fence = tracker.create_circular_geofence(
+        fence = tracker.create_circular_geofence(  # noqa: F841
             fence_id="zone-1",
             name="Test Zone",
             center_lat=37.7749,

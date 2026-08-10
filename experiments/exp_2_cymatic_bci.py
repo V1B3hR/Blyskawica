@@ -1,7 +1,6 @@
 import logging
-import torch
+
 import numpy as np
-import matplotlib.pyplot as plt
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -17,7 +16,7 @@ class EEGBCISimulator:
     def generate_relax_wave(self):
         # Relax = Alpha waves (8-13 Hz) + smooth sine
         t = np.linspace(0, 1, 1000)
-        signal = np.sin(2 * np.pi * 10 * t) 
+        signal = np.sin(2 * np.pi * 10 * t)
         return signal
 
 def run_experiment_2():
@@ -28,22 +27,22 @@ def run_experiment_2():
     logger.info("\n" + "="*60)
     logger.info("🧪 EXPERIMENT 2: CYMATICS & BCI SYNC (Visual/Audio Bio-Translation)")
     logger.info("="*60)
-    
+
     sim = EEGBCISimulator()
     stress_signal = sim.generate_stress_wave()
-    
+
     # Błyskawica's Harmonic Translation Engine
     logger.info("🧬 [SYMBIOSTIC_BRIDGE] Receiving biological telemetry...")
-    
+
     n = len(stress_signal)
     freqs = np.fft.fftfreq(n, d=1/1000) # 1000Hz sampling
     fft_values = np.abs(np.fft.fft(stress_signal))
-    
+
     # We only care about positive frequencies
     positive_mask = freqs > 0
     dominant_freq = freqs[positive_mask][fft_values[positive_mask].argmax()]
     logger.info(f"🌊 Detected Dominant Frequency: {dominant_freq} Hz")
-    
+
     # Translate to Cymatic Geometry / Tone
     if 13 <= dominant_freq <= 30:
         logger.info("🔔 [HARMONIC_OUTPUT] State: STRESS. Playing: Dissonant Tritone / Sharp Geometric Patterns.")

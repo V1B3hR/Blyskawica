@@ -7,11 +7,11 @@ This module implements:
 """
 
 import json
-from typing import Dict, List, Optional, Any, Tuple
+from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from collections import defaultdict
 from pathlib import Path
+from typing import Any
 
 
 @dataclass
@@ -19,11 +19,11 @@ class ViolationStats:
     """Statistics for violations."""
 
     total_count: int = 0
-    by_severity: Dict[str, int] = field(default_factory=lambda: defaultdict(int))
-    by_type: Dict[str, int] = field(default_factory=lambda: defaultdict(int))
-    by_time: List[Tuple[datetime, int]] = field(default_factory=list)
+    by_severity: dict[str, int] = field(default_factory=lambda: defaultdict(int))
+    by_type: dict[str, int] = field(default_factory=lambda: defaultdict(int))
+    by_time: list[tuple[datetime, int]] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "total_count": self.total_count,
@@ -42,9 +42,9 @@ class CohortProfile:
     action_count: int = 0
     violation_stats: ViolationStats = field(default_factory=ViolationStats)
     avg_risk_score: float = 0.0
-    risk_distribution: Dict[str, int] = field(default_factory=lambda: defaultdict(int))
+    risk_distribution: dict[str, int] = field(default_factory=lambda: defaultdict(int))
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "cohort_id": self.cohort_id,
@@ -63,12 +63,12 @@ class EthicalDriftReport:
     report_id: str
     start_time: datetime
     end_time: datetime
-    cohorts: Dict[str, CohortProfile]
-    drift_metrics: Dict[str, Any]
-    recommendations: List[str]
+    cohorts: dict[str, CohortProfile]
+    drift_metrics: dict[str, Any]
+    recommendations: list[str]
     generated_at: datetime = field(default_factory=datetime.utcnow)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "report_id": self.report_id,
@@ -108,7 +108,7 @@ class EthicalDriftReporter:
         self.key_prefix = key_prefix
 
         # Cohort data
-        self.cohort_profiles: Dict[str, CohortProfile] = {}
+        self.cohort_profiles: dict[str, CohortProfile] = {}
 
     def track_violation(
         self,
@@ -116,7 +116,7 @@ class EthicalDriftReporter:
         cohort: str,
         violation_type: str,
         severity: str,
-        timestamp: Optional[datetime] = None,
+        timestamp: datetime | None = None,
     ):
         """Track a violation for drift analysis.
 
@@ -177,7 +177,7 @@ class EthicalDriftReporter:
             return "low"
 
     def generate_report(
-        self, start_time: datetime, end_time: datetime, cohorts: Optional[List[str]] = None
+        self, start_time: datetime, end_time: datetime, cohorts: list[str] | None = None
     ) -> EthicalDriftReport:
         """Generate ethical drift report.
 
@@ -219,7 +219,7 @@ class EthicalDriftReporter:
 
         return report
 
-    def _calculate_drift_metrics(self, cohorts: Dict[str, CohortProfile]) -> Dict[str, Any]:
+    def _calculate_drift_metrics(self, cohorts: dict[str, CohortProfile]) -> dict[str, Any]:
         """Calculate drift metrics across cohorts.
 
         Args:
@@ -314,7 +314,7 @@ class EthicalDriftReporter:
         # Overall drift score
         drift_components = []
         for vtype_data in metrics["violation_type_drift"].values():
-            drift_components.append(vtype_data["drift"])
+            drift_components.append(vtype_data["drift"])  # noqa: PERF401
 
         if drift_components:
             metrics["drift_score"] = sum(drift_components) / len(drift_components)
@@ -322,8 +322,8 @@ class EthicalDriftReporter:
         return metrics
 
     def _generate_recommendations(
-        self, cohorts: Dict[str, CohortProfile], drift_metrics: Dict[str, Any]
-    ) -> List[str]:
+        self, cohorts: dict[str, CohortProfile], drift_metrics: dict[str, Any]
+    ) -> list[str]:
         """Generate recommendations based on drift analysis.
 
         Args:
@@ -396,7 +396,7 @@ class EthicalDriftReporter:
             except Exception:
                 pass  # Silent fail
 
-    def get_dashboard_data(self) -> Dict[str, Any]:
+    def get_dashboard_data(self) -> dict[str, Any]:
         """Get fairness dashboard data.
 
         Returns:
@@ -464,7 +464,7 @@ class EthicalDriftReporter:
 
         return dict(dashboard)
 
-    def _calculate_variance(self, values: List[float]) -> float:
+    def _calculate_variance(self, values: list[float]) -> float:
         """Calculate variance of values."""
         if not values:
             return 0.0

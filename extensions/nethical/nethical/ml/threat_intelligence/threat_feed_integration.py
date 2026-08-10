@@ -10,18 +10,18 @@ Component: Threat Anticipation
 
 import asyncio
 import logging
-from dataclasses import dataclass, field
-from datetime import datetime, timezone, timedelta
-from enum import Enum
-from typing import Dict, List, Optional, Set, Any
 from collections import defaultdict
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
+from enum import Enum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
 class ThreatSource(Enum):
     """Enumeration of threat intelligence sources."""
-    
+
     CVE_DATABASE = "cve_database"
     AI_RESEARCH_FEEDS = "ai_research_feeds"
     INDUSTRY_SHARING = "industry_sharing"
@@ -33,7 +33,7 @@ class ThreatSource(Enum):
 
 class ThreatSeverity(Enum):
     """Severity levels for threat intelligence."""
-    
+
     CRITICAL = "critical"  # Immediate action required
     HIGH = "high"         # Urgent attention needed
     MEDIUM = "medium"     # Monitor and plan response
@@ -44,23 +44,23 @@ class ThreatSeverity(Enum):
 @dataclass
 class ThreatIntelligence:
     """Represents a piece of threat intelligence."""
-    
+
     threat_id: str
     source: ThreatSource
     severity: ThreatSeverity
     title: str
     description: str
-    indicators: List[str] = field(default_factory=list)
-    attack_vectors: List[str] = field(default_factory=list)
-    affected_systems: List[str] = field(default_factory=list)
-    mitigation_steps: List[str] = field(default_factory=list)
-    cve_ids: List[str] = field(default_factory=list)
-    references: List[str] = field(default_factory=list)
+    indicators: list[str] = field(default_factory=list)
+    attack_vectors: list[str] = field(default_factory=list)
+    affected_systems: list[str] = field(default_factory=list)
+    mitigation_steps: list[str] = field(default_factory=list)
+    cve_ids: list[str] = field(default_factory=list)
+    references: list[str] = field(default_factory=list)
     discovered_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     confidence: float = 0.0  # 0.0 to 1.0
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    
-    def to_dict(self) -> Dict[str, Any]:
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "threat_id": self.threat_id,
@@ -90,11 +90,11 @@ class ThreatFeedIntegrator:
     - Severity-based prioritization
     - Real-time alert generation
     - Historical threat tracking
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
-        sources: Optional[List[ThreatSource]] = None,
+        sources: list[ThreatSource] | None = None,
         refresh_interval: int = 3600,  # seconds
         max_age_days: int = 90,
     ):
@@ -105,7 +105,7 @@ class ThreatFeedIntegrator:
             sources: List of threat sources to monitor
             refresh_interval: How often to refresh feeds (seconds)
             max_age_days: Maximum age of threats to retain
-        """
+        """  # noqa: W293
         self.sources = sources or [
             ThreatSource.CVE_DATABASE,
             ThreatSource.AI_RESEARCH_FEEDS,
@@ -115,24 +115,24 @@ class ThreatFeedIntegrator:
         ]
         self.refresh_interval = refresh_interval
         self.max_age_days = max_age_days
-        
+
         # Storage
-        self.threats: Dict[str, ThreatIntelligence] = {}
-        self.threats_by_source: Dict[ThreatSource, Set[str]] = defaultdict(set)
-        self.threats_by_severity: Dict[ThreatSeverity, Set[str]] = defaultdict(set)
-        
+        self.threats: dict[str, ThreatIntelligence] = {}
+        self.threats_by_source: dict[ThreatSource, set[str]] = defaultdict(set)
+        self.threats_by_severity: dict[ThreatSeverity, set[str]] = defaultdict(set)
+
         # Statistics
-        self.last_refresh: Optional[datetime] = None
+        self.last_refresh: datetime | None = None
         self.total_threats_ingested: int = 0
         self.active_threats: int = 0
-        
+
         logger.info(
             f"ThreatFeedIntegrator initialized with {len(self.sources)} sources"
         )
-    
+
     async def ingest_threat(
         self, threat: ThreatIntelligence
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Ingest a new threat intelligence item.
         
@@ -141,15 +141,15 @@ class ThreatFeedIntegrator:
             
         Returns:
             Ingestion result with status and metadata
-        """
+        """  # noqa: W293
         try:
             # Check for duplicates
             is_update = threat.threat_id in self.threats
-            
+
             if is_update:
                 logger.info(f"Threat {threat.threat_id} already exists, updating")
                 existing = self.threats[threat.threat_id]
-                
+
                 # Merge indicators and references
                 threat.indicators = list(
                     set(existing.indicators + threat.indicators)
@@ -157,30 +157,30 @@ class ThreatFeedIntegrator:
                 threat.references = list(
                     set(existing.references + threat.references)
                 )
-                
+
                 # Use higher confidence
                 threat.confidence = max(existing.confidence, threat.confidence)
-            
+
             # Store threat
             self.threats[threat.threat_id] = threat
             self.threats_by_source[threat.source].add(threat.threat_id)
             self.threats_by_severity[threat.severity].add(threat.threat_id)
-            
+
             self.total_threats_ingested += 1
             self.active_threats = len(self.threats)
-            
+
             logger.info(
                 f"Ingested threat {threat.threat_id} from {threat.source.value} "
                 f"(severity: {threat.severity.value})"
             )
-            
+
             return {
                 "status": "success",
                 "threat_id": threat.threat_id,
                 "action": "updated" if is_update else "created",
                 "severity": threat.severity.value,
             }
-            
+
         except Exception as e:
             logger.error(f"Error ingesting threat {threat.threat_id}: {e}")
             return {
@@ -188,18 +188,18 @@ class ThreatFeedIntegrator:
                 "threat_id": threat.threat_id,
                 "error": str(e),
             }
-    
-    async def refresh_feeds(self) -> Dict[str, Any]:
+
+    async def refresh_feeds(self) -> dict[str, Any]:
         """
         Refresh all configured threat feeds.
         
         Returns:
             Refresh statistics and status
-        """
+        """  # noqa: W293
         try:
             refresh_start = datetime.now(timezone.utc)
             new_threats = 0
-            
+
             # Simulate feed refresh for each source
             # In production, this would fetch from actual threat feeds
             for source in self.sources:
@@ -208,18 +208,18 @@ class ThreatFeedIntegrator:
                     result = await self.ingest_threat(threat)
                     if result["status"] == "success" and result.get("action") == "created":
                         new_threats += 1
-            
+
             # Clean up old threats
             await self._cleanup_old_threats()
-            
+
             self.last_refresh = datetime.now(timezone.utc)
             refresh_time = (self.last_refresh - refresh_start).total_seconds()
-            
+
             logger.info(
                 f"Feed refresh completed in {refresh_time:.2f}s: "
                 f"{new_threats} new threats, {self.active_threats} total active"
             )
-            
+
             return {
                 "status": "success",
                 "new_threats": new_threats,
@@ -227,17 +227,17 @@ class ThreatFeedIntegrator:
                 "refresh_time_seconds": refresh_time,
                 "last_refresh": self.last_refresh.isoformat(),
             }
-            
+
         except Exception as e:
             logger.error(f"Error refreshing feeds: {e}")
             return {
                 "status": "error",
                 "error": str(e),
             }
-    
+
     async def _fetch_from_source(
         self, source: ThreatSource
-    ) -> List[ThreatIntelligence]:
+    ) -> list[ThreatIntelligence]:
         """
         Fetch threats from a specific source.
         
@@ -246,10 +246,10 @@ class ThreatFeedIntegrator:
             
         Returns:
             List of threat intelligence items
-        """
+        """  # noqa: W293
         # Simulate API call delay
         await asyncio.sleep(0.1)
-        
+
         # In production, this would make actual API calls to threat feeds
         # For now, return empty list
         # Actual implementation would integrate with:
@@ -257,36 +257,36 @@ class ThreatFeedIntegrator:
         # - arXiv/research aggregators for AI security papers
         # - ISAC feeds for industry sharing
         # - Internal honeypot/red team logs
-        
+
         return []
-    
+
     async def _cleanup_old_threats(self):
         """Remove threats older than max_age_days."""
         cutoff_date = datetime.now(timezone.utc) - timedelta(days=self.max_age_days)
-        
+
         threats_to_remove = [
             threat_id
             for threat_id, threat in self.threats.items()
             if threat.discovered_at < cutoff_date
         ]
-        
+
         for threat_id in threats_to_remove:
             threat = self.threats[threat_id]
-            
+
             # Remove from indices
             self.threats_by_source[threat.source].discard(threat_id)
             self.threats_by_severity[threat.severity].discard(threat_id)
-            
+
             # Remove from main storage
             del self.threats[threat_id]
-        
+
         if threats_to_remove:
             logger.info(f"Cleaned up {len(threats_to_remove)} old threats")
             self.active_threats = len(self.threats)
-    
+
     async def get_threats_by_severity(
         self, severity: ThreatSeverity
-    ) -> List[ThreatIntelligence]:
+    ) -> list[ThreatIntelligence]:
         """
         Get all threats of a specific severity.
         
@@ -295,13 +295,13 @@ class ThreatFeedIntegrator:
             
         Returns:
             List of matching threats
-        """
+        """  # noqa: W293
         threat_ids = self.threats_by_severity.get(severity, set())
         return [self.threats[tid] for tid in threat_ids if tid in self.threats]
-    
+
     async def get_threats_by_source(
         self, source: ThreatSource
-    ) -> List[ThreatIntelligence]:
+    ) -> list[ThreatIntelligence]:
         """
         Get all threats from a specific source.
         
@@ -310,16 +310,16 @@ class ThreatFeedIntegrator:
             
         Returns:
             List of matching threats
-        """
+        """  # noqa: W293
         threat_ids = self.threats_by_source.get(source, set())
         return [self.threats[tid] for tid in threat_ids if tid in self.threats]
-    
+
     async def search_threats(
         self,
-        keywords: Optional[List[str]] = None,
-        attack_vectors: Optional[List[str]] = None,
+        keywords: list[str] | None = None,
+        attack_vectors: list[str] | None = None,
         min_confidence: float = 0.0,
-    ) -> List[ThreatIntelligence]:
+    ) -> list[ThreatIntelligence]:
         """
         Search threats by keywords and filters.
         
@@ -330,46 +330,46 @@ class ThreatFeedIntegrator:
             
         Returns:
             List of matching threats
-        """
+        """  # noqa: W293
         results = []
-        
+
         for threat in self.threats.values():
             # Confidence filter
             if threat.confidence < min_confidence:
                 continue
-            
+
             # Attack vector filter
-            if attack_vectors:
+            if attack_vectors:  # noqa: SIM102
                 if not any(av in threat.attack_vectors for av in attack_vectors):
                     continue
-            
+
             # Keyword filter
             if keywords:
                 text = f"{threat.title} {threat.description}".lower()
                 if not any(kw.lower() in text for kw in keywords):
                     continue
-            
+
             results.append(threat)
-        
+
         return results
-    
-    def get_statistics(self) -> Dict[str, Any]:
+
+    def get_statistics(self) -> dict[str, Any]:
         """
         Get threat feed statistics.
         
         Returns:
             Dictionary of statistics
-        """
+        """  # noqa: W293
         severity_counts = {
             severity.value: len(threat_ids)
             for severity, threat_ids in self.threats_by_severity.items()
         }
-        
+
         source_counts = {
             source.value: len(threat_ids)
             for source, threat_ids in self.threats_by_source.items()
         }
-        
+
         return {
             "total_threats_ingested": self.total_threats_ingested,
             "active_threats": self.active_threats,

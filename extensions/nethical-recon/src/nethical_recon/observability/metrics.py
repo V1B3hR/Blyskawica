@@ -10,9 +10,10 @@ Provides metrics for:
 """
 
 import time
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from functools import wraps
-from typing import Any, Callable, Generator, Optional
+from typing import Any
 
 from prometheus_client import (
     CollectorRegistry,
@@ -149,7 +150,7 @@ error_rate = Counter(
 # ============================================================================
 
 
-def track_duration(metric_name: str, labels: Optional[dict[str, str]] = None):
+def track_duration(metric_name: str, labels: dict[str, str] | None = None):
     """
     Decorator to track duration of a function execution.
 
@@ -172,7 +173,7 @@ def track_duration(metric_name: str, labels: Optional[dict[str, str]] = None):
             try:
                 result = func(*args, **kwargs)
                 return result
-            except Exception as e:
+            except Exception:
                 status = "error"
                 raise
             finally:
@@ -219,7 +220,7 @@ def track_tool_run(tool_name: str) -> Generator[dict[str, Any], None, None]:
         tool_run_total.labels(tool_name=tool_name, status=status).inc()
 
 
-def track_findings(findings_count: int, severity: str, tool_name: str, job_id: Optional[str] = None) -> None:
+def track_findings(findings_count: int, severity: str, tool_name: str, job_id: str | None = None) -> None:
     """
     Track findings metrics.
 
@@ -246,7 +247,7 @@ def track_errors(component: str, error_type: str) -> None:
     error_rate.labels(component=component, error_type=error_type).inc()
 
 
-def increment_counter(counter_name: str, labels: Optional[dict[str, str]] = None, value: float = 1) -> None:
+def increment_counter(counter_name: str, labels: dict[str, str] | None = None, value: float = 1) -> None:
     """
     Increment a counter metric.
 
@@ -265,7 +266,7 @@ def increment_counter(counter_name: str, labels: Optional[dict[str, str]] = None
         api_requests_total.labels(**labels).inc(value)
 
 
-def observe_value(metric_name: str, value: float, labels: Optional[dict[str, str]] = None) -> None:
+def observe_value(metric_name: str, value: float, labels: dict[str, str] | None = None) -> None:
     """
     Observe a value in a histogram or summary metric.
 

@@ -3,12 +3,13 @@ WebSocket Updates for Forest
 Provides real-time updates about forest changes via WebSocket
 """
 
-import logging
-import json
-from datetime import datetime
-from typing import Any, Callable
-from collections import deque
 import asyncio
+import json
+import logging
+from collections import deque
+from collections.abc import Callable
+from datetime import datetime
+from typing import Any
 
 
 class ForestEvent:
@@ -294,7 +295,7 @@ class ForestWebSocketBridge:
                     await websocket.send(json.dumps(event_dict))
 
                 # Keep connection alive
-                async for message in websocket:
+                async for message in websocket:  # noqa: B007
                     # Handle incoming messages if needed
                     pass
             finally:

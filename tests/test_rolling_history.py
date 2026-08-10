@@ -1,6 +1,5 @@
 import unittest
 from collections import deque
-import time
 
 from adaptiveneuralnetwork.central_nervous_system.alive_node import AliveLoopNode
 from tests.test_utils import get_test_seed, set_seed
@@ -27,7 +26,7 @@ class TestRollingHistory(unittest.TestCase):
 
         # Check max length is set to 20 (or default config)
         self.assertGreaterEqual(self.node.anxiety_history.maxlen, 10)
-        
+
         # Should start empty
         self.assertEqual(len(self.node.anxiety_history), 0)
         self.assertEqual(len(self.node.calm_history), 0)
@@ -73,7 +72,7 @@ class TestRollingHistory(unittest.TestCase):
         def mock_predict(state_name, steps):
             return 5.0
         self.node.predict_emotional_state = mock_predict
-        
+
         trends = self.node.get_emotional_trends()
         self.assertEqual(trends["anxiety"], "stable")
 
@@ -84,7 +83,7 @@ class TestRollingHistory(unittest.TestCase):
         def mock_predict(state_name, steps):
             return 6.0
         self.node.predict_emotional_state = mock_predict
-        
+
         trends = self.node.get_emotional_trends()
         self.assertEqual(trends["anxiety"], "increasing")
 
@@ -93,10 +92,10 @@ class TestRollingHistory(unittest.TestCase):
         self.node.energy = 8.0
         # Decreasing prediction
         def mock_predict(state_name, steps):
-            if state_name == 'energy': return 6.0
+            if state_name == 'energy': return 6.0  # noqa: E701
             return getattr(self.node, state_name, 0.0)
         self.node.predict_emotional_state = mock_predict
-        
+
         trends = self.node.get_emotional_trends()
         self.assertEqual(trends["energy"], "decreasing")
 
@@ -104,9 +103,9 @@ class TestRollingHistory(unittest.TestCase):
         """Test intervention detection for high anxiety"""
         self.node.anxiety = 9.0
         self.node.calm = 1.0
-        
+
         def mock_predict(state_name, steps):
-            if state_name == 'anxiety': return 9.5
+            if state_name == 'anxiety': return 9.5  # noqa: E701
             return getattr(self.node, state_name, 0.0)
         self.node.predict_emotional_state = mock_predict
 
@@ -119,10 +118,10 @@ class TestRollingHistory(unittest.TestCase):
         """Test intervention detection for energy risk scenario"""
         self.node.energy = 2.0
         self.node.anxiety = 8.0
-        
+
         def mock_predict(state_name, steps):
-            if state_name == 'energy': return 1.5
-            if state_name == 'anxiety': return 8.5
+            if state_name == 'energy': return 1.5  # noqa: E701
+            if state_name == 'anxiety': return 8.5  # noqa: E701
             return getattr(self.node, state_name, 0.0)
         self.node.predict_emotional_state = mock_predict
 
@@ -143,16 +142,16 @@ class TestRollingHistory(unittest.TestCase):
         """Test step phase handles proactive interventions gracefully"""
         self.node.anxiety = 10.0
         self.node.calm = 0.5
-        
+
         def mock_predict(state_name, steps):
-            if state_name == 'anxiety': return 11.0
+            if state_name == 'anxiety': return 11.0  # noqa: E701
             return getattr(self.node, state_name, 0.0)
         self.node.predict_emotional_state = mock_predict
 
         # Should test without crashing
         for i in range(15):
             self.node.step_phase(current_time=i)
-            
+
         self.assertIsNotNone(self.node._last_intervention_assessment)
         self.assertTrue(self.node._last_intervention_assessment["intervention_needed"])
 

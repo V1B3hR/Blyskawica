@@ -71,7 +71,7 @@ class AIReporter:
 
     def _assess_impact(self, threat_data: dict[str, Any]) -> dict[str, str]:
         """Assess CIA (Confidentiality, Integrity, Availability) impact"""
-        impact_level = threat_data.get("impact", "MEDIUM")
+        impact_level = threat_data.get("impact", "MEDIUM")  # noqa: F841
 
         # Map based on threat type
         threat_type = threat_data.get("type", "unknown")

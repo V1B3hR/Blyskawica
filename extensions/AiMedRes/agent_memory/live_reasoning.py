@@ -38,16 +38,18 @@ Run (demo):
 """
 
 from __future__ import annotations
-import re
-import math
-import time
-import json
+
 import hashlib
+import json
 import logging
-from dataclasses import dataclass, field, asdict
-from datetime import datetime, timezone
-from typing import List, Dict, Any, Optional, Tuple, Set, Iterable
+import math
+import re
+import time
 from collections import Counter
+from collections.abc import Iterable
+from dataclasses import asdict, dataclass, field
+from datetime import UTC, datetime
+from typing import Any
 
 # --------------------------------------------------------------------------------------
 # Logging
@@ -68,7 +70,7 @@ DEFAULT_LANG = "en"
 # PHI Sanitization (Granular)
 # --------------------------------------------------------------------------------------
 # Each category -> (pattern, replacement)
-PHI_CATEGORY_PATTERNS: Dict[str, Tuple[re.Pattern, str]] = {
+PHI_CATEGORY_PATTERNS: dict[str, tuple[re.Pattern, str]] = {
     "email":   (re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b'), '[EMAIL]'),
     "date_iso":(re.compile(r'\b\d{4}-\d{2}-\d{2}\b'), '[DATE]'),
     "date_alt":(re.compile(r'\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b'), '[DATE]'),
@@ -82,7 +84,7 @@ PHI_CATEGORY_PATTERNS: Dict[str, Tuple[re.Pattern, str]] = {
 DEFAULT_PHI_CATEGORIES = {"email","date_iso","date_alt","phone","id","address","name"}
 
 # Domain-specific lexicon to reduce false positive name masking
-DEFAULT_DOMAIN_WHITELIST: Set[str] = {
+DEFAULT_DOMAIN_WHITELIST: set[str] = {
     # clinical & biomedical terms (capitalized in text often)
     "Cognitive","Memory","Score","Patient","Lifestyle","APOE4","APOE","Amyloid","Tau","CSF",
     "Longitudinal","Assessment","Symptoms","Differential","Decline","Trajectory","Biomarker",
@@ -93,8 +95,8 @@ DEFAULT_DOMAIN_WHITELIST: Set[str] = {
 NAME_PATTERN = re.compile(r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,3})\b')
 
 def sanitize_phi(text: str,
-                 categories: Optional[Set[str]] = None,
-                 whitelist: Optional[Set[str]] = None) -> str:
+                 categories: set[str] | None = None,
+                 whitelist: set[str] | None = None) -> str:
     """
     Granular PHI sanitization. If categories is None, uses DEFAULT_PHI_CATEGORIES.
     'name' category uses whitelist to avoid over-masking.
@@ -154,7 +156,7 @@ class EmbeddingManager:
             self.df[t] += 1
         self.doc_count += 1
 
-    def text_to_vector(self, text: str) -> List[float]:
+    def text_to_vector(self, text: str) -> list[float]:
         dim = self.config.dim
         tokens = TOKEN_RE.findall(text.lower())
         if not tokens:
@@ -214,7 +216,7 @@ def filter_adversarial_terms(text: str,
     tokens = TOKEN_RE.findall(text)
     replacements = 0
     # Build map of suspicious tokens
-    suspicious: Set[str] = set()
+    suspicious: set[str] = set()
     for tok in tokens:
         if replacements >= cfg.max_replacements:
             break
@@ -245,14 +247,14 @@ def filter_adversarial_terms(text: str,
 class MemoryRecord:
     id: str
     content: str
-    vector: List[float]
+    vector: list[float]
     memory_type: str
     importance: float
     created_at: datetime
     access_count: int = 0
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_json(self) -> Dict[str, Any]:
+    def to_json(self) -> dict[str, Any]:
         return {
             "id": self.id,
             "content": self.content,
@@ -265,7 +267,7 @@ class MemoryRecord:
         }
 
     @staticmethod
-    def from_json(data: Dict[str, Any]) -> "MemoryRecord":
+    def from_json(data: dict[str, Any]) -> MemoryRecord:
         return MemoryRecord(
             id=data["id"],
             content=data["content"],
@@ -283,14 +285,14 @@ class MemoryRecord:
 class MemoryStore:
     def __init__(self,
                  sanitize: bool = True,
-                 phi_categories: Optional[Set[str]] = None,
-                 domain_whitelist: Optional[Set[str]] = None,
-                 embedding_config: Optional[EmbeddingConfig] = None,
-                 adversarial_config: Optional[AdversarialFilterConfig] = None,
-                 auto_flush_path: Optional[str] = None,
+                 phi_categories: set[str] | None = None,
+                 domain_whitelist: set[str] | None = None,
+                 embedding_config: EmbeddingConfig | None = None,
+                 adversarial_config: AdversarialFilterConfig | None = None,
+                 auto_flush_path: str | None = None,
                  persist_vectors: bool = True):
-        self.sessions: Dict[str, Dict[str, Any]] = {}
-        self.memory_by_session: Dict[str, List[MemoryRecord]] = {}
+        self.sessions: dict[str, dict[str, Any]] = {}
+        self.memory_by_session: dict[str, list[MemoryRecord]] = {}
         self.sanitize = sanitize
         self.phi_categories = phi_categories or DEFAULT_PHI_CATEGORIES
         self.domain_whitelist = domain_whitelist or DEFAULT_DOMAIN_WHITELIST
@@ -304,14 +306,14 @@ class MemoryStore:
         sid = f"session_{agent_name}_{int(time.time()*1000)}"
         self.sessions[sid] = {
             "agent": agent_name,
-            "created_at": datetime.now(timezone.utc).isoformat()
+            "created_at": datetime.now(UTC).isoformat()
         }
         self.memory_by_session[sid] = []
         return sid
 
     def end_session(self, session_id: str):
         if session_id in self.sessions:
-            self.sessions[session_id]["ended_at"] = datetime.now(timezone.utc).isoformat()
+            self.sessions[session_id]["ended_at"] = datetime.now(UTC).isoformat()
             self._auto_flush()
 
     # ---- Memory Operations ----
@@ -320,7 +322,7 @@ class MemoryStore:
                      content: str,
                      memory_type: str = "knowledge",
                      importance: float = 0.5,
-                     metadata: Optional[Dict[str, Any]] = None) -> str:
+                     metadata: dict[str, Any] | None = None) -> str:
         if session_id not in self.memory_by_session:
             raise ValueError("Invalid session_id")
 
@@ -346,7 +348,7 @@ class MemoryStore:
             vector=vec,
             memory_type=memory_type,
             importance=importance,
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
             metadata=metadata or {}
         )
         self.memory_by_session[session_id].append(rec)
@@ -358,14 +360,14 @@ class MemoryStore:
                  query: str,
                  limit: int = 7,
                  min_importance: float = 0.25,
-                 sanitize_query: bool = False) -> List[MemoryRecord]:
+                 sanitize_query: bool = False) -> list[MemoryRecord]:
         if sanitize_query and self.sanitize:
             query = sanitize_phi(query, categories=self.phi_categories, whitelist=self.domain_whitelist)
         pool = self.memory_by_session.get(session_id, [])
         if not pool:
             return []
         qvec = self.embedding_manager.text_to_vector(query)
-        scored: List[Tuple[float, MemoryRecord]] = []
+        scored: list[tuple[float, MemoryRecord]] = []
         for rec in pool:
             if rec.importance < min_importance:
                 continue
@@ -398,8 +400,8 @@ class MemoryStore:
             json.dump(data, f, ensure_ascii=False, indent=2)
 
     @classmethod
-    def load_state(cls, path: str) -> "MemoryStore":
-        with open(path, "r", encoding="utf-8") as f:
+    def load_state(cls, path: str) -> MemoryStore:
+        with open(path, encoding="utf-8") as f:
             data = json.load(f)
         emb_cfg = EmbeddingConfig(**data["embedding"]["config"])
         store = cls(
@@ -434,13 +436,13 @@ class MemoryStore:
 # --------------------------------------------------------------------------------------
 # Cosine Similarity (assumes normalized vectors)
 # --------------------------------------------------------------------------------------
-def cosine_similarity(a: List[float], b: List[float]) -> float:
-    return sum(x*y for x,y in zip(a,b))
+def cosine_similarity(a: list[float], b: list[float]) -> float:
+    return sum(x*y for x,y in zip(a,b))  # noqa: B905
 
 # --------------------------------------------------------------------------------------
 # Localization Data (unchanged sections condensed for brevity)
 # --------------------------------------------------------------------------------------
-RT_DESCRIPTIONS: Dict[str, Dict[str, str]] = {
+RT_DESCRIPTIONS: dict[str, dict[str, str]] = {
     "en": {
         "medical_consultation": "Clinical context synthesis",
         "diagnosis": "Diagnostic structuring",
@@ -604,7 +606,7 @@ RT_DESCRIPTIONS.update({
     },
 })
 
-RECOMMENDATIONS: Dict[str, Dict[str, List[str]]] = {
+RECOMMENDATIONS: dict[str, dict[str, list[str]]] = {
     # identical to previous version (kept for completeness) ...
     "en": {
         "risk_stratification": ["Aggregate genetic & cognitive indicators", "Document explicit tier rationale"],
@@ -709,7 +711,7 @@ class HeuristicCoTSummarizer:
         self.max_sentences = max_sentences
         self.max_chars = max_chars
 
-    def summarize(self, query: str, memories: List['MemoryRecord']) -> Dict[str, Any]:
+    def summarize(self, query: str, memories: list[MemoryRecord]) -> dict[str, Any]:
         if not memories:
             return {
                 "summary_text": f"Query '{query}' has no contextual memories.",
@@ -739,7 +741,7 @@ class HeuristicCoTSummarizer:
 
         chosen = []
         used = set()
-        for ov, sentence in scored:
+        for ov, sentence in scored:  # noqa: B007
             sig = " ".join(sorted(set(re.findall(r"\w+", sentence.lower()))))
             if sig in used:
                 continue
@@ -748,7 +750,7 @@ class HeuristicCoTSummarizer:
             if len(chosen) >= self.max_sentences:
                 break
 
-        freq: Dict[str,int] = {}
+        freq: dict[str,int] = {}
         for c in chosen:
             for tok in re.findall(r"[A-Za-z][A-Za-z0-9_+-]{2,}", c.lower()):
                 if tok in {"with","that","this","from","were","which","therefore","into","will","should","could"}:
@@ -793,12 +795,12 @@ class ReasoningContext:
     session_id: str
     query: str
     reasoning_type: str
-    memories: List[MemoryRecord]
-    memory_weights: List[float]
-    structured_features: Dict[str, Any]
-    memory_stats: Dict[str, Any]
+    memories: list[MemoryRecord]
+    memory_weights: list[float]
+    structured_features: dict[str, Any]
+    memory_stats: dict[str, Any]
     language: str
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 @dataclass
 class ReasoningResult:
@@ -807,9 +809,9 @@ class ReasoningResult:
     reasoning_type: str
     context_used: bool
     memory_count: int
-    steps: List[str]
-    diagnostics: Dict[str, Any]
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    steps: list[str]
+    diagnostics: dict[str, Any]
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 # --------------------------------------------------------------------------------------
 # Template Generator
@@ -819,8 +821,8 @@ class TemplateGenerator:
                  lang: str,
                  reasoning_type: str,
                  skeleton: str,
-                 cot: Optional[Dict[str, Any]],
-                 features: Dict[str, Any],
+                 cot: dict[str, Any] | None,
+                 features: dict[str, Any],
                  confidence: float) -> str:
         lang = lang if lang in SUPPORTED_LANGS else DEFAULT_LANG
         desc = local_rt_desc(reasoning_type, lang)
@@ -888,7 +890,7 @@ class TemplateGenerator:
         out = "\n".join([ln for ln in lines if ln.strip()])
         return re.sub(r"\n{3,}", "\n\n", out).strip()
 
-    def _recommendations(self, lang: str, reasoning_type: str, features: Dict[str, Any]) -> List[str]:
+    def _recommendations(self, lang: str, reasoning_type: str, features: dict[str, Any]) -> list[str]:
         base = RECOMMENDATIONS.get(lang, RECOMMENDATIONS["en"])
         recs = base.get(reasoning_type, base.get("general", []))
         if "apoe4" in features.get("biomarkers", []):
@@ -954,7 +956,7 @@ class PureLiteReasoningAgent:
     def reason(self,
                query: str,
                reasoning_type: str = "general",
-               language: Optional[str] = None) -> ReasoningResult:
+               language: str | None = None) -> ReasoningResult:
         lang = (language or DEFAULT_LANG).lower()
         if lang not in SUPPORTED_LANGS:
             lang = DEFAULT_LANG
@@ -1016,9 +1018,9 @@ class PureLiteReasoningAgent:
         )
 
     # --- Internal Helpers ---
-    def _filter_by_overlap(self, memories: List[MemoryRecord], query: str) -> List[MemoryRecord]:
+    def _filter_by_overlap(self, memories: list[MemoryRecord], query: str) -> list[MemoryRecord]:
         qtok = set(re.findall(r"\w+", query.lower()))
-        out: List[MemoryRecord] = []
+        out: list[MemoryRecord] = []
         for m in memories:
             mtok = set(re.findall(r"\w+", m.content.lower()))
             overlap = len(qtok & mtok) / max(len(qtok), 1)
@@ -1027,8 +1029,8 @@ class PureLiteReasoningAgent:
                 out.append(m)
         return out
 
-    def _compute_weights(self, memories: List[MemoryRecord]) -> List[float]:
-        now = datetime.now(timezone.utc)
+    def _compute_weights(self, memories: list[MemoryRecord]) -> list[float]:
+        now = datetime.now(UTC)
         weights = []
         for m in memories:
             hours = (now - m.created_at).total_seconds() / 3600
@@ -1038,7 +1040,7 @@ class PureLiteReasoningAgent:
             weights.append(weight)
         return weights
 
-    def _extract_features(self, memories: List[MemoryRecord]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    def _extract_features(self, memories: list[MemoryRecord]) -> tuple[dict[str, Any], dict[str, Any]]:
         biomarkers = []
         temporal_refs = 0
         scores = []
@@ -1068,7 +1070,7 @@ class PureLiteReasoningAgent:
         }
         return features, stats
 
-    def _skeleton(self, reasoning_type: str, memories: List[MemoryRecord], features: Dict[str, Any]) -> str:
+    def _skeleton(self, reasoning_type: str, memories: list[MemoryRecord], features: dict[str, Any]) -> str:
         count = len(memories)
         if reasoning_type == "risk_stratification":
             parts = []
@@ -1115,10 +1117,10 @@ class PureLiteReasoningAgent:
 
     def _confidence(self,
                     reasoning_type: str,
-                    memories: List[MemoryRecord],
-                    weights: List[float],
-                    features: Dict[str, Any]) -> Tuple[float, Dict[str, Any]]:
-        breakdown: Dict[str, float] = {}
+                    memories: list[MemoryRecord],
+                    weights: list[float],
+                    features: dict[str, Any]) -> tuple[float, dict[str, Any]]:
+        breakdown: dict[str, float] = {}
         base = 0.48
         breakdown["base"] = base
         mc = len(memories)

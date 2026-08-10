@@ -29,8 +29,8 @@ Features:
     - Integration with Ray observability stack
 """
 
-from typing import Any, Dict, Optional, Callable
-from datetime import datetime, timezone
+from collections.abc import Callable
+from typing import Any
 
 from nethical.core.integrated_governance import IntegratedGovernance
 from nethical.integrations._decision_logic import compute_decision
@@ -55,7 +55,7 @@ class NethicalRayServeMiddleware:
     def __init__(
         self,
         deployment_class: Any,
-        governance: Optional[IntegratedGovernance] = None,
+        governance: IntegratedGovernance | None = None,
         check_input: bool = True,
         check_output: bool = True,
         agent_id: str = "ray-serve",
@@ -106,7 +106,7 @@ class NethicalRayServeMiddleware:
         # Call the actual model
         try:
             output = self.deployment(request)
-        except Exception as e:
+        except Exception:
             # Log detailed error internally but return sanitized message
             # TODO: Implement proper logging
             return {
@@ -136,7 +136,7 @@ def create_safe_deployment(
     deployment_func: Callable,
     check_input: bool = True,
     check_output: bool = True,
-    agent_id: Optional[str] = None,
+    agent_id: str | None = None,
 ) -> Callable:
     """Create a safe Ray Serve deployment with Nethical.
 

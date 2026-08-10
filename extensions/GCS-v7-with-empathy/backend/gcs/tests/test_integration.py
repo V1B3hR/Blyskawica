@@ -1,12 +1,12 @@
 import os
 import tempfile
-import pytest
-import numpy as np
 
-from gcs.config_loader import load_config
-from gcs.training import Trainer
-from gcs.security import SecurityManager
+import numpy as np
+import pytest
 from gcs.closed_loop_agent import ClosedLoopAgent
+from gcs.security import SecurityManager
+from gcs.training import Trainer
+
 
 @pytest.fixture
 def config():

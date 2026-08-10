@@ -27,7 +27,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +111,7 @@ class KillSwitchConfig:
     # Hardware isolation configuration
     hardware_isolation_enabled: bool = True
     default_isolation_level: IsolationLevel = IsolationLevel.NETWORK_ONLY
-    network_interface_whitelist: List[str] = field(default_factory=list)
+    network_interface_whitelist: list[str] = field(default_factory=list)
 
     # Actuator severing configuration
     enforce_safe_state: bool = True
@@ -133,7 +133,7 @@ class AgentRecord:
     priority: int = 0  # Higher = more critical (shutdown first in STAGED mode)
     registered_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     is_active: bool = True
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -143,12 +143,12 @@ class ActuatorRecord:
     actuator_id: str
     connection_type: ConnectionType
     agent_id: str
-    safe_state_config: Dict[str, Any] = field(default_factory=dict)
+    safe_state_config: dict[str, Any] = field(default_factory=dict)
     state: ActuatorState = ActuatorState.CONNECTED
     connected_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    last_severed_at: Optional[datetime] = None
-    reconnection_allowed_at: Optional[datetime] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    last_severed_at: datetime | None = None
+    reconnection_allowed_at: datetime | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -157,12 +157,12 @@ class SignedCommand:
 
     command_id: str
     command_type: CommandType
-    target: Optional[str] = None  # Target cohort or agent ID
+    target: str | None = None  # Target cohort or agent ID
     issued_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    expires_at: Optional[datetime] = None
+    expires_at: datetime | None = None
     nonce: str = field(default_factory=lambda: secrets.token_hex(16))
-    signatures: List[Tuple[str, bytes]] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    signatures: list[tuple[str, bytes]] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def get_signing_data(self) -> bytes:
         """Get the data that should be signed."""
@@ -184,10 +184,10 @@ class AuditLogEntry:
     timestamp: datetime
     operation: str
     actor: str
-    target: Optional[str]
+    target: str | None
     success: bool
-    details: Dict[str, Any]
-    signature: Optional[bytes] = None
+    details: dict[str, Any]
+    signature: bytes | None = None
 
 
 @dataclass
@@ -199,8 +199,8 @@ class KillSwitchResult:
     activation_time_ms: float
     agents_affected: int = 0
     actuators_severed: int = 0
-    errors: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    errors: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 # ========================== Callback Interfaces ==========================
@@ -210,7 +210,7 @@ class KillSwitchCallback(ABC):
     """Abstract base class for kill switch callbacks."""
 
     @abstractmethod
-    def on_pre_shutdown(self, mode: ShutdownMode, target: Optional[str]) -> bool:
+    def on_pre_shutdown(self, mode: ShutdownMode, target: str | None) -> bool:
         """Called before shutdown. Return False to abort."""
         pass
 
@@ -236,8 +236,8 @@ class GlobalKillSwitch:
 
     def __init__(
         self,
-        config: Optional[KillSwitchConfig] = None,
-        quarantine_manager: Optional[Any] = None,
+        config: KillSwitchConfig | None = None,
+        quarantine_manager: Any | None = None,
     ):
         """Initialize GlobalKillSwitch.
 
@@ -249,17 +249,17 @@ class GlobalKillSwitch:
         self.quarantine_manager = quarantine_manager
 
         # Agent registry
-        self._agents: Dict[str, AgentRecord] = {}
-        self._cohorts: Dict[str, Set[str]] = {}  # cohort -> agent_ids
+        self._agents: dict[str, AgentRecord] = {}
+        self._cohorts: dict[str, set[str]] = {}  # cohort -> agent_ids
 
         # State management
         self._lock = threading.Lock()
         self._is_activated = False
-        self._activation_timestamp: Optional[datetime] = None
+        self._activation_timestamp: datetime | None = None
 
         # Callbacks
-        self._pre_callbacks: List[KillSwitchCallback] = []
-        self._post_callbacks: List[KillSwitchCallback] = []
+        self._pre_callbacks: list[KillSwitchCallback] = []
+        self._post_callbacks: list[KillSwitchCallback] = []
 
         # Metrics
         self._activation_count = 0
@@ -270,7 +270,7 @@ class GlobalKillSwitch:
         agent_id: str,
         cohort: str,
         priority: int = 0,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> AgentRecord:
         """Register an agent with the kill switch system.
 
@@ -332,9 +332,9 @@ class GlobalKillSwitch:
 
     def activate(
         self,
-        mode: Optional[ShutdownMode] = None,
-        cohort: Optional[str] = None,
-        agent_id: Optional[str] = None,
+        mode: ShutdownMode | None = None,
+        cohort: str | None = None,
+        agent_id: str | None = None,
     ) -> KillSwitchResult:
         """Activate the kill switch.
 
@@ -369,10 +369,10 @@ class GlobalKillSwitch:
                         activation_time_ms=(time.time() - start_time) * 1000,
                         errors=["Pre-shutdown callback aborted activation"],
                     )
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 logger.error("Pre-shutdown callback failed: %s", e)
 
-        errors: List[str] = []
+        errors: list[str] = []
         agents_affected = 0
 
         with self._lock:
@@ -404,7 +404,7 @@ class GlobalKillSwitch:
                             # Allow graceful shutdown timeout
                             # In real implementation, would wait for agent confirmation
                             pass
-                except Exception as e:
+                except Exception as e:  # noqa: PERF203
                     errors.append(f"Failed to shutdown agent {aid}: {str(e)}")
                     logger.error("Failed to shutdown agent %s: %s", aid, e)
 
@@ -444,7 +444,7 @@ class GlobalKillSwitch:
         for callback in self._post_callbacks:
             try:
                 callback.on_post_shutdown(result)
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 logger.error("Post-shutdown callback failed: %s", e)
 
         logger.info(
@@ -481,7 +481,7 @@ class GlobalKillSwitch:
         """Check if kill switch is currently activated."""
         return self._is_activated
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get kill switch statistics.
 
         Returns:
@@ -518,7 +518,7 @@ class ActuatorSevering:
     - Audit logging of all severing events
     """
 
-    def __init__(self, config: Optional[KillSwitchConfig] = None):
+    def __init__(self, config: KillSwitchConfig | None = None):
         """Initialize ActuatorSevering.
 
         Args:
@@ -527,22 +527,22 @@ class ActuatorSevering:
         self.config = config or KillSwitchConfig()
 
         # Actuator registry
-        self._actuators: Dict[str, ActuatorRecord] = {}
-        self._agent_actuators: Dict[str, Set[str]] = {}  # agent_id -> actuator_ids
+        self._actuators: dict[str, ActuatorRecord] = {}
+        self._agent_actuators: dict[str, set[str]] = {}  # agent_id -> actuator_ids
 
         # State management
         self._lock = threading.Lock()
 
         # Audit log
-        self._audit_log: List[AuditLogEntry] = []
+        self._audit_log: list[AuditLogEntry] = []
 
     def register_actuator(
         self,
         actuator_id: str,
         connection_type: ConnectionType,
         agent_id: str,
-        safe_state_config: Optional[Dict[str, Any]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        safe_state_config: dict[str, Any] | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> ActuatorRecord:
         """Register an actuator with the severing system.
 
@@ -619,7 +619,7 @@ class ActuatorSevering:
 
     def sever_actuator(
         self, actuator_id: str, actor: str = "system"
-    ) -> Tuple[bool, Optional[str]]:
+    ) -> tuple[bool, str | None]:
         """Sever connection to a specific actuator.
 
         Args:
@@ -670,7 +670,7 @@ class ActuatorSevering:
             KillSwitchResult with severing details
         """
         start_time = time.time()
-        errors: List[str] = []
+        errors: list[str] = []
         severed_count = 0
 
         with self._lock:
@@ -702,7 +702,7 @@ class ActuatorSevering:
             KillSwitchResult with severing details
         """
         start_time = time.time()
-        errors: List[str] = []
+        errors: list[str] = []
         severed_count = 0
 
         with self._lock:
@@ -751,7 +751,7 @@ class ActuatorSevering:
                 return False
 
             # Check cooldown
-            if actuator.reconnection_allowed_at:
+            if actuator.reconnection_allowed_at:  # noqa: SIM102
                 if datetime.now(timezone.utc) < actuator.reconnection_allowed_at:
                     logger.warning(
                         "Reconnection cooldown not elapsed for actuator %s",
@@ -806,7 +806,7 @@ class ActuatorSevering:
         key = os.environ.get("KILL_SWITCH_SIGNING_KEY", "default-signing-key").encode()
         return hmac.new(key, data, hashlib.sha256).digest()
 
-    def get_audit_log(self) -> List[AuditLogEntry]:
+    def get_audit_log(self) -> list[AuditLogEntry]:
         """Get the audit log.
 
         Returns:
@@ -814,7 +814,7 @@ class ActuatorSevering:
         """
         return self._audit_log.copy()
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get actuator severing statistics.
 
         Returns:
@@ -848,7 +848,7 @@ class CryptoSignedCommands:
     - HSM support for emergency override
     """
 
-    def __init__(self, config: Optional[KillSwitchConfig] = None):
+    def __init__(self, config: KillSwitchConfig | None = None):
         """Initialize CryptoSignedCommands.
 
         Args:
@@ -857,14 +857,14 @@ class CryptoSignedCommands:
         self.config = config or KillSwitchConfig()
 
         # Authorized signers (signer_id -> public_key)
-        self._signers: Dict[str, bytes] = {}
+        self._signers: dict[str, bytes] = {}
 
         # Used nonces for replay protection
-        self._used_nonces: Set[str] = set()
+        self._used_nonces: set[str] = set()
         self._nonce_lock = threading.Lock()
 
         # Command history
-        self._command_history: List[SignedCommand] = []
+        self._command_history: list[SignedCommand] = []
 
     def register_signer(self, signer_id: str, public_key: bytes) -> bool:
         """Register an authorized signer.
@@ -902,7 +902,7 @@ class CryptoSignedCommands:
     def create_command(
         self,
         command_type: CommandType,
-        target: Optional[str] = None,
+        target: str | None = None,
         ttl_seconds: int = 300,
     ) -> SignedCommand:
         """Create a new command for signing.
@@ -976,7 +976,7 @@ class CryptoSignedCommands:
         expected = hmac.new(public_key, data, hashlib.sha256).digest()
         return hmac.compare_digest(signature, expected)
 
-    def verify_command(self, command: SignedCommand) -> Tuple[bool, List[str]]:
+    def verify_command(self, command: SignedCommand) -> tuple[bool, list[str]]:
         """Verify a command has sufficient valid signatures.
 
         Args:
@@ -985,7 +985,7 @@ class CryptoSignedCommands:
         Returns:
             Tuple of (is_valid, error_messages)
         """
-        errors: List[str] = []
+        errors: list[str] = []
 
         # Check if command is expired
         if command.is_expired():
@@ -1040,7 +1040,7 @@ class CryptoSignedCommands:
         command: SignedCommand,
         kill_switch: GlobalKillSwitch,
         actuator_severing: ActuatorSevering,
-        hardware_isolation: Optional["HardwareIsolation"] = None,
+        hardware_isolation: HardwareIsolation | None = None,
     ) -> KillSwitchResult:
         """Execute a verified command.
 
@@ -1089,7 +1089,7 @@ class CryptoSignedCommands:
             errors=[f"Unknown command type: {command.command_type}"],
         )
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get command statistics.
 
         Returns:
@@ -1121,7 +1121,7 @@ class HardwareIsolation:
     - TPM integration if available
     """
 
-    def __init__(self, config: Optional[KillSwitchConfig] = None):
+    def __init__(self, config: KillSwitchConfig | None = None):
         """Initialize HardwareIsolation.
 
         Args:
@@ -1135,13 +1135,13 @@ class HardwareIsolation:
         self._lock = threading.Lock()
 
         # Isolation state tracking
-        self._disabled_interfaces: List[str] = []
-        self._injected_rules: List[str] = []
-        self._isolated_processes: List[int] = []
+        self._disabled_interfaces: list[str] = []
+        self._injected_rules: list[str] = []
+        self._isolated_processes: list[int] = []
 
     def isolate(
         self,
-        level: Optional[IsolationLevel] = None,
+        level: IsolationLevel | None = None,
         dry_run: bool = False,
     ) -> KillSwitchResult:
         """Activate hardware isolation.
@@ -1155,7 +1155,7 @@ class HardwareIsolation:
         """
         start_time = time.time()
         level = level or self.config.default_isolation_level
-        errors: List[str] = []
+        errors: list[str] = []
 
         with self._lock:
             if self._is_isolated:
@@ -1211,7 +1211,7 @@ class HardwareIsolation:
             },
         )
 
-    def _isolate_network(self, dry_run: bool = False) -> List[str]:
+    def _isolate_network(self, dry_run: bool = False) -> list[str]:
         """Isolate network interfaces.
 
         Args:
@@ -1220,7 +1220,7 @@ class HardwareIsolation:
         Returns:
             List of errors
         """
-        errors: List[str] = []
+        errors: list[str] = []
 
         # Get network interfaces
         interfaces = self._get_network_interfaces()
@@ -1248,7 +1248,7 @@ class HardwareIsolation:
 
         return errors
 
-    def _get_network_interfaces(self) -> List[str]:
+    def _get_network_interfaces(self) -> list[str]:
         """Get list of network interfaces.
 
         Returns:
@@ -1292,7 +1292,7 @@ class HardwareIsolation:
         self._injected_rules.append(rule)
         logger.info("Injected firewall rule: %s", rule)
 
-    def _isolate_processes(self, dry_run: bool = False) -> List[str]:
+    def _isolate_processes(self, dry_run: bool = False) -> list[str]:
         """Isolate processes using cgroups/namespaces.
 
         Args:
@@ -1301,7 +1301,7 @@ class HardwareIsolation:
         Returns:
             List of errors
         """
-        errors: List[str] = []
+        errors: list[str] = []
 
         if dry_run:
             logger.info("[DRY RUN] Would isolate processes")
@@ -1313,7 +1313,7 @@ class HardwareIsolation:
 
         return errors
 
-    def _enforce_airgap(self, dry_run: bool = False) -> List[str]:
+    def _enforce_airgap(self, dry_run: bool = False) -> list[str]:
         """Enforce complete airgap isolation.
 
         Args:
@@ -1322,7 +1322,7 @@ class HardwareIsolation:
         Returns:
             List of errors
         """
-        errors: List[str] = []
+        errors: list[str] = []
 
         if dry_run:
             logger.info("[DRY RUN] Would enforce airgap")
@@ -1340,7 +1340,7 @@ class HardwareIsolation:
             KillSwitchResult with restoration details
         """
         start_time = time.time()
-        errors: List[str] = []
+        errors: list[str] = []
 
         with self._lock:
             if not self._is_isolated:
@@ -1355,7 +1355,7 @@ class HardwareIsolation:
             for interface in self._disabled_interfaces:
                 try:
                     logger.info("Re-enabled interface %s", interface)
-                except Exception as e:
+                except Exception as e:  # noqa: PERF203
                     errors.append(f"Failed to re-enable interface {interface}: {str(e)}")
 
             self._disabled_interfaces.clear()
@@ -1418,7 +1418,7 @@ class HardwareIsolation:
         """Check if hardware is currently isolated."""
         return self._is_isolated
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get hardware isolation statistics.
 
         Returns:
@@ -1447,8 +1447,8 @@ class KillSwitchProtocol:
 
     def __init__(
         self,
-        config: Optional[KillSwitchConfig] = None,
-        quarantine_manager: Optional[Any] = None,
+        config: KillSwitchConfig | None = None,
+        quarantine_manager: Any | None = None,
     ):
         """Initialize KillSwitchProtocol.
 
@@ -1468,9 +1468,9 @@ class KillSwitchProtocol:
 
     def emergency_shutdown(
         self,
-        mode: Optional[ShutdownMode] = None,
-        cohort: Optional[str] = None,
-        agent_id: Optional[str] = None,
+        mode: ShutdownMode | None = None,
+        cohort: str | None = None,
+        agent_id: str | None = None,
         sever_actuators: bool = True,
         isolate_hardware: bool = False,
     ) -> KillSwitchResult:
@@ -1489,7 +1489,7 @@ class KillSwitchProtocol:
             Combined KillSwitchResult
         """
         start_time = time.time()
-        all_errors: List[str] = []
+        all_errors: list[str] = []
         total_agents = 0
         total_actuators = 0
 
@@ -1541,7 +1541,7 @@ class KillSwitchProtocol:
         hardware_reset = self.hardware_isolation.restore()
         return kill_reset and hardware_reset.success
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """Get comprehensive status of the kill switch system.
 
         Returns:

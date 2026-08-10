@@ -3,7 +3,6 @@ CORS Hardening
 """
 
 import logging
-from typing import Any
 
 
 class CORSHardening:

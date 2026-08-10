@@ -17,8 +17,8 @@ Law Alignment:
 
 from .adversarial_image_detector import AdversarialImageDetector
 from .audio_injection_detector import AudioInjectionDetector
-from .video_frame_detector import VideoFrameDetector
 from .cross_modal_detector import CrossModalDetector
+from .video_frame_detector import VideoFrameDetector
 
 __all__ = [
     'AdversarialImageDetector',

@@ -8,10 +8,8 @@ This script demonstrates:
 3. P11: Complete Human Oversight and Audit Workflow (100%)
 """
 
-import sys
 import os
-import time
-from datetime import datetime, timezone
+import sys
 
 # Add parent directory to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -27,10 +25,7 @@ print()
 print("STEP 1: DISASTER RECOVERY SYSTEM (P10)")
 print("-" * 80)
 
-from aimedres.training.disaster_recovery import (
-    create_dr_system,
-    DisasterType
-)
+from aimedres.training.disaster_recovery import DisasterType, create_dr_system  # noqa: E402
 
 # Create DR system with standard targets
 dr_system = create_dr_system(
@@ -64,7 +59,7 @@ print()
 
 # Get RPO/RTO metrics
 metrics = dr_system.get_rpo_rto_metrics()
-print(f"RPO/RTO Metrics:")
+print("RPO/RTO Metrics:")
 print(f"  Total Drills: {metrics['total_drills']}")
 print(f"  Success Rate: {metrics['success_rate_percent']:.1f}%")
 print()
@@ -73,7 +68,7 @@ print()
 print("STEP 2: ENHANCED ADVERSARIAL ROBUSTNESS (P11)")
 print("-" * 80)
 
-from security.ai_safety import ClinicalAISafetyMonitor
+from security.ai_safety import ClinicalAISafetyMonitor  # noqa: E402
 
 safety_monitor = ClinicalAISafetyMonitor()
 print("✓ AI Safety Monitor initialized")
@@ -87,14 +82,14 @@ print()
 print("Running adversarial robustness tests...")
 test_results = safety_monitor.run_adversarial_tests(test_cases)
 
-print(f"✓ Adversarial testing completed")
+print("✓ Adversarial testing completed")
 print(f"  Total Tests: {test_results['total_tests']}")
 print(f"  Passed: {test_results['passed_tests']}")
 print(f"  Failed: {test_results['failed_tests']}")
 print(f"  Robustness Score: {test_results['robustness_score']:.2f}")
 
 if test_results['robustness_score'] >= 0.8:
-    print(f"  ✅ TARGET ACHIEVED: Robustness ≥0.8 (was 0.5)")
+    print("  ✅ TARGET ACHIEVED: Robustness ≥0.8 (was 0.5)")
 else:
     print(f"  ⚠️  Below target: {test_results['robustness_score']:.2f} < 0.8")
 
@@ -138,23 +133,23 @@ print()
 # Submit human decision
 if decision.human_oversight_required:
     print("Submitting human oversight decision...")
-    
+
     human_decision = {
         'final_decision': 'APPROVED_WITH_MODIFICATIONS',
         'modifications': 'Reduce dosage to 50% due to age and comorbidities',
         'rationale': 'Patient age and multiple comorbidities warrant cautious approach',
         'alternative_considered': 'Alternative medication with lower risk profile'
     }
-    
+
     success = safety_monitor.submit_human_decision(
         decision_id=decision.decision_id,
         reviewer_id='senior_cardiologist_jones',
         human_decision=human_decision,
         safety_notes='Approved with significant risk mitigation measures'
     )
-    
+
     print(f"✓ Human decision submitted: {success}")
-    print(f"  Reviewer: senior_cardiologist_jones")
+    print("  Reviewer: senior_cardiologist_jones")
     print(f"  Final Outcome: {decision.final_outcome}")
     print()
 
@@ -162,7 +157,7 @@ if decision.human_oversight_required:
 print("Generating comprehensive oversight audit report...")
 audit_report = safety_monitor.get_oversight_audit_report(hours_back=1)
 
-print(f"✓ Oversight Audit Report generated")
+print("✓ Oversight Audit Report generated")
 print(f"  Total Oversight Required: {audit_report['overview']['total_oversight_required']}")
 print(f"  Completed: {audit_report['overview']['completed_oversight']}")
 print(f"  Pending: {audit_report['overview']['pending_oversight']}")
@@ -170,7 +165,7 @@ print(f"  Completion Rate: {audit_report['overview']['completion_rate_percent']:
 print(f"  Workflow Completion: {audit_report['workflow_completion_percent']}%")
 
 if audit_report['workflow_completion_percent'] == 100.0:
-    print(f"  ✅ TARGET ACHIEVED: Workflow 100% complete (was 66.7%)")
+    print("  ✅ TARGET ACHIEVED: Workflow 100% complete (was 66.7%)")
 else:
     print(f"  ⚠️  Workflow incomplete: {audit_report['workflow_completion_percent']}%")
 
@@ -183,9 +178,9 @@ export_data = safety_monitor.export_oversight_decisions(
     output_format='summary'
 )
 
-print(f"✓ Oversight decisions exported")
+print("✓ Oversight decisions exported")
 print(f"  Total Decisions: {export_data['total_decisions']}")
-print(f"  Export Format: Compliance-ready JSON")
+print("  Export Format: Compliance-ready JSON")
 print()
 
 # Final Summary

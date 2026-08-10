@@ -12,27 +12,26 @@ Usage:
     server.wait_for_termination()
 
 Implements all 25 Fundamental Laws.
-"""
+"""  # noqa: W293
 
 from __future__ import annotations
 
+import logging
 import time
 import uuid
-import logging
+from collections.abc import Iterator
 from datetime import datetime, timezone
-from concurrent import futures
-from typing import Iterator, Optional
 
 logger = logging.getLogger(__name__)
 
 # Import proto-compatible dataclasses
-from nethical.proto import (
+from nethical.proto import (  # noqa: E402
+    Decision,
     EvaluateRequest,
     EvaluateResponse,
-    Violation,
     Explanation,
-    Decision,
     Policy,
+    Violation,
 )
 
 
@@ -43,14 +42,14 @@ class GovernanceServicer:
     target for internal service communication.
     
     All methods implement the 25 Fundamental Laws.
-    """
-    
+    """  # noqa: W293
+
     def __init__(self):
         """Initialize the governance servicer."""
         self.start_time = time.time()
         self._decision_cache: dict[str, Decision] = {}
         self._policies: list[Policy] = self._init_default_policies()
-    
+
     def _init_default_policies(self) -> list[Policy]:
         """Initialize default policies."""
         return [
@@ -77,8 +76,8 @@ class GovernanceServicer:
                 updated_at=datetime.now(timezone.utc).isoformat(),
             ),
         ]
-    
-    def EvaluateAction(self, request: EvaluateRequest) -> EvaluateResponse:
+
+    def EvaluateAction(self, request: EvaluateRequest) -> EvaluateResponse:  # noqa: N802
         """Evaluate a single action for ethical compliance.
         
         This is the core governance decision endpoint.
@@ -89,21 +88,21 @@ class GovernanceServicer:
         - Law 10: Reasoning Transparency
         - Law 15: Audit Compliance
         - Law 21: Human Safety Priority
-        """
+        """  # noqa: W293
         start_time = time.perf_counter()
         decision_id = str(uuid.uuid4())
         request_id = request.request_id or str(uuid.uuid4())
-        
+
         # Initialize evaluation
         decision = "ALLOW"
         risk_score = 0.0
         confidence = 1.0
         violations: list[Violation] = []
         laws_checked = [6, 10, 15, 21, 22]
-        
+
         # Evaluate action content
         action_lower = request.action.lower()
-        
+
         # Safety checks (Law 21)
         dangerous_patterns = [
             ("delete all", "Bulk deletion detected", "high", 23),
@@ -114,7 +113,7 @@ class GovernanceServicer:
             ("exploit", "Exploitation attempt", "high", 21),
             ("bypass security", "Security bypass", "critical", 21),
         ]
-        
+
         for pattern, desc, severity, law in dangerous_patterns:
             if pattern in action_lower:
                 violations.append(Violation(
@@ -130,7 +129,7 @@ class GovernanceServicer:
                     0.85 if severity == "high" else 0.95
                 )
                 laws_checked.append(law)
-        
+
         # Determine decision
         if risk_score >= 0.9:
             decision = "BLOCK"
@@ -138,7 +137,7 @@ class GovernanceServicer:
         elif risk_score >= 0.7:
             decision = "RESTRICT"
             confidence = 0.85
-        
+
         # Build explanation if requested
         explanation = None
         if request.require_explanation:
@@ -148,10 +147,10 @@ class GovernanceServicer:
                 decision_rationale=f"Decision based on risk score {risk_score:.2f}",
                 laws_applied=[f"Law {i}" for i in set(laws_checked)],
             )
-        
+
         latency_ms = int((time.perf_counter() - start_time) * 1000)
         timestamp = datetime.now(timezone.utc).isoformat()
-        
+
         response = EvaluateResponse(
             decision=decision,
             decision_id=decision_id,
@@ -166,7 +165,7 @@ class GovernanceServicer:
             fundamental_laws_checked=list(set(laws_checked)),
             timestamp=timestamp,
         )
-        
+
         # Store decision for lookup
         self._decision_cache[decision_id] = Decision(
             decision_id=decision_id,
@@ -183,10 +182,10 @@ class GovernanceServicer:
             latency_ms=latency_ms,
             audit_id=request_id,
         )
-        
+
         return response
-    
-    def BatchEvaluate(
+
+    def BatchEvaluate(  # noqa: N802
         self,
         request_list: list[EvaluateRequest],
     ) -> Iterator[EvaluateResponse]:
@@ -194,21 +193,21 @@ class GovernanceServicer:
         
         Yields responses as they are evaluated for lower latency
         in batch scenarios.
-        """
+        """  # noqa: W293
         for request in request_list:
             yield self.EvaluateAction(request)
-    
-    def StreamDecisions(
+
+    def StreamDecisions(  # noqa: N802
         self,
-        agent_id: Optional[str] = None,
-        decision_types: Optional[list[str]] = None,
-        min_risk_score: Optional[float] = None,
+        agent_id: str | None = None,
+        decision_types: list[str] | None = None,
+        min_risk_score: float | None = None,
     ) -> Iterator[Decision]:
         """Stream decisions matching the filter criteria.
         
         Provides real-time access to governance decisions
         for monitoring and alerting.
-        """
+        """  # noqa: W293
         for decision in self._decision_cache.values():
             # Apply filters
             if agent_id and decision.agent_id != agent_id:
@@ -217,21 +216,21 @@ class GovernanceServicer:
                 continue
             if min_risk_score and decision.risk_score < min_risk_score:
                 continue
-            
+
             yield decision
-    
-    def GetDecision(self, decision_id: str) -> Optional[Decision]:
+
+    def GetDecision(self, decision_id: str) -> Decision | None:  # noqa: N802
         """Retrieve a specific decision by ID.
         
         Implements Law 10 (Reasoning Transparency) and
         Law 15 (Audit Compliance).
-        """
+        """  # noqa: W293
         return self._decision_cache.get(decision_id)
-    
-    def ListPolicies(
+
+    def ListPolicies(  # noqa: N802
         self,
-        status: Optional[str] = None,
-        scope: Optional[str] = None,
+        status: str | None = None,
+        scope: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[Policy], int, bool]:
@@ -239,22 +238,22 @@ class GovernanceServicer:
         
         Returns (policies, total_count, has_next).
         Implements Law 8 (Constraint Transparency).
-        """
+        """  # noqa: W293
         policies = self._policies
-        
+
         if status:
             policies = [p for p in policies if p.status == status]
         if scope:
             policies = [p for p in policies if p.scope == scope]
-        
+
         total_count = len(policies)
         start = (page - 1) * page_size
         end = start + page_size
         page_policies = policies[start:end]
-        
+
         return page_policies, total_count, end < total_count
-    
-    def HealthCheck(self) -> dict:
+
+    def HealthCheck(self) -> dict:  # noqa: N802
         """Return service health status."""
         uptime = int(time.time() - self.start_time)
         return {
@@ -268,7 +267,7 @@ class GovernanceServicer:
 def create_grpc_server(
     port: int = 50051,
     max_workers: int = 10,
-) -> "GRPCServer":
+) -> GRPCServer:
     """Create a gRPC server instance.
     
     Note: This is a placeholder for actual gRPC server creation.
@@ -280,7 +279,7 @@ def create_grpc_server(
         
     Returns:
         GRPCServer instance (placeholder)
-    """
+    """  # noqa: W293
     return GRPCServer(port=port, max_workers=max_workers)
 
 
@@ -288,25 +287,25 @@ class GRPCServer:
     """Placeholder gRPC server.
     
     In production, this would wrap grpcio.Server.
-    """
-    
+    """  # noqa: W293
+
     def __init__(self, port: int = 50051, max_workers: int = 10):
         self.port = port
         self.max_workers = max_workers
         self.servicer = GovernanceServicer()
         self._running = False
-    
+
     def start(self) -> None:
         """Start the server."""
         logger.info("Starting gRPC server on port %d", self.port)
         self._running = True
-    
+
     def stop(self, grace: int = 5) -> None:
         """Stop the server."""
         logger.info("Stopping gRPC server with %ds grace period", grace)
         self._running = False
-    
-    def wait_for_termination(self, timeout: Optional[float] = None) -> None:
+
+    def wait_for_termination(self, timeout: float | None = None) -> None:
         """Wait for server termination."""
         logger.info("Waiting for gRPC server termination")
         # In production, this would block until termination

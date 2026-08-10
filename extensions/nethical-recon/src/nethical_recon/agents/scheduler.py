@@ -6,13 +6,13 @@ Manages recurring scans, playbook execution schedules, and time-based triggers.
 
 import asyncio
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
 
-class ScheduleType(str, Enum):
+class ScheduleType(str, Enum):  # noqa: UP042
     """Types of schedules"""
 
     ONCE = "once"  # Run once at specific time
@@ -31,19 +31,19 @@ class Schedule:
     name: str = ""
     schedule_type: ScheduleType = ScheduleType.ONCE
     playbook_name: str = ""
-    parameters: Dict[str, Any] = field(default_factory=dict)
+    parameters: dict[str, Any] = field(default_factory=dict)
     enabled: bool = True
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    last_run: Optional[datetime] = None
-    next_run: Optional[datetime] = None
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    last_run: datetime | None = None
+    next_run: datetime | None = None
 
     # Schedule-specific fields
-    run_at: Optional[datetime] = None  # For ONCE
-    interval_seconds: Optional[int] = None  # For INTERVAL
-    cron_expression: Optional[str] = None  # For CRON
-    time_of_day: Optional[str] = None  # For DAILY (HH:MM format)
-    day_of_week: Optional[int] = None  # For WEEKLY (0-6, Monday=0)
-    day_of_month: Optional[int] = None  # For MONTHLY (1-31)
+    run_at: datetime | None = None  # For ONCE
+    interval_seconds: int | None = None  # For INTERVAL
+    cron_expression: str | None = None  # For CRON
+    time_of_day: str | None = None  # For DAILY (HH:MM format)
+    day_of_week: int | None = None  # For WEEKLY (0-6, Monday=0)
+    day_of_month: int | None = None  # For MONTHLY (1-31)
 
 
 class JobScheduler:
@@ -58,17 +58,17 @@ class JobScheduler:
     """
 
     def __init__(self, orchestrator=None):
-        self.schedules: Dict[UUID, Schedule] = {}
+        self.schedules: dict[UUID, Schedule] = {}
         self.orchestrator = orchestrator
         self._running = False
-        self._scheduler_task: Optional[asyncio.Task] = None
+        self._scheduler_task: asyncio.Task | None = None
 
     def create_schedule(
         self,
         name: str,
         playbook_name: str,
         schedule_type: ScheduleType,
-        parameters: Optional[Dict[str, Any]] = None,
+        parameters: dict[str, Any] | None = None,
         **schedule_params,
     ) -> UUID:
         """
@@ -154,14 +154,14 @@ class JobScheduler:
         if schedule_id in self.schedules:
             self.schedules[schedule_id].enabled = False
 
-    def list_schedules(self, enabled_only: bool = False) -> List[Schedule]:
+    def list_schedules(self, enabled_only: bool = False) -> list[Schedule]:
         """List all schedules"""
         schedules = list(self.schedules.values())
         if enabled_only:
             schedules = [s for s in schedules if s.enabled]
         return schedules
 
-    def get_schedule(self, schedule_id: UUID) -> Optional[Schedule]:
+    def get_schedule(self, schedule_id: UUID) -> Schedule | None:
         """Get schedule by ID"""
         return self.schedules.get(schedule_id)
 
@@ -195,7 +195,7 @@ class JobScheduler:
 
     async def _check_and_execute_schedules(self):
         """Check schedules and execute due jobs"""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         for schedule in self.schedules.values():
             if not schedule.enabled:
@@ -229,9 +229,9 @@ class JobScheduler:
             except Exception as e:
                 print(f"Error executing schedule {schedule.name}: {e}")
 
-    def _calculate_next_run(self, schedule: Schedule) -> Optional[datetime]:
+    def _calculate_next_run(self, schedule: Schedule) -> datetime | None:
         """Calculate next run time for schedule"""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         if schedule.schedule_type == ScheduleType.ONCE:
             return schedule.run_at

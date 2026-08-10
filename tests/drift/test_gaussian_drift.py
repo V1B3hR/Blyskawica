@@ -144,7 +144,7 @@ def test_drift_affects_model_performance():
     Test that injected drift measurably affects model performance.
     
     This is a critical test to ensure drift injection is effective.
-    """
+    """  # noqa: W293
     class SimpleModel(nn.Module):
         def __init__(self, input_dim: int = 32, num_classes: int = 3):
             super().__init__()
@@ -177,7 +177,7 @@ def test_drift_affects_model_performance():
 
         # Train
         model.train()
-        for epoch in range(12):
+        for epoch in range(12):  # noqa: B007
             for batch_x, batch_y in train_loader:
                 optimizer.zero_grad()
                 output = model(batch_x)
@@ -263,7 +263,7 @@ def test_drift_magnitude_scaling():
 
         # Quick training
         model.train()
-        for epoch in range(8):
+        for epoch in range(8):  # noqa: B007
             for batch_x, batch_y in train_loader:
                 optimizer.zero_grad()
                 output = model(batch_x)

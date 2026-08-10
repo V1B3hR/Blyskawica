@@ -289,13 +289,13 @@ def train_epoch(
     
     Returns:
         (average_loss, accuracy)
-    """
+    """  # noqa: W293
     model.train()
     total_loss = 0.0
     correct = 0
     total = 0
 
-    for batch_idx, (data, target) in enumerate(train_loader):
+    for batch_idx, (data, target) in enumerate(train_loader):  # noqa: B007
         data, target = data.to(device), target.to(device)
 
         # Flatten data if needed for adaptive model
@@ -336,7 +336,7 @@ def evaluate_model(
     
     Returns:
         Accuracy score
-    """
+    """  # noqa: W293
     model.eval()
     correct = 0
     total = 0

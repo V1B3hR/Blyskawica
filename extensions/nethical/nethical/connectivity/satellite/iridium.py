@@ -10,7 +10,7 @@ import asyncio
 import logging
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any
 
 from .base import (
     ConnectionConfig,
@@ -65,7 +65,7 @@ class IridiumProvider(SatelliteProvider):
     SBD_BANDWIDTH_KBPS = 2.4
     CERTUS_BANDWIDTH_KBPS = 704.0
 
-    def __init__(self, config: Optional[ConnectionConfig] = None):
+    def __init__(self, config: ConnectionConfig | None = None):
         """
         Initialize Iridium provider.
 
@@ -73,7 +73,7 @@ class IridiumProvider(SatelliteProvider):
             config: Connection configuration
         """
         super().__init__(config)
-        self._modem_status: Optional[IridiumModemStatus] = None
+        self._modem_status: IridiumModemStatus | None = None
         self._serial_port = self.config.provider_options.get(
             "serial_port", "/dev/ttyUSB0"
         )
@@ -137,7 +137,7 @@ class IridiumProvider(SatelliteProvider):
             raise
         except Exception as e:
             self.state = ConnectionState.ERROR
-            raise SatelliteConnectionError(
+            raise SatelliteConnectionError(  # noqa: B904
                 f"Iridium connection failed: {str(e)}",
                 self.provider_name,
             )
@@ -188,12 +188,12 @@ class IridiumProvider(SatelliteProvider):
             return True
         except Exception as e:
             self._metrics.errors_count += 1
-            raise SatelliteConnectionError(
+            raise SatelliteConnectionError(  # noqa: B904
                 f"Send failed: {str(e)}",
                 self.provider_name,
             )
 
-    async def receive(self, timeout: Optional[float] = None) -> Optional[bytes]:
+    async def receive(self, timeout: float | None = None) -> bytes | None:
         """
         Receive data from Iridium connection.
 
@@ -221,7 +221,7 @@ class IridiumProvider(SatelliteProvider):
             return None
         except Exception as e:
             self._metrics.errors_count += 1
-            raise SatelliteConnectionError(
+            raise SatelliteConnectionError(  # noqa: B904
                 f"Receive failed: {str(e)}",
                 self.provider_name,
             )
@@ -265,7 +265,7 @@ class IridiumProvider(SatelliteProvider):
             logger.error(f"Iridium health check failed: {e}")
             return False
 
-    async def get_signal_info(self) -> Dict[str, Any]:
+    async def get_signal_info(self) -> dict[str, Any]:
         """
         Get current Iridium signal information.
 
@@ -292,7 +292,7 @@ class IridiumProvider(SatelliteProvider):
             "mt_queue_length": self._modem_status.mt_queue_length,
         }
 
-    async def send_sbd_message(self, data: bytes) -> Optional[str]:
+    async def send_sbd_message(self, data: bytes) -> str | None:
         """
         Send an SBD (Short Burst Data) message.
 

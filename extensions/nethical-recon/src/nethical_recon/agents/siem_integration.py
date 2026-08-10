@@ -7,18 +7,16 @@ Security Orchestration, Automation and Response (SOAR) platforms.
 Supports: Elastic, Splunk, Azure Sentinel, webhooks
 """
 
-import asyncio
 import json
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
-from uuid import uuid4
+from typing import Any
 
 import requests
 
 
-class SIEMProvider(str, Enum):
+class SIEMProvider(str, Enum):  # noqa: UP042
     """Supported SIEM/SOAR providers"""
 
     ELASTIC = "elastic"
@@ -35,11 +33,11 @@ class SIEMEvent:
     event_type: str
     severity: str
     message: str
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     source: str = "nethical-recon"
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for JSON serialization"""
         return {
             "event_type": self.event_type,
@@ -59,31 +57,31 @@ class SIEMConfig:
     enabled: bool = True
 
     # Common settings
-    api_url: Optional[str] = None
-    api_key: Optional[str] = None
-    index_name: Optional[str] = None
+    api_url: str | None = None
+    api_key: str | None = None
+    index_name: str | None = None
 
     # Elastic-specific
-    elastic_cloud_id: Optional[str] = None
-    elastic_username: Optional[str] = None
-    elastic_password: Optional[str] = None
+    elastic_cloud_id: str | None = None
+    elastic_username: str | None = None
+    elastic_password: str | None = None
 
     # Splunk-specific
-    splunk_hec_token: Optional[str] = None
-    splunk_source: Optional[str] = "nethical-recon"
-    splunk_sourcetype: Optional[str] = "json"
+    splunk_hec_token: str | None = None
+    splunk_source: str | None = "nethical-recon"
+    splunk_sourcetype: str | None = "json"
 
     # Azure Sentinel-specific
-    sentinel_workspace_id: Optional[str] = None
-    sentinel_shared_key: Optional[str] = None
-    sentinel_log_type: Optional[str] = "NethicalRecon"
+    sentinel_workspace_id: str | None = None
+    sentinel_shared_key: str | None = None
+    sentinel_log_type: str | None = "NethicalRecon"
 
     # Webhook-specific
-    webhook_url: Optional[str] = None
-    webhook_headers: Dict[str, str] = field(default_factory=dict)
+    webhook_url: str | None = None
+    webhook_headers: dict[str, str] = field(default_factory=dict)
 
     # Syslog-specific
-    syslog_host: Optional[str] = None
+    syslog_host: str | None = None
     syslog_port: int = 514
     syslog_protocol: str = "udp"  # udp or tcp
 
@@ -95,9 +93,9 @@ class SIEMIntegration:
     Sends security events, findings, and alerts to configured SIEM platforms.
     """
 
-    def __init__(self, configs: Optional[List[SIEMConfig]] = None):
-        self.configs: List[SIEMConfig] = configs or []
-        self._session: Optional[requests.Session] = None
+    def __init__(self, configs: list[SIEMConfig] | None = None):
+        self.configs: list[SIEMConfig] = configs or []
+        self._session: requests.Session | None = None
 
     def add_config(self, config: SIEMConfig):
         """Add SIEM configuration"""
@@ -107,7 +105,7 @@ class SIEMIntegration:
         """Remove SIEM configuration"""
         self.configs = [c for c in self.configs if c.provider != provider]
 
-    async def send_event(self, event: SIEMEvent) -> Dict[SIEMProvider, bool]:
+    async def send_event(self, event: SIEMEvent) -> dict[SIEMProvider, bool]:
         """
         Send event to all configured SIEM providers.
 

@@ -1,11 +1,13 @@
 import time
-from typing import Callable, List, Dict, Any
+from collections.abc import Callable
 
 # Import the comprehensive constraints module
 from .ethical_constraints import (
-    SEVERE_CONSTRAINTS, MINOR_CONSTRAINTS,
-    bidirectional_awareness_constraint, run_constraints
+    MINOR_CONSTRAINTS,
+    SEVERE_CONSTRAINTS,
+    run_constraints,
 )
+
 
 class CognitiveFault(Exception):
     """
@@ -34,8 +36,8 @@ class CognitiveRCD:
     """
 
     def __init__(self, sensitivity_threshold=0.05,
-                 severe_constraints: List[Callable] = None,
-                 minor_constraints: List[Callable] = None):
+                 severe_constraints: list[Callable] = None,
+                 minor_constraints: list[Callable] = None):
         self.sensitivity = sensitivity_threshold
         self.severe_constraints = severe_constraints or SEVERE_CONSTRAINTS
         self.minor_constraints = minor_constraints or MINOR_CONSTRAINTS
@@ -50,7 +52,7 @@ class CognitiveRCD:
         """
         expected_resources = intent.get("resource_budget", 1.0)
         expected_emotional_cost = intent.get("emotional_budget", 0.5) # Domyślnie dopuszczamy średnie obciążenie emocjonalne
-        
+
         if expected_resources == 0:
             raise CognitiveFault(
                 "Expected resource budget must be greater than zero.",
@@ -64,7 +66,7 @@ class CognitiveRCD:
             outcome = execution_func(*args, **kwargs)
             execution_time = time.time() - start_time
             actual_resources = execution_time
-            
+
             # Jeśli funkcja zwróciła dane o koszcie emocjonalnym (np. po trudnej analizie sentymentu)
             actual_emotional_cost = outcome.get("emotional_cost", 0.0) if isinstance(outcome, dict) else 0.0
 
@@ -98,7 +100,7 @@ class CognitiveRCD:
             if resource_leakage > self.sensitivity:
                 print(f"[MINOR] Resource budget exceeded by {resource_leakage:.1%}!")
                 # Log or flag for review
-                
+
             if actual_emotional_cost > expected_emotional_cost:
                 overload = actual_emotional_cost - expected_emotional_cost
                 print(f"[WARNING] Emotional toll exceeded budget by {overload:.2f}. Shielding activated.")
@@ -114,7 +116,7 @@ class CognitiveRCD:
             raise
         except Exception as e:
             # Unexpected errors are treated as severe by default
-            raise CognitiveFault(
+            raise CognitiveFault(  # noqa: B904
                 f"Unexpected execution error: {e}",
                 intent=intent,
                 outcome={"error": str(e)},

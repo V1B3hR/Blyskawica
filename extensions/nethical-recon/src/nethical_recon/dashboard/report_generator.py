@@ -6,14 +6,13 @@ findings, compliance, and executive summaries.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
-from uuid import UUID
+from typing import Any
 
 
-class ReportFormat(str, Enum):
+class ReportFormat(str, Enum):  # noqa: UP042
     """Report output formats"""
 
     PDF = "pdf"
@@ -22,7 +21,7 @@ class ReportFormat(str, Enum):
     MARKDOWN = "markdown"
 
 
-class ReportType(str, Enum):
+class ReportType(str, Enum):  # noqa: UP042
     """Types of reports"""
 
     EXECUTIVE_SUMMARY = "executive_summary"
@@ -39,8 +38,8 @@ class ReportSection:
 
     title: str
     content: str
-    subsections: List["ReportSection"] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    subsections: list["ReportSection"] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -50,11 +49,11 @@ class ReportFinding:
     title: str
     severity: str
     description: str
-    affected_assets: List[str] = field(default_factory=list)
-    cvss_score: Optional[float] = None
-    cve_ids: List[str] = field(default_factory=list)
-    remediation: Optional[str] = None
-    references: List[str] = field(default_factory=list)
+    affected_assets: list[str] = field(default_factory=list)
+    cvss_score: float | None = None
+    cve_ids: list[str] = field(default_factory=list)
+    remediation: str | None = None
+    references: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -63,13 +62,13 @@ class ReportMetadata:
 
     title: str
     report_type: ReportType
-    generated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    generated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     generated_by: str = "Nethical Recon"
     version: str = "1.0"
     classification: str = "Confidential"
-    client_name: Optional[str] = None
-    scan_period_start: Optional[datetime] = None
-    scan_period_end: Optional[datetime] = None
+    client_name: str | None = None
+    scan_period_start: datetime | None = None
+    scan_period_end: datetime | None = None
 
 
 class ReportGenerator:
@@ -81,10 +80,10 @@ class ReportGenerator:
     """
 
     def __init__(self):
-        self.metadata: Optional[ReportMetadata] = None
-        self.sections: List[ReportSection] = []
-        self.findings: List[ReportFinding] = []
-        self.statistics: Dict[str, Any] = {}
+        self.metadata: ReportMetadata | None = None
+        self.sections: list[ReportSection] = []
+        self.findings: list[ReportFinding] = []
+        self.statistics: dict[str, Any] = {}
 
     def set_metadata(self, metadata: ReportMetadata):
         """Set report metadata"""
@@ -98,7 +97,7 @@ class ReportGenerator:
         """Add finding to report"""
         self.findings.append(finding)
 
-    def set_statistics(self, statistics: Dict[str, Any]):
+    def set_statistics(self, statistics: dict[str, Any]):
         """Set report statistics"""
         self.statistics = statistics
 
@@ -135,7 +134,7 @@ Immediate attention is required for critical and high-severity findings.
 1. Address all critical severity findings within 24 hours
 2. Plan remediation for high severity findings within 1 week
 3. Schedule regular security assessments to maintain security posture
-"""
+"""  # noqa: W291
         return ReportSection(
             title="Executive Summary",
             content=content,
@@ -363,7 +362,7 @@ Based on the findings, the following compliance gaps were identified:
                 border-radius: 3px; 
                 font-family: monospace;
             }
-        """
+        """  # noqa: W291
 
     def _markdown_to_html(self, markdown: str) -> str:
         """Simple markdown to HTML conversion"""
@@ -375,7 +374,7 @@ Based on the findings, the following compliance gaps were identified:
         html = html.replace("- ", "<li>").replace("\n", "</li>\n")
         return f"<div>{html}</div>"
 
-    def _to_dict(self) -> Dict[str, Any]:
+    def _to_dict(self) -> dict[str, Any]:
         """Convert report to dictionary"""
         return {
             "metadata": (

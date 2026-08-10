@@ -1,14 +1,11 @@
 """Tests for secrets management module."""
 
 import os
-import tempfile
-from pathlib import Path
 
 import pytest
-
 from nethical_recon.secrets import (
-    SecretsSanitizer,
     SecretsManager,
+    SecretsSanitizer,
     get_secrets_manager,
     sanitize_dict,
     sanitize_string,

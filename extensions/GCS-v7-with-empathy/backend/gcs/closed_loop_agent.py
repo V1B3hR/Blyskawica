@@ -1,7 +1,6 @@
+import logging
 import os
 import time
-import logging
-from typing import Dict, Tuple, Optional, List
 from collections import deque
 
 import numpy as np
@@ -10,13 +9,14 @@ import tensorflow as tf
 # Enable unsafe deserialization for Lambda layers
 tf.keras.config.enable_unsafe_deserialization()
 
-from .inference import GCSInference
-from .neuromodulation_controller import NeuromodulationController
-from .online_learning_module import OnlineLearningModule
-from .feedback_detector import AdaptiveFeedbackDetector
+from .feedback_detector import AdaptiveFeedbackDetector  # noqa: E402
+from .inference import GCSInference  # noqa: E402
+from .neuromodulation_controller import NeuromodulationController  # noqa: E402
+from .online_learning_module import OnlineLearningModule  # noqa: E402
+
 
 # --- Helper Functions ---
-def softmax_emotion_to_valence_arousal(prob: np.ndarray, config: Dict) -> Tuple[float, float]:
+def softmax_emotion_to_valence_arousal(prob: np.ndarray, config: dict) -> tuple[float, float]:
     # ... (bez zmian jak w oryginale) ...
     if not isinstance(prob, np.ndarray):
         raise TypeError(f"prob must be numpy array, got {type(prob)}")
@@ -59,7 +59,7 @@ def softmax_emotion_to_valence_arousal(prob: np.ndarray, config: Dict) -> Tuple[
         val = sum(prob[i] * anchors.get(k, {}).get("valence", 0.0) for i, k in enumerate(keys))
         aro = sum(prob[i] * anchors.get(k, {}).get("arousal", 0.0) for i, k in enumerate(keys))
     except Exception as e:
-        raise ValueError(f"Failed to calculate valence/arousal from emotion probabilities: {e}")
+        raise ValueError(f"Failed to calculate valence/arousal from emotion probabilities: {e}")  # noqa: B904
     val_scaled = (val + 1.0) * 5.0
     if not (0 <= val_scaled <= 10):
         logging.warning(f"Valence {val_scaled:.3f} is outside expected range [0, 10]")
@@ -74,7 +74,7 @@ class ClosedLoopAgent:
     Now includes SESSION MEMORY: tracks last N (valence, arousal) state tuples for greater context-awareness.
     """
 
-    def __init__(self, config: Dict, session_memory_len: int = 100):
+    def __init__(self, config: dict, session_memory_len: int = 100):
         if not isinstance(config, dict):
             raise TypeError(f"Config must be a dictionary, got {type(config)}")
         required_keys = ["output_model_dir", "graph_scaffold_path"]
@@ -107,6 +107,7 @@ class ClosedLoopAgent:
             logging.info("Attempting GCSInference initialization with config file approach")
             try:
                 import tempfile
+
                 import yaml
                 temp_config = {
                     "model_path": foundational_model_path,
@@ -170,7 +171,7 @@ class ClosedLoopAgent:
 
         logging.info("Closed-Loop Agent initialized successfully with all components loaded.")
 
-    def _policy_engine(self, cognitive_state: Dict, affective_state: Dict) -> Tuple[Optional[str], Optional[Dict]]:
+    def _policy_engine(self, cognitive_state: dict, affective_state: dict) -> tuple[str | None, dict | None]:
         if not isinstance(cognitive_state, dict):
             raise TypeError(f"cognitive_state must be dictionary, got {type(cognitive_state)}")
         if not isinstance(affective_state, dict):
@@ -215,8 +216,8 @@ class ClosedLoopAgent:
         logging.debug(f"[POLICY] Decision factors: intent={cognitive_state.get('intent')}, "
                      f"confidence={pain_confidence:.3f}, arousal={arousal:.3f}, valence={valence:.3f}")
 
-        if (cognitive_state.get("intent") == "PAIN_SIGNATURE" and 
-            pain_confidence > confidence_threshold and 
+        if (cognitive_state.get("intent") == "PAIN_SIGNATURE" and
+            pain_confidence > confidence_threshold and
             arousal > arousal_threshold):
             logging.warning(f"[POLICY] Condition met: High-confidence pain signature "
                           f"({pain_confidence:.2f} > {confidence_threshold}) and high arousal "
@@ -236,7 +237,7 @@ class ClosedLoopAgent:
         logging.debug("[POLICY] No intervention criteria met")
         return None, None
 
-    def _run_affective_inference(self, live_data: Dict) -> Tuple[float, float]:
+    def _run_affective_inference(self, live_data: dict) -> tuple[float, float]:
         if not isinstance(live_data, dict):
             raise TypeError(f"live_data must be a dictionary, got {type(live_data)}")
 
@@ -248,8 +249,8 @@ class ClosedLoopAgent:
             if not input_names:
                 raise RuntimeError("Affective model has no inputs defined")
             name_to_data = {
-                "node_input": live_data.get("source_eeg"), 
-                "physio_input": live_data.get("physio"), 
+                "node_input": live_data.get("source_eeg"),
+                "physio_input": live_data.get("physio"),
                 "voice_input": live_data.get("voice")
             }
             model_inputs = []
@@ -269,7 +270,7 @@ class ClosedLoopAgent:
                 preds = self.affective_model.predict(model_inputs, verbose=0)
             except Exception as e:
                 logging.error(f"Affective model prediction failed: {e}")
-                raise RuntimeError(f"Affective model prediction failed: {e}")
+                raise RuntimeError(f"Affective model prediction failed: {e}")  # noqa: B904
             if isinstance(preds, np.ndarray):
                 if preds.size == 0:
                     raise ValueError("Model prediction returned empty array")
@@ -289,7 +290,7 @@ class ClosedLoopAgent:
                         return valence, arousal
                     except (IndexError, ValueError) as e:
                         logging.error(f"Failed to extract valence/arousal from direct outputs: {e}")
-                        raise ValueError(f"Failed to extract valence/arousal from direct outputs: {e}")
+                        raise ValueError(f"Failed to extract valence/arousal from direct outputs: {e}")  # noqa: B904
                 return softmax_emotion_to_valence_arousal(preds[0], self.config)
             else:
                 raise RuntimeError(f"Unexpected affective model prediction type: {type(preds)}")
@@ -297,7 +298,7 @@ class ClosedLoopAgent:
             logging.error(f"Affective inference failed: {e}")
             raise
 
-    def run_cycle(self, live_data: Dict):
+    def run_cycle(self, live_data: dict):
         if not isinstance(live_data, dict):
             raise TypeError(f"live_data must be a dictionary, got {type(live_data)}")
         try:
@@ -323,7 +324,7 @@ class ClosedLoopAgent:
                 logging.info(f"[SENSE] Cognitive: {intent} ({conf:.2f}) | Affective: Valence={valence:.2f}, Arousal={arousal:.2f}")
             except Exception as e:
                 logging.error(f"SENSE phase failed: {e}")
-                raise RuntimeError(f"SENSE phase failed: {e}")
+                raise RuntimeError(f"SENSE phase failed: {e}")  # noqa: B904
 
             # ---- SESSION MEMORY LOGGING ----
             mem_point = {
@@ -341,7 +342,7 @@ class ClosedLoopAgent:
                 modality, params = self._policy_engine(cognitive_state, affective_state)
             except Exception as e:
                 logging.error(f"DECIDE phase failed: {e}")
-                raise RuntimeError(f"DECIDE phase failed: {e}")
+                raise RuntimeError(f"DECIDE phase failed: {e}")  # noqa: B904
             if modality:
                 try:
                     logging.info(f"[ACTION] Proposing {modality} intervention to user...")
@@ -364,7 +365,7 @@ class ClosedLoopAgent:
         except Exception as e:
             logging.error(f"Error during cleanup: {e}")
 
-    def get_status(self) -> Dict:
+    def get_status(self) -> dict:
         try:
             return {
                 "is_running": self.is_running,
@@ -382,7 +383,7 @@ class ClosedLoopAgent:
             return {"error": str(e)}
 
     # ---- SESSION HISTORY ACCESSOR (OPTIONAL) ----
-    def get_session_history(self) -> List[Dict]:
+    def get_session_history(self) -> list[dict]:
         """Returns the tracked session emotional states history."""
         return list(self.session_history)
     # ---------------------------------------------

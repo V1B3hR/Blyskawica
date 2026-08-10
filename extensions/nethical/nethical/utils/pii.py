@@ -5,9 +5,8 @@ personally identifiable information in text.
 """
 
 import re
-from typing import List, Optional
-from enum import Enum
 from dataclasses import dataclass
+from enum import Enum
 
 
 class PIIType(Enum):
@@ -84,7 +83,7 @@ class PIIDetector:
             PIIType.CREDIT_CARD: ["0000-0000-0000-0000", "1111-1111-1111-1111"],
         }
 
-    def detect_all(self, text: str) -> List[PIIMatch]:
+    def detect_all(self, text: str) -> list[PIIMatch]:
         """Detect all PII types in text."""
         matches = []
 
@@ -113,7 +112,7 @@ class PIIDetector:
         # Phone
         for pattern in self.PHONE_PATTERNS:
             for match in pattern.finditer(text):
-                matches.append(
+                matches.append(  # noqa: PERF401
                     PIIMatch(
                         pii_type=PIIType.PHONE,
                         text=match.group(),
@@ -165,7 +164,7 @@ class PIIDetector:
 
         # IP Address
         for match in self.IP_PATTERN.finditer(text):
-            matches.append(
+            matches.append(  # noqa: PERF401
                 PIIMatch(
                     pii_type=PIIType.IP_ADDRESS,
                     text=match.group(),
@@ -211,11 +210,11 @@ class PIIDetector:
         if len(digits) < 13 or len(digits) > 19:
             return False
         # Filter all zeros, all ones, etc.
-        if len(set(digits)) <= 2:
+        if len(set(digits)) <= 2:  # noqa: SIM103
             return False
         return True
 
-    def calculate_pii_risk_score(self, matches: List[PIIMatch]) -> float:
+    def calculate_pii_risk_score(self, matches: list[PIIMatch]) -> float:
         """Calculate overall PII risk score based on matches."""
         if not matches:
             return 0.0
@@ -246,7 +245,7 @@ class PIIDetector:
 
 
 # Singleton instance
-_global_detector: Optional[PIIDetector] = None
+_global_detector: PIIDetector | None = None
 
 
 def get_pii_detector() -> PIIDetector:

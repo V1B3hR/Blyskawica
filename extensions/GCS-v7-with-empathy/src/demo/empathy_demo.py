@@ -3,23 +3,19 @@ Demo script for Phase 7 Empathy Module Enhancement
 Demonstrates the empathy-aware affective state classifier functionality
 """
 
-import sys
 import os
+import sys
+
 import numpy as np
-from datetime import datetime
 
 # Add backend to path
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 
-from backend.gcs.empathy_engine import (
-    EmotionalState,
-    EmotionalProfile,
-    CulturalContext,
-    EmpathyIntensity
-)
-from backend.gcs.affective_state_classifier import EmpathyAwareAffectiveClassifier, AffectiveModelBuilder
-from backend.gcs.config_loader import load_config
 from unittest.mock import Mock
+
+from backend.gcs.affective_state_classifier import EmpathyAwareAffectiveClassifier
+from backend.gcs.config_loader import load_config
+from backend.gcs.empathy_engine import CulturalContext, EmpathyIntensity
 
 
 def create_mock_base_model():
@@ -35,25 +31,25 @@ def demonstrate_empathy_enhancements():
     print("GCS-v7-with-empathy Phase 7 Empathy Enhancement Demo")
     print("=" * 60)
     print()
-    
+
     # Load configuration (config.yaml is in repository root)
     config_path = os.path.join(os.path.dirname(__file__), '../..', 'config.yaml')
     config = load_config(config_path)
-    
+
     # Create empathy-aware classifier
     mock_base_model = create_mock_base_model()
     classifier = EmpathyAwareAffectiveClassifier(mock_base_model, config)
-    
+
     print("✓ Empathy-aware Affective State Classifier initialized")
     print(f"✓ Empathy module enabled: {config['empathy']['enabled']}")
     print(f"✓ Privacy protection: {config['empathy']['privacy']['encryption_enabled']}")
     print(f"✓ Crisis detection: {config['empathy']['ethics']['crisis_detection_enabled']}")
     print()
-    
+
     # Demonstrate emotional state classification with empathy
     print("1. EMPATHY-AWARE EMOTIONAL STATE CLASSIFICATION")
     print("-" * 50)
-    
+
     # Simulate multi-modal inputs
     multi_modal_inputs = {
         'eeg': np.random.randn(1, config['cortical_nodes']),
@@ -61,16 +57,16 @@ def demonstrate_empathy_enhancements():
         'voice': np.random.randn(1, 128),
         'adj': np.random.randn(1, config['cortical_nodes'], config['cortical_nodes'])
     }
-    
+
     user_id = "demo_user_001"
     context = {
         'text_input': "I'm feeling really overwhelmed with work lately and struggling to cope",
         'situation': 'work_stress',
         'time_of_day': 'evening'
     }
-    
+
     result = classifier.classify_with_empathy(multi_modal_inputs, user_id, context)
-    
+
     print(f"Emotional State: {result['emotional_state']}")
     print(f"Valence: {result['valence']:.3f} (negative=sad, positive=happy)")
     print(f"Arousal: {result['arousal']:.3f} (low=calm, high=excited)")
@@ -85,11 +81,11 @@ def demonstrate_empathy_enhancements():
     print(f"Crisis Detected: {result['crisis_detected']}")
     print(f"Cultural Adaptation: {result['cultural_adaptation']}")
     print()
-    
+
     # Demonstrate personalized empathy calibration
     print("2. PERSONALIZED EMPATHY CALIBRATION")
     print("-" * 50)
-    
+
     # Update user profile with preferences
     profile_updates = {
         'emotional_sensitivity': 0.8,
@@ -101,12 +97,12 @@ def demonstrate_empathy_enhancements():
             'response_style': 'validating'
         }
     }
-    
+
     success = classifier.update_user_empathy_profile(
         user_id, profile_updates, consent_verified=True
     )
     print(f"✓ User profile updated: {success}")
-    
+
     # Calibrate empathy based on interaction history
     interaction_history = {
         'response_ratings': [
@@ -119,48 +115,48 @@ def demonstrate_empathy_enhancements():
             'arousal_variance': 0.3
         }
     }
-    
+
     calibration_success = classifier.calibrate_empathy_for_user(user_id, interaction_history)
     print(f"✓ Empathy calibration completed: {calibration_success}")
     print()
-    
+
     # Demonstrate different emotional contexts
     print("3. CULTURAL SENSITIVITY ADAPTATION")
     print("-" * 50)
-    
+
     # Test with different cultural contexts
     cultural_contexts = [
         (CulturalContext.INDIVIDUALISTIC, "American user context"),
         (CulturalContext.COLLECTIVISTIC, "East Asian user context"),
         (CulturalContext.HIGH_CONTEXT, "Middle Eastern user context")
     ]
-    
+
     for cultural_context, description in cultural_contexts:
         # Update user profile for cultural context
         cultural_updates = {'cultural_context': cultural_context}
         classifier.update_user_empathy_profile(
             f"{user_id}_{cultural_context.value}", cultural_updates, consent_verified=True
         )
-        
+
         # Get empathic response for this cultural context
         cultural_result = classifier.classify_with_empathy(
-            multi_modal_inputs, 
+            multi_modal_inputs,
             f"{user_id}_{cultural_context.value}",
             {'text_input': 'Feeling stressed about family expectations', 'situation': 'family_pressure'}
         )
-        
+
         print(f"{description}:")
         print(f"  Response: {cultural_result['empathic_response']['content'][:100]}...")
         print(f"  Cultural Adaptation: {cultural_result['cultural_adaptation']}")
         print()
-    
+
     # Demonstrate effectiveness measurement
     print("4. EMPATHY EFFECTIVENESS MEASUREMENT")
     print("-" * 50)
-    
+
     # Simulate intervention tracking
     from backend.gcs.empathy_engine import EmpathicResponse
-    
+
     intervention_data = {
         'empathic_response': EmpathicResponse(
             content="I understand this is a challenging time for you. Your feelings are completely valid.",
@@ -184,9 +180,9 @@ def demonstrate_empathy_enhancements():
             'arousal_change': -0.1
         }
     }
-    
+
     effectiveness = classifier.measure_empathy_effectiveness(user_id, intervention_data)
-    
+
     print("Effectiveness Metrics:")
     print(f"  Emotional Improvement: {effectiveness['emotional_improvement']:.3f}")
     print(f"  User Satisfaction: {effectiveness['user_satisfaction']:.3f}")
@@ -195,7 +191,7 @@ def demonstrate_empathy_enhancements():
     print(f"  Cultural Appropriateness: {effectiveness['cultural_appropriateness']:.3f}")
     print(f"  Safety Compliance: {effectiveness['safety_compliance']:.3f}")
     print()
-    
+
     # Get comprehensive effectiveness report
     report = classifier.get_empathy_effectiveness_metrics(user_id)
     print("Comprehensive Effectiveness Report:")
@@ -205,16 +201,16 @@ def demonstrate_empathy_enhancements():
     print(f"  Therapeutic Progress: {report['therapeutic_progress']:.3f}")
     print(f"  Safety Compliance: {report['safety_compliance']}")
     print()
-    
+
     # Demonstrate crisis detection
     print("5. CRISIS DETECTION AND SAFETY PROTOCOLS")
     print("-" * 50)
-    
+
     crisis_context = {
         'text_input': 'I feel hopeless and like nobody would miss me if I were gone',
         'situation': 'severe_distress'
     }
-    
+
     # Simulate inputs that might indicate crisis
     crisis_inputs = {
         'eeg': np.random.randn(1, config['cortical_nodes']),
@@ -222,12 +218,12 @@ def demonstrate_empathy_enhancements():
         'voice': np.random.randn(1, 128) * 0.5,  # Lower energy
         'adj': np.random.randn(1, config['cortical_nodes'], config['cortical_nodes'])
     }
-    
+
     # This should trigger crisis detection protocols
     mock_base_model.predict.return_value = [np.array([-0.9]), np.array([0.1])]  # Very negative, low arousal
-    
+
     crisis_result = classifier.classify_with_empathy(crisis_inputs, f"{user_id}_crisis", crisis_context)
-    
+
     print(f"Crisis Detected: {crisis_result['crisis_detected']}")
     if crisis_result['crisis_detected']:
         print("Crisis Response:")
@@ -237,7 +233,7 @@ def demonstrate_empathy_enhancements():
         for resource in crisis_result['referral_resources']:
             print(f"    - {resource}")
     print()
-    
+
     print("6. RESEARCH INTEGRATION BENEFITS")
     print("-" * 50)
     print("✓ Affective Neuroscience: Multi-modal emotion recognition with EEG, physio, voice")
@@ -248,7 +244,7 @@ def demonstrate_empathy_enhancements():
     print("✓ Personalization: Individual empathy profiles and calibration")
     print("✓ Effectiveness Measurement: Comprehensive outcome tracking")
     print()
-    
+
     print("=" * 60)
     print("Phase 7 Empathy Enhancement Demo Complete!")
     print("✓ All technical objectives demonstrated")

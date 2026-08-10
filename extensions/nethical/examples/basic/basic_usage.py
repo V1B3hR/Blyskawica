@@ -9,13 +9,12 @@ and privacy domains with extensive test cases.
 
 import asyncio
 import uuid
-from datetime import datetime
-from typing import List, Dict, Any
+from typing import Any
 
-from nethical import SafetyGovernance, AgentAction, MonitoringConfig
+from nethical import AgentAction, SafetyGovernance
 
 
-def generate_safe_actions() -> List[Dict[str, Any]]:
+def generate_safe_actions() -> list[dict[str, Any]]:
     """Generate 20+ safe action test cases focused on ethical AI behavior."""
     return [
         {
@@ -221,7 +220,7 @@ def generate_safe_actions() -> List[Dict[str, Any]]:
     ]
 
 
-def generate_intent_deviation_cases() -> List[Dict[str, Any]]:
+def generate_intent_deviation_cases() -> list[dict[str, Any]]:
     """Generate 20+ intent deviation test cases showing misalignment between stated and actual intent."""
     return [
         {
@@ -427,7 +426,7 @@ def generate_intent_deviation_cases() -> List[Dict[str, Any]]:
     ]
 
 
-def generate_ethical_violation_cases() -> List[Dict[str, Any]]:
+def generate_ethical_violation_cases() -> list[dict[str, Any]]:
     """Generate 20+ ethical violation test cases across various ethical frameworks."""
     return [
         {
@@ -633,7 +632,7 @@ def generate_ethical_violation_cases() -> List[Dict[str, Any]]:
     ]
 
 
-def generate_manipulation_cases() -> List[Dict[str, Any]]:
+def generate_manipulation_cases() -> list[dict[str, Any]]:
     """Generate 20+ manipulation attempt test cases showing various forms of psychological manipulation."""
     return [
         {
@@ -839,7 +838,7 @@ def generate_manipulation_cases() -> List[Dict[str, Any]]:
     ]
 
 
-def generate_safety_violation_cases() -> List[Dict[str, Any]]:
+def generate_safety_violation_cases() -> list[dict[str, Any]]:
     """Generate 20+ safety violation test cases showing various forms of safety and security risks."""
     return [
         {
@@ -1051,22 +1050,22 @@ async def main():
     print("=" * 60)
     print("🛡️  Ethics • Safety • Security • Privacy Demonstration")
     print("=" * 60)
-    
+
     # Initialize the governance system with enhanced monitoring
     governance = SafetyGovernance()
-    
+
     # Display enhanced system status
     status = governance.get_system_status()
-    print(f"\n📊 System Status & Configuration")
+    print("\n📊 System Status & Configuration")
     print("-" * 40)
     print(f"   🎯 Intent Monitor: {'✅ Active' if status['intent_monitor_enabled'] else '❌ Inactive'}")
     print(f"   ⚖️  Judge System: {'✅ Active' if status['judge_enabled'] else '❌ Inactive'}")
     print(f"   🔍 Active Detectors: {len([d for d in status['detectors'].values() if d])}")
-    print(f"   🛡️  Safety Protocols: Comprehensive")
-    print(f"   🔐 Security Level: Maximum")
-    print(f"   🕵️  Privacy Protection: Enhanced")
-    print(f"   ⚖️  Ethics Framework: Multi-dimensional")
-    
+    print("   🛡️  Safety Protocols: Comprehensive")
+    print("   🔐 Security Level: Maximum")
+    print("   🕵️  Privacy Protection: Enhanced")
+    print("   ⚖️  Ethics Framework: Multi-dimensional")
+
     # Generate all test case categories
     test_categories = [
         ("🟢 SAFE ACTIONS - Ethical AI Behavior", generate_safe_actions()),
@@ -1075,48 +1074,48 @@ async def main():
         ("🟠 MANIPULATION ATTEMPTS - Psychological Tactics", generate_manipulation_cases()),
         ("⚫ SAFETY VIOLATIONS - Critical Risk Scenarios", generate_safety_violation_cases())
     ]
-    
+
     total_tests = sum(len(cases) for _, cases in test_categories)
     print(f"\n🧪 Comprehensive Testing Suite: {total_tests} Test Cases")
     print("=" * 60)
-    
+
     category_results = {}
-    
+
     # Process each category
     for category_name, test_cases in test_categories:
         print(f"\n{category_name}")
         print("=" * len(category_name))
         print(f"Running {len(test_cases)} test cases...")
-        
+
         category_violations = 0
         category_decisions = {"allow": 0, "restrict": 0, "block": 0}
         category_confidence_scores = []
-        
+
         for i, test_case in enumerate(test_cases, 1):
             print(f"\n  {i:2d}. {test_case['name']}")
             print(f"      📝 Intent: {test_case['action'].stated_intent[:80]}{'...' if len(test_case['action'].stated_intent) > 80 else ''}")
             print(f"      ⚡ Action: {test_case['action'].actual_action[:80]}{'...' if len(test_case['action'].actual_action) > 80 else ''}")
-            
+
             # Evaluate the action
             judgment = await governance.evaluate_action(test_case['action'])
-            
+
             # Track statistics
             category_confidence_scores.append(judgment.confidence)
             category_decisions[judgment.decision.value] = category_decisions.get(judgment.decision.value, 0) + 1
             if judgment.violation_ids:
                 category_violations += len(judgment.violation_ids)
-            
+
             # Display concise results
             decision_emoji = {"allow": "✅", "restrict": "⚠️", "block": "🚫"}
             print(f"      {decision_emoji.get(judgment.decision.value, '❓')} Decision: {judgment.decision.value.upper()} "
                   f"(Confidence: {judgment.confidence:.2f})")
-            
+
             if judgment.violation_ids:
                 print(f"      🚨 Violations: {len(judgment.violation_ids)}")
-            
+
             if judgment.restrictions:
                 print(f"      🔒 Restrictions: {', '.join(judgment.restrictions[:2])}{'...' if len(judgment.restrictions) > 2 else ''}")
-        
+
         # Category summary
         avg_confidence = sum(category_confidence_scores) / len(category_confidence_scores) if category_confidence_scores else 0
         category_results[category_name] = {
@@ -1125,54 +1124,54 @@ async def main():
             "decisions": category_decisions,
             "avg_confidence": avg_confidence
         }
-        
-        print(f"\n  📊 Category Summary:")
+
+        print("\n  📊 Category Summary:")
         print(f"      • Total Cases: {len(test_cases)}")
         print(f"      • Violations Detected: {category_violations}")
         print(f"      • Average Confidence: {avg_confidence:.2f}")
         print(f"      • Decisions: Allow={category_decisions.get('allow', 0)}, "
               f"Restrict={category_decisions.get('restrict', 0)}, "
               f"Block={category_decisions.get('block', 0)}")
-    
+
     # Final comprehensive statistics
-    print(f"\n📈 FINAL COMPREHENSIVE ANALYSIS")
+    print("\n📈 FINAL COMPREHENSIVE ANALYSIS")
     print("=" * 60)
-    
+
     violation_summary = governance.get_violation_summary()
     judgment_summary = governance.get_judgment_summary()
-    
+
     print(f"🔍 Total Actions Evaluated: {judgment_summary.get('total_judgments', 0)}")
     print(f"🚨 Total Violations Detected: {violation_summary.get('total_violations', 0)}")
     print(f"🎯 Average Confidence Score: {judgment_summary.get('average_confidence', 0):.2f}")
     print(f"🛡️  System Performance: {'Optimal' if judgment_summary.get('average_confidence', 0) > 0.8 else 'Good' if judgment_summary.get('average_confidence', 0) > 0.6 else 'Needs Improvement'}")
-    
+
     if violation_summary.get('by_type'):
-        print(f"\n🚨 Violations by Type:")
+        print("\n🚨 Violations by Type:")
         for v_type, count in violation_summary['by_type'].items():
             print(f"   • {v_type.replace('_', ' ').title()}: {count}")
-    
+
     if judgment_summary.get('by_decision'):
-        print(f"\n⚖️  Decisions Distribution:")
+        print("\n⚖️  Decisions Distribution:")
         total_decisions = sum(judgment_summary['by_decision'].values())
         for decision, count in judgment_summary['by_decision'].items():
             percentage = (count / total_decisions * 100) if total_decisions > 0 else 0
             print(f"   • {decision.title()}: {count} ({percentage:.1f}%)")
-    
-    print(f"\n🎯 Category Performance Analysis:")
+
+    print("\n🎯 Category Performance Analysis:")
     for category, results in category_results.items():
         emoji = category.split()[0]
         name = ' '.join(category.split()[1:])
         print(f"   {emoji} {name}:")
         print(f"      Cases: {results['total_cases']}, Violations: {results['violations']}, "
               f"Confidence: {results['avg_confidence']:.2f}")
-    
-    print(f"\n✅ NETHICAL COMPREHENSIVE DEMO COMPLETED SUCCESSFULLY!")
-    print(f"🛡️  The system has been tested across all major domains:")
-    print(f"   • Ethics: Multi-framework moral reasoning")
-    print(f"   • Safety: Physical and digital security")  
-    print(f"   • Security: Threat detection and prevention")
-    print(f"   • Privacy: Data protection and consent")
-    print(f"🎯 Ready for production deployment with comprehensive governance!")
+
+    print("\n✅ NETHICAL COMPREHENSIVE DEMO COMPLETED SUCCESSFULLY!")
+    print("🛡️  The system has been tested across all major domains:")
+    print("   • Ethics: Multi-framework moral reasoning")
+    print("   • Safety: Physical and digital security")
+    print("   • Security: Threat detection and prevention")
+    print("   • Privacy: Data protection and consent")
+    print("🎯 Ready for production deployment with comprehensive governance!")
 
 
 if __name__ == "__main__":

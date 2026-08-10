@@ -1,6 +1,11 @@
 import unittest
-from adaptiveneuralnetwork.central_nervous_system.neurochemistry import NeurochemicalState, NeurochemicalConfig
+
 from adaptiveneuralnetwork.central_nervous_system.alive_node import AliveLoopNode
+from adaptiveneuralnetwork.central_nervous_system.neurochemistry import (
+    NeurochemicalConfig,
+    NeurochemicalState,
+)
+
 
 class TestNeurochemistry(unittest.TestCase):
     def setUp(self):
@@ -30,7 +35,7 @@ class TestNeurochemistry(unittest.TestCase):
         # High adenosine, would normally force sleep
         self.state.adenosine = 1.1
         self.assertTrue(self.state.should_force_sleep())
-        
+
         # Attack happens
         self.state.trigger_cortisol_spike(0.8)
         self.assertTrue(self.state.is_sleep_masked())
@@ -40,7 +45,7 @@ class TestNeurochemistry(unittest.TestCase):
     def test_dopamine_all_nighter(self):
         # Sleep deprived, high adenosine
         self.state.adenosine = 0.9
-        
+
         # But having a good time!
         self.state.trigger_dopamine_spike(0.7)
         self.assertTrue(self.state.is_sleep_masked())
@@ -48,12 +53,12 @@ class TestNeurochemistry(unittest.TestCase):
     def test_cognitive_load_multiplier(self):
         # Baseline (serotonin=0.8, gaba=0.5 -> 1.0 - 0.24 - 0.05 = 0.71)
         self.assertAlmostEqual(self.state.get_cognitive_load_multiplier(), 0.71)
-        
+
         # Sleepless -> goes up
         self.state.adenosine = 0.7  # 0.2 over threshold (0.5)
         # 0.71 + (0.2 * 2.5) = 1.21
         self.assertAlmostEqual(self.state.get_cognitive_load_multiplier(), 1.21)
-        
+
         # Stress -> goes up further
         self.state.cortisol = 0.9
         # 1.21 + 0.5 = 1.71
@@ -66,7 +71,7 @@ class TestNeurochemistry(unittest.TestCase):
         node.circadian_cycle = 12
         node._determine_phase_transition()
         self.assertEqual(node.phase, "sleep")
-        
+
         # Fully charged, daylight, should be active
         node.energy = 100.0
         node.circadian_cycle = 12

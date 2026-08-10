@@ -4,9 +4,9 @@ Coordinates multiple birds for distributed reconnaissance
 """
 
 import logging
-from typing import Any
 from datetime import datetime
 from enum import Enum
+from typing import Any
 
 
 class CoordinationMessage(Enum):

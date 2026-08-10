@@ -7,11 +7,10 @@ Curriculum Order:
     2. EthicalTorqueDataset v2.0 — Module 2: "I Understand Conflict"
 """
 
-import torch
 import logging
-import os
 import sys
-import io
+
+import torch
 from torch.utils.data import DataLoader
 
 # Force UTF-8 encoding for Windows terminals
@@ -22,20 +21,20 @@ if sys.platform == "win32":
         sys.stderr.reconfigure(encoding='utf-8')
 
 from adaptiveneuralnetwork.applications.multimodal_continual_learning import (
-    MultimodalContinualLearningSystem,
-    VisionLanguageConfig,
     ContinualLearningConfig,
+    MultimodalContinualLearningSystem,
     TemporalConfig,
+    VisionLanguageConfig,
 )
-from adaptiveneuralnetwork.training.trainer import Trainer
 from adaptiveneuralnetwork.training.callbacks import (
     CognitiveHygieneCallback,
-    NeuromodulationCallback,
     LoggingCallback,
+    NeuromodulationCallback,
 )
+from adaptiveneuralnetwork.training.datasets.cyber_defense import CyberDefenseDataset
 from adaptiveneuralnetwork.training.datasets.hardware_awareness import HardwareAwarenessDataset
 from adaptiveneuralnetwork.training.datasets.psych_logic_gen import EthicalTorqueDataset
-from adaptiveneuralnetwork.training.datasets.cyber_defense import CyberDefenseDataset
+from adaptiveneuralnetwork.training.trainer import Trainer
 
 # ─── Logging ────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -119,13 +118,13 @@ def start_blyskawica():
     hw_loader = DataLoader(hw_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=default_collate)
 
     model_it = build_model(output_dim=5)  # 5 HW states
-    
+
     # Load Soul Identity Core dynamically
     if model_it.nodes.soul.identity_file:
         logger.info(f"Loaded Soul Identity Core from: {model_it.nodes.soul.identity_file}")
     else:
         logger.warning("No Soul Identity Core found, using default calibrated identity.")
-    
+
     trainer_it = build_trainer(model_it, output_dim=5)
 
     run_module(
@@ -151,13 +150,13 @@ def start_blyskawica():
         logger.info(f"   {scenario}: {count} samples")
 
     model_psych = build_model(output_dim=7)  # 7 ethical scenarios
-    
+
     # Load Soul Identity Core dynamically
     if model_psych.nodes.soul.identity_file:
         logger.info(f"Loaded Soul Identity Core from: {model_psych.nodes.soul.identity_file}")
     else:
         logger.warning("No Soul Identity Core found, using default calibrated identity.")
-        
+
     trainer_psych = build_trainer(model_psych, output_dim=7)
 
     run_module(
@@ -183,13 +182,13 @@ def start_blyskawica():
         logger.info(f"   {threat}: {count} samples")
 
     model_cyber = build_model(output_dim=6) # 6 threat categories
-    
+
     # Load Soul Identity Core dynamically
     if model_cyber.nodes.soul.identity_file:
         logger.info(f"Loaded Soul Identity Core from: {model_cyber.nodes.soul.identity_file}")
     else:
         logger.warning("No Soul Identity Core found, using default calibrated identity.")
-        
+
     trainer_cyber = build_trainer(model_cyber, output_dim=6)
 
     run_module(

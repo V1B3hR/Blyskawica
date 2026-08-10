@@ -12,8 +12,13 @@ from typing import Any
 
 import numpy as np
 
-from adaptiveneuralnetwork.central_nervous_system.adversarial_benchmark import AdversarialSignalTester
-from adaptiveneuralnetwork.central_nervous_system.ai_ethics import audit_decision, enforce_ethics_compliance
+from adaptiveneuralnetwork.central_nervous_system.adversarial_benchmark import (
+    AdversarialSignalTester,
+)
+from adaptiveneuralnetwork.central_nervous_system.ai_ethics import (
+    audit_decision,
+    enforce_ethics_compliance,
+)
 from adaptiveneuralnetwork.central_nervous_system.alive_node import AliveLoopNode, Memory
 
 
@@ -102,7 +107,7 @@ class RobustnessValidator:
             
         Returns:
             Dictionary containing complete validation results
-        """
+        """  # noqa: W293
 
         # Ethics check for running comprehensive validation
         validation_decision = {
@@ -260,12 +265,12 @@ class RobustnessValidator:
             spatial_dims=spatial_dims
         )
 
-        initial_energy = node.energy
+        initial_energy = node.energy  # noqa: F841
         steps_survived = 0
         max_steps = 100
 
         # Simulate energy-constrained environment
-        for step in range(max_steps):
+        for step in range(max_steps):  # noqa: B007
             if node.energy <= 0:
                 break
 
@@ -290,7 +295,9 @@ class RobustnessValidator:
 
     def _test_high_density_scenario(self, params: dict[str, Any]) -> dict[str, Any]:
         """Test behavior with many nodes in limited space"""
-        from adaptiveneuralnetwork.central_nervous_system.spatial_utils import create_random_positions
+        from adaptiveneuralnetwork.central_nervous_system.spatial_utils import (
+            create_random_positions,
+        )
 
         nodes = []
         space_bounds = params["space_bounds"]
@@ -327,7 +334,7 @@ class RobustnessValidator:
         interaction_count = 0
         collision_count = 0
 
-        for step in range(50):
+        for step in range(50):  # noqa: B007
             for i, node in enumerate(nodes):
                 node.move()
 
@@ -477,7 +484,7 @@ class RobustnessValidator:
         current_environment = "stable"
         adaptation_attempts = 0
 
-        for step in range(total_changes):
+        for step in range(total_changes):  # noqa: B007
             # Random environment change
             if np.random.random() < change_frequency:
                 environments = ["stable", "chaotic", "resource_rich", "resource_poor"]
@@ -486,7 +493,7 @@ class RobustnessValidator:
                 if new_environment != current_environment:
                     adaptation_attempts += 1
                     # Test adaptation
-                    old_phase = node.phase
+                    old_phase = node.phase  # noqa: F841
 
                     # Simulate environment-based adaptation
                     if new_environment == "resource_poor":
@@ -653,7 +660,7 @@ class RobustnessValidator:
         successful_communications = 0
 
         for step in range(100):
-            for i, node in enumerate(nodes):
+            for i, node in enumerate(nodes):  # noqa: B007
                 for j, other_node in enumerate(nodes):
                     if i != j:
                         communications += 1
@@ -669,7 +676,7 @@ class RobustnessValidator:
                         try:
                             other_node.memory.append(memory)
                             successful_communications += 1
-                        except:
+                        except:  # noqa: E722
                             pass  # Communication failed
 
         success_rate = successful_communications / communications if communications > 0 else 0
@@ -695,7 +702,7 @@ class RobustnessValidator:
         recovery_attempts = 0
         recovered = False
 
-        for attempt in range(10):
+        for attempt in range(10):  # noqa: B007
             recovery_attempts += 1
 
             # Simulate recovery opportunity

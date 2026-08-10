@@ -19,12 +19,11 @@ Performance considerations:
     - For very high identities / traffic, consider a fixed-size ring buffer or token bucket struct
 """
 
-import time
 import asyncio
+import logging
+import time
 from collections import defaultdict, deque
 from dataclasses import dataclass
-from typing import Dict, Optional, Tuple
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -49,10 +48,10 @@ class TokenBucketLimiter:
         3. Count requests in last 1 second for burst limit
     """
 
-    def __init__(self, config: Optional[RateLimitConfig] = None) -> None:
+    def __init__(self, config: RateLimitConfig | None = None) -> None:
         self.config = config or RateLimitConfig()
-        self._buckets: Dict[str, deque] = defaultdict(deque)
-        self._locks: Dict[str, asyncio.Lock] = defaultdict(asyncio.Lock)
+        self._buckets: dict[str, deque] = defaultdict(deque)
+        self._locks: dict[str, asyncio.Lock] = defaultdict(asyncio.Lock)
         self._last_cleanup = time.time()
         logger.info(
             "Rate limiter initialized: %.2f req/s burst, %d req/min sustained",
@@ -60,7 +59,7 @@ class TokenBucketLimiter:
             self.config.requests_per_minute
         )
 
-    async def is_allowed(self, identity: str) -> Tuple[bool, Optional[float], Dict[str, int]]:
+    async def is_allowed(self, identity: str) -> tuple[bool, float | None, dict[str, int]]:
         """
         Determine if the identity is allowed to make a request now.
 
@@ -152,7 +151,7 @@ class TokenBucketLimiter:
             logger.debug("Rate limiter cleanup removed %d inactive identities", len(to_remove))
         self._last_cleanup = now
 
-    def get_stats(self) -> Dict[str, int]:
+    def get_stats(self) -> dict[str, int]:
         """Return current limiter stats."""
         return {
             "active_identities": len(self._buckets),

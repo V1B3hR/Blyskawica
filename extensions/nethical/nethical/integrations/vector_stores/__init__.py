@@ -16,7 +16,7 @@ All connectors provide:
 - Error handling and graceful degradation
 """
 
-from .base import VectorStoreProvider, VectorSearchResult
+from .base import VectorSearchResult, VectorStoreProvider
 
 __all__ = [
     "VectorStoreProvider",

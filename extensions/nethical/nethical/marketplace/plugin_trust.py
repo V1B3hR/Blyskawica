@@ -11,16 +11,15 @@ Production Readiness Checklist - Section 8: Plugin Trust
 - Vulnerability scan per plugin load
 """
 
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Dict, List, Optional, Any, Tuple
 from enum import Enum
-import logging
-import hashlib
+from typing import Any
 
-from nethical.marketplace.plugin_governance import PluginGovernance, SecurityScanResult
 from nethical.marketplace.community import CommunityManager
-from nethical.marketplace.plugin_registry import PluginRegistry, PluginTrustLevel
+from nethical.marketplace.plugin_governance import PluginGovernance, SecurityScanResult
+from nethical.marketplace.plugin_registry import PluginRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -45,9 +44,9 @@ class PluginTrustCheck:
     vulnerability_count: int
     critical_vulnerability_count: int
     gating_result: TrustGatingResult
-    scan_result: Optional[SecurityScanResult] = None
-    details: Dict[str, Any] = field(default_factory=dict)
-    
+    scan_result: SecurityScanResult | None = None
+    details: dict[str, Any] = field(default_factory=dict)
+
     def passed(self) -> bool:
         """Check if plugin passed all trust checks"""
         return self.gating_result == TrustGatingResult.PASSED
@@ -66,13 +65,13 @@ class PluginTrustSystem:
         >>> check = trust_system.verify_plugin_trust("my-plugin")
         >>> if check.passed():
         ...     print("Plugin is trusted and safe to load")
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
-        registry: Optional[PluginRegistry] = None,
-        governance: Optional[PluginGovernance] = None,
-        community: Optional[CommunityManager] = None,
+        registry: PluginRegistry | None = None,
+        governance: PluginGovernance | None = None,
+        community: CommunityManager | None = None,
         trust_threshold: float = 80.0,
         max_vulnerabilities: int = 0,
         max_critical_vulnerabilities: int = 0,
@@ -91,7 +90,7 @@ class PluginTrustSystem:
             max_critical_vulnerabilities: Maximum allowed critical vulnerabilities
             enforce_signature: Whether to enforce signature verification
             storage_dir: Directory for trust system data
-        """
+        """  # noqa: W293
         self.registry = registry
         self.governance = governance or PluginGovernance()
         self.community = community or CommunityManager()
@@ -100,20 +99,20 @@ class PluginTrustSystem:
         self.max_critical_vulnerabilities = max_critical_vulnerabilities
         self.enforce_signature = enforce_signature
         self.storage_dir = storage_dir
-        
+
         # Cache for trust checks to avoid repeated scans
-        self._trust_cache: Dict[str, PluginTrustCheck] = {}
-        
+        self._trust_cache: dict[str, PluginTrustCheck] = {}
+
         logger.info(
             f"Plugin trust system initialized with threshold={trust_threshold}, "
             f"enforce_signature={enforce_signature}"
         )
-    
+
     def verify_plugin_trust(
         self,
         plugin_id: str,
-        plugin_code: Optional[str] = None,
-        plugin_path: Optional[str] = None,
+        plugin_code: str | None = None,
+        plugin_path: str | None = None,
         force_scan: bool = False
     ) -> PluginTrustCheck:
         """
@@ -132,9 +131,9 @@ class PluginTrustSystem:
         
         Returns:
             PluginTrustCheck with complete verification results
-        """
+        """  # noqa: W293
         timestamp = datetime.now(timezone.utc)
-        
+
         # Check cache unless forced
         if not force_scan and plugin_id in self._trust_cache:
             cached = self._trust_cache[plugin_id]
@@ -142,17 +141,17 @@ class PluginTrustSystem:
             if (timestamp - cached.timestamp).total_seconds() < 3600:
                 logger.info(f"Using cached trust check for {plugin_id}")
                 return cached
-        
+
         logger.info(f"Verifying plugin trust for {plugin_id}")
-        
-        failures: List[str] = []
-        
+
+        failures: list[str] = []
+
         # 1. Signature verification
         signature_valid = self._verify_signature(plugin_id)
         if self.enforce_signature and not signature_valid:
             failures.append("signature")
             logger.warning(f"Signature verification failed for {plugin_id}")
-        
+
         # 2. Trust score gating
         trust_score = self._calculate_trust_score(plugin_id)
         if trust_score < self.trust_threshold:
@@ -161,34 +160,34 @@ class PluginTrustSystem:
                 f"Trust score {trust_score} below threshold {self.trust_threshold} "
                 f"for {plugin_id}"
             )
-        
+
         # 3. Vulnerability scanning
         scan_result = self.governance.security_scan(
             plugin_id=plugin_id,
             plugin_code=plugin_code,
             plugin_path=plugin_path
         )
-        
+
         vulnerability_count = len(scan_result.vulnerabilities)
         critical_count = sum(
             1 for v in scan_result.vulnerabilities
             if "CRITICAL" in v or "HIGH" in v
         )
-        
+
         if vulnerability_count > self.max_vulnerabilities:
             failures.append("vulnerabilities")
             logger.warning(
                 f"Plugin {plugin_id} has {vulnerability_count} vulnerabilities "
                 f"(max: {self.max_vulnerabilities})"
             )
-        
+
         if critical_count > self.max_critical_vulnerabilities:
             failures.append("critical_vulnerabilities")
             logger.error(
                 f"Plugin {plugin_id} has {critical_count} critical vulnerabilities "
                 f"(max: {self.max_critical_vulnerabilities})"
             )
-        
+
         # Determine gating result
         if len(failures) == 0:
             gating_result = TrustGatingResult.PASSED
@@ -201,7 +200,7 @@ class PluginTrustSystem:
                 gating_result = TrustGatingResult.FAILED_VULNERABILITIES
         else:
             gating_result = TrustGatingResult.FAILED_MULTIPLE
-        
+
         # Create trust check result
         check = PluginTrustCheck(
             plugin_id=plugin_id,
@@ -220,10 +219,10 @@ class PluginTrustSystem:
                 "security_level": scan_result.security_level.value
             }
         )
-        
+
         # Cache the result
         self._trust_cache[plugin_id] = check
-        
+
         if check.passed():
             logger.info(f"Plugin {plugin_id} passed all trust checks")
         else:
@@ -231,49 +230,49 @@ class PluginTrustSystem:
                 f"Plugin {plugin_id} failed trust checks: {failures}, "
                 f"result={gating_result.value}"
             )
-        
+
         return check
-    
+
     def _verify_signature(self, plugin_id: str) -> bool:
         """Verify plugin signature using registry"""
         if not self.registry:
             logger.warning("No registry configured, skipping signature verification")
             return not self.enforce_signature  # Pass if not enforced
-        
+
         plugin = self.registry.get_plugin(plugin_id)
         if not plugin:
             logger.error(f"Plugin {plugin_id} not found in registry")
             return False
-        
+
         if not plugin.signature:
             logger.warning(f"No signature available for plugin {plugin_id}")
             return not self.enforce_signature
-        
+
         # Verify using registry
         try:
             return self.registry.verify_signature(
-                plugin_id, 
+                plugin_id,
                 plugin.signature.encode() if isinstance(plugin.signature, str) else plugin.signature
             )
         except Exception as e:
             logger.error(f"Signature verification error for {plugin_id}: {e}")
             return False
-    
+
     def _calculate_trust_score(self, plugin_id: str) -> float:
         """Calculate trust score (0-100) for a plugin"""
         # Get plugin stats from community
         plugin_stats = self.community.get_plugin_stats(plugin_id)
-        
+
         # Get contributor stats if available using public API
         submissions = self.community.list_submissions(plugin_id=plugin_id)
-        
+
         if not submissions:
             logger.warning(f"No submission data for {plugin_id}, using minimal score")
             return 0.0
-        
+
         submission = submissions[0]  # Use first submission
         contributor_stats = self.community.get_contributor_stats(submission.author)
-        
+
         # Calculate trust score (0-1 scale)
         trust_score_01 = self.community.compute_trust_score(
             average_rating=plugin_stats.get("average_rating", 0.0),
@@ -281,22 +280,22 @@ class PluginTrustSystem:
             approval_ratio=contributor_stats.get("acceptance_rate", 0.0),
             helpful_votes=plugin_stats.get("helpful_votes_total", 0)
         )
-        
+
         # Convert to 0-100 scale
         return trust_score_01 * 100.0
-    
-    def get_trust_metrics(self) -> Dict[str, Any]:
+
+    def get_trust_metrics(self) -> dict[str, Any]:
         """Get overall trust system metrics"""
         total_checks = len(self._trust_cache)
         passed_checks = sum(1 for c in self._trust_cache.values() if c.passed())
-        
+
         failure_breakdown = {
             "signature": 0,
             "trust_score": 0,
             "vulnerabilities": 0,
             "multiple": 0
         }
-        
+
         for check in self._trust_cache.values():
             if check.gating_result == TrustGatingResult.FAILED_SIGNATURE:
                 failure_breakdown["signature"] += 1
@@ -306,7 +305,7 @@ class PluginTrustSystem:
                 failure_breakdown["vulnerabilities"] += 1
             elif check.gating_result == TrustGatingResult.FAILED_MULTIPLE:
                 failure_breakdown["multiple"] += 1
-        
+
         return {
             "total_checks": total_checks,
             "passed_checks": passed_checks,
@@ -317,8 +316,8 @@ class PluginTrustSystem:
             "enforce_signature": self.enforce_signature,
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
-    
-    def clear_cache(self, plugin_id: Optional[str] = None):
+
+    def clear_cache(self, plugin_id: str | None = None):
         """Clear trust check cache"""
         if plugin_id:
             self._trust_cache.pop(plugin_id, None)

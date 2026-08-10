@@ -104,7 +104,7 @@ class ComponentStatus(Enum):
     COMPROMISED = "compromised"
 
 
-class ForestBase(ABC):
+class ForestBase(ABC):  # noqa: B024
     """Base class for Forest management"""
 
     def __init__(self, forest_name: str = "Infrastructure"):

@@ -14,10 +14,10 @@ if __name__ == "__main__":
         level=logging.INFO,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
-    
+
     # Import after logging is set up to avoid circular import issues
     from benchmarks.runner import run_default_benchmarks
-    
+
     # Run benchmarks
     try:
         asyncio.run(run_default_benchmarks())

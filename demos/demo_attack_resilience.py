@@ -9,12 +9,11 @@ to address the problem statement requirements:
 3. Improved signal jamming resistance (from 52% to 75-80% effectiveness)
 4. Enhanced trust manipulation resistance
 5. Faster environmental adaptation
-"""
+"""  # noqa: W291
 
 import sys
 
 import numpy as np
-
 from core.alive_node import AliveLoopNode
 
 
@@ -48,7 +47,7 @@ def demonstrate_energy_sharing_resilience():
 
     # Test attack detection
     print("\n2. Energy drain attack detection:")
-    initial_energy = low_energy_node.energy
+    initial_energy = low_energy_node.energy  # noqa: F841
 
     # Simulate multiple excessive requests from attacker (should be detected)
     for i in range(3):
@@ -242,7 +241,7 @@ def demonstrate_environmental_adaptation():
     initial_redundancy = adaptive_node.signal_redundancy_level
 
     # Add threat indicators
-    for i in range(2):
+    for i in range(2):  # noqa: B007
         threat_memory = adaptive_node.Memory(
             content="danger detected nearby",
             importance=0.9,
@@ -283,7 +282,7 @@ def run_comprehensive_demo():
 
     try:
         # Run all demonstrations
-        nodes = demonstrate_energy_sharing_resilience()
+        nodes = demonstrate_energy_sharing_resilience()  # noqa: F841
         demonstrate_energy_drain_resistance()
         demonstrate_signal_jamming_resistance()
         demonstrate_trust_manipulation_resistance()

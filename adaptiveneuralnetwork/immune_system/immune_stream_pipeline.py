@@ -4,13 +4,14 @@ Neuro-Immunological Stream Pipeline for Błyskawica V8 (Stream 1: Wolf Teeth & I
 Processes network telemetry datasets (CICIDS2017, UNSW-NB15, TON_IoT) as continuous 
 time-series streams. Maps flow rhythm deviations directly to Cortisol surges in 
 Błyskawica's neurochemistry module, triggering automatic Wolf Teeth quarantine.
-"""
+"""  # noqa: W291
 
-import math
 import logging
+import math
 import time
-from dataclasses import dataclass, field
-from typing import Dict, Any, List, Tuple
+from dataclasses import dataclass
+from typing import Any
+
 import torch
 import torch.nn as nn
 
@@ -53,13 +54,13 @@ class GardenQuarantineBuffer:
     Data Quarantine ('The Garden').
     Isolates external dataset sample batches before core model ingestion, 
     watermarking data as 'Observation (External)' vs 'Self (Ground Truth)'.
-    """
+    """  # noqa: W291
 
     def __init__(self, capacity: int = 1000):
         self.capacity = capacity
-        self.buffer: List[Dict[str, Any]] = []
+        self.buffer: list[dict[str, Any]] = []
 
-    def ingest_to_quarantine(self, sample_tensor: torch.Tensor, metadata: Dict[str, Any]) -> Dict[str, Any]:
+    def ingest_to_quarantine(self, sample_tensor: torch.Tensor, metadata: dict[str, Any]) -> dict[str, Any]:
         """Ingests incoming sample into quarantine with identity watermarking."""
         watermarked_record = {
             "tensor": sample_tensor,
@@ -75,7 +76,7 @@ class GardenQuarantineBuffer:
         self.buffer.append(watermarked_record)
         return watermarked_record
 
-    def verify_and_release(self, index: int = -1) -> Dict[str, Any] | None:
+    def verify_and_release(self, index: int = -1) -> dict[str, Any] | None:
         """Verifies safety of quarantined sample before releasing to training loop."""
         if not self.buffer:
             return None
@@ -89,7 +90,7 @@ class NeuroImmunologicalEngine(nn.Module):
     Core Neuro-Immunological Engine (Stream 1).
     Calculates network flow rhythm entropy, maps deviations to Cortisol, 
     and drives Wolf Teeth active defense + high-frequency cymatic dissonance.
-    """
+    """  # noqa: W291
 
     def __init__(self, neuro_state: NeuromodulationState | None = None):
         super().__init__()
@@ -108,9 +109,9 @@ class NeuroImmunologicalEngine(nn.Module):
         self.anxiety_threshold = 1.25  # Cortisol level triggering Wolf Teeth quarantine
 
     def process_flow_stream(
-        self, 
-        samples: List[NetworkFlowSample]
-    ) -> Tuple[torch.Tensor, Dict[str, Any]]:
+        self,
+        samples: list[NetworkFlowSample]
+    ) -> tuple[torch.Tensor, dict[str, Any]]:
         """
         Processes a stream of network flow samples.
         Calculates network rhythm deviation, updates Cortisol, and returns threat evaluation.

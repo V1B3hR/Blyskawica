@@ -1,14 +1,14 @@
+import asyncio
+import json
+import logging
+import os
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
-import json
-import os
-import logging
-import asyncio
+from typing import Any
 
+from .appeals_metrics import AppealsMetricsCollector
 from .fairness_metrics import FairnessMetricsCollector
 from .policy_lineage_tracker import PolicyLineageTracker
-from .appeals_metrics import AppealsMetricsCollector
 
 # Configure logging for observability
 logging.basicConfig(level=logging.INFO)
@@ -18,23 +18,23 @@ logger = logging.getLogger("GovernanceDashboard")
 class DashboardMetrics:
     """Container for dashboard metrics"""
     timestamp: datetime
-    fairness: Dict[str, Any] = field(default_factory=dict)
-    policy_lineage: Dict[str, Any] = field(default_factory=dict)
-    appeals: Dict[str, Any] = field(default_factory=dict)
-    audit_log: Dict[str, Any] = field(default_factory=dict)
-    invariant_violations: Dict[str, Any] = field(default_factory=dict)
-    slo_compliance: Dict[str, Any] = field(default_factory=dict)
-    security: Dict[str, Any] = field(default_factory=dict)
-    performance: Dict[str, Any] = field(default_factory=dict)
-    reliability: Dict[str, Any] = field(default_factory=dict)
-    compliance: Dict[str, Any] = field(default_factory=dict)
-    engagement: Dict[str, Any] = field(default_factory=dict)
-    accessibility: Dict[str, Any] = field(default_factory=dict)
-    cost_efficiency: Dict[str, Any] = field(default_factory=dict)
-    risk: Dict[str, Any] = field(default_factory=dict)
-    sustainability: Dict[str, Any] = field(default_factory=dict)
+    fairness: dict[str, Any] = field(default_factory=dict)
+    policy_lineage: dict[str, Any] = field(default_factory=dict)
+    appeals: dict[str, Any] = field(default_factory=dict)
+    audit_log: dict[str, Any] = field(default_factory=dict)
+    invariant_violations: dict[str, Any] = field(default_factory=dict)
+    slo_compliance: dict[str, Any] = field(default_factory=dict)
+    security: dict[str, Any] = field(default_factory=dict)
+    performance: dict[str, Any] = field(default_factory=dict)
+    reliability: dict[str, Any] = field(default_factory=dict)
+    compliance: dict[str, Any] = field(default_factory=dict)
+    engagement: dict[str, Any] = field(default_factory=dict)
+    accessibility: dict[str, Any] = field(default_factory=dict)
+    cost_efficiency: dict[str, Any] = field(default_factory=dict)
+    risk: dict[str, Any] = field(default_factory=dict)
+    sustainability: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
         return {k: (v.isoformat() if isinstance(v, datetime) else v)
                 for k, v in self.__dict__.items()}
@@ -43,19 +43,19 @@ class DashboardMetrics:
 class GovernanceDashboard:
     """High-end Governance Dashboard with extensibility and resilience"""
 
-    def __init__(self, config_path: Optional[str] = None, cache_ttl_seconds: int = 60):
+    def __init__(self, config_path: str | None = None, cache_ttl_seconds: int = 60):
         self.cache_ttl_seconds = cache_ttl_seconds
-        self._cache: Dict[str, Any] = {}
-        self._cache_timestamps: Dict[str, datetime] = {}
-        self._probe_results: Dict[str, Any] = {}
+        self._cache: dict[str, Any] = {}
+        self._cache_timestamps: dict[str, datetime] = {}
+        self._probe_results: dict[str, Any] = {}
 
         # Load configuration
         if config_path and os.path.exists(config_path):
-            with open(config_path, 'r') as f:
+            with open(config_path) as f:
                 self.config = json.load(f)
         else:
             default_config_path = os.path.join(os.path.dirname(__file__), "governance.json")
-            with open(default_config_path, 'r') as f:
+            with open(default_config_path) as f:
                 self.config = json.load(f)
 
         # Initialize collectors
@@ -65,7 +65,7 @@ class GovernanceDashboard:
         self.lineage_tracker = PolicyLineageTracker()
         self.appeals_collector = AppealsMetricsCollector()
 
-    async def get_metrics(self, sections: Optional[List[str]] = None, use_cache: bool = True) -> DashboardMetrics:
+    async def get_metrics(self, sections: list[str] | None = None, use_cache: bool = True) -> DashboardMetrics:
         """Get dashboard metrics asynchronously"""
         start_time = datetime.utcnow()
         metrics = DashboardMetrics(timestamp=start_time)
@@ -112,7 +112,7 @@ class GovernanceDashboard:
             logger.error(f"Error computing {key}: {e}")
             return {"error": str(e)}
 
-    def _compute_fairness_metrics(self) -> Dict[str, Any]:
+    def _compute_fairness_metrics(self) -> dict[str, Any]:
         return {
             "statistical_parity": self.fairness_collector.get_statistical_parity(),
             "disparate_impact": self.fairness_collector.get_disparate_impact(),
@@ -120,21 +120,21 @@ class GovernanceDashboard:
             "summary": self.fairness_collector.get_summary(),
         }
 
-    def _compute_lineage_metrics(self) -> Dict[str, Any]:
+    def _compute_lineage_metrics(self) -> dict[str, Any]:
         return {
             "chain_integrity": self.lineage_tracker.get_chain_integrity(),
             "version_tracking": self.lineage_tracker.get_version_metrics(),
             "multi_sig_compliance": self.lineage_tracker.get_multi_sig_metrics(),
         }
 
-    def _compute_appeals_metrics(self) -> Dict[str, Any]:
+    def _compute_appeals_metrics(self) -> dict[str, Any]:
         return {
             "volume": self.appeals_collector.get_volume_metrics(),
             "resolution_time": self.appeals_collector.get_resolution_metrics(),
             "outcomes": self.appeals_collector.get_outcome_distribution(),
         }
 
-    def _compute_audit_metrics(self) -> Dict[str, Any]:
+    def _compute_audit_metrics(self) -> dict[str, Any]:
         return {
             "completeness": {"rate": 1.0, "total_decisions": 0, "audited_decisions": 0},
             "integrity": {"merkle_root_valid": True, "signature_valid": True,
@@ -142,7 +142,7 @@ class GovernanceDashboard:
             "retention": {"total_entries": 0, "oldest_entry_days": 0, "storage_size_gb": 0.0},
         }
 
-    def _compute_invariant_metrics(self) -> Dict[str, Any]:
+    def _compute_invariant_metrics(self) -> dict[str, Any]:
         violations = {}
         for probe_name, result in self._probe_results.items():
             if hasattr(result, 'violations'):
@@ -153,7 +153,7 @@ class GovernanceDashboard:
                 }
         return violations
 
-    def _compute_slo_compliance(self) -> Dict[str, Any]:
+    def _compute_slo_compliance(self) -> dict[str, Any]:
         slos = self.config.get("slo_definitions", {})
         compliance = {}
         for slo_id, slo_config in slos.items():
@@ -165,7 +165,7 @@ class GovernanceDashboard:
             }
         return compliance
 
-    def export_metrics(self, format: str = "json", sections: Optional[List[str]] = None) -> str:
+    def export_metrics(self, format: str = "json", sections: list[str] | None = None) -> str:
         """Export metrics in specified format"""
         metrics = asyncio.run(self.get_metrics(sections=sections))
         if format == "json":
@@ -195,5 +195,5 @@ class GovernanceDashboard:
         if "invariant_violations" in self._cache_timestamps:
             del self._cache_timestamps["invariant_violations"]
 
-    def get_accessibility_info(self) -> Dict[str, Any]:
+    def get_accessibility_info(self) -> dict[str, Any]:
         return self.config.get("accessibility", {})

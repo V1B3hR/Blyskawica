@@ -9,8 +9,9 @@ Usage:
 import argparse
 import sys
 from pathlib import Path
-from PIL import Image
+
 import requests
+from PIL import Image
 
 
 def download_image(url_or_path, output_path):

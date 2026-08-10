@@ -8,6 +8,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+
 def run_command(cmd, description):
     """Run a command and display results."""
     print("=" * 80)
@@ -15,10 +16,10 @@ def run_command(cmd, description):
     print("=" * 80)
     print(f"Command: {' '.join(cmd)}")
     print()
-    
+
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
     output = result.stdout + result.stderr
-    
+
     # Print relevant portions of output
     lines = output.split('\n')
     for line in lines:
@@ -29,7 +30,7 @@ def run_command(cmd, description):
             'Available Jobs', '- als:', '- alzheimers:', '- parkinsons:'
         ]):
             print(line)
-    
+
     print()
     return result.returncode == 0
 
@@ -44,41 +45,41 @@ def main():
     print()
     print("is fully functional and working correctly.")
     print()
-    
+
     # Change to repo root
     repo_root = Path(__file__).parent
     import os
     os.chdir(repo_root)
-    
+
     demos = [
         {
-            "cmd": [sys.executable, "run_all_training.py", "--parallel", "--max-workers", "4", 
+            "cmd": [sys.executable, "run_all_training.py", "--parallel", "--max-workers", "4",
                    "--dry-run", "--only", "als", "alzheimers", "parkinsons"],
             "description": "Parallel mode with 3 jobs (4 workers max)"
         },
         {
-            "cmd": [sys.executable, "run_all_training.py", "--parallel", "--max-workers", "4", 
+            "cmd": [sys.executable, "run_all_training.py", "--parallel", "--max-workers", "4",
                    "--dry-run", "--epochs", "20", "--folds", "5"],
             "description": "Parallel mode with all jobs and custom parameters"
         },
         {
-            "cmd": [sys.executable, "run_all_training.py", "--parallel", "--max-workers", "2", 
+            "cmd": [sys.executable, "run_all_training.py", "--parallel", "--max-workers", "2",
                    "--list", "--only", "als", "alzheimers"],
             "description": "Show jobs that would run in parallel (2 workers)"
         },
     ]
-    
+
     success_count = 0
     for demo in demos:
         if run_command(demo["cmd"], demo["description"]):
             success_count += 1
         else:
             print("❌ Demo failed!")
-    
+
     print("=" * 80)
     print(f"RESULTS: {success_count}/{len(demos)} demonstrations successful")
     print("=" * 80)
-    
+
     if success_count == len(demos):
         print("\n✅ SUCCESS: All demonstrations passed!")
         print("\nThe parallel training orchestrator is working correctly:")

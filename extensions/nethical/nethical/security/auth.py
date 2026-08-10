@@ -13,20 +13,20 @@ Security Features:
 - API key hashing (bcrypt)
 - Automatic secret key generation with warnings for ephemeral keys
 - Environment-driven secret key for production deployments
-"""
+"""  # noqa: W291
 
 from __future__ import annotations
 
-import bcrypt
 import logging
 import os
 import secrets
 import warnings
+from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import Callable, Dict, Optional, Tuple
-from dataclasses import dataclass
 
+import bcrypt
 import jwt
 
 __all__ = [
@@ -65,7 +65,7 @@ class TokenPayload:
     issued_at: datetime
     expires_at: datetime
     jti: str  # JWT ID for revocation tracking
-    scope: Optional[str] = None
+    scope: str | None = None
 
     def to_dict(self) -> dict:
         """Convert to dictionary for JWT encoding"""
@@ -96,15 +96,15 @@ class TokenPayload:
 
 
 @dataclass
-class APIKey:  
+class APIKey:
     """API Key metadata"""
 
     key_id: str
     key_hash: str
     name: str
     created_at: datetime
-    expires_at: Optional[datetime] = None
-    last_used_at:  Optional[datetime] = None
+    expires_at: datetime | None = None
+    last_used_at:  datetime | None = None
     enabled: bool = True
 
     def is_expired(self) -> bool:
@@ -116,7 +116,7 @@ class APIKey:
         return self.enabled and not self.is_expired()
 
 
-class AuthManager: 
+class AuthManager:
     """
     Authentication Manager with secure JWT handling
     
@@ -125,18 +125,18 @@ class AuthManager:
     - Never commit secret keys to version control
     - Rotate secret keys periodically
     - Use external revocation storage for distributed deployments
-    """
-    
+    """  # noqa: W293
+
     # Insecure literal secret that should NEVER be used
     _INSECURE_SECRET = "secret"
-    
+
     def __init__(
         self,
-        secret_key: Optional[str] = None,
+        secret_key: str | None = None,
         access_token_expiry:  timedelta = timedelta(hours=1),
         refresh_token_expiry: timedelta = timedelta(days=7),
-        revocation_store: Optional[Callable[[str], None]] = None,
-        revocation_checker: Optional[Callable[[str], bool]] = None,
+        revocation_store: Callable[[str], None] | None = None,
+        revocation_checker: Callable[[str], bool] | None = None,
     ):
         """
         Initialize AuthManager with secure secret key handling
@@ -151,12 +151,12 @@ class AuthManager:
             
         Raises:
             ValueError: If secret_key is the insecure literal "secret"
-        """
+        """  # noqa: W291, W293
         # Determine secret key with security checks
         if secret_key is None:
             # Try environment variable first (production best practice)
             secret_key = os.environ.get("JWT_SECRET")
-            
+
             if secret_key is None:
                 # Generate ephemeral key with strong warning
                 secret_key = secrets.token_urlsafe(32)
@@ -172,14 +172,14 @@ class AuthManager:
                     "Auto-generated ephemeral key will not persist across restarts.  "
                     "Set JWT_SECRET environment variable for production."
                 )
-        
+
         # Block insecure literal secret
         if secret_key == self._INSECURE_SECRET:
             raise ValueError(
                 f"Refusing to use insecure literal secret '{self._INSECURE_SECRET}'.  "
                 "Set JWT_SECRET environment variable or provide a cryptographically secure secret_key."
             )
-        
+
         # Additional length check for security
         if len(secret_key) < 16:
             raise ValueError(
@@ -187,12 +187,12 @@ class AuthManager:
                 "Use at least 16 characters for cryptographic security.   "
                 "Recommended:   32+ characters or set JWT_SECRET environment variable."
             )
-        
+
         self. secret_key = secret_key
         self.access_token_expiry = access_token_expiry
         self.refresh_token_expiry = refresh_token_expiry
 
-        self.api_keys: Dict[str, APIKey] = {}
+        self.api_keys: dict[str, APIKey] = {}
         self._revoked_tokens: set[str] = set()  # JTI of revoked tokens (in-memory)
 
         self._revocation_store = revocation_store
@@ -231,7 +231,7 @@ class AuthManager:
         )
 
     def _decode_token(self, token: str) -> TokenPayload:
-        try: 
+        try:
             payload_data = jwt.decode(
                 token,
                 self.secret_key,
@@ -245,15 +245,15 @@ class AuthManager:
                 raise InvalidTokenError("Token has been revoked")
             return payload
         except jwt.ExpiredSignatureError:
-            raise TokenExpiredError("Token has expired")
+            raise TokenExpiredError("Token has expired")  # noqa: B904
         except jwt. InvalidTokenError as e:
-            raise InvalidTokenError(f"Invalid token: {e}")
+            raise InvalidTokenError(f"Invalid token: {e}")  # noqa: B904
         except (ValueError, KeyError) as e:
-            raise InvalidTokenError(f"Failed to decode token: {e}")
+            raise InvalidTokenError(f"Failed to decode token: {e}")  # noqa: B904
 
     def create_access_token(
-        self, user_id: str, scope: Optional[str] = None
-    ) -> Tuple[str, TokenPayload]:
+        self, user_id: str, scope: str | None = None
+    ) -> tuple[str, TokenPayload]:
         now = datetime. now(timezone.utc)
         payload = TokenPayload(
             user_id=user_id,
@@ -267,7 +267,7 @@ class AuthManager:
         log.info(f"Created access token for user {user_id}")
         return token, payload
 
-    def create_refresh_token(self, user_id:  str) -> Tuple[str, TokenPayload]:  
+    def create_refresh_token(self, user_id:  str) -> tuple[str, TokenPayload]:
         now = datetime.now(timezone.utc)
         payload = TokenPayload(
             user_id=user_id,
@@ -292,8 +292,8 @@ class AuthManager:
         self,
         key_id: str,
         name: str,
-        expires_at: Optional[datetime] = None,
-    ) -> Tuple[str, APIKey]:
+        expires_at: datetime | None = None,
+    ) -> tuple[str, APIKey]:
         """Create a new API key (returns unhashed key once)"""
         raw_key = secrets.token_urlsafe(32)
         key_hash = bcrypt.hashpw(raw_key.encode(), bcrypt.gensalt()).decode()
@@ -310,7 +310,7 @@ class AuthManager:
         log.info(f"Created API key {key_id}")
         return raw_key, api_key
 
-    def verify_api_key(self, raw_key: str) -> Optional[str]:
+    def verify_api_key(self, raw_key: str) -> str | None:
         """Verify API key and return key_id if valid"""
 
         for key_id, api_key in self.api_keys.items():

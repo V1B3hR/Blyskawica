@@ -21,20 +21,20 @@ from .actions.forest_patrol import ForestPatrolNanobot
 from .actions.honeypot import HoneypotNanobot
 from .actions.rate_limit import RateLimiterNanobot
 from .actions.threat_hunt import ThreatHunterNanobot
+from .adaptive_behavior import AdaptiveBehavior, BehaviorProfile
 from .base import ActionResult, ActionStatus, ActionType, BaseNanobot, NanobotMode
 from .learning.anomaly_ml import SimpleMLAnomalyDetector
 
 # Learning
 from .learning.baseline import BaselineLearner
 
+# New features
+from .ml_prediction import MLThreatPredictor, ThreatFeatures, ThreatPredictionModel
+
 # Rules
 from .rules.engine import Rule, RuleCondition, RuleOperator, RulesEngine
 from .rules.hybrid_mode import DecisionMode, HybridDecisionMaker
 from .swarm import NanobotSwarm
-
-# New features
-from .ml_prediction import MLThreatPredictor, ThreatPredictionModel, ThreatFeatures
-from .adaptive_behavior import AdaptiveBehavior, BehaviorProfile
 from .swarm_coordination import SwarmCoordinator, SwarmRole
 
 __all__ = [

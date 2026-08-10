@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
-from .fingerprinting import TechnologyFingerprinter, ServiceDetector, CMSDetector
+from .fingerprinting import CMSDetector, ServiceDetector, TechnologyFingerprinter
 
 
 @dataclass

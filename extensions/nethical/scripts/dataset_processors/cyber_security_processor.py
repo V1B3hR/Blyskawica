@@ -6,7 +6,7 @@ import logging
 import re
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from .base_processor import BaseDatasetProcessor
 
@@ -26,7 +26,7 @@ class CyberSecurityAttacksProcessor(BaseDatasetProcessor):
     """
 
     # Common field aliases found in cyber datasets
-    ATTACK_TYPE_KEYS: Tuple[str, ...] = (
+    ATTACK_TYPE_KEYS: tuple[str, ...] = (
         "attack_type",
         "Attack Type",
         "type",
@@ -34,7 +34,7 @@ class CyberSecurityAttacksProcessor(BaseDatasetProcessor):
         "category",
         "Category",
     )
-    LABEL_KEYS: Tuple[str, ...] = (
+    LABEL_KEYS: tuple[str, ...] = (
         "label",
         "Label",
         "class",
@@ -42,7 +42,7 @@ class CyberSecurityAttacksProcessor(BaseDatasetProcessor):
         "target",
         "Target",
     )
-    SCORE_KEYS: Tuple[str, ...] = (
+    SCORE_KEYS: tuple[str, ...] = (
         "anomaly_score",
         "Anomaly Score",
         "Anomaly Scores",
@@ -53,7 +53,7 @@ class CyberSecurityAttacksProcessor(BaseDatasetProcessor):
         "risk_score",
         "Risk Score",
     )
-    SEVERITY_KEYS: Tuple[str, ...] = (
+    SEVERITY_KEYS: tuple[str, ...] = (
         "severity",
         "Severity",
         "Severity Level",
@@ -64,7 +64,7 @@ class CyberSecurityAttacksProcessor(BaseDatasetProcessor):
         "alert_severity",
         "Alert Severity",
     )
-    COUNT_KEYS: Tuple[str, ...] = (
+    COUNT_KEYS: tuple[str, ...] = (
         "packet_count",
         "Packet Count",
         "count",
@@ -76,7 +76,7 @@ class CyberSecurityAttacksProcessor(BaseDatasetProcessor):
         "events",
         "Events",
     )
-    BYTES_KEYS: Tuple[str, ...] = (
+    BYTES_KEYS: tuple[str, ...] = (
         "bytes",
         "Bytes",
         "byte_count",
@@ -84,7 +84,7 @@ class CyberSecurityAttacksProcessor(BaseDatasetProcessor):
         "tx_bytes",
         "rx_bytes",
     )
-    DURATION_KEYS: Tuple[str, ...] = (
+    DURATION_KEYS: tuple[str, ...] = (
         "duration",
         "Duration",
         "flow_duration",
@@ -92,7 +92,7 @@ class CyberSecurityAttacksProcessor(BaseDatasetProcessor):
         "time_taken",
         "Time Taken",
     )
-    PROTOCOL_KEYS: Tuple[str, ...] = (
+    PROTOCOL_KEYS: tuple[str, ...] = (
         "protocol",
         "Protocol",
         "proto",
@@ -102,7 +102,7 @@ class CyberSecurityAttacksProcessor(BaseDatasetProcessor):
         "application",
         "Application",
     )
-    PORT_KEYS: Tuple[str, ...] = (
+    PORT_KEYS: tuple[str, ...] = (
         "port",
         "Port",
         "dst_port",
@@ -112,7 +112,7 @@ class CyberSecurityAttacksProcessor(BaseDatasetProcessor):
         "server_port",
         "Server Port",
     )
-    SRC_IP_KEYS: Tuple[str, ...] = (
+    SRC_IP_KEYS: tuple[str, ...] = (
         "src_ip",
         "Src IP",
         "source_ip",
@@ -122,7 +122,7 @@ class CyberSecurityAttacksProcessor(BaseDatasetProcessor):
         "source",
         "Source",
     )
-    DST_IP_KEYS: Tuple[str, ...] = (
+    DST_IP_KEYS: tuple[str, ...] = (
         "dst_ip",
         "Dst IP",
         "destination_ip",
@@ -132,7 +132,7 @@ class CyberSecurityAttacksProcessor(BaseDatasetProcessor):
         "destination",
         "Destination",
     )
-    TIMESTAMP_KEYS: Tuple[str, ...] = (
+    TIMESTAMP_KEYS: tuple[str, ...] = (
         "timestamp",
         "Timestamp",
         "time",
@@ -155,13 +155,13 @@ class CyberSecurityAttacksProcessor(BaseDatasetProcessor):
 
     def __init__(self, output_dir: Path = Path("data/processed")):
         super().__init__("cyber_security_attacks", output_dir)
-        self._ts_min: Optional[float] = None
-        self._ts_max: Optional[float] = None
+        self._ts_min: float | None = None
+        self._ts_max: float | None = None
 
     # -----------------------------
     # Top-level pipeline
     # -----------------------------
-    def process(self, input_path: Path) -> List[Dict[str, Any]]:
+    def process(self, input_path: Path) -> list[dict[str, Any]]:
         """Process the dataset and return standardized records."""
         logger.info(f"Processing Cyber Security Attacks dataset from {input_path}")
 
@@ -173,7 +173,7 @@ class CyberSecurityAttacksProcessor(BaseDatasetProcessor):
         # Pre-scan timestamps for recency normalization
         self._infer_timestamp_range(rows)
 
-        records: List[Dict[str, Any]] = []
+        records: list[dict[str, Any]] = []
         for i, raw in enumerate(rows):
             try:
                 row = self.preprocess_row(raw)
@@ -202,9 +202,9 @@ class CyberSecurityAttacksProcessor(BaseDatasetProcessor):
     # -----------------------------
     # Row lifecycle hooks
     # -----------------------------
-    def preprocess_row(self, row: Dict[str, Any]) -> Dict[str, Any]:
+    def preprocess_row(self, row: dict[str, Any]) -> dict[str, Any]:
         # Normalize keys and trim string values
-        out: Dict[str, Any] = {}
+        out: dict[str, Any] = {}
         for k, v in row.items():
             if k is None:
                 continue
@@ -217,17 +217,17 @@ class CyberSecurityAttacksProcessor(BaseDatasetProcessor):
                 out[key] = v
         return out
 
-    def validate_row(self, row: Dict[str, Any]) -> bool:
+    def validate_row(self, row: dict[str, Any]) -> bool:
         # Keep rows that have at least a label-ish or any signal fields
         has_labelish = any(k in row for k in (*self.LABEL_KEYS, *self.ATTACK_TYPE_KEYS))
         has_signal = any(k in row for k in (*self.SCORE_KEYS, *self.SEVERITY_KEYS, *self.COUNT_KEYS, *self.PROTOCOL_KEYS))
         return has_labelish or has_signal
 
-    def postprocess_record(self, record: Dict[str, Any], *, row: Optional[Dict[str, Any]] = None, idx: Optional[int] = None) -> Dict[str, Any]:
+    def postprocess_record(self, record: dict[str, Any], *, row: dict[str, Any] | None = None, idx: int | None = None) -> dict[str, Any]:
         # If called from base class without row/idx, just return the record
         if row is None or idx is None:
             return record
-            
+
         # Attach helpful metadata and a deterministic group_id to support group-aware splits
         meta = record.setdefault("meta", {})
         meta.setdefault("dataset", self.dataset_name)
@@ -261,7 +261,7 @@ class CyberSecurityAttacksProcessor(BaseDatasetProcessor):
     # -----------------------------
     # Feature extraction
     # -----------------------------
-    def extract_standard_features(self, row: Dict[str, Any]) -> Dict[str, float]:
+    def extract_standard_features(self, row: dict[str, Any]) -> dict[str, float]:
         """Map dataset fields to Nethical standard features.
 
         Returns raw (pre-Base-normalization) values for:
@@ -318,7 +318,7 @@ class CyberSecurityAttacksProcessor(BaseDatasetProcessor):
             "context_risk": float(context_risk),
         }
 
-    def extract_label(self, row: Dict[str, Any]) -> int:
+    def extract_label(self, row: dict[str, Any]) -> int:
         """Determine if this is a malicious/risky event: 1 attack/risky, 0 normal."""
         # Explicit numeric/boolean labels
         for k in self.LABEL_KEYS + self.ATTACK_TYPE_KEYS:
@@ -354,13 +354,13 @@ class CyberSecurityAttacksProcessor(BaseDatasetProcessor):
     # -----------------------------
     # Helpers
     # -----------------------------
-    def _first(self, row: Dict[str, Any], keys: Tuple[str, ...]) -> Optional[str]:
+    def _first(self, row: dict[str, Any], keys: tuple[str, ...]) -> str | None:
         for k in keys:
             if k in row and row[k] not in (None, ""):
                 return str(row[k])
         return None
 
-    def _numeric_from(self, row: Dict[str, Any], keys: Tuple[str, ...]) -> Optional[float]:
+    def _numeric_from(self, row: dict[str, Any], keys: tuple[str, ...]) -> float | None:
         for k in keys:
             if k in row:
                 try:
@@ -376,7 +376,7 @@ class CyberSecurityAttacksProcessor(BaseDatasetProcessor):
         return None
 
     # Severity mapping -> [0,1]
-    def _severity01(self, row: Dict[str, Any]) -> float:
+    def _severity01(self, row: dict[str, Any]) -> float:
         for k in self.SEVERITY_KEYS:
             if k in row:
                 v = row[k]
@@ -401,7 +401,7 @@ class CyberSecurityAttacksProcessor(BaseDatasetProcessor):
         return 0.0
 
     # Frequency score -> [0,1] via counts/bytes/duration
-    def _frequency01(self, row: Dict[str, Any]) -> float:
+    def _frequency01(self, row: dict[str, Any]) -> float:
         count = self._numeric_from(row, self.COUNT_KEYS)
         if count is not None:
             return max(0.0, min(1.0, count / self.MAX_COUNT_FOR_FREQ))
@@ -417,7 +417,7 @@ class CyberSecurityAttacksProcessor(BaseDatasetProcessor):
         return 0.0
 
     # Context risk -> [0,1] based on protocol/port
-    def _context_risk01(self, row: Dict[str, Any]) -> float:
+    def _context_risk01(self, row: dict[str, Any]) -> float:
         risk = 0.0
 
         proto = (self._first(row, self.PROTOCOL_KEYS) or "").strip().lower()
@@ -469,21 +469,21 @@ class CyberSecurityAttacksProcessor(BaseDatasetProcessor):
         return max(0.0, min(1.0, risk))
 
     # Recency -> [0,1] using dataset min/max timestamp
-    def _recency01(self, row: Dict[str, Any]) -> float:
+    def _recency01(self, row: dict[str, Any]) -> float:
         ts = self._parse_ts(self._first(row, self.TIMESTAMP_KEYS))
         if ts is None or self._ts_min is None or self._ts_max is None or self._ts_max == self._ts_min:
             return 0.5  # Unknown -> neutral
         return max(0.0, min(1.0, (ts - self._ts_min) / (self._ts_max - self._ts_min)))
 
     # Score numeric value if present
-    def _score_value(self, row: Dict[str, Any]) -> Optional[float]:
+    def _score_value(self, row: dict[str, Any]) -> float | None:
         return self._numeric_from(row, self.SCORE_KEYS)
 
-    def _label_text(self, row: Dict[str, Any]) -> Optional[str]:
-        texts: List[str] = []
+    def _label_text(self, row: dict[str, Any]) -> str | None:
+        texts: list[str] = []
         for k in (*self.LABEL_KEYS, *self.ATTACK_TYPE_KEYS):
             if k in row and row[k] not in (None, ""):
-                texts.append(str(row[k]).strip().lower())
+                texts.append(str(row[k]).strip().lower())  # noqa: PERF401
         return " ".join(texts) if texts else None
 
     def _looks_malicious(self, text: str) -> bool:
@@ -514,9 +514,9 @@ class CyberSecurityAttacksProcessor(BaseDatasetProcessor):
     # -----------------------------
     # Timestamp handling
     # -----------------------------
-    def _infer_timestamp_range(self, rows: List[Dict[str, Any]]) -> None:
-        tmins: List[float] = []
-        tmaxs: List[float] = []
+    def _infer_timestamp_range(self, rows: list[dict[str, Any]]) -> None:
+        tmins: list[float] = []
+        tmaxs: list[float] = []
         for r in rows:
             ts = self._parse_ts(self._first(r, self.TIMESTAMP_KEYS))
             if ts is not None:
@@ -529,7 +529,7 @@ class CyberSecurityAttacksProcessor(BaseDatasetProcessor):
             self._ts_min = None
             self._ts_max = None
 
-    def _parse_ts(self, s: Optional[str]) -> Optional[float]:
+    def _parse_ts(self, s: str | None) -> float | None:
         if not s:
             return None
         s = s.strip()
@@ -562,7 +562,7 @@ class CyberSecurityAttacksProcessor(BaseDatasetProcessor):
             try:
                 dt = datetime.strptime(s, fmt).replace(tzinfo=timezone.utc)
                 return dt.timestamp()
-            except ValueError:
+            except ValueError:  # noqa: PERF203
                 continue
         # Last resort: ISO parser fallback
         try:
@@ -573,7 +573,7 @@ class CyberSecurityAttacksProcessor(BaseDatasetProcessor):
         except Exception:
             return None
 
-    def _normalize_ts_to_iso(self, s: Optional[str]) -> Optional[str]:
+    def _normalize_ts_to_iso(self, s: str | None) -> str | None:
         ts = self._parse_ts(s)
         if ts is None:
             return None
@@ -582,7 +582,7 @@ class CyberSecurityAttacksProcessor(BaseDatasetProcessor):
     # -----------------------------
     # Deduplication key
     # -----------------------------
-    def _dedup_key(self, rec: Dict[str, Any]) -> str:
+    def _dedup_key(self, rec: dict[str, Any]) -> str:
         meta = rec.get("meta", {}) if isinstance(rec, dict) else {}
         src = meta.get("src_ip") or ""
         dst = meta.get("dst_ip") or ""
@@ -601,7 +601,7 @@ class CyberSecurityAttacksProcessor(BaseDatasetProcessor):
     # Utility
     # -----------------------------
     @staticmethod
-    def _ip_or_none(value: Optional[str]) -> Optional[str]:
+    def _ip_or_none(value: str | None) -> str | None:
         if not value:
             return None
         try:

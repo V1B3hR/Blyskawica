@@ -46,7 +46,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
 import yaml
 
@@ -84,11 +84,11 @@ class PolicyRule:
 
     condition: str
     severity: RuleSeverity
-    actions: List[PolicyAction]
+    actions: list[PolicyAction]
     description: str = ""
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "condition": self.condition,
@@ -106,13 +106,13 @@ class Policy:
     name: str
     version: str
     enabled: bool
-    rules: List[PolicyRule]
+    rules: list[PolicyRule]
     description: str = ""
-    tags: Set[str] = field(default_factory=set)
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    tags: set[str] = field(default_factory=set)
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "name": self.name,
@@ -130,7 +130,7 @@ class PolicyParser:
     """Parser for YAML/JSON policy files."""
 
     @staticmethod
-    def parse_yaml(yaml_content: str) -> List[Policy]:
+    def parse_yaml(yaml_content: str) -> list[Policy]:
         """
         Parse YAML policy content.
 
@@ -145,10 +145,10 @@ class PolicyParser:
             return PolicyParser._parse_policy_data(data)
         except yaml.YAMLError as e:
             logger.error(f"YAML parsing error: {e}")
-            raise ValueError(f"Invalid YAML: {e}")
+            raise ValueError(f"Invalid YAML: {e}")  # noqa: B904
 
     @staticmethod
-    def parse_json(json_content: str) -> List[Policy]:
+    def parse_json(json_content: str) -> list[Policy]:
         """
         Parse JSON policy content.
 
@@ -163,10 +163,10 @@ class PolicyParser:
             return PolicyParser._parse_policy_data(data)
         except json.JSONDecodeError as e:
             logger.error(f"JSON parsing error: {e}")
-            raise ValueError(f"Invalid JSON: {e}")
+            raise ValueError(f"Invalid JSON: {e}")  # noqa: B904
 
     @staticmethod
-    def parse_file(file_path: str) -> List[Policy]:
+    def parse_file(file_path: str) -> list[Policy]:
         """
         Parse policy file (YAML or JSON based on extension).
 
@@ -192,7 +192,7 @@ class PolicyParser:
             )
 
     @staticmethod
-    def _parse_policy_data(data: Dict[str, Any]) -> List[Policy]:
+    def _parse_policy_data(data: dict[str, Any]) -> list[Policy]:
         """Parse policy data dictionary into Policy objects."""
         if not isinstance(data, dict):
             raise ValueError("Policy data must be a dictionary")
@@ -208,7 +208,7 @@ class PolicyParser:
         return policies
 
     @staticmethod
-    def _parse_single_policy(policy_data: Dict[str, Any]) -> Policy:
+    def _parse_single_policy(policy_data: dict[str, Any]) -> Policy:
         """Parse a single policy dictionary."""
         # Required fields
         name = policy_data.get("name")
@@ -237,7 +237,7 @@ class PolicyParser:
         )
 
     @staticmethod
-    def _parse_rule(rule_data: Dict[str, Any]) -> PolicyRule:
+    def _parse_rule(rule_data: dict[str, Any]) -> PolicyRule:
         """Parse a single rule dictionary."""
         condition = rule_data.get("condition")
         if not condition:
@@ -247,7 +247,7 @@ class PolicyParser:
         try:
             severity = RuleSeverity[severity_str.upper()]
         except KeyError:
-            raise ValueError(f"Invalid severity: {severity_str}")
+            raise ValueError(f"Invalid severity: {severity_str}")  # noqa: B904
 
         actions_data = rule_data.get("actions", [])
         actions = []
@@ -291,7 +291,7 @@ class RuleEvaluator:
         }
 
     def evaluate_condition(
-        self, condition: str, action: Any, context: Optional[Dict[str, Any]] = None
+        self, condition: str, action: Any, context: dict[str, Any] | None = None
     ) -> bool:
         """
         Evaluate a condition against an action.
@@ -312,7 +312,7 @@ class RuleEvaluator:
             if hasattr(action, "__dict__"):
                 for key, value in action.__dict__.items():
                     if not key.startswith("_"):
-                        namespace[key] = value
+                        namespace[key] = value  # noqa: PERF403
 
             # Sanitize and evaluate condition using AST validation
             sanitized_condition = self._sanitize_condition(condition)
@@ -352,12 +352,12 @@ class RuleEvaluator:
         Validate condition using AST parsing to ensure only safe operations.
         
         Raises ValueError if unsafe AST nodes are detected.
-        """
+        """  # noqa: W293
         try:
             tree = ast.parse(condition, mode='eval')
         except SyntaxError as e:
-            raise ValueError(f"Invalid condition syntax: {e}")
-        
+            raise ValueError(f"Invalid condition syntax: {e}")  # noqa: B904
+
         # Define allowed AST node types for safe evaluation
         allowed_nodes = (
             ast.Expression, ast.Compare, ast.BoolOp, ast.UnaryOp, ast.BinOp,
@@ -367,7 +367,7 @@ class RuleEvaluator:
             ast.Add, ast.Sub, ast.Mult, ast.Div, ast.Mod,
             ast.List, ast.Tuple, ast.Dict, ast.Set
         )
-        
+
         for node in ast.walk(tree):
             if not isinstance(node, allowed_nodes):
                 raise ValueError(
@@ -402,15 +402,15 @@ class PolicyEngine:
 
     def __init__(self):
         """Initialize the policy engine."""
-        self.policies: Dict[str, Policy] = {}
-        self.policy_history: Dict[str, List[Policy]] = {}
-        self._policy_file_paths: Dict[str, str] = {}
-        self._file_timestamps: Dict[str, float] = {}
+        self.policies: dict[str, Policy] = {}
+        self.policy_history: dict[str, list[Policy]] = {}
+        self._policy_file_paths: dict[str, str] = {}
+        self._file_timestamps: dict[str, float] = {}
         self.evaluator = RuleEvaluator()
 
         logger.info("PolicyEngine initialized")
 
-    def load_policy_file(self, file_path: str) -> List[str]:
+    def load_policy_file(self, file_path: str) -> list[str]:
         """
         Load policies from a file.
 
@@ -477,11 +477,11 @@ class PolicyEngine:
             return True
         return False
 
-    def get_policy(self, policy_name: str) -> Optional[Policy]:
+    def get_policy(self, policy_name: str) -> Policy | None:
         """Get a policy by name."""
         return self.policies.get(policy_name)
 
-    def list_policies(self) -> Dict[str, Dict[str, Any]]:
+    def list_policies(self) -> dict[str, dict[str, Any]]:
         """
         List all policies with their info.
 
@@ -490,7 +490,7 @@ class PolicyEngine:
         """
         return {name: policy.to_dict() for name, policy in self.policies.items()}
 
-    def rollback_policy(self, policy_name: str, version: Optional[str] = None) -> bool:
+    def rollback_policy(self, policy_name: str, version: str | None = None) -> bool:
         """
         Rollback a policy to a previous version.
 
@@ -523,7 +523,7 @@ class PolicyEngine:
             logger.info(f"Rolled back policy '{policy_name}' to version {old_policy.version}")
             return True
 
-    def check_for_updates(self) -> List[str]:
+    def check_for_updates(self) -> list[str]:
         """
         Check if any policy files have been modified and reload them.
 
@@ -539,7 +539,7 @@ class PolicyEngine:
                     logger.info(f"Policy file {file_path} has been modified, reloading...")
                     self.load_policy_file(file_path)
                     reloaded.append(file_path)
-            except FileNotFoundError:
+            except FileNotFoundError:  # noqa: PERF203
                 logger.warning(f"Policy file {file_path} no longer exists")
                 del self._file_timestamps[file_path]
             except Exception as e:
@@ -548,8 +548,8 @@ class PolicyEngine:
         return reloaded
 
     def evaluate_policies(
-        self, action: Any, context: Optional[Dict[str, Any]] = None
-    ) -> List[SafetyViolation]:
+        self, action: Any, context: dict[str, Any] | None = None
+    ) -> list[SafetyViolation]:
         """
         Evaluate all enabled policies against an action.
 
@@ -572,8 +572,8 @@ class PolicyEngine:
         return violations
 
     def evaluate_policy(
-        self, policy: Policy, action: Any, context: Optional[Dict[str, Any]] = None
-    ) -> List[SafetyViolation]:
+        self, policy: Policy, action: Any, context: dict[str, Any] | None = None
+    ) -> list[SafetyViolation]:
         """
         Evaluate a single policy against an action.
 
@@ -609,14 +609,14 @@ class PolicyEngine:
                     )
                     violations.append(violation)
 
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 logger.error(f"Error evaluating rule in policy '{policy.name}': {e}")
 
         return violations
 
 
 # Global policy engine instance
-_policy_engine: Optional[PolicyEngine] = None
+_policy_engine: PolicyEngine | None = None
 
 
 def get_policy_engine() -> PolicyEngine:

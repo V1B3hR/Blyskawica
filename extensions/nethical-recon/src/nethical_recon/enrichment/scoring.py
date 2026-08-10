@@ -8,7 +8,7 @@ and configuration. Includes CISA KEV enrichment for enhanced vulnerability scori
 
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass
@@ -49,7 +49,7 @@ class RiskScorer:
     KEV Enrichment: Vulnerabilities in CISA KEV catalog receive +30 risk score boost
     """
 
-    def __init__(self, kev_client: Optional[Any] = None):
+    def __init__(self, kev_client: Any | None = None):
         """
         Initialize risk scorer.
 
@@ -146,7 +146,7 @@ class RiskScorer:
 
         return None
 
-    def _score_vulnerabilities(self, asset: dict[str, Any]) -> Optional[RiskFactor]:
+    def _score_vulnerabilities(self, asset: dict[str, Any]) -> RiskFactor | None:
         """
         Score based on vulnerabilities including CISA KEV enrichment.
 
@@ -201,7 +201,7 @@ class RiskScorer:
 
         return None
 
-    def _score_exposure(self, asset: dict[str, Any]) -> Optional[RiskFactor]:
+    def _score_exposure(self, asset: dict[str, Any]) -> RiskFactor | None:
         """Score based on exposure level."""
         # Check if asset has public-facing services
         port = asset.get("port")
@@ -233,7 +233,7 @@ class RiskScorer:
 
         return None
 
-    def _score_configuration(self, asset: dict[str, Any]) -> Optional[RiskFactor]:
+    def _score_configuration(self, asset: dict[str, Any]) -> RiskFactor | None:
         """Score based on configuration issues."""
         technologies = asset.get("technologies", [])
 

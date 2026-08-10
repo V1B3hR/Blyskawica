@@ -13,7 +13,10 @@ from typing import Any, Protocol, runtime_checkable
 import torch
 import torch.nn as nn
 
-from adaptiveneuralnetwork.central_nervous_system.neuromorphic import NeuromorphicConfig, NeuromorphicPlatform
+from adaptiveneuralnetwork.central_nervous_system.neuromorphic import (
+    NeuromorphicConfig,
+    NeuromorphicPlatform,
+)
 
 logger = logging.getLogger(__name__)
 

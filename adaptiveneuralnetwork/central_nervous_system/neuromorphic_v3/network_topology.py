@@ -14,16 +14,19 @@ Enhancements:
 """
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any
 
 import numpy as np
 import torch
 import torch.nn as nn
 
 from .advanced_neurons import (
-    AdaptiveThresholdNeuron, MultiCompartmentNeuron,
-    NeuronV3Config, BurstingNeuron
+    AdaptiveThresholdNeuron,
+    BurstingNeuron,
+    MultiCompartmentNeuron,
+    NeuronV3Config,
 )
 
 logger = logging.getLogger(__name__)
@@ -74,7 +77,7 @@ class PopulationLayer(nn.Module):
         "adaptive_threshold": AdaptiveThresholdNeuron,
         "multi_compartment": MultiCompartmentNeuron,
         "bursting": BurstingNeuron if 'BurstingNeuron' in globals() else AdaptiveThresholdNeuron,
-        "inhibitory": InhibitoryNeuron if 'InhibitoryNeuron' in globals() else AdaptiveThresholdNeuron,
+        "inhibitory": InhibitoryNeuron if 'InhibitoryNeuron' in globals() else AdaptiveThresholdNeuron,  # noqa: F821
     }
 
     def __init__(
@@ -109,7 +112,7 @@ class PopulationLayer(nn.Module):
         # Create neurons based on type
         self.neurons = nn.ModuleList()
         neuron_cls = self.SUPPORTED_NEURON_TYPES.get(neuron_type, AdaptiveThresholdNeuron)
-        for i in range(population_size):
+        for i in range(population_size):  # noqa: B007
             if neuron_type == "multi_compartment":
                 neuron = neuron_cls(neuron_config, num_dendrites=4)
             else:
@@ -420,7 +423,7 @@ class DynamicConnectivity(nn.Module):
         if dt is None:
             dt = 0.001
 
-        batch_size = pre_spikes.size(0)
+        batch_size = pre_spikes.size(0)  # noqa: F841
         self.pre_activity = 0.99 * self.pre_activity + 0.01 * pre_spikes.mean(dim=0)
         self.post_activity = 0.99 * self.post_activity + 0.01 * post_spikes.mean(dim=0)
 
@@ -627,7 +630,7 @@ class HierarchicalNetwork(nn.Module):
         current_input = input_spikes.to(device)
         # Pass through subnetworks if present
         if self.subnetworks and subnetwork_inputs:
-            for submodule, sub_input in zip(self.subnetworks, subnetwork_inputs):
+            for submodule, sub_input in zip(self.subnetworks, subnetwork_inputs):  # noqa: B905
                 _ = submodule(sub_input.to(self.device))
 
         # Forward pass through hierarchical layers
@@ -642,7 +645,7 @@ class HierarchicalNetwork(nn.Module):
             # Prepare input for next layer (if not last layer)
             if layer_idx < len(self.layers) - 1:
                 ff_conn = self.feedforward_connections[layer_idx]
-                ff_delay = self.delays[layer_idx][0]
+                ff_delay = self.delays[layer_idx][0]  # noqa: F841
                 ff_current, ff_info = ff_conn(
                     layer_output,
                     torch.zeros_like(layer_outputs[layer_idx + 1]) if layer_idx + 1 < len(layer_outputs) else torch.zeros(batch_size, self.config.layer_sizes[layer_idx + 1], device=device),
@@ -664,7 +667,7 @@ class HierarchicalNetwork(nn.Module):
                 dt
             )
             # Bypass buggy RealisticDelays
-            delayed_feedback = fb_current
+            delayed_feedback = fb_current  # noqa: F841
             # Optionally integrate feedback for next timestep or runtime state
 
         # Recurrent connections (optional)

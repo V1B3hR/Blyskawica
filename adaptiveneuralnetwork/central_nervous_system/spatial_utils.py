@@ -18,7 +18,7 @@ def zero_vector(dim: int) -> np.ndarray:
         
     Returns:
         Zero vector of shape (dim,)
-    """
+    """  # noqa: W293
     if dim < 1:
         raise ValueError(f"Dimension must be positive, got {dim}")
     return np.zeros(dim, dtype=float)
@@ -34,7 +34,7 @@ def rand_vector(dim: int, ranges: tuple[float, float] | Sequence[tuple[float, fl
                 
     Returns:
         Random vector of shape (dim,)
-    """
+    """  # noqa: W293
     if dim < 1:
         raise ValueError(f"Dimension must be positive, got {dim}")
 
@@ -66,7 +66,7 @@ def distance(a: np.ndarray, b: np.ndarray) -> float:
         
     Raises:
         ValueError: If points have different dimensions
-    """
+    """  # noqa: W293
     a = np.asarray(a)
     b = np.asarray(b)
 
@@ -85,7 +85,7 @@ def validate_spatial_dimensions(arrays: list[np.ndarray], expected_dims: int) ->
         
     Raises:
         ValueError: If any array doesn't match expected dimensions
-    """
+    """  # noqa: W293
     if expected_dims < 1:
         raise ValueError(f"Expected dimensions must be positive, got {expected_dims}")
 
@@ -108,7 +108,7 @@ def expand_bounds_to_dimensions(bounds: tuple[float, float] | Sequence[tuple[flo
         
     Returns:
         List of (min, max) tuples, one for each dimension
-    """
+    """  # noqa: W293
     if dim < 1:
         raise ValueError(f"Dimension must be positive, got {dim}")
 
@@ -142,7 +142,7 @@ def validate_position_in_bounds(position: np.ndarray,
         
     Raises:
         ValueError: If position is outside bounds
-    """
+    """  # noqa: W293
     position = np.asarray(position)
 
     if position.ndim != 1:
@@ -167,7 +167,7 @@ def create_random_positions(count: int, dim: int,
         
     Returns:
         Array of shape (count, dim) with random positions
-    """
+    """  # noqa: W293
     if count < 0:
         raise ValueError(f"Count must be non-negative, got {count}")
 

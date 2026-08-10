@@ -5,13 +5,12 @@ Pre-computes decisions for likely scenarios before they're requested.
 Achieves 0ms apparent latency for 80%+ of decisions.
 """
 
-import hashlib
 import logging
 import threading
 import time
 from collections import OrderedDict
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -32,16 +31,16 @@ class SixDOFContextPattern:
     - angular_x: Roll
     - angular_y: Pitch
     - angular_z: Yaw
-    """
+    """  # noqa: W293
 
-    linear_x_range: Tuple[float, float] = (-1.0, 1.0)
-    linear_y_range: Tuple[float, float] = (-1.0, 1.0)
-    linear_z_range: Tuple[float, float] = (-1.0, 1.0)
-    angular_x_range: Tuple[float, float] = (-1.0, 1.0)
-    angular_y_range: Tuple[float, float] = (-1.0, 1.0)
-    angular_z_range: Tuple[float, float] = (-1.0, 1.0)
+    linear_x_range: tuple[float, float] = (-1.0, 1.0)
+    linear_y_range: tuple[float, float] = (-1.0, 1.0)
+    linear_z_range: tuple[float, float] = (-1.0, 1.0)
+    angular_x_range: tuple[float, float] = (-1.0, 1.0)
+    angular_y_range: tuple[float, float] = (-1.0, 1.0)
+    angular_z_range: tuple[float, float] = (-1.0, 1.0)
 
-    def matches(self, context: Dict[str, Any]) -> bool:
+    def matches(self, context: dict[str, Any]) -> bool:
         """Check if a context matches this pattern."""
         checks = [
             ("linear_x", self.linear_x_range),
@@ -51,10 +50,10 @@ class SixDOFContextPattern:
             ("angular_y", self.angular_y_range),
             ("angular_z", self.angular_z_range),
         ]
-        
+
         for key, (min_val, max_val) in checks:
             value = context.get(key, 0.0)
-            if isinstance(value, (int, float)):
+            if isinstance(value, (int, float)):  # noqa: SIM102
                 if not (min_val <= value <= max_val):
                     return False
         return True
@@ -75,11 +74,11 @@ class PredictionProfile:
     """
 
     domain: str
-    common_actions: List[Dict[str, Any]] = field(default_factory=list)
-    action_weights: Dict[str, float] = field(default_factory=dict)
-    context_patterns: List[Dict[str, Any]] = field(default_factory=list)
-    warmup_actions: List[Dict[str, Any]] = field(default_factory=list)
-    six_dof_patterns: List[SixDOFContextPattern] = field(default_factory=list)
+    common_actions: list[dict[str, Any]] = field(default_factory=list)
+    action_weights: dict[str, float] = field(default_factory=dict)
+    context_patterns: list[dict[str, Any]] = field(default_factory=list)
+    warmup_actions: list[dict[str, Any]] = field(default_factory=list)
+    six_dof_patterns: list[SixDOFContextPattern] = field(default_factory=list)
 
 
 class PredictiveEngine:
@@ -119,15 +118,15 @@ class PredictiveEngine:
         self.learning_threshold = learning_threshold
 
         # Decision cache: context_hash -> (decision, timestamp)
-        self._decision_cache: OrderedDict[str, Tuple[Any, float]] = OrderedDict()
+        self._decision_cache: OrderedDict[str, tuple[Any, float]] = OrderedDict()
         self._cache_lock = threading.RLock()
 
         # Action pattern learning
-        self._action_patterns: Dict[str, int] = {}  # action_hash -> count
+        self._action_patterns: dict[str, int] = {}  # action_hash -> count
         self._pattern_lock = threading.RLock()
 
         # Prediction profiles
-        self._profiles: Dict[str, PredictionProfile] = {}
+        self._profiles: dict[str, PredictionProfile] = {}
 
         # Metrics
         self._cache_hits = 0
@@ -139,7 +138,7 @@ class PredictiveEngine:
             f"ttl={cache_ttl_seconds}s"
         )
 
-    def get_cached_decision(self, context_hash: str) -> Optional[Any]:
+    def get_cached_decision(self, context_hash: str) -> Any | None:
         """
         Get cached decision by context hash.
 
@@ -188,7 +187,7 @@ class PredictiveEngine:
 
     def _copy_decision(self, decision: Any) -> Any:
         """Create a copy of decision to avoid mutation."""
-        from .local_governor import EdgeDecision, DecisionType
+        from .local_governor import EdgeDecision
 
         if isinstance(decision, EdgeDecision):
             return EdgeDecision(
@@ -203,7 +202,7 @@ class PredictiveEngine:
             )
         return decision
 
-    def learn_pattern(self, action: str, action_type: str, context: Dict[str, Any]):
+    def learn_pattern(self, action: str, action_type: str, context: dict[str, Any]):
         """
         Learn an action pattern for future prediction.
 
@@ -234,7 +233,7 @@ class PredictiveEngine:
                 )
                 self._action_patterns = dict(sorted_patterns[: self.max_cache_size])
 
-    def get_common_patterns(self, min_count: Optional[int] = None) -> List[str]:
+    def get_common_patterns(self, min_count: int | None = None) -> list[str]:
         """
         Get commonly occurring action patterns.
 
@@ -263,7 +262,7 @@ class PredictiveEngine:
         self._profiles[profile.domain] = profile
         logger.info(f"Loaded prediction profile: {profile.domain}")
 
-    def get_warmup_actions(self, domain: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_warmup_actions(self, domain: str | None = None) -> list[dict[str, Any]]:
         """
         Get actions to pre-compute during warmup.
 
@@ -283,7 +282,7 @@ class PredictiveEngine:
 
         return actions
 
-    def invalidate(self, pattern: Optional[str] = None):
+    def invalidate(self, pattern: str | None = None):
         """
         Invalidate cached decisions.
 
@@ -295,7 +294,7 @@ class PredictiveEngine:
                 self._decision_cache.clear()
             else:
                 keys_to_delete = [
-                    k for k in self._decision_cache.keys() if pattern in k
+                    k for k in self._decision_cache.keys() if pattern in k  # noqa: SIM118
                 ]
                 for key in keys_to_delete:
                     del self._decision_cache[key]
@@ -312,7 +311,7 @@ class PredictiveEngine:
             for key in keys_to_delete:
                 del self._decision_cache[key]
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get engine metrics."""
         with self._cache_lock:
             total = self._cache_hits + self._cache_misses
@@ -327,7 +326,7 @@ class PredictiveEngine:
             }
 
     def matches_six_dof_pattern(
-        self, context: Dict[str, Any], domain: Optional[str] = None
+        self, context: dict[str, Any], domain: str | None = None
     ) -> bool:
         """
         Check if context matches any pre-computed 6-DOF pattern.

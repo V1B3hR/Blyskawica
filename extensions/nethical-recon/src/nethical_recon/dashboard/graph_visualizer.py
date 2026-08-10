@@ -6,11 +6,11 @@ Prepares asset graph data for D3.js force-directed and hierarchical visualizatio
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 from uuid import UUID
 
 
-class NodeType(str, Enum):
+class NodeType(str, Enum):  # noqa: UP042
     """Types of nodes in asset graph"""
 
     TARGET = "target"
@@ -21,7 +21,7 @@ class NodeType(str, Enum):
     FINDING = "finding"
 
 
-class EdgeType(str, Enum):
+class EdgeType(str, Enum):  # noqa: UP042
     """Types of relationships between nodes"""
 
     HAS_HOST = "has_host"
@@ -40,10 +40,10 @@ class GraphNode:
     type: NodeType
     label: str
     size: int = 10
-    color: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    color: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_d3_format(self) -> Dict[str, Any]:
+    def to_d3_format(self) -> dict[str, Any]:
         """Convert to D3.js node format"""
         return {
             "id": self.id,
@@ -75,9 +75,9 @@ class GraphEdge:
     target: str
     type: EdgeType
     weight: float = 1.0
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_d3_format(self) -> Dict[str, Any]:
+    def to_d3_format(self) -> dict[str, Any]:
         """Convert to D3.js edge format"""
         return {
             "source": self.source,
@@ -97,8 +97,8 @@ class GraphVisualizer:
     """
 
     def __init__(self):
-        self.nodes: Dict[str, GraphNode] = {}
-        self.edges: List[GraphEdge] = []
+        self.nodes: dict[str, GraphNode] = {}
+        self.edges: list[GraphEdge] = []
 
     def add_node(self, node: GraphNode):
         """Add node to graph"""
@@ -183,7 +183,7 @@ class GraphVisualizer:
         self.add_edge(edge)
         return node.id
 
-    def to_d3_format(self) -> Dict[str, Any]:
+    def to_d3_format(self) -> dict[str, Any]:
         """
         Export graph in D3.js compatible format.
 
@@ -195,7 +195,7 @@ class GraphVisualizer:
             "links": [edge.to_d3_format() for edge in self.edges],
         }
 
-    def to_hierarchical_format(self, root_id: str) -> Dict[str, Any]:
+    def to_hierarchical_format(self, root_id: str) -> dict[str, Any]:
         """
         Export graph in D3.js hierarchical tree format.
 
@@ -209,11 +209,11 @@ class GraphVisualizer:
             raise ValueError(f"Root node {root_id} not found")
 
         # Build adjacency list
-        children_map: Dict[str, List[str]] = {node_id: [] for node_id in self.nodes}
+        children_map: dict[str, list[str]] = {node_id: [] for node_id in self.nodes}
         for edge in self.edges:
             children_map[edge.source].append(edge.target)
 
-        def build_tree(node_id: str, visited: Set[str]) -> Dict[str, Any]:
+        def build_tree(node_id: str, visited: set[str]) -> dict[str, Any]:
             """Recursively build tree structure"""
             if node_id in visited:
                 return None  # Prevent cycles
@@ -241,7 +241,7 @@ class GraphVisualizer:
 
         return build_tree(root_id, set())
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get graph statistics"""
         node_counts = {}
         for node_type in NodeType:

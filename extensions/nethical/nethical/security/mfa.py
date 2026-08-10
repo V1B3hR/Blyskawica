@@ -23,9 +23,8 @@ from __future__ import annotations
 import hashlib
 import logging
 import secrets
-from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 
 __all__ = [
@@ -73,12 +72,12 @@ class MFASetup:
 
     user_id: str
     enabled: bool = False
-    methods: List[MFAMethod] = field(default_factory=list)
-    totp_secret: Optional[str] = None
-    backup_codes: List[str] = field(default_factory=list)
-    phone_number: Optional[str] = None  # For SMS
+    methods: list[MFAMethod] = field(default_factory=list)
+    totp_secret: str | None = None
+    backup_codes: list[str] = field(default_factory=list)
+    phone_number: str | None = None  # For SMS
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    last_used_at: Optional[datetime] = None
+    last_used_at: datetime | None = None
 
 
 class MFAManager:
@@ -115,7 +114,7 @@ class MFAManager:
             lockout_duration_minutes: Account lockout duration in minutes (default: 15)
             require_pyotp: If True, raise error when pyotp is not installed
         """
-        self.user_mfa: Dict[str, MFASetup] = {}
+        self.user_mfa: dict[str, MFASetup] = {}
         self.admin_mfa_required: bool = True  # Enforce MFA for admin operations
         self.require_pyotp = require_pyotp
 
@@ -124,12 +123,12 @@ class MFAManager:
         self.lockout_duration = timedelta(minutes=lockout_duration_minutes)
 
         # Track failed attempts for rate limiting
-        self._failed_attempts: Dict[str, List[datetime]] = {}
-        self._lockouts: Dict[str, datetime] = {}
+        self._failed_attempts: dict[str, list[datetime]] = {}
+        self._lockouts: dict[str, datetime] = {}
 
         log.info("MFAManager initialized")
 
-    def setup_totp(self, user_id: str, issuer: str = "Nethical") -> Tuple[str, str, List[str]]:
+    def setup_totp(self, user_id: str, issuer: str = "Nethical") -> tuple[str, str, list[str]]:
         """
         Set up TOTP-based MFA for a user
 
@@ -336,7 +335,7 @@ class MFAManager:
         except ImportError:
             if self.require_pyotp:
                 log.error("pyotp is required but not installed")
-                raise MFADependencyError(
+                raise MFADependencyError(  # noqa: B904
                     "pyotp library is required for TOTP verification but is not installed. "
                     "Install it with: pip install pyotp"
                 )
@@ -390,7 +389,7 @@ class MFAManager:
         log.warning(f"Invalid backup code for user {user_id}")
         return False
 
-    def verify_mfa(self, user_id: str, code: str, method: Optional[MFAMethod] = None) -> bool:
+    def verify_mfa(self, user_id: str, code: str, method: MFAMethod | None = None) -> bool:
         """
         Verify MFA code (auto-detect method if not specified)
 
@@ -417,11 +416,11 @@ class MFAManager:
             return self.verify_backup_code(user_id, code)
 
         # Auto-detect: try TOTP first, then backup codes
-        if MFAMethod.TOTP in mfa_setup.methods:
+        if MFAMethod.TOTP in mfa_setup.methods:  # noqa: SIM102
             if self.verify_totp(user_id, code):
                 return True
 
-        if MFAMethod.BACKUP_CODE in mfa_setup.methods:
+        if MFAMethod.BACKUP_CODE in mfa_setup.methods:  # noqa: SIM102
             if self.verify_backup_code(user_id, code):
                 return True
 
@@ -484,9 +483,10 @@ class MFAManager:
             Data URI string for QR code image
         """
         try:
-            import qrcode
-            import io
             import base64
+            import io
+
+            import qrcode
 
             qr = qrcode.QRCode(version=1, box_size=10, border=5)
             qr.add_data(provisioning_uri)
@@ -505,7 +505,7 @@ class MFAManager:
             log.warning("qrcode library not installed, returning provisioning URI")
             return provisioning_uri
 
-    def _generate_backup_codes(self, count: int = 10) -> List[str]:
+    def _generate_backup_codes(self, count: int = 10) -> list[str]:
         """
         Generate backup recovery codes
 
@@ -538,7 +538,7 @@ class MFAManager:
         """
         return hashlib.sha256(code.encode()).hexdigest()
 
-    def regenerate_backup_codes(self, user_id: str) -> List[str]:
+    def regenerate_backup_codes(self, user_id: str) -> list[str]:
         """
         Regenerate backup codes for a user
 
@@ -559,7 +559,7 @@ class MFAManager:
 
 
 # Global MFA manager instance
-_mfa_manager: Optional[MFAManager] = None
+_mfa_manager: MFAManager | None = None
 
 
 def get_mfa_manager() -> MFAManager:

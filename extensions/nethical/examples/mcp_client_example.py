@@ -12,25 +12,25 @@ Prerequisites:
     - requests library: pip install requests
 """
 
-import json
+from typing import Any
+
 import requests
-from typing import Dict, Any
 
 
 class NethicalMCPClient:
     """Simple MCP client for Nethical server."""
-    
+
     def __init__(self, base_url: str = "http://localhost:8000"):
         """Initialize the MCP client.
         
         Args:
             base_url: Base URL of the Nethical MCP server
-        """
+        """  # noqa: W293
         self.base_url = base_url
         self.messages_url = f"{base_url}/messages"
         self.message_id = 0
-    
-    def _send_message(self, method: str, params: Dict[str, Any] = None) -> Dict[str, Any]:
+
+    def _send_message(self, method: str, params: dict[str, Any] = None) -> dict[str, Any]:
         """Send a JSON-RPC message to the server.
         
         Args:
@@ -39,7 +39,7 @@ class NethicalMCPClient:
             
         Returns:
             Response from the server
-        """
+        """  # noqa: W293
         self.message_id += 1
         message = {
             "jsonrpc": "2.0",
@@ -47,7 +47,7 @@ class NethicalMCPClient:
             "method": method,
             "params": params or {}
         }
-        
+
         response = requests.post(
             self.messages_url,
             json=message,
@@ -55,16 +55,16 @@ class NethicalMCPClient:
         )
         response.raise_for_status()
         return response.json()
-    
-    def initialize(self) -> Dict[str, Any]:
+
+    def initialize(self) -> dict[str, Any]:
         """Initialize the MCP connection."""
         return self._send_message("initialize")
-    
-    def list_tools(self) -> Dict[str, Any]:
+
+    def list_tools(self) -> dict[str, Any]:
         """List available tools."""
         return self._send_message("tools/list")
-    
-    def call_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
+
+    def call_tool(self, tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         """Call a tool.
         
         Args:
@@ -73,18 +73,18 @@ class NethicalMCPClient:
             
         Returns:
             Tool execution result
-        """
+        """  # noqa: W293
         return self._send_message("tools/call", {
             "name": tool_name,
             "arguments": arguments
         })
-    
+
     def evaluate_action(
         self,
         action: str,
         agent_id: str,
         action_type: str = "code_generation",
-        context: Dict[str, Any] = None
+        context: dict[str, Any] = None
     ) -> str:
         """Evaluate an action for ethical compliance.
         
@@ -96,19 +96,19 @@ class NethicalMCPClient:
             
         Returns:
             Formatted evaluation result
-        """
+        """  # noqa: W293
         result = self.call_tool("evaluate_action", {
             "action": action,
             "agent_id": agent_id,
             "action_type": action_type,
             "context": context or {}
         })
-        
+
         if "result" in result:
             return result["result"]["content"][0]["text"]
         else:
             return f"Error: {result.get('error', {}).get('message', 'Unknown error')}"
-    
+
     def check_pii(self, text: str, redact: bool = False) -> str:
         """Check for PII in text.
         
@@ -118,17 +118,17 @@ class NethicalMCPClient:
             
         Returns:
             PII detection result
-        """
+        """  # noqa: W293
         result = self.call_tool("check_pii", {
             "text": text,
             "redact": redact
         })
-        
+
         if "result" in result:
             return result["result"]["content"][0]["text"]
         else:
             return f"Error: {result.get('error', {}).get('message', 'Unknown error')}"
-    
+
     def check_violations(
         self,
         content: str,
@@ -142,25 +142,25 @@ class NethicalMCPClient:
             
         Returns:
             Violation check result
-        """
+        """  # noqa: W293
         result = self.call_tool("check_violations", {
             "content": content,
             "violation_types": violation_types or []
         })
-        
+
         if "result" in result:
             return result["result"]["content"][0]["text"]
         else:
             return f"Error: {result.get('error', {}).get('message', 'Unknown error')}"
-    
+
     def get_system_status(self) -> str:
         """Get system status.
         
         Returns:
             System status information
-        """
+        """  # noqa: W293
         result = self.call_tool("get_system_status", {})
-        
+
         if "result" in result:
             return result["result"]["content"][0]["text"]
         else:
@@ -169,43 +169,43 @@ class NethicalMCPClient:
 
 def main():
     """Demonstrate using the Nethical MCP client."""
-    
+
     print("=" * 70)
     print("Nethical MCP Client Example")
     print("=" * 70)
     print()
-    
+
     # Create client
     client = NethicalMCPClient()
-    
+
     # 1. Initialize
     print("1. Initializing connection...")
     init_result = client.initialize()
     print(f"   Server: {init_result['result']['serverInfo']['name']}")
     print(f"   Version: {init_result['result']['serverInfo']['version']}")
     print()
-    
+
     # 2. List tools
     print("2. Listing available tools...")
     tools = client.list_tools()
     for tool in tools["result"]["tools"]:
         print(f"   - {tool['name']}: {tool['description'][:60]}...")
     print()
-    
+
     # 3. Example: Check for PII
     print("3. Example: Checking for PII in text...")
     pii_text = "My email is john.doe@example.com and phone is 555-123-4567"
     pii_result = client.check_pii(pii_text)
     print(pii_result)
     print()
-    
+
     # 4. Example: Check for violations
     print("4. Example: Checking for ethical violations...")
     harmful_code = "Here's how to exploit the system and hack into databases"
     violation_result = client.check_violations(harmful_code)
     print(violation_result)
     print()
-    
+
     # 5. Example: Evaluate safe code
     print("5. Example: Evaluating safe code...")
     safe_code = '''
@@ -220,7 +220,7 @@ def greet(name):
     )
     print(eval_result)
     print()
-    
+
     # 6. Example: Evaluate code with PII
     print("6. Example: Evaluating code with PII...")
     pii_code = '''
@@ -236,12 +236,12 @@ ssn = "123-45-6789"
     )
     print(eval_result)
     print()
-    
+
     # 7. Example: Get system status
     print("7. Example: Getting system status...")
     status = client.get_system_status()
     print(status[:500] + "...\n")
-    
+
     print("=" * 70)
     print("Demo complete!")
     print("=" * 70)
@@ -250,13 +250,13 @@ ssn = "123-45-6789"
 if __name__ == "__main__":
     try:
         main()
-    except requests.exceptions.ConnectionError as e:
+    except requests.exceptions.ConnectionError:
         print("Error: Could not connect to Nethical MCP server.")
         # Extract base URL from client if available
         try:
             client = NethicalMCPClient()
             server_url = client.base_url
-        except:
+        except:  # noqa: E722
             server_url = "http://localhost:8000"
         print(f"Please ensure the server is running on {server_url}")
         print("\nStart the server with:")

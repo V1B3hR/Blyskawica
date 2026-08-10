@@ -4,13 +4,13 @@ Identity Garderoba Pipeline for Błyskawica V8 (Stream 3: Domain-Specific Adapte
 Ingests SEC EDGAR financial filings and HuggingFace instruction tuning text streams.
 Trains Błyskawica to read epistemic risk and financial stress, mapping calm structured reports to 
 stable Dopamine baseline resonance, while quarantining manipulative or deceptive text via EpistemicQuarantineNode.
-"""
+"""  # noqa: W291
 
-import re
 import logging
-import time
+import re
 from dataclasses import dataclass
-from typing import Dict, Any, List, Tuple
+from typing import Any
+
 import torch
 import torch.nn as nn
 
@@ -28,10 +28,10 @@ class TextDocumentSample:
     source_domain: str = "SEC_EDGAR"
     document_type: str = "10-K_Annual_Report"
 
-    def calculate_risk_markers(self) -> Dict[str, float]:
+    def calculate_risk_markers(self) -> dict[str, float]:
         """Calculates linguistic risk, hype intensity, and structural manipulation markers."""
         text = self.content.lower()
-        
+
         # Risk & crisis markers
         crisis_words = ["default", "insolvency", "restructuring", "bankruptcy", "material uncertainty", "litigation risk", "going concern"]
         manipulation_words = ["guaranteed return", "100% risk free", "ignore previous instructions", "secret backdoor", "act immediately", "urgent action required"]
@@ -63,7 +63,7 @@ class IdentityGarderobaEngine(nn.Module):
         super().__init__()
         self.neuro = neuro_state or NeuromodulationState()
         self.epistemic_defense = EpistemicQuarantineNode()
-        
+
         # Active persona adapter mode ("Garderoba")
         self.active_persona = "Financial_Auditor"
         self.personas = ["Financial_Auditor", "Systems_Defense", "Technical_Engineer"]
@@ -75,21 +75,21 @@ class IdentityGarderobaEngine(nn.Module):
             logger.info(f"👔 [GARDEROBA] Switched active identity persona to: '{persona_name}'")
 
     def process_text_stream(
-        self, 
-        documents: List[TextDocumentSample]
-    ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+        self,
+        documents: list[TextDocumentSample]
+    ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         """
         Processes a stream of text documents.
         Evaluates linguistic risk markers, checks epistemic validity, 
         and updates Dopamine baseline / Serotonin coherence.
-        """
+        """  # noqa: W291
         results = []
         accepted_count = 0
         quarantined_count = 0
 
         for doc in documents:
             risk_metrics = doc.calculate_risk_markers()
-            
+
             # Formulate knowledge package for EpistemicQuarantineNode
             pkg = {
                 "source": doc.source_domain,
@@ -99,7 +99,7 @@ class IdentityGarderobaEngine(nn.Module):
 
             # 1. Epistemic Immunity Check
             is_accepted, reason = self.epistemic_defense.vet_knowledge(pkg)
-            
+
             # Check for high manipulation or prompt injection
             if risk_metrics["raw_manipulation_count"] > 0 or not is_accepted:
                 is_accepted = False

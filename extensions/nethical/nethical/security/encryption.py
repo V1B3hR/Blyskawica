@@ -14,14 +14,12 @@ Compliance: FIPS 140-2, NIST 800-53, FedRAMP, HIPAA
 
 from __future__ import annotations
 
-import hashlib
-import hmac
 import logging
 import secrets
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Any
 
 __all__ = [
     "EncryptionAlgorithm",
@@ -60,9 +58,9 @@ class HSMConfig:
     """Hardware Security Module configuration"""
 
     provider: str  # e.g., "aws-cloudhsm", "azure-keyvault", "thales"
-    endpoint: Optional[str] = None
-    credentials: Optional[Dict[str, str]] = None
-    partition_id: Optional[str] = None
+    endpoint: str | None = None
+    credentials: dict[str, str] | None = None
+    partition_id: str | None = None
     enabled: bool = False
 
 
@@ -76,9 +74,9 @@ class EncryptedData:
     algorithm: EncryptionAlgorithm
     key_id: str
     timestamp: datetime
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization"""
         return {
             "ciphertext": self.ciphertext.hex(),
@@ -91,7 +89,7 @@ class EncryptedData:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> EncryptedData:
+    def from_dict(cls, data: dict[str, Any]) -> EncryptedData:
         """Create from dictionary"""
         return cls(
             ciphertext=bytes.fromhex(data["ciphertext"]),
@@ -116,7 +114,7 @@ class KeyManagementService:
     - Access control
     """
 
-    def __init__(self, hsm_config: Optional[HSMConfig] = None):
+    def __init__(self, hsm_config: HSMConfig | None = None):
         """
         Initialize key management service
 
@@ -124,8 +122,8 @@ class KeyManagementService:
             hsm_config: HSM configuration for hardware-backed key storage
         """
         self.hsm_config = hsm_config
-        self._keys: Dict[str, Dict[str, Any]] = {}
-        self._key_versions: Dict[str, List[str]] = {}
+        self._keys: dict[str, dict[str, Any]] = {}
+        self._key_versions: dict[str, list[str]] = {}
 
         # Initialize HSM if configured
         if hsm_config and hsm_config.enabled:
@@ -147,7 +145,7 @@ class KeyManagementService:
 
     def generate_key(
         self,
-        key_id: Optional[str] = None,
+        key_id: str | None = None,
         algorithm: EncryptionAlgorithm = EncryptionAlgorithm.AES_256_GCM,
     ) -> str:
         """
@@ -168,9 +166,7 @@ class KeyManagementService:
             key_material = self._generate_key_in_hsm(algorithm)
         else:
             # Software-based key generation
-            if algorithm in (EncryptionAlgorithm.AES_256_GCM, EncryptionAlgorithm.AES_256_CBC):
-                key_material = secrets.token_bytes(32)  # 256 bits
-            elif algorithm == EncryptionAlgorithm.CHACHA20_POLY1305:
+            if algorithm in (EncryptionAlgorithm.AES_256_GCM, EncryptionAlgorithm.AES_256_CBC) or algorithm == EncryptionAlgorithm.CHACHA20_POLY1305:
                 key_material = secrets.token_bytes(32)  # 256 bits
             else:
                 raise ValueError(f"Unsupported algorithm: {algorithm}")
@@ -196,7 +192,7 @@ class KeyManagementService:
         log.info(f"Generating key in HSM (stub): {algorithm.value}")
         return secrets.token_bytes(32)
 
-    def get_key(self, key_id: str) -> Optional[bytes]:
+    def get_key(self, key_id: str) -> bytes | None:
         """
         Retrieve encryption key
 
@@ -255,7 +251,7 @@ class KeyManagementService:
         log.info(f"Key rotated: {key_id} -> {new_key_id}")
         return new_key_id
 
-    def list_keys(self) -> List[Dict[str, Any]]:
+    def list_keys(self) -> list[dict[str, Any]]:
         """List all keys with metadata"""
         return [
             {
@@ -285,8 +281,8 @@ class MilitaryGradeEncryption:
 
     def __init__(
         self,
-        hsm_config: Optional[HSMConfig] = None,
-        key_rotation_policy: Optional[KeyRotationPolicy] = None,
+        hsm_config: HSMConfig | None = None,
+        key_rotation_policy: KeyRotationPolicy | None = None,
         default_algorithm: EncryptionAlgorithm = EncryptionAlgorithm.AES_256_GCM,
     ):
         """
@@ -308,7 +304,7 @@ class MilitaryGradeEncryption:
         self.master_key_id = self.kms.generate_key(key_id="master-key", algorithm=default_algorithm)
 
         # Track key rotation schedule
-        self._rotation_schedule: Dict[str, datetime] = {}
+        self._rotation_schedule: dict[str, datetime] = {}
         self._init_rotation_schedule()
 
         log.info("Military-Grade Encryption initialized")
@@ -325,8 +321,8 @@ class MilitaryGradeEncryption:
     async def encrypt(
         self,
         plaintext: bytes,
-        key_id: Optional[str] = None,
-        additional_data: Optional[bytes] = None,
+        key_id: str | None = None,
+        additional_data: bytes | None = None,
     ) -> EncryptedData:
         """
         Encrypt data using AES-256-GCM
@@ -387,8 +383,8 @@ class MilitaryGradeEncryption:
         key: bytes,
         nonce: bytes,
         plaintext: bytes,
-        additional_data: Optional[bytes],
-    ) -> Tuple[bytes, bytes]:
+        additional_data: bytes | None,
+    ) -> tuple[bytes, bytes]:
         """
         Encrypt with AES-256-GCM using the cryptography library.
 
@@ -417,7 +413,7 @@ class MilitaryGradeEncryption:
     async def decrypt(
         self,
         encrypted: EncryptedData,
-        additional_data: Optional[bytes] = None,
+        additional_data: bytes | None = None,
     ) -> bytes:
         """
         Decrypt data using AES-256-GCM
@@ -463,7 +459,7 @@ class MilitaryGradeEncryption:
         nonce: bytes,
         ciphertext: bytes,
         tag: bytes,
-        additional_data: Optional[bytes],
+        additional_data: bytes | None,
     ) -> bytes:
         """
         Decrypt with AES-256-GCM using the cryptography library.
@@ -483,8 +479,8 @@ class MilitaryGradeEncryption:
         Raises:
             ValueError: If authentication tag verification fails
         """
-        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
         from cryptography.exceptions import InvalidTag
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
         aesgcm = AESGCM(key)
         # AESGCM.decrypt expects ciphertext + tag concatenated
@@ -494,11 +490,11 @@ class MilitaryGradeEncryption:
             plaintext = aesgcm.decrypt(nonce, ciphertext_with_tag, additional_data)
             return plaintext
         except InvalidTag:
-            raise ValueError("Authentication tag verification failed")
+            raise ValueError("Authentication tag verification failed")  # noqa: B904
 
         return plaintext
 
-    async def encrypt_governance_decision(self, decision_data: Dict[str, Any]) -> EncryptedData:
+    async def encrypt_governance_decision(self, decision_data: dict[str, Any]) -> EncryptedData:
         """
         Encrypt governance decision with metadata
 
@@ -521,8 +517,8 @@ class MilitaryGradeEncryption:
     async def decrypt_governance_decision(
         self,
         encrypted: EncryptedData,
-        decision_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        decision_id: str | None = None,
+    ) -> dict[str, Any]:
         """
         Decrypt governance decision
 
@@ -542,8 +538,8 @@ class MilitaryGradeEncryption:
 
     async def encrypt_audit_log(
         self,
-        log_entry: Dict[str, Any],
-        merkle_root: Optional[bytes] = None,
+        log_entry: dict[str, Any],
+        merkle_root: bytes | None = None,
     ) -> EncryptedData:
         """
         Encrypt audit log with integrity verification
@@ -597,7 +593,7 @@ class MilitaryGradeEncryption:
             if key_id == self.master_key_id:
                 self.master_key_id = new_key_id
 
-    def get_key_rotation_status(self) -> Dict[str, Any]:
+    def get_key_rotation_status(self) -> dict[str, Any]:
         """Get key rotation status"""
         return {
             "policy": {
@@ -612,7 +608,7 @@ class MilitaryGradeEncryption:
             "master_key_id": self.master_key_id,
         }
 
-    def configure_tls(self) -> Dict[str, Any]:
+    def configure_tls(self) -> dict[str, Any]:
         """
         Get TLS 1.3 configuration recommendations
 
@@ -635,7 +631,7 @@ class MilitaryGradeEncryption:
             "client_auth": True,  # Mutual TLS
         }
 
-    def evaluate_quantum_resistance(self) -> Dict[str, Any]:
+    def evaluate_quantum_resistance(self) -> dict[str, Any]:
         """
         Evaluate quantum-resistant cryptography options
 

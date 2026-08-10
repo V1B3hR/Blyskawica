@@ -1,148 +1,128 @@
 """Core components of the Nethical safety governance system."""
 
-from .risk_engine import RiskEngine, RiskTier, RiskProfile
-from .correlation_engine import CorrelationEngine, CorrelationMatch
-from .fairness_sampler import FairnessSampler, Sample, SamplingJob, SamplingStrategy
-from .ethical_drift_reporter import EthicalDriftReporter, EthicalDriftReport, CohortProfile
-from .performance_optimizer import PerformanceOptimizer, DetectorTier, DetectorMetrics
-from .phase3_integration import Phase3IntegratedGovernance
-
-# Fundamental Laws - Ethical Backbone
-from .fundamental_laws import (
-    LawCategory,
-    FundamentalLaw,
-    FundamentalLawsRegistry,
-    FUNDAMENTAL_LAWS,
-    get_fundamental_laws,
+# Phase 7 components
+from .anomaly_detector import (
+    AnomalyAlert,
+    AnomalyDriftMonitor,
+    AnomalyType,
+    DistributionDriftDetector,
+    DriftMetrics,
+    DriftSeverity,
+    SequenceAnomalyDetector,
 )
 
 # Phase 4 components
-from .audit_merkle import MerkleAnchor, AuditChunk, MerkleNode
-from .policy_diff import PolicyDiffAuditor, PolicyDiffResult, PolicyChange, ChangeType, RiskLevel
-from .quarantine import QuarantineManager, QuarantineReason, QuarantineStatus, QuarantinePolicy, HardwareIsolationLevel
-from .ethical_taxonomy import EthicalTaxonomy, EthicalTag, ViolationTagging, EthicalDimension
-from .sla_monitor import SLAMonitor, SLAStatus, SLATarget, SLABreach
-from .phase4_integration import Phase4IntegratedGovernance
-
-# Kill Switch Protocol - Emergency Override System
-from .kill_switch import (
-    ShutdownMode,
-    CommandType,
-    KeyType,
-    ConnectionType,
-    IsolationLevel,
-    ActuatorState,
-    KillSwitchConfig,
-    AgentRecord,
-    ActuatorRecord,
-    SignedCommand,
-    AuditLogEntry,
-    KillSwitchResult,
-    KillSwitchCallback,
-    GlobalKillSwitch,
-    ActuatorSevering,
-    CryptoSignedCommands,
-    HardwareIsolation,
-    KillSwitchProtocol,
+from .audit_merkle import AuditChunk, MerkleAnchor, MerkleNode
+from .correlation_engine import CorrelationEngine, CorrelationMatch
+from .embedding_config import (
+    EmbeddingConfig,
+    EmbeddingProviderType,
+    EnsembleStrategy,
+    ProviderConfig,
+    load_embedding_config,
 )
-
-# Phase 5 components
-from .ml_shadow import MLShadowClassifier, ShadowPrediction, ShadowMetrics, MLModelType
-
-# Phase 6 components
-from .ml_blended_risk import MLBlendedRiskEngine, BlendedDecision, BlendingMetrics, RiskZone
-
-# Phase 7 components
-from .anomaly_detector import (
-    AnomalyDriftMonitor,
-    SequenceAnomalyDetector,
-    DistributionDriftDetector,
-    AnomalyAlert,
-    AnomalyType,
-    DriftSeverity,
-    DriftMetrics,
-)
-
-# Phase 5-7 Integration
-from .phase567_integration import Phase567IntegratedGovernance
-
-# Phase 8 components
-from .human_feedback import (
-    EscalationQueue,
-    FeedbackTag,
-    ReviewStatus,
-    ReviewPriority,
-    HumanFeedback,
-    EscalationCase,
-    SLAMetrics,
-)
-
-# Phase 9 components
-from .optimization import (
-    MultiObjectiveOptimizer,
-    Configuration,
-    PerformanceMetrics,
-    OptimizationObjective,
-    OptimizationTechnique,
-    ConfigStatus,
-    PromotionGate,
-    AdaptiveThresholdTuner,
-    ABTestingFramework,
-    OutcomeRecord,
-)
-
-# Phase 8-9 Integration
-from .phase89_integration import Phase89IntegratedGovernance
-
-# Unified Integration (All Phases)
-from .integrated_governance import IntegratedGovernance
 
 # Vector/Embedding support
 from .embedding_engine import (
     EmbeddingEngine,
     EmbeddingProvider,
     EmbeddingResult,
-    SimpleEmbeddingProvider,
-    OpenAIEmbeddingProvider,
     HuggingFaceEmbeddingProvider,
+    OpenAIEmbeddingProvider,
+    SimpleEmbeddingProvider,
     cosine_similarity,
 )
-from .embedding_config import (
-    EmbeddingConfig,
-    ProviderConfig,
-    EmbeddingProviderType,
-    EnsembleStrategy,
-    load_embedding_config,
+from .ethical_drift_reporter import CohortProfile, EthicalDriftReport, EthicalDriftReporter
+from .ethical_taxonomy import EthicalDimension, EthicalTag, EthicalTaxonomy, ViolationTagging
+from .fairness_sampler import FairnessSampler, Sample, SamplingJob, SamplingStrategy
+from .feedback_finetuning import (
+    ActionLawPair,
+    FeedbackEntry,
+    FeedbackLogger,
+    FeedbackSource,
+    FeedbackType,
 )
-from .semantic_mapper import (
-    SemanticMapper,
-    SemanticPrimitive,
-    PolicyVector,
-    ActionEmbedding,
+
+# Fundamental Laws - Ethical Backbone
+from .fundamental_laws import (
+    FUNDAMENTAL_LAWS,
+    FundamentalLaw,
+    FundamentalLawsRegistry,
+    LawCategory,
+    get_fundamental_laws,
 )
-from .semantic_primitives import (
-    EnhancedPrimitiveDetector,
-    PRIMITIVE_KEYWORDS,
+
+# Phase 8 components
+from .human_feedback import (
+    EscalationCase,
+    EscalationQueue,
+    FeedbackTag,
+    HumanFeedback,
+    ReviewPriority,
+    ReviewStatus,
+    SLAMetrics,
 )
+
+# Unified Integration (All Phases)
+from .integrated_governance import IntegratedGovernance
+
+# Kill Switch Protocol - Emergency Override System
+from .kill_switch import (
+    ActuatorRecord,
+    ActuatorSevering,
+    ActuatorState,
+    AgentRecord,
+    AuditLogEntry,
+    CommandType,
+    ConnectionType,
+    CryptoSignedCommands,
+    GlobalKillSwitch,
+    HardwareIsolation,
+    IsolationLevel,
+    KeyType,
+    KillSwitchCallback,
+    KillSwitchConfig,
+    KillSwitchProtocol,
+    KillSwitchResult,
+    ShutdownMode,
+    SignedCommand,
+)
+
+# Phase 6 components
+from .ml_blended_risk import BlendedDecision, BlendingMetrics, MLBlendedRiskEngine, RiskZone
+
+# Phase 5 components
+from .ml_shadow import MLModelType, MLShadowClassifier, ShadowMetrics, ShadowPrediction
 from .multimodal_embeddings import (
-    MultiModalEmbeddingEngine,
-    MultiModalInput,
-    MultiModalEmbeddingResult,
     Modality,
     ModalityDetector,
+    MultiModalEmbeddingEngine,
+    MultiModalEmbeddingResult,
+    MultiModalInput,
 )
-from .feedback_finetuning import (
-    FeedbackLogger,
-    FeedbackEntry,
-    ActionLawPair,
-    FeedbackType,
-    FeedbackSource,
+
+# Phase 9 components
+from .optimization import (
+    ABTestingFramework,
+    AdaptiveThresholdTuner,
+    ConfigStatus,
+    Configuration,
+    MultiObjectiveOptimizer,
+    OptimizationObjective,
+    OptimizationTechnique,
+    OutcomeRecord,
+    PerformanceMetrics,
+    PromotionGate,
 )
-from .semantic_benchmark import (
-    SemanticAccuracyBenchmark,
-    BenchmarkTestCase,
-    BenchmarkResult,
-)
+from .performance_optimizer import DetectorMetrics, DetectorTier, PerformanceOptimizer
+from .phase3_integration import Phase3IntegratedGovernance
+from .phase4_integration import Phase4IntegratedGovernance
+
+# Phase 8-9 Integration
+from .phase89_integration import Phase89IntegratedGovernance
+
+# Phase 5-7 Integration
+from .phase567_integration import Phase567IntegratedGovernance
 
 # F2: Detector & Policy Extensibility
 from .plugin_interface import (
@@ -152,6 +132,7 @@ from .plugin_interface import (
     PluginStatus,
     get_plugin_manager,
 )
+from .policy_diff import ChangeType, PolicyChange, PolicyDiffAuditor, PolicyDiffResult, RiskLevel
 from .policy_dsl import (
     Policy,
     PolicyAction,
@@ -162,18 +143,36 @@ from .policy_dsl import (
     RuleSeverity,
     get_policy_engine,
 )
+from .quarantine import HardwareIsolationLevel, QuarantineManager, QuarantinePolicy, QuarantineReason, QuarantineStatus
 
 # Phase 1: Security & Governance
 from .rbac import (
-    Role,
+    AccessDeniedError,
     Permission,
     RBACManager,
-    AccessDeniedError,
-    require_role,
-    require_permission,
+    Role,
     get_rbac_manager,
+    require_permission,
+    require_role,
     set_rbac_manager,
 )
+from .risk_engine import RiskEngine, RiskProfile, RiskTier
+from .semantic_benchmark import (
+    BenchmarkResult,
+    BenchmarkTestCase,
+    SemanticAccuracyBenchmark,
+)
+from .semantic_mapper import (
+    ActionEmbedding,
+    PolicyVector,
+    SemanticMapper,
+    SemanticPrimitive,
+)
+from .semantic_primitives import (
+    PRIMITIVE_KEYWORDS,
+    EnhancedPrimitiveDetector,
+)
+from .sla_monitor import SLABreach, SLAMonitor, SLAStatus, SLATarget
 
 __all__ = [
     # Fundamental Laws - Ethical Backbone

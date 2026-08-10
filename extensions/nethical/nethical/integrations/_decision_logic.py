@@ -3,10 +3,10 @@
 This module provides common decision-making logic used by both Claude and REST API integrations.
 """
 
-from typing import Dict, Any, Tuple, List
+from typing import Any
 
 
-def compute_decision(governance_result: Dict[str, Any]) -> Tuple[str, str, List[Dict[str, Any]]]:
+def compute_decision(governance_result: dict[str, Any]) -> tuple[str, str, list[dict[str, Any]]]:
     """Compute decision from governance results.
     
     The IntegratedGovernance.process_action() returns comprehensive phase results
@@ -21,19 +21,19 @@ def compute_decision(governance_result: Dict[str, Any]) -> Tuple[str, str, List[
         - decision: One of "ALLOW", "RESTRICT", "BLOCK", "TERMINATE"
         - reason: Human-readable explanation
         - violations: List of detected violations/correlations
-    """
+    """  # noqa: W293
     # Check if decision is already present (future-proofing)
     if "decision" in governance_result:
         decision = governance_result["decision"]
         reason = governance_result.get("reason", f"Decision: {decision}")
         violations = governance_result.get("violations", [])
         return decision, reason, violations
-    
+
     # Extract indicators from governance results
     risk_score = governance_result.get("phase3", {}).get("risk_score", 0.0)
     pii_detection = governance_result.get("pii_detection", {})
     pii_risk = pii_detection.get("pii_risk_score", 0.0)
-    
+
     # Get violations from correlations (actual location in governance results)
     correlations = governance_result.get("phase3", {}).get("correlations", [])
     violations = [
@@ -45,12 +45,12 @@ def compute_decision(governance_result: Dict[str, Any]) -> Tuple[str, str, List[
         }
         for c in correlations
     ]
-    
+
     quarantined = governance_result.get("phase4", {}).get("quarantined", False)
     quota_blocked = False
     if governance_result.get("blocked_by_quota"):
         quota_blocked = True
-    
+
     # Decision logic based on risk thresholds
     if quota_blocked:
         decision = "BLOCK"
@@ -70,11 +70,11 @@ def compute_decision(governance_result: Dict[str, Any]) -> Tuple[str, str, List[
     else:
         decision = "ALLOW"
         reason = "Action evaluated as safe and compliant"
-    
+
     return decision, reason, violations
 
 
-def format_violations_for_response(violations: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def format_violations_for_response(violations: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Format violations for inclusion in API response.
     
     Args:
@@ -82,7 +82,7 @@ def format_violations_for_response(violations: List[Dict[str, Any]]) -> List[Dic
         
     Returns:
         Formatted violations suitable for API response
-    """
+    """  # noqa: W293
     return [
         {
             "type": v.get("pattern", "unknown"),

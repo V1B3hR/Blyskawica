@@ -66,9 +66,10 @@ def demo_with_langchain_agent():
     print("=" * 80)
 
     try:
-        from langchain.agents import initialize_agent, AgentType
+        from langchain.agents import AgentType, initialize_agent
         from langchain.tools import Tool
         from langchain_openai import OpenAI
+
         from nethical.integrations.langchain_tools import NethicalGuardTool
 
         # Check for OpenAI API key
@@ -126,6 +127,7 @@ def demo_create_nethical_agent_helper():
     try:
         from langchain.tools import Tool
         from langchain_openai import OpenAI
+
         from nethical.integrations.langchain_tools import create_nethical_agent
 
         if not os.getenv("OPENAI_API_KEY"):
@@ -147,7 +149,7 @@ def demo_create_nethical_agent_helper():
         ]
 
         # Create agent with Nethical guard automatically added
-        agent = create_nethical_agent(
+        agent = create_nethical_agent(  # noqa: F841
             llm=llm,
             tools=tools,
             storage_dir="./demo_nethical_data",
@@ -199,7 +201,7 @@ def demo_chained_guards():
         llama_guard=None,  # Would be LlamaGuardChain instance if available
     )
 
-    print(f"\n✅ Chained evaluation result:")
+    print("\n✅ Chained evaluation result:")
     print(f"   Final Decision: {result['final_decision']}")
     print(f"   Nethical Result: {result['nethical'][:100]}...")
 
@@ -242,7 +244,7 @@ def demo_pre_and_post_action_checks():
     # Simulate agent processing (only if pre-check allows)
     if "BLOCK" not in pre_result:
         print(
-            f"\n2️⃣ Agent processing: ✅ Allowed (input passed governance check)"
+            "\n2️⃣ Agent processing: ✅ Allowed (input passed governance check)"
         )
 
         # Post-action check (evaluate agent output)
@@ -280,7 +282,7 @@ def demo_custom_thresholds():
 
     test_action = "How can I improve my code security?"
 
-    print(f"\n📊 Testing action with different thresholds:")
+    print("\n📊 Testing action with different thresholds:")
     print(f"   Action: {test_action}")
 
     for config in configs:

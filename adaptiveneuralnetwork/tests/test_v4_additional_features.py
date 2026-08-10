@@ -52,8 +52,8 @@ class TestDistributedTraining:
         dist_config = DistributedConfig(world_size=1, rank=0)  # Single process
         trainer = DistributedTrainer(model, dist_config)
 
-        assert trainer.is_distributed == False  # Single process
-        assert trainer.is_main_process == True
+        assert trainer.is_distributed == False  # Single process  # noqa: E712
+        assert trainer.is_main_process == True  # noqa: E712
         assert trainer.ddp_model is None  # No DDP for single process
 
     def test_distributed_dataloader_creation(self):
@@ -91,7 +91,7 @@ class TestDistributedTraining:
         assert config.rank == 1
         assert config.local_rank == 1
         assert config.backend == "nccl"
-        assert config.use_ray == False
+        assert config.use_ray == False  # noqa: E712
 
 
 class TestStreamingDatasets:
@@ -250,7 +250,7 @@ class TestStreamingDatasets:
 
         # Test iteration
         batch_count = 0
-        for batch in dataloader:
+        for batch in dataloader:  # noqa: B007
             batch_count += 1
             if batch_count >= 3:  # Test a few batches
                 break
@@ -399,8 +399,8 @@ class TestGraphSpatialIntegration:
             enable_graph=False  # Disable graph for simpler test
         )
 
-        assert integration.enable_spatial == True
-        assert integration.enable_graph == False
+        assert integration.enable_spatial == True  # noqa: E712
+        assert integration.enable_graph == False  # noqa: E712
         assert hasattr(integration, 'spatial_layer')
 
     def test_integrated_forward_pass(self):

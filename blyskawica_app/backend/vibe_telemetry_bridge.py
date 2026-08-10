@@ -8,16 +8,19 @@ Aggregates real-time telemetry from all 4 Vibe Streams:
 - Stream 4: Diamond Yant (16x16 Cymatic Matrix, 2D Spatial Symmetry, Serotonin Coherence)
 """
 
-import time
 import logging
-from typing import Dict, Any
+import time
+from typing import Any
+
 import torch
 
-from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import NeuromodulationState
-from adaptiveneuralnetwork.immune_system.immune_stream_pipeline import NeuroImmunologicalEngine
-from adaptiveneuralnetwork.cognitive_tools.physics_stream_pipeline import CognitivePhysicsEngine
 from adaptiveneuralnetwork.applications.identity_garderoba_pipeline import IdentityGarderobaEngine
-from adaptiveneuralnetwork.central_nervous_system.diamond_yant_stream_pipeline import DiamondYantCymaticEngine
+from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import NeuromodulationState
+from adaptiveneuralnetwork.central_nervous_system.diamond_yant_stream_pipeline import (
+    DiamondYantCymaticEngine,
+)
+from adaptiveneuralnetwork.cognitive_tools.physics_stream_pipeline import CognitivePhysicsEngine
+from adaptiveneuralnetwork.immune_system.immune_stream_pipeline import NeuroImmunologicalEngine
 
 logger = logging.getLogger("vibe_telemetry_bridge")
 
@@ -26,7 +29,7 @@ class VibeTelemetryBridge:
     """
     Central Telemetry Aggregator connecting Błyskawica's 4 Vibe Streams 
     to the FastAPI backend and Sparkle UI.
-    """
+    """  # noqa: W291
 
     def __init__(self):
         self.neuro_state = NeuromodulationState()
@@ -37,7 +40,7 @@ class VibeTelemetryBridge:
 
         self.last_update_timestamp = time.time()
 
-    def get_live_vibe_state(self) -> Dict[str, Any]:
+    def get_live_vibe_state(self) -> dict[str, Any]:
         """Returns unified real-time Vibe state telemetry snapshot."""
         # 16x16 Cymatic matrix snapshot
         yant_grid_sample = torch.randn(16, 16)

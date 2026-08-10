@@ -25,10 +25,11 @@ import logging
 import time
 from abc import ABC, abstractmethod
 from collections import deque
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any
 
 __all__ = [
     "InvariantType",
@@ -74,8 +75,8 @@ class InvariantViolation:
     severity: ViolationSeverity
     description: str
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    context: Dict[str, Any] = field(default_factory=dict)
-    stack_trace: Optional[str] = None
+    context: dict[str, Any] = field(default_factory=dict)
+    stack_trace: str | None = None
     remediation_attempted: bool = False
     remediation_successful: bool = False
 
@@ -94,10 +95,10 @@ class RuntimeInvariant(ABC):
         self.severity = severity
         self.check_count = 0
         self.violation_count = 0
-        self.last_check_time: Optional[float] = None
+        self.last_check_time: float | None = None
 
     @abstractmethod
-    def check(self, context: Dict[str, Any]) -> Tuple[bool, str]:
+    def check(self, context: dict[str, Any]) -> tuple[bool, str]:
         """Check if invariant holds.
 
         Args:
@@ -108,7 +109,7 @@ class RuntimeInvariant(ABC):
         """
         pass
 
-    def attempt_remediation(self, context: Dict[str, Any]) -> bool:
+    def attempt_remediation(self, context: dict[str, Any]) -> bool:
         """Attempt to remediate violation.
 
         Args:
@@ -127,7 +128,7 @@ class StateInvariant(RuntimeInvariant):
     def __init__(
         self,
         name: str,
-        predicate: Callable[[Dict[str, Any]], bool],
+        predicate: Callable[[dict[str, Any]], bool],
         severity: ViolationSeverity = ViolationSeverity.ERROR,
         description: str = "",
     ):
@@ -135,7 +136,7 @@ class StateInvariant(RuntimeInvariant):
         self.predicate = predicate
         self.description = description
 
-    def check(self, context: Dict[str, Any]) -> Tuple[bool, str]:
+    def check(self, context: dict[str, Any]) -> tuple[bool, str]:
         """Check state predicate."""
         self.check_count += 1
         self.last_check_time = time.time()
@@ -157,7 +158,7 @@ class TemporalProperty(RuntimeInvariant):
     def __init__(
         self,
         name: str,
-        pattern: List[str],
+        pattern: list[str],
         window_size: int = 100,
         severity: ViolationSeverity = ViolationSeverity.WARNING,
     ):
@@ -170,7 +171,7 @@ class TemporalProperty(RuntimeInvariant):
         """Add event to history."""
         self.event_history.append(event)
 
-    def check(self, context: Dict[str, Any]) -> Tuple[bool, str]:
+    def check(self, context: dict[str, Any]) -> tuple[bool, str]:
         """Check if temporal pattern holds."""
         self.check_count += 1
         self.last_check_time = time.time()
@@ -204,15 +205,15 @@ class ContractAssertion(RuntimeInvariant):
     def __init__(
         self,
         name: str,
-        precondition: Optional[Callable[[Dict[str, Any]], bool]] = None,
-        postcondition: Optional[Callable[[Dict[str, Any]], bool]] = None,
+        precondition: Callable[[dict[str, Any]], bool] | None = None,
+        postcondition: Callable[[dict[str, Any]], bool] | None = None,
         severity: ViolationSeverity = ViolationSeverity.ERROR,
     ):
         super().__init__(name, InvariantType.CONTRACT, severity)
         self.precondition = precondition
         self.postcondition = postcondition
 
-    def check_precondition(self, context: Dict[str, Any]) -> Tuple[bool, str]:
+    def check_precondition(self, context: dict[str, Any]) -> tuple[bool, str]:
         """Check precondition."""
         if self.precondition is None:
             return True, "No precondition"
@@ -225,7 +226,7 @@ class ContractAssertion(RuntimeInvariant):
         except Exception as e:
             return False, f"Error checking precondition: {e}"
 
-    def check_postcondition(self, context: Dict[str, Any]) -> Tuple[bool, str]:
+    def check_postcondition(self, context: dict[str, Any]) -> tuple[bool, str]:
         """Check postcondition."""
         if self.postcondition is None:
             return True, "No postcondition"
@@ -238,7 +239,7 @@ class ContractAssertion(RuntimeInvariant):
         except Exception as e:
             return False, f"Error checking postcondition: {e}"
 
-    def check(self, context: Dict[str, Any]) -> Tuple[bool, str]:
+    def check(self, context: dict[str, Any]) -> tuple[bool, str]:
         """Check contract (used for general checks)."""
         self.check_count += 1
         self.last_check_time = time.time()
@@ -267,11 +268,11 @@ class RuntimeMonitor:
         self.max_violations = max_violations
         self.emergency_stop_on_critical = emergency_stop_on_critical
 
-        self.invariants: Dict[str, RuntimeInvariant] = {}
-        self.temporal_properties: Dict[str, TemporalProperty] = {}
-        self.contracts: Dict[str, ContractAssertion] = {}
+        self.invariants: dict[str, RuntimeInvariant] = {}
+        self.temporal_properties: dict[str, TemporalProperty] = {}
+        self.contracts: dict[str, ContractAssertion] = {}
 
-        self.violations: List[InvariantViolation] = []
+        self.violations: list[InvariantViolation] = []
         self.emergency_stop = False
 
         self._initialize_default_invariants()
@@ -349,7 +350,7 @@ class RuntimeMonitor:
         self.contracts[contract.name] = contract
         log.info(f"Added contract: {contract.name}")
 
-    def check_all(self, context: Dict[str, Any]) -> List[InvariantViolation]:
+    def check_all(self, context: dict[str, Any]) -> list[InvariantViolation]:
         """Check all invariants against context.
 
         Args:
@@ -432,8 +433,8 @@ class RuntimeMonitor:
         return violations
 
     def check_contract_precondition(
-        self, contract_name: str, context: Dict[str, Any]
-    ) -> Tuple[bool, str]:
+        self, contract_name: str, context: dict[str, Any]
+    ) -> tuple[bool, str]:
         """Check contract precondition."""
         if contract_name not in self.contracts:
             return True, "Contract not found"
@@ -442,8 +443,8 @@ class RuntimeMonitor:
         return contract.check_precondition(context)
 
     def check_contract_postcondition(
-        self, contract_name: str, context: Dict[str, Any]
-    ) -> Tuple[bool, str]:
+        self, contract_name: str, context: dict[str, Any]
+    ) -> tuple[bool, str]:
         """Check contract postcondition."""
         if contract_name not in self.contracts:
             return True, "Contract not found"
@@ -456,7 +457,7 @@ class RuntimeMonitor:
         for prop in self.temporal_properties.values():
             prop.add_event(event)
 
-    def trigger_emergency_stop(self, violations: List[InvariantViolation]) -> None:
+    def trigger_emergency_stop(self, violations: list[InvariantViolation]) -> None:
         """Trigger emergency stop due to critical violations."""
         self.emergency_stop = True
         log.critical(
@@ -474,7 +475,7 @@ class RuntimeMonitor:
             invariant.check_count = 0
             invariant.violation_count = 0
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get monitoring statistics."""
         return {
             "total_violations": len(self.violations),
@@ -524,7 +525,7 @@ def invariant_check(monitor: RuntimeMonitor, context_builder: Callable):
 
 
 # Contract assertion decorators
-def requires(condition: Callable[[Dict[str, Any]], bool], message: str = ""):
+def requires(condition: Callable[[dict[str, Any]], bool], message: str = ""):
     """Decorator for precondition assertion."""
 
     def decorator(func):

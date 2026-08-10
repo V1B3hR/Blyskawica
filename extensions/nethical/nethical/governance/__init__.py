@@ -6,20 +6,8 @@ Governance and ethics features including:
 - Policy grammar specification
 """
 
-from .ethics_benchmark import (
-    EthicsBenchmark,
-    BenchmarkCase,
-    DetectionResult,
-    ViolationType,
-    BenchmarkMetrics
-)
-from .threshold_config import (
-    ThresholdVersionManager,
-    Threshold,
-    ThresholdType,
-    ThresholdConfig,
-    DEFAULT_THRESHOLDS
-)
+from .ethics_benchmark import BenchmarkCase, BenchmarkMetrics, DetectionResult, EthicsBenchmark, ViolationType
+from .threshold_config import DEFAULT_THRESHOLDS, Threshold, ThresholdConfig, ThresholdType, ThresholdVersionManager
 
 __all__ = [
     'EthicsBenchmark',

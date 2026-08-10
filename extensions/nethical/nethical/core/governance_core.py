@@ -10,25 +10,20 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import sqlite3
 import statistics
 import threading
 import time
 from collections import deque
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from enum import Enum
 from pathlib import Path
 from typing import (
     Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Tuple,
 )
-
-import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -123,7 +118,7 @@ class SubMission(Enum):
     PRIVILEGE_MISUSE = "privilege_misuse"
 
 
-VIOLATION_SUB_MISSIONS: Dict[ViolationType, set[SubMission]] = {
+VIOLATION_SUB_MISSIONS: dict[ViolationType, set[SubMission]] = {
     ViolationType.ETHICAL: {SubMission.HARMFUL_CONTENT, SubMission.MANIPULATIVE_ETHICS},
     ViolationType.BIAS: {SubMission.PROTECTED_ATTRIBUTE_CONTEXT, SubMission.DISCRIMINATION},
     ViolationType.SECURITY: {
@@ -208,15 +203,15 @@ class AgentAction:
     agent_id: str
     action_type: ActionType
     content: str
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    context: Dict[str, Any] = field(default_factory=dict)
-    intent: Optional[str] = None
+    context: dict[str, Any] = field(default_factory=dict)
+    intent: str | None = None
     risk_score: float = 0.0
-    parent_action_id: Optional[str] = None
-    session_id: Optional[str] = None
+    parent_action_id: str | None = None
+    session_id: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "action_id": self.action_id,
             "agent_id": self.agent_id,
@@ -240,15 +235,15 @@ class SafetyViolation:
     severity: Severity
     description: str
     confidence: float
-    evidence: List[str] = field(default_factory=list)
-    recommendations: List[str] = field(default_factory=list)
+    evidence: list[str] = field(default_factory=list)
+    recommendations: list[str] = field(default_factory=list)
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    detector_name: Optional[str] = None
+    detector_name: str | None = None
     remediation_applied: bool = False
     false_positive: bool = False
-    sub_mission: Optional[SubMission] = None
+    sub_mission: SubMission | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "violation_id": self.violation_id,
             "action_id": self.action_id,
@@ -273,14 +268,14 @@ class JudgmentResult:
     decision: Decision
     confidence: float
     reasoning: str
-    violations: List[SafetyViolation] = field(default_factory=list)
-    modifications: Dict[str, Any] = field(default_factory=dict)
-    feedback: List[str] = field(default_factory=list)
+    violations: list[SafetyViolation] = field(default_factory=list)
+    modifications: dict[str, Any] = field(default_factory=dict)
+    feedback: list[str] = field(default_factory=list)
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    remediation_steps: List[str] = field(default_factory=list)
+    remediation_steps: list[str] = field(default_factory=list)
     follow_up_required: bool = False
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "judgment_id": self.judgment_id,
             "action_id": self.action_id,
@@ -329,8 +324,8 @@ class MonitoringConfig:
     retention_days: int = 30
 
     # External pattern directory (optional)
-    pattern_dir: Optional[str] = None
-    reload_patterns_on_interval: Optional[int] = 300  # seconds
+    pattern_dir: str | None = None
+    reload_patterns_on_interval: int | None = 300  # seconds
 
     max_violation_history: int = 10000
     max_judgment_history: int = 10000
@@ -437,7 +432,7 @@ class PersistenceManager:
                 ),
             )
 
-    def store_violations(self, violations: List[SafetyViolation]):
+    def store_violations(self, violations: list[SafetyViolation]):
         if not violations:
             return
         with self._lock, self._connect() as conn:
@@ -495,12 +490,12 @@ class PersistenceManager:
 
     def query_actions(
         self,
-        start_time: Optional[str] = None,
-        end_time: Optional[str] = None,
-        agent_ids: Optional[List[str]] = None,
-        limit: Optional[int] = None,
+        start_time: str | None = None,
+        end_time: str | None = None,
+        agent_ids: list[str] | None = None,
+        limit: int | None = None,
         offset: int = 0,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Query actions with filters for replay functionality."""
         with self._lock, self._connect() as conn:
             query = "SELECT * FROM actions WHERE 1=1"
@@ -527,9 +522,9 @@ class PersistenceManager:
 
             cursor = conn.execute(query, params)
             columns = [desc[0] for desc in cursor.description]
-            return [dict(zip(columns, row)) for row in cursor.fetchall()]
+            return [dict(zip(columns, row)) for row in cursor.fetchall()]  # noqa: B905
 
-    def query_judgments_by_action_ids(self, action_ids: List[str]) -> Dict[str, Dict[str, Any]]:
+    def query_judgments_by_action_ids(self, action_ids: list[str]) -> dict[str, dict[str, Any]]:
         """Query judgments for multiple action IDs."""
         if not action_ids:
             return {}
@@ -542,15 +537,15 @@ class PersistenceManager:
             columns = [desc[0] for desc in cursor.description]
             results = {}
             for row in cursor.fetchall():
-                judgment = dict(zip(columns, row))
+                judgment = dict(zip(columns, row))  # noqa: B905
                 results[judgment["action_id"]] = judgment
             return results
 
     def count_actions(
         self,
-        start_time: Optional[str] = None,
-        end_time: Optional[str] = None,
-        agent_ids: Optional[List[str]] = None,
+        start_time: str | None = None,
+        end_time: str | None = None,
+        agent_ids: list[str] | None = None,
     ) -> int:
         """Count actions matching filters."""
         with self._lock, self._connect() as conn:
@@ -579,44 +574,43 @@ class PersistenceManager:
 # from .governance_evaluation import generate_id, sha256_content_key
 
 # Detectors moved to governance_detectors.py
-from .governance_detectors import BaseDetector
-from .governance_detectors import (
-    EthicalViolationDetector,
-    SafetyViolationDetector,
-    ManipulationDetector,
-    PrivacyDetector,
+from .governance_detectors import (  # noqa: E402
     AdversarialDetector,
-    DarkPatternDetector,
+    BaseDetector,
     CognitiveWarfareDetector,
-    SystemLimitsDetector,
-    HallucinationDetector,
-    MisinformationDetector,
-    ToxicContentDetector,
-    ModelExtractionDetector,
+    DarkPatternDetector,
     DataPoisoningDetector,
+    EthicalViolationDetector,
+    HallucinationDetector,
+    ManipulationDetector,
+    MisinformationDetector,
+    ModelExtractionDetector,
+    PrivacyDetector,
+    SafetyViolationDetector,
+    SystemLimitsDetector,
+    ToxicContentDetector,
     UnauthorizedAccessDetector,
 )
 
 # Judge and Monitor moved to governance_evaluation.py
-from .governance_evaluation import IntentDeviationMonitor, SafetyJudge
-
+from .governance_evaluation import IntentDeviationMonitor, SafetyJudge  # noqa: E402
 
 # ========================== Governance System ==========================
 
 
 class EnhancedSafetyGovernance:
-    def __init__(self, config: Optional[MonitoringConfig] = None):
+    def __init__(self, config: MonitoringConfig | None = None):
         self.config = config or MonitoringConfig()
         self.start_time = datetime.now(timezone.utc)
         self.intent_monitor = IntentDeviationMonitor(self.config.intent_deviation_threshold)
-        self.detectors: List[BaseDetector] = []
+        self.detectors: list[BaseDetector] = []
         self._initialize_detectors()
 
         self.judge = SafetyJudge()
 
         # Initialize Kill Switch Protocol and AI Lawyer (Stage 0)
-        from .kill_switch import KillSwitchProtocol
         from .compliance import AILawyer
+        from .kill_switch import KillSwitchProtocol
 
         self.kill_switch_protocol = KillSwitchProtocol()
         self.ai_lawyer = AILawyer(kill_switch_protocol=self.kill_switch_protocol)
@@ -627,7 +621,7 @@ class EnhancedSafetyGovernance:
         self.action_history: deque = deque(maxlen=10_000)
 
         # Metrics
-        self.metrics: Dict[str, Any] = {
+        self.metrics: dict[str, Any] = {
             "total_actions_processed": 0,
             "total_violations_detected": 0,
             "total_actions_blocked": 0,
@@ -640,21 +634,21 @@ class EnhancedSafetyGovernance:
         }
 
         # Persistence
-        self.persistence: Optional[PersistenceManager] = None
+        self.persistence: PersistenceManager | None = None
         if self.config.enable_persistence:
             self.persistence = PersistenceManager(self.config.db_path, self.config.retention_days)
             # Schedule periodic retention cleanup
             asyncio.get_event_loop().create_task(self._periodic_retention_cleanup())
 
         # Cache
-        self._judgment_cache: Dict[str, Tuple[float, JudgmentResult]] = {}
+        self._judgment_cache: dict[str, tuple[float, JudgmentResult]] = {}
         self._cache_lock = threading.Lock()
 
         # Alerts
-        self.alert_callbacks: List[Callable] = []
+        self.alert_callbacks: list[Callable] = []
 
         # External pattern loading
-        self._pattern_last_load: Optional[float] = None
+        self._pattern_last_load: float | None = None
         if self.config.pattern_dir:
             self._load_external_patterns()
 
@@ -736,8 +730,8 @@ class EnhancedSafetyGovernance:
     # -------- Core Evaluation Pipeline --------
 
     async def evaluate_action(self, action: AgentAction, use_cache: bool = True) -> JudgmentResult:
-        from .governance_evaluation import generate_id, sha256_content_key
         from .compliance import ReviewDecision
+        from .governance_evaluation import generate_id, sha256_content_key
 
         await self._maybe_reload_patterns()
         start = time.time()
@@ -803,7 +797,7 @@ class EnhancedSafetyGovernance:
         intent_violations = await self.intent_monitor.analyze_action(action)
 
         # Detector execution
-        all_violations: List[SafetyViolation] = list(intent_violations)
+        all_violations: list[SafetyViolation] = list(intent_violations)
         detector_tasks = []
         for det in self.detectors:
             if not det.enabled:
@@ -812,7 +806,7 @@ class EnhancedSafetyGovernance:
 
         if self.config.enable_async_processing:
             results = await asyncio.gather(*detector_tasks, return_exceptions=True)
-            for idx, res in enumerate(results):
+            for idx, res in enumerate(results):  # noqa: B007
                 if isinstance(res, Exception):
                     logger.error("Detector error: %s", res)
                 else:
@@ -823,7 +817,7 @@ class EnhancedSafetyGovernance:
                 all_violations.extend(res)
 
         # Validation & metrics tally
-        validated: List[SafetyViolation] = []
+        validated: list[SafetyViolation] = []
         for v in all_violations:
             if self._validate_violation_type_and_sub_mission(v):
                 validated.append(v)
@@ -874,8 +868,8 @@ class EnhancedSafetyGovernance:
         return judgment
 
     async def batch_evaluate_actions(
-        self, actions: List[AgentAction], parallel: bool = True
-    ) -> List[JudgmentResult]:
+        self, actions: list[AgentAction], parallel: bool = True
+    ) -> list[JudgmentResult]:
         if parallel and self.config.enable_async_processing:
             tasks = [self.evaluate_action(a) for a in actions]
             res = await asyncio.gather(*tasks, return_exceptions=True)
@@ -885,7 +879,7 @@ class EnhancedSafetyGovernance:
             for a in actions:
                 try:
                     results.append(await self.evaluate_action(a))
-                except Exception as e:
+                except Exception as e:  # noqa: PERF203
                     logger.error("Error evaluating action %s: %s", a.action_id, e)
             return results
 
@@ -893,7 +887,7 @@ class EnhancedSafetyGovernance:
 
     async def _run_detector_cpu_bound(
         self, detector: BaseDetector, action: AgentAction
-    ) -> List[SafetyViolation]:
+    ) -> list[SafetyViolation]:
         start = time.time()
         res = await detector.detect_violations(action)
         elapsed = time.time() - start
@@ -941,7 +935,7 @@ class EnhancedSafetyGovernance:
 
             # Determine the agent and cohort to terminate
             agent_id = action.agent_id
-            cohort = action.metadata.get("cohort")
+            cohort = action.metadata.get("cohort")  # noqa: F841
 
             # Log the termination trigger
             logger.warning(
@@ -982,7 +976,7 @@ class EnhancedSafetyGovernance:
     # -------- Alerts --------
 
     async def _handle_alerts(
-        self, action: AgentAction, violations: List[SafetyViolation], judgment: JudgmentResult
+        self, action: AgentAction, violations: list[SafetyViolation], judgment: JudgmentResult
     ):
         if not violations:
             return
@@ -1012,7 +1006,7 @@ class EnhancedSafetyGovernance:
                 else:
                     loop = asyncio.get_running_loop()
                     await loop.run_in_executor(None, cb, payload)
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 logger.error("Alert callback failed: %s", e)
 
     # -------- Metrics & Cache --------
@@ -1025,7 +1019,7 @@ class EnhancedSafetyGovernance:
             prev = self.metrics["avg_processing_time"]
             self.metrics["avg_processing_time"] = (prev * (total - 1) + elapsed) / total
 
-    def _get_cache(self, key: str) -> Optional[JudgmentResult]:
+    def _get_cache(self, key: str) -> JudgmentResult | None:
         with self._cache_lock:
             entry = self._judgment_cache.get(key)
             if not entry:
@@ -1063,13 +1057,13 @@ class EnhancedSafetyGovernance:
 
     # -------- Summaries --------
 
-    def get_violation_summary(self) -> Dict[str, Any]:
+    def get_violation_summary(self) -> dict[str, Any]:
         violations = list(self.violation_history)
         if not violations:
             return {"total_violations": 0}
-        by_type: Dict[str, int] = {}
-        by_severity: Dict[str, int] = {}
-        by_sub: Dict[str, int] = {}
+        by_type: dict[str, int] = {}
+        by_severity: dict[str, int] = {}
+        by_sub: dict[str, int] = {}
         for v in violations:
             t = v.violation_type.value
             by_type[t] = by_type.get(t, 0) + 1
@@ -1097,7 +1091,7 @@ class EnhancedSafetyGovernance:
             "recent": [v.to_dict() for v in violations[-5:]],
         }
 
-    def get_system_metrics(self) -> Dict[str, Any]:
+    def get_system_metrics(self) -> dict[str, Any]:
         uptime = (datetime.now(timezone.utc) - self.start_time).total_seconds()
         timing_stats = {
             name: {
@@ -1133,7 +1127,7 @@ class EnhancedSafetyGovernance:
         include_actions: bool = True,
         include_violations: bool = True,
         include_judgments: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         out = {"exported_at": datetime.now(timezone.utc).isoformat()}
         if include_actions:
             out["actions"] = [a.to_dict() for a in self.action_history]

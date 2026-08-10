@@ -45,6 +45,7 @@ import string
 import time
 import uuid
 from collections import Counter
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
 from functools import lru_cache
@@ -52,14 +53,6 @@ from hashlib import blake2b
 from itertools import tee
 from typing import (
     Any,
-    Awaitable,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
     Protocol,
     runtime_checkable,
 )
@@ -68,8 +61,8 @@ from typing import (
 # Project model placeholders (Adjust import paths to your actual project)
 # ---------------------------------------------------------------------------
 try:
+    from ..core.models import AgentAction, SafetyViolation, SeverityLevel, ViolationType
     from .base_monitor import BaseMonitor
-    from ..core.models import AgentAction, SafetyViolation, ViolationType, SeverityLevel
 except Exception:
     # Fallback lightweight stand-ins for demonstration/testing outside full project
     class SeverityLevel:
@@ -83,18 +76,18 @@ except Exception:
 
     @dataclass
     class AgentAction:
-        id: Optional[str]
-        stated_intent: Optional[str]
-        actual_action: Optional[str]
+        id: str | None
+        stated_intent: str | None
+        actual_action: str | None
 
     @dataclass
     class SafetyViolation:
         id: str
-        action_id: Optional[str]
+        action_id: str | None
         violation_type: str
         severity: str
         description: str
-        evidence: Dict[str, Any]
+        evidence: dict[str, Any]
 
     class BaseMonitor:
         def __init__(self, name: str):
@@ -108,7 +101,7 @@ except Exception:
 
 
 def setup_logging(
-    level: Optional[str] = None,
+    level: str | None = None,
     json_format: bool = False,
 ) -> None:
     """
@@ -170,27 +163,27 @@ class Observability:
 
     def _init_otel(self) -> None:
         try:
-            from opentelemetry import trace, metrics
+            from opentelemetry import metrics, trace
+            from opentelemetry.sdk.metrics import MeterProvider
+            from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
             from opentelemetry.sdk.resources import Resource
             from opentelemetry.sdk.trace import TracerProvider
             from opentelemetry.sdk.trace.export import BatchSpanProcessor
-            from opentelemetry.sdk.metrics import MeterProvider
-            from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 
             exporter_choice = os.getenv("OTEL_EXPORTER", "console").lower()
 
             # Span Exporter
             if exporter_choice == "otlp":
-                from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
                 from opentelemetry.exporter.otlp.proto.http.metric_exporter import (
                     OTLPMetricExporter,
                 )
+                from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 
                 span_exporter = OTLPSpanExporter()
                 metric_exporter = OTLPMetricExporter()
             else:
-                from opentelemetry.sdk.trace.export import ConsoleSpanExporter
                 from opentelemetry.sdk.metrics.export import ConsoleMetricExporter
+                from opentelemetry.sdk.trace.export import ConsoleSpanExporter
 
                 span_exporter = ConsoleSpanExporter()
                 metric_exporter = ConsoleMetricExporter()
@@ -246,16 +239,16 @@ class Observability:
             return self.tracer.start_as_current_span(name)
         return _NullContext()
 
-    def record_deviation(self, score: float, attributes: Optional[Dict[str, Any]] = None):
+    def record_deviation(self, score: float, attributes: dict[str, Any] | None = None):
         self._last_score = score
         if self.enabled and self._otel_available and self._hist_deviation:
             self._hist_deviation.record(score, attributes=attributes or {})
 
-    def increment_violation(self, attributes: Optional[Dict[str, Any]] = None):
+    def increment_violation(self, attributes: dict[str, Any] | None = None):
         if self.enabled and self._otel_available and self._counter_violations:
             self._counter_violations.add(1, attributes=attributes or {})
 
-    def increment_risk_trigger(self, attributes: Optional[Dict[str, Any]] = None):
+    def increment_risk_trigger(self, attributes: dict[str, Any] | None = None):
         if self.enabled and self._otel_available and self._counter_risk_triggers:
             self._counter_risk_triggers.add(1, attributes=attributes or {})
 
@@ -284,7 +277,7 @@ class _OptionalSentenceTransformerEmbedder:
     def __init__(self, model_name: str = "sentence-transformers/all-MiniLM-L6-v2"):
         self.model_name = model_name
         self._model = None
-        self._available_error: Optional[str] = None
+        self._available_error: str | None = None
 
     def available(self) -> bool:
         if self._model is None and self._available_error is None:
@@ -296,18 +289,18 @@ class _OptionalSentenceTransformerEmbedder:
                 self._available_error = f"{type(e).__name__}: {e}"
         return self._model is not None
 
-    @lru_cache(maxsize=512)
-    def encode(self, text: str) -> Optional[List[float]]:
+    @lru_cache(maxsize=512)  # noqa: B019
+    def encode(self, text: str) -> list[float] | None:
         if not self.available():
             return None
         vec = self._model.encode(text, normalize_embeddings=True)  # type: ignore[attr-defined]
         return vec.tolist() if hasattr(vec, "tolist") else list(vec)
 
-    def similarity(self, a: str, b: str) -> Optional[float]:
+    def similarity(self, a: str, b: str) -> float | None:
         va, vb = self.encode(a), self.encode(b)
         if not va or not vb:
             return None
-        dot = sum(x * y for x, y in zip(va, vb))
+        dot = sum(x * y for x, y in zip(va, vb))  # noqa: B905
         return max(0.0, min(1.0, float(dot)))
 
 
@@ -317,7 +310,7 @@ class _OptionalNLI:
     def __init__(self, model_name: str = "facebook/bart-large-mnli"):
         self.model_name = model_name
         self._pipe = None
-        self._available_error: Optional[str] = None
+        self._available_error: str | None = None
 
     def available(self) -> bool:
         if self._pipe is None and self._available_error is None:
@@ -329,8 +322,8 @@ class _OptionalNLI:
                 self._available_error = f"{type(e).__name__}: {e}"
         return self._pipe is not None
 
-    @lru_cache(maxsize=512)
-    def score(self, premise: str, hypothesis: str) -> Optional[Dict[str, float]]:
+    @lru_cache(maxsize=512)  # noqa: B019
+    def score(self, premise: str, hypothesis: str) -> dict[str, float] | None:
         if not self.available():
             return None
         try:
@@ -338,7 +331,7 @@ class _OptionalNLI:
             raw = pipe(f"{premise} </s></s> {hypothesis}", return_all_scores=True)  # type: ignore[operator]
             if not raw or not isinstance(raw, list) or not raw[0]:
                 return None
-            label_map: Dict[str, float] = {}
+            label_map: dict[str, float] = {}
             for item in raw[0]:
                 label = str(item.get("label", "")).lower()
                 label_map[label] = float(item.get("score", 0.0))
@@ -362,17 +355,17 @@ class _OptionalNLI:
 class Metric(Protocol):
     name: str
 
-    def compute(self, ctx: "MetricContext") -> float: ...
+    def compute(self, ctx: MetricContext) -> float: ...
 
 
 @dataclass
 class MetricContext:
-    intent_tokens: List[str]
-    action_tokens: List[str]
+    intent_tokens: list[str]
+    action_tokens: list[str]
     norm_intent: str
     norm_action: str
-    bigrams_intent: List[Tuple[str, str]]
-    bigrams_action: List[Tuple[str, str]]
+    bigrams_intent: list[tuple[str, str]]
+    bigrams_action: list[tuple[str, str]]
 
 
 @dataclass
@@ -436,16 +429,16 @@ class CoverageMetric:
 # Config & Severity Policy
 # ---------------------------------------------------------------------------
 
-SeverityPolicy = Callable[[float, Dict[str, Any]], Optional[SeverityLevel]]
+SeverityPolicy = Callable[[float, dict[str, Any]], SeverityLevel | None]
 
 
 @dataclass
 class IntentMonitorConfig:
     deviation_threshold: float = 0.7
     min_token_len: int = 2
-    stopwords: Optional[Sequence[str]] = None
-    synonyms: Optional[Dict[str, str]] = None
-    weights: Optional[Dict[str, float]] = None
+    stopwords: Sequence[str] | None = None
+    synonyms: dict[str, str] | None = None
+    weights: dict[str, float] | None = None
     enable_embeddings: bool = False
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     enable_nli: bool = False
@@ -457,15 +450,15 @@ class IntentMonitorConfig:
     enable_timings: bool = False
     parallel_optional: bool = True
     max_chars: int = 8000
-    severity_thresholds: Dict[str, float] = field(
+    severity_thresholds: dict[str, float] = field(
         default_factory=lambda: {
             "critical": 0.95,
             "high": 0.85,
             "medium": 0.70,
         }
     )
-    severity_policy: Optional[SeverityPolicy] = None
-    metric_overrides: Optional[Dict[str, Metric]] = None
+    severity_policy: SeverityPolicy | None = None
+    metric_overrides: dict[str, Metric] | None = None
     allow_synonym_cycle: bool = False
 
 
@@ -477,7 +470,7 @@ class IntentMonitorConfig:
 class IntentDeviationMonitor(BaseMonitor):
     """Detects deviation between stated intent and actual action with logging + OTEL instrumentation."""
 
-    _DEFAULT_STOPWORDS: Set[str] = {
+    _DEFAULT_STOPWORDS: set[str] = {
         "the",
         "a",
         "an",
@@ -533,7 +526,7 @@ class IntentDeviationMonitor(BaseMonitor):
         "yes",
     }
 
-    _RISK_TOKENS_CATEGORY: Dict[str, str] = {
+    _RISK_TOKENS_CATEGORY: dict[str, str] = {
         "delete": "destructive",
         "drop": "destructive",
         "truncate": "destructive",
@@ -575,15 +568,15 @@ class IntentDeviationMonitor(BaseMonitor):
         "ignore": "control_bypass",
         "override": "control_bypass",
     }
-    _BYPASS_PHRASES: Set[str] = {
+    _BYPASS_PHRASES: set[str] = {
         "ignore safety",
         "bypass policy",
         "disable guard",
         "disable safeguards",
     }
-    _NEGATIONS: Set[str] = {"not", "no", "never", "without", "avoid"}
+    _NEGATIONS: set[str] = {"not", "no", "never", "without", "avoid"}
 
-    def __init__(self, observability: Optional[Observability] = None, **kwargs):
+    def __init__(self, observability: Observability | None = None, **kwargs):
         super().__init__("Intent Deviation Monitor (OTEL)")
         self.log = logging.getLogger(self.__class__.__name__)
         if "config" in kwargs:
@@ -604,7 +597,7 @@ class IntentDeviationMonitor(BaseMonitor):
         if not self.config.allow_synonym_cycle:
             self._validate_synonyms(self.synonyms)
 
-        self.high_risk_tokens: Set[str] = set(self._RISK_TOKENS_CATEGORY.keys()) | set(
+        self.high_risk_tokens: set[str] = set(self._RISK_TOKENS_CATEGORY.keys()) | set(
             self.config.extra_high_risk_tokens
         )
         self.configured_weights = self._sanitize_weights(
@@ -621,7 +614,7 @@ class IntentDeviationMonitor(BaseMonitor):
         self._nli = _OptionalNLI(self.config.nli_model) if self.config.enable_nli else None
 
         # Metrics registry
-        self.metrics: Dict[str, Metric] = {
+        self.metrics: dict[str, Metric] = {
             "unigram_jaccard": JaccardMetric("unigram_jaccard", use_bigrams=False),
             "bigram_jaccard": JaccardMetric("bigram_jaccard", use_bigrams=True),
             "cosine": CosineTFMetric(),
@@ -635,7 +628,7 @@ class IntentDeviationMonitor(BaseMonitor):
     # Public API
     # -----------------------------------------------------------------------
 
-    async def analyze_action(self, action: AgentAction) -> List[SafetyViolation]:
+    async def analyze_action(self, action: AgentAction) -> list[SafetyViolation]:
         if not self.enabled:
             return []
         with self.observability.span("intent_monitor.analyze_action"):
@@ -718,9 +711,9 @@ class IntentDeviationMonitor(BaseMonitor):
 
     async def _calculate_deviation_async(
         self,
-        intent: Optional[str],
-        action: Optional[str],
-    ) -> Tuple[float, Dict[str, Any], Dict[str, Any]]:
+        intent: str | None,
+        action: str | None,
+    ) -> tuple[float, dict[str, Any], dict[str, Any]]:
         if not intent and not action:
             return 0.0, self._empty_evidence(), {"risk_cues_detected": False}
         if not intent or not action:
@@ -745,8 +738,8 @@ class IntentDeviationMonitor(BaseMonitor):
             bigrams_action=bigrams_action,
         )
 
-        components: Dict[str, float] = {}
-        timings: Dict[str, float] = {}
+        components: dict[str, float] = {}
+        timings: dict[str, float] = {}
         with self.observability.span("intent_monitor.lexical_metrics"):
             for name, metric in self.metrics.items():
                 t0 = time.time()
@@ -758,8 +751,8 @@ class IntentDeviationMonitor(BaseMonitor):
                 if self.config.enable_timings:
                     timings[name] = time.time() - t0
 
-        embed_sim: Optional[float] = None
-        nli_scores: Optional[Dict[str, Dict[str, float]]] = None
+        embed_sim: float | None = None
+        nli_scores: dict[str, dict[str, float]] | None = None
 
         async def run_embedding():
             if self._embedder is None:
@@ -794,7 +787,7 @@ class IntentDeviationMonitor(BaseMonitor):
                 return scores
 
         if self.config.parallel_optional:
-            tasks: List[Awaitable] = []
+            tasks: list[Awaitable] = []
             if self._embedder is not None:
                 tasks.append(run_embedding())
             if self._nli is not None:
@@ -868,7 +861,7 @@ class IntentDeviationMonitor(BaseMonitor):
         if trunc_note_a:
             notes.append(trunc_note_a)
 
-        evidence: Dict[str, Any] = {
+        evidence: dict[str, Any] = {
             "metrics": metrics_evidence,
             "configured_weights": self.configured_weights,
             "effective_weights": {k: round(v, 4) for k, v in effective_weights.items()},
@@ -906,8 +899,8 @@ class IntentDeviationMonitor(BaseMonitor):
     # -----------------------------------------------------------------------
 
     def _build_contribution_profile(
-        self, components: Dict[str, float], weights: Dict[str, float]
-    ) -> Dict[str, Any]:
+        self, components: dict[str, float], weights: dict[str, float]
+    ) -> dict[str, Any]:
         contrib = []
         for k, w in weights.items():
             contrib.append((k, w * components.get(k, 0.0)))
@@ -917,7 +910,7 @@ class IntentDeviationMonitor(BaseMonitor):
             "top_metric": contrib[0][0] if contrib else None,
         }
 
-    def _default_weights(self) -> Dict[str, float]:
+    def _default_weights(self) -> dict[str, float]:
         return {
             "unigram_jaccard": 0.20,
             "bigram_jaccard": 0.10,
@@ -928,7 +921,7 @@ class IntentDeviationMonitor(BaseMonitor):
             "nli_entailment": 0.05,
         }
 
-    def _sanitize_weights(self, weights: Dict[str, float]) -> Dict[str, float]:
+    def _sanitize_weights(self, weights: dict[str, float]) -> dict[str, float]:
         supported = set(self._default_weights().keys())
         filtered = {k: max(0.0, float(v)) for k, v in weights.items() if k in supported}
         if not filtered:
@@ -939,7 +932,7 @@ class IntentDeviationMonitor(BaseMonitor):
             total = sum(filtered.values())
         return {k: v / total for k, v in filtered.items()}
 
-    def _aggregate_similarity(self, components: Dict[str, float]) -> Tuple[float, Dict[str, float]]:
+    def _aggregate_similarity(self, components: dict[str, float]) -> tuple[float, dict[str, float]]:
         usable = {k: v for k, v in self.configured_weights.items() if k in components}
         total = sum(usable.values())
         if total <= 0:
@@ -948,9 +941,9 @@ class IntentDeviationMonitor(BaseMonitor):
         sim = sum(eff[k] * components[k] for k in eff)
         return self._clamp(sim, 0.0, 1.0), eff
 
-    def _find_risky_terms(self, tokens: Sequence[str]) -> Set[str]:
+    def _find_risky_terms(self, tokens: Sequence[str]) -> set[str]:
         toks = set(tokens)
-        risky: Set[str] = set()
+        risky: set[str] = set()
         for t in toks:
             if t in self.high_risk_tokens:
                 risky.add(t)
@@ -960,8 +953,8 @@ class IntentDeviationMonitor(BaseMonitor):
                 risky.add("drop")
         return risky
 
-    def _categorize_risks(self, risky_terms: Set[str]) -> Dict[str, List[str]]:
-        cat_map: Dict[str, List[str]] = {}
+    def _categorize_risks(self, risky_terms: set[str]) -> dict[str, list[str]]:
+        cat_map: dict[str, list[str]] = {}
         for term in risky_terms:
             cat = self._RISK_TOKENS_CATEGORY.get(term, "other")
             cat_map.setdefault(cat, []).append(term)
@@ -970,7 +963,7 @@ class IntentDeviationMonitor(BaseMonitor):
     def _find_bypass_cues(self, text: str) -> bool:
         if not text:
             return False
-        for phrase in self._BYPASS_PHRASES:
+        for phrase in self._BYPASS_PHRASES:  # noqa: SIM110
             if phrase in text:
                 return True
         return False
@@ -981,7 +974,7 @@ class IntentDeviationMonitor(BaseMonitor):
         *,
         contradiction: float,
         risk_active: bool,
-        evidence: Dict[str, Any],
+        evidence: dict[str, Any],
     ) -> SeverityLevel:
         adjusted = deviation_score
         adjusted = min(
@@ -1013,21 +1006,21 @@ class IntentDeviationMonitor(BaseMonitor):
     def _apply_synonyms(self, token: str) -> str:
         return self.synonyms.get(token, token)
 
-    def _validate_synonyms(self, syn_map: Dict[str, str]) -> None:
+    def _validate_synonyms(self, syn_map: dict[str, str]) -> None:
         for k, v in syn_map.items():
             if syn_map.get(v) == k:
                 raise ValueError(
                     f"Synonym cycle detected: {k} <-> {v}. Set allow_synonym_cycle=True to override."
                 )
 
-    @lru_cache(maxsize=4096)
-    def _tokenize_cached(self, text: str) -> List[str]:
+    @lru_cache(maxsize=4096)  # noqa: B019
+    def _tokenize_cached(self, text: str) -> list[str]:
         return self._tokenize(text)
 
-    def _tokenize(self, text: str) -> List[str]:
+    def _tokenize(self, text: str) -> list[str]:
         if not text:
             return []
-        out: List[str] = []
+        out: list[str] = []
         for t in text.split():
             if t in self.stopwords:
                 continue
@@ -1036,14 +1029,14 @@ class IntentDeviationMonitor(BaseMonitor):
                 out.append(t)
         return out
 
-    def _bigrams(self, tokens: Sequence[str]) -> List[Tuple[str, str]]:
+    def _bigrams(self, tokens: Sequence[str]) -> list[tuple[str, str]]:
         if len(tokens) < 2:
             return []
         a, b = tee(tokens)
         next(b, None)
-        return list(zip(a, b))
+        return list(zip(a, b))  # noqa: B905
 
-    def _maybe_truncate(self, text: str) -> Tuple[str, Optional[str]]:
+    def _maybe_truncate(self, text: str) -> tuple[str, str | None]:
         if len(text) > self.config.max_chars:
             return (
                 text[: self.config.max_chars],
@@ -1054,8 +1047,8 @@ class IntentDeviationMonitor(BaseMonitor):
     def _clamp(self, x: float, lo: float, hi: float) -> float:
         return max(lo, min(hi, x))
 
-    def _empty_evidence(self, *, flag: Optional[str] = None) -> Dict[str, Any]:
-        out: Dict[str, Any] = {
+    def _empty_evidence(self, *, flag: str | None = None) -> dict[str, Any]:
+        out: dict[str, Any] = {
             "metrics": {},
             "unigram_overlap": {"only_in_intent": [], "only_in_action": []},
             "bigram_overlap": {"only_in_intent": [], "only_in_action": []},
@@ -1118,7 +1111,7 @@ async def _demo():
 
 if __name__ == "__main__":
     setup_logging(json_format=False)
-    try:
+    try:  # noqa: SIM105
         asyncio.run(_demo())
     except KeyboardInterrupt:
         pass

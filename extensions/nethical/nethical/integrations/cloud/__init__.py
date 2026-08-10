@@ -6,8 +6,8 @@ This module provides integration with major cloud ML platforms:
 - Snowflake Cortex: AI/ML functions in Snowflake
 """
 
-from typing import Dict, Any, Optional
 import logging
+from typing import Any, Dict, Optional  # noqa: UP035
 
 from .base import CloudMLProvider, ExperimentRun, RunStatus
 
@@ -45,12 +45,12 @@ except ImportError:
     SnowflakeCortexConnector = None
 
 
-def get_cloud_integration_info() -> Dict[str, Any]:
+def get_cloud_integration_info() -> dict[str, Any]:
     """Get information about available cloud integrations.
     
     Returns:
         Dictionary with integration availability and setup info
-    """
+    """  # noqa: W293
     return {
         "vertex_ai": {
             "available": VERTEX_AI_AVAILABLE,

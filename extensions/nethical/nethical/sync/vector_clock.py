@@ -15,8 +15,7 @@ import logging
 import time
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, Optional, Tuple
-
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +47,7 @@ class VectorClock:
         node_id: ID of the local node
     """
 
-    clock: Dict[str, int] = field(default_factory=dict)
+    clock: dict[str, int] = field(default_factory=dict)
     node_id: str = ""
 
     def __post_init__(self):
@@ -168,7 +167,7 @@ class VectorClock:
         """Create a copy of this vector clock."""
         return VectorClock(clock=dict(self.clock), node_id=self.node_id)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "clock": dict(self.clock),
@@ -176,7 +175,7 @@ class VectorClock:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "VectorClock":
+    def from_dict(cls, data: dict[str, Any]) -> "VectorClock":
         """Create from dictionary."""
         return cls(
             clock=dict(data.get("clock", {})),
@@ -210,7 +209,7 @@ class HybridLogicalClock:
     # Class constant for backwards compatibility
     MAX_DRIFT_USEC: int = 60 * 1_000_000
 
-    def now(self) -> Tuple[int, int]:
+    def now(self) -> tuple[int, int]:
         """
         Generate a new HLC timestamp for a local event.
 
@@ -229,7 +228,7 @@ class HybridLogicalClock:
 
         return (self.physical, self.logical)
 
-    def send(self) -> Tuple[int, int]:
+    def send(self) -> tuple[int, int]:
         """
         Generate HLC timestamp for send event.
 
@@ -238,7 +237,7 @@ class HybridLogicalClock:
         """
         return self.now()
 
-    def receive(self, remote_physical: int, remote_logical: int) -> Tuple[int, int]:
+    def receive(self, remote_physical: int, remote_logical: int) -> tuple[int, int]:
         """
         Update HLC on receiving a message.
 
@@ -333,7 +332,7 @@ class HybridLogicalClock:
         logical = ts & 0xFFFFF
         return cls(physical=physical, logical=logical, node_id=node_id)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "physical": self.physical,
@@ -342,7 +341,7 @@ class HybridLogicalClock:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "HybridLogicalClock":
+    def from_dict(cls, data: dict[str, Any]) -> "HybridLogicalClock":
         """Create from dictionary."""
         return cls(
             physical=data.get("physical", 0),

@@ -1,23 +1,23 @@
 from __future__ import annotations
 
-from typing import Dict, Any, Optional, Callable, Iterable
+from collections.abc import Callable, Iterable
 from datetime import datetime, timezone
+from typing import Any
 
 from nethical.core import IntegratedGovernance
-from nethical.hooks.interfaces import (
-    Region,
-    AttestationProvider,
-    CryptoSignalProvider,
-    CommsPolicy,
-    OfflineStore,
-)
-from nethical.security.attestation import NoopAttestation
-from nethical.net.zerotrust import NoopCommsPolicy
-from nethical.storage.tamper_store import TamperEvidentOfflineStore
-from nethical.policy.engine import PolicyEngine
-
-from nethical.detectors.healthcare.phi_detector import PHIDetector, detect_and_redact_payload
 from nethical.detectors.healthcare.clinical_risk_detectors import extract_clinical_signals
+from nethical.detectors.healthcare.phi_detector import PHIDetector, detect_and_redact_payload
+from nethical.hooks.interfaces import (
+    AttestationProvider,
+    CommsPolicy,
+    CryptoSignalProvider,
+    OfflineStore,
+    Region,
+)
+from nethical.net.zerotrust import NoopCommsPolicy
+from nethical.policy.engine import PolicyEngine
+from nethical.security.attestation import NoopAttestation
+from nethical.storage.tamper_store import TamperEvidentOfflineStore
 
 
 class HealthcareGuardrails:
@@ -35,12 +35,12 @@ class HealthcareGuardrails:
         gov: IntegratedGovernance,
         region: Region,
         policy_path: str = "policies/healthcare/core.yaml",
-        attestation: Optional[AttestationProvider] = None,
-        crypto_signal: Optional[CryptoSignalProvider] = None,
-        comms: Optional[CommsPolicy] = None,
-        offline_store: Optional[OfflineStore] = None,
-        input_allowlist: Optional[Iterable[str]] = None,
-        output_allowlist: Optional[Iterable[str]] = None,
+        attestation: AttestationProvider | None = None,
+        crypto_signal: CryptoSignalProvider | None = None,
+        comms: CommsPolicy | None = None,
+        offline_store: OfflineStore | None = None,
+        input_allowlist: Iterable[str] | None = None,
+        output_allowlist: Iterable[str] | None = None,
     ):
         self.gov = gov
         self.region = region
@@ -59,7 +59,7 @@ class HealthcareGuardrails:
     def _timestamp(self) -> str:
         return datetime.now(timezone.utc).isoformat(timespec="milliseconds") + "Z"
 
-    def _apply_allowlist(self, data: Dict[str, Any], allowlist: set[str]) -> Dict[str, Any]:
+    def _apply_allowlist(self, data: dict[str, Any], allowlist: set[str]) -> dict[str, Any]:
         if not allowlist:
             return data
         return {k: v for k, v in data.items() if k in allowlist}
@@ -76,17 +76,17 @@ class HealthcareGuardrails:
             return [self._deep_redact(v) for v in value]
         return value
 
-    def _sanitize_for_log(self, event: Dict[str, Any]) -> Dict[str, Any]:
+    def _sanitize_for_log(self, event: dict[str, Any]) -> dict[str, Any]:
         """
         Ensure no PHI leaks into logs. Redact all string values deep in the structure.
         """
         return self._deep_redact(event)
 
-    def _log_event(self, event: Dict[str, Any]) -> None:
+    def _log_event(self, event: dict[str, Any]) -> None:
         event_with_meta = {"ts": self._timestamp(), **event}
         self.offline.append_event(self._sanitize_for_log(event_with_meta))
 
-    def _policy_to_governance_flags(self, policy_out: Dict[str, Any]) -> Dict[str, Any]:
+    def _policy_to_governance_flags(self, policy_out: dict[str, Any]) -> dict[str, Any]:
         """
         Map policy engine output to governance flags with safe defaults.
         Expected policy fields (best effort):
@@ -123,7 +123,7 @@ class HealthcareGuardrails:
 
     # ------------- pipeline stages -------------
 
-    def preprocess(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+    def preprocess(self, payload: dict[str, Any]) -> dict[str, Any]:
         """
         - Enforce minimum necessary on input (if configured)
         - Redact PHI at ingress
@@ -147,7 +147,7 @@ class HealthcareGuardrails:
         self._log_event({"type": "ingress", "keys": list(redacted.keys())})
         return redacted
 
-    def postprocess(self, result: Dict[str, Any]) -> Dict[str, Any]:
+    def postprocess(self, result: dict[str, Any]) -> dict[str, Any]:
         """
         - Redact PHI on egress (agent_output and all string fields)
         - Enforce minimum necessary on output (if configured)
@@ -172,7 +172,7 @@ class HealthcareGuardrails:
         )
         return redacted_result
 
-    def evaluate(self, agent_id: str, action_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+    def evaluate(self, agent_id: str, action_id: str, payload: dict[str, Any]) -> dict[str, Any]:
         """
         - Extract clinical signals into facts
         - Evaluate policy
@@ -188,7 +188,7 @@ class HealthcareGuardrails:
         action_text = payload.get("agent_output") or payload.get("user_input") or ""
 
         # Build features for governance
-        features: Dict[str, Any] = {
+        features: dict[str, Any] = {
             "ml_score": (
                 float(policy_out.get("ml_score", 0.0)) if isinstance(policy_out, dict) else 0.0
             ),
@@ -222,9 +222,9 @@ class HealthcareGuardrails:
         self,
         agent_id: str,
         action_id: str,
-        payload: Dict[str, Any],
-        agent_fn: Callable[[Dict[str, Any]], Dict[str, Any]],
-    ) -> Dict[str, Any]:
+        payload: dict[str, Any],
+        agent_fn: Callable[[dict[str, Any]], dict[str, Any]],
+    ) -> dict[str, Any]:
         """
         Convenience method to run the full pipeline:
         preprocess -> agent_fn -> postprocess -> evaluate

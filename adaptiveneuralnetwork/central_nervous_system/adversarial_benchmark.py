@@ -121,14 +121,14 @@ class AdversarialSignalTester:
         jamming_intensity = params["jamming_intensity"]
         coordination_level = params["coordination_level"]
 
-        for step in range(total_attempts):
+        for step in range(total_attempts):  # noqa: B007
             # Simulate coordinated jamming attack
             jamming_active = np.random.random() < coordination_level
 
             if jamming_active:
                 # Calculate interference from multiple attackers
                 interference = 0
-                for attacker in malicious_nodes:
+                for attacker in malicious_nodes:  # noqa: B007
                     # Attackers coordinate their jamming
                     if np.random.random() < jamming_intensity:
                         interference += 0.3
@@ -188,9 +188,9 @@ class AdversarialSignalTester:
         correct_consensus_count = 0
         total_consensus_rounds = 50
         false_signal_prob = params["false_signal_probability"]
-        consensus_threshold = params["consensus_threshold"]
+        consensus_threshold = params["consensus_threshold"]  # noqa: F841
 
-        for round_num in range(total_consensus_rounds):
+        for round_num in range(total_consensus_rounds):  # noqa: B007
             # Generate true value for consensus
             true_value = np.random.random()
             votes = []
@@ -278,7 +278,7 @@ class AdversarialSignalTester:
         steps_survived = 0
         max_steps = attack_duration
 
-        for step in range(max_steps):
+        for step in range(max_steps):  # noqa: B007
             if victim.energy <= 0:
                 break
 
@@ -357,7 +357,7 @@ class AdversarialSignalTester:
 
         # Designate trust manipulators
         manipulator_count = params["trust_manipulators"]
-        trust_decay_rate = params["trust_decay_rate"]
+        trust_decay_rate = params["trust_decay_rate"]  # noqa: F841
         false_reputation_prob = params["false_reputation_probability"]
 
         # Initialize trust network

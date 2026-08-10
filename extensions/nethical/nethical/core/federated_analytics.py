@@ -4,13 +4,14 @@ This module enables cross-region metric aggregation without raw data sharing,
 privacy-preserving correlation detection, and encrypted metric reporting.
 """
 
-from typing import Dict, List, Optional, Any, Tuple
+import hashlib
+import json
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
+from typing import Any
+
 import numpy as np
-import hashlib
-import json
 
 
 class AggregationMethod(Enum):
@@ -28,24 +29,24 @@ class RegionMetrics:
 
     region_id: str
     timestamp: datetime
-    metrics: Dict[str, float]
+    metrics: dict[str, float]
     sample_size: int
     encrypted: bool = False
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
 class AggregatedMetrics:
     """Result of federated aggregation."""
 
-    regions: List[str]
-    aggregated_values: Dict[str, float]
+    regions: list[str]
+    aggregated_values: dict[str, float]
     timestamp: datetime
     method: AggregationMethod
     privacy_preserving: bool
     noise_level: float
     total_samples: int
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -56,9 +57,9 @@ class CorrelationResult:
     variable2: str
     correlation: float
     p_value: float
-    regions: List[str]
+    regions: list[str]
     privacy_preserving: bool
-    confidence_interval: Tuple[float, float]
+    confidence_interval: tuple[float, float]
 
 
 class FederatedAnalytics:
@@ -66,7 +67,7 @@ class FederatedAnalytics:
 
     def __init__(
         self,
-        regions: List[str],
+        regions: list[str],
         enable_encryption: bool = True,
         privacy_preserving: bool = True,
         noise_level: float = 0.1,
@@ -88,10 +89,10 @@ class FederatedAnalytics:
         self.min_samples_per_region = min_samples_per_region
 
         # Storage for regional metrics
-        self.regional_metrics: Dict[str, List[RegionMetrics]] = {region: [] for region in regions}
+        self.regional_metrics: dict[str, list[RegionMetrics]] = {region: [] for region in regions}
 
         # Aggregation history
-        self.aggregation_history: List[AggregatedMetrics] = []
+        self.aggregation_history: list[AggregatedMetrics] = []
 
         # Statistics
         self.stats = {"total_aggregations": 0, "regions_processed": set(), "privacy_operations": 0}
@@ -99,9 +100,9 @@ class FederatedAnalytics:
     def register_regional_metrics(
         self,
         region_id: str,
-        metrics: Dict[str, float],
+        metrics: dict[str, float],
         sample_size: int,
-        metadata: Dict[str, Any] = None,
+        metadata: dict[str, Any] = None,
     ) -> None:
         """Register metrics from a region.
 
@@ -135,9 +136,9 @@ class FederatedAnalytics:
 
     def compute_metrics(
         self,
-        metric_names: Optional[List[str]] = None,
+        metric_names: list[str] | None = None,
         privacy_preserving: bool = True,
-        noise_level: Optional[float] = None,
+        noise_level: float | None = None,
         method: AggregationMethod = AggregationMethod.SECURE_AVERAGE,
     ) -> AggregatedMetrics:
         """Compute aggregated metrics across all regions.
@@ -154,7 +155,7 @@ class FederatedAnalytics:
         noise_level = noise_level or self.noise_level
 
         # Collect latest metrics from each region
-        regional_values: Dict[str, List[Tuple[float, int]]] = {}
+        regional_values: dict[str, list[tuple[float, int]]] = {}
         total_samples = 0
         participating_regions = []
 
@@ -223,7 +224,7 @@ class FederatedAnalytics:
         return result
 
     def privacy_preserving_correlation(
-        self, variable1: str, variable2: str, noise_level: Optional[float] = None
+        self, variable1: str, variable2: str, noise_level: float | None = None
     ) -> CorrelationResult:
         """Compute privacy-preserving correlation between variables.
 
@@ -296,7 +297,7 @@ class FederatedAnalytics:
 
     def secure_multiparty_statistic(
         self, metric_name: str, statistic: str = "mean", privacy_preserving: bool = True
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Compute statistics using secure multi-party computation.
 
         Args:
@@ -332,7 +333,7 @@ class FederatedAnalytics:
 
         # Compute statistic
         if statistic == "mean":
-            result = self._secure_weighted_average(list(zip(values, sample_sizes)))
+            result = self._secure_weighted_average(list(zip(values, sample_sizes)))  # noqa: B905
         elif statistic == "median":
             result = float(np.median(values))
         elif statistic == "std":
@@ -356,7 +357,7 @@ class FederatedAnalytics:
             "privacy_preserving": privacy_preserving,
         }
 
-    def get_encrypted_report(self, metric_names: Optional[List[str]] = None) -> Dict[str, Any]:
+    def get_encrypted_report(self, metric_names: list[str] | None = None) -> dict[str, Any]:
         """Generate encrypted metric report.
 
         Args:
@@ -392,7 +393,7 @@ class FederatedAnalytics:
             },
         }
 
-    def _encrypt_metrics(self, metrics: Dict[str, float]) -> Dict[str, float]:
+    def _encrypt_metrics(self, metrics: dict[str, float]) -> dict[str, float]:
         """Encrypt metrics for secure transmission.
 
         Note: This is a simplified encryption. In production, use proper
@@ -402,10 +403,10 @@ class FederatedAnalytics:
         encrypted = {}
         for key, value in metrics.items():
             # Hash-based encryption (simplified)
-            encrypted[key] = value  # Keep values, encrypt separately in practice
+            encrypted[key] = value  # Keep values, encrypt separately in practice  # noqa: PERF403
         return encrypted
 
-    def _decrypt_metrics(self, metrics: Dict[str, float]) -> Dict[str, float]:
+    def _decrypt_metrics(self, metrics: dict[str, float]) -> dict[str, float]:
         """Decrypt metrics.
 
         Note: This is a simplified decryption matching the encryption above.
@@ -413,13 +414,13 @@ class FederatedAnalytics:
         # Simplified decryption
         return metrics
 
-    def _encrypt_report(self, report: Dict[str, Any]) -> str:
+    def _encrypt_report(self, report: dict[str, Any]) -> str:
         """Encrypt report for secure transmission."""
         # Simplified - in production use proper encryption
         report_str = json.dumps(report, sort_keys=True)
         return hashlib.sha256(report_str.encode()).hexdigest()
 
-    def _secure_weighted_average(self, values_and_weights: List[Tuple[float, int]]) -> float:
+    def _secure_weighted_average(self, values_and_weights: list[tuple[float, int]]) -> float:
         """Compute weighted average using secure aggregation."""
         total_weight = sum(w for _, w in values_and_weights)
         if total_weight == 0:
@@ -428,7 +429,7 @@ class FederatedAnalytics:
         weighted_sum = sum(v * w for v, w in values_and_weights)
         return weighted_sum / total_weight
 
-    def _federated_mean(self, values_and_sizes: List[Tuple[float, int]]) -> float:
+    def _federated_mean(self, values_and_sizes: list[tuple[float, int]]) -> float:
         """Compute federated mean across regions."""
         return self._secure_weighted_average(values_and_sizes)
 
@@ -437,7 +438,7 @@ class FederatedAnalytics:
         noise = np.random.laplace(0, noise_level * abs(value))
         return value + noise
 
-    def _secure_correlation(self, values1: List[float], values2: List[float]) -> float:
+    def _secure_correlation(self, values1: list[float], values2: list[float]) -> float:
         """Compute correlation using secure aggregation."""
         if len(values1) != len(values2) or len(values1) < 2:
             return 0.0
@@ -467,7 +468,7 @@ class FederatedAnalytics:
 
     def _correlation_confidence_interval(
         self, correlation: float, n: int, confidence: float = 0.95
-    ) -> Tuple[float, float]:
+    ) -> tuple[float, float]:
         """Compute confidence interval for correlation."""
         # Fisher z-transformation
         z = 0.5 * np.log((1 + correlation) / (1 - correlation + 1e-10))
@@ -488,7 +489,7 @@ class FederatedAnalytics:
 
         return (float(np.clip(r_lower, -1, 1)), float(np.clip(r_upper, -1, 1)))
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get federated analytics statistics."""
         return {
             "total_aggregations": self.stats["total_aggregations"],
@@ -500,7 +501,7 @@ class FederatedAnalytics:
             "encryption_enabled": self.enable_encryption,
         }
 
-    def validate_privacy_guarantees(self) -> Dict[str, Any]:
+    def validate_privacy_guarantees(self) -> dict[str, Any]:
         """Validate that privacy guarantees are maintained."""
         validation = {"privacy_preserving": self.privacy_preserving, "checks": {}, "passed": True}
 

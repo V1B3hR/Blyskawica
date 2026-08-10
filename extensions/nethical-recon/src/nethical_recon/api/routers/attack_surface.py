@@ -10,8 +10,8 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from nethical_recon.attack_surface import AttackSurfaceMapper, BaselineManager
 from nethical_recon.api.auth import get_current_user
+from nethical_recon.attack_surface import AttackSurfaceMapper
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +91,7 @@ async def map_attack_surface(
         }
     except Exception as e:
         logger.error(f"Failed to map attack surface: {e}")
-        raise HTTPException(status_code=500, detail=f"Mapping failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Mapping failed: {str(e)}")  # noqa: B904
 
 
 @router.get("/snapshots/{snapshot_id}")
@@ -130,7 +130,7 @@ async def create_baseline(
         }
     except Exception as e:
         logger.error(f"Failed to create baseline: {e}")
-        raise HTTPException(status_code=500, detail=f"Baseline creation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Baseline creation failed: {str(e)}")  # noqa: B904
 
 
 @router.get("/baselines")
@@ -178,7 +178,7 @@ async def compare_with_baseline(
         }
     except Exception as e:
         logger.error(f"Failed to compare with baseline: {e}")
-        raise HTTPException(status_code=500, detail=f"Comparison failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Comparison failed: {str(e)}")  # noqa: B904
 
 
 @router.get("/report/{snapshot_id}")
@@ -209,4 +209,4 @@ async def get_attack_surface_report(
         }
     except Exception as e:
         logger.error(f"Failed to generate report: {e}")
-        raise HTTPException(status_code=500, detail=f"Report generation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Report generation failed: {str(e)}")  # noqa: B904

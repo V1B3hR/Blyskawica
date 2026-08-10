@@ -7,10 +7,10 @@ Comprehensive observability for Nethical governance system including:
 - Alert rules
 """
 
+from .alerts import Alert, AlertRuleManager, AlertSeverity
 from .metrics import MetricsCollector, get_metrics_collector, record_action, record_violation
+from .sanitization import LogSanitizer, get_sanitizer, sanitize_dict, sanitize_log
 from .tracing import TracingManager, get_tracer, trace_span
-from .sanitization import LogSanitizer, get_sanitizer, sanitize_log, sanitize_dict
-from .alerts import AlertRuleManager, AlertSeverity, Alert
 
 __all__ = [
     'MetricsCollector',

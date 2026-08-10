@@ -112,7 +112,7 @@ PLUGIN_DESCRIPTION = "Custom scanner plugin"
 def create_plugin(config: Dict[str, Any]) -> CustomScanner:
     """Create plugin instance"""
     return CustomScanner(config)
-'''
+'''  # noqa: W293
 
     def _analyzer_template(self) -> str:
         """Generate analyzer plugin template"""
@@ -171,7 +171,7 @@ PLUGIN_DESCRIPTION = "Custom analyzer plugin"
 def create_plugin(config: Dict[str, Any]) -> CustomAnalyzer:
     """Create plugin instance"""
     return CustomAnalyzer(config)
-'''
+'''  # noqa: W293
 
     def _reporter_template(self) -> str:
         """Generate reporter plugin template"""
@@ -224,7 +224,7 @@ PLUGIN_DESCRIPTION = "Custom reporter plugin"
 def create_plugin(config: Dict[str, Any]) -> CustomReporter:
     """Create plugin instance"""
     return CustomReporter(config)
-'''
+'''  # noqa: W293
 
     def get_template(self, template_type: str) -> PluginTemplate | None:
         """Get plugin template by type"""
@@ -253,7 +253,7 @@ def create_plugin(config: Dict[str, Any]) -> CustomReporter:
             f"{plugin_name}.py": template.code,
             "README.md": self._generate_readme(plugin_name, template_type),
             "requirements.txt": "# Add your dependencies here\n",
-            "test_{}.py".format(plugin_name): self._generate_test_template(plugin_name),
+            f"test_{plugin_name}.py": self._generate_test_template(plugin_name),
             "plugin.yaml": self._generate_plugin_manifest(plugin_name, template_type),
         }
 

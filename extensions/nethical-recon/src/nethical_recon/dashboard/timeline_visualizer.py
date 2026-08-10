@@ -6,13 +6,13 @@ over time, including scans, findings, and events.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
 
-class EventType(str, Enum):
+class EventType(str, Enum):  # noqa: UP042
     """Types of timeline events"""
 
     SCAN_STARTED = "scan_started"
@@ -25,7 +25,7 @@ class EventType(str, Enum):
     PLAYBOOK_EXECUTED = "playbook_executed"
 
 
-class SeverityLevel(str, Enum):
+class SeverityLevel(str, Enum):  # noqa: UP042
     """Severity levels for timeline events"""
 
     INFO = "info"
@@ -43,12 +43,12 @@ class TimelineEvent:
     timestamp: datetime
     event_type: EventType
     title: str
-    description: Optional[str] = None
+    description: str | None = None
     severity: SeverityLevel = SeverityLevel.INFO
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    duration: Optional[timedelta] = None  # For events with duration
+    metadata: dict[str, Any] = field(default_factory=dict)
+    duration: timedelta | None = None  # For events with duration
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for JSON serialization"""
         return {
             "id": self.id,
@@ -73,7 +73,7 @@ class TimelineVisualizer:
     """
 
     def __init__(self):
-        self.events: List[TimelineEvent] = []
+        self.events: list[TimelineEvent] = []
 
     def add_event(self, event: TimelineEvent):
         """Add event to timeline"""
@@ -83,9 +83,9 @@ class TimelineVisualizer:
         self,
         scan_id: UUID,
         start_time: datetime,
-        end_time: Optional[datetime] = None,
+        end_time: datetime | None = None,
         status: str = "completed",
-        target: Optional[str] = None,
+        target: str | None = None,
     ):
         """Add scan event to timeline"""
         event_type = EventType.SCAN_COMPLETED if status == "completed" else EventType.SCAN_FAILED
@@ -113,7 +113,7 @@ class TimelineVisualizer:
         timestamp: datetime,
         title: str,
         severity: str,
-        target: Optional[str] = None,
+        target: str | None = None,
     ):
         """Add finding event to timeline"""
         severity_map = {
@@ -184,12 +184,12 @@ class TimelineVisualizer:
 
     def get_events(
         self,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
-        event_types: Optional[List[EventType]] = None,
-        severity_levels: Optional[List[SeverityLevel]] = None,
-        limit: Optional[int] = None,
-    ) -> List[TimelineEvent]:
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+        event_types: list[EventType] | None = None,
+        severity_levels: list[SeverityLevel] | None = None,
+        limit: int | None = None,
+    ) -> list[TimelineEvent]:
         """
         Get filtered and sorted events.
 
@@ -229,10 +229,10 @@ class TimelineVisualizer:
 
     def to_linear_format(
         self,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
         limit: int = 100,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Export timeline in linear format for sequential visualization.
 
@@ -244,9 +244,9 @@ class TimelineVisualizer:
 
     def to_gantt_format(
         self,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
-    ) -> List[Dict[str, Any]]:
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+    ) -> list[dict[str, Any]]:
         """
         Export timeline in Gantt chart format for duration-based visualization.
 
@@ -276,9 +276,9 @@ class TimelineVisualizer:
 
     def get_statistics(
         self,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
-    ) -> Dict[str, Any]:
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+    ) -> dict[str, Any]:
         """Get timeline statistics"""
         events = self.get_events(start_date=start_date, end_date=end_date)
 

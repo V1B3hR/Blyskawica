@@ -7,10 +7,10 @@ This module implements:
 - Transparency reporting
 """
 
-from typing import Dict, Any, List
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
+from typing import Any
 
 
 class ExplanationType(Enum):
@@ -30,13 +30,13 @@ class DecisionExplanation:
     decision: str
     explanation_type: ExplanationType
     primary_reason: str
-    contributing_factors: List[Dict[str, Any]] = field(default_factory=list)
+    contributing_factors: list[dict[str, Any]] = field(default_factory=list)
     confidence: float = 1.0
-    rules_matched: List[str] = field(default_factory=list)
-    threshold_comparisons: Dict[str, Any] = field(default_factory=dict)
+    rules_matched: list[str] = field(default_factory=list)
+    threshold_comparisons: dict[str, Any] = field(default_factory=dict)
     natural_language: str = ""
     timestamp: datetime = field(default_factory=datetime.utcnow)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -66,7 +66,7 @@ class DecisionExplainer:
         self.risk_threshold = risk_threshold
         self.explanation_templates = self._load_templates()
 
-    def _load_templates(self) -> Dict[str, str]:
+    def _load_templates(self) -> dict[str, str]:
         """Load natural language templates.
 
         Returns:
@@ -85,7 +85,7 @@ class DecisionExplainer:
         }
 
     def explain_decision(
-        self, decision: str, judgment_data: Dict[str, Any], include_ml_explanation: bool = False
+        self, decision: str, judgment_data: dict[str, Any], include_ml_explanation: bool = False
     ) -> DecisionExplanation:
         """Generate explanation for a decision.
 
@@ -134,7 +134,7 @@ class DecisionExplainer:
             metadata=judgment_data,
         )
 
-    def _extract_primary_reason(self, decision: str, judgment_data: Dict[str, Any]) -> str:
+    def _extract_primary_reason(self, decision: str, judgment_data: dict[str, Any]) -> str:
         """Extract primary reason for decision.
 
         Args:
@@ -146,7 +146,7 @@ class DecisionExplainer:
         """
         # Check for violations
         violations = judgment_data.get("violations", [])
-        if violations:
+        if violations:  # noqa: SIM102
             if isinstance(violations, list) and violations:
                 first_violation = violations[0]
                 if isinstance(first_violation, dict):
@@ -155,13 +155,13 @@ class DecisionExplainer:
 
         # Check for policy matches
         matched_rules = judgment_data.get("matched_rules", [])
-        if matched_rules:
+        if matched_rules:  # noqa: SIM102
             if isinstance(matched_rules, list) and matched_rules:
                 first_rule = matched_rules[0]
                 if isinstance(first_rule, dict):
                     rule_id = first_rule.get("id", "unknown rule")
                     return f"policy rule '{rule_id}' matched"
-                return f"policy rule matched"
+                return "policy rule matched"
 
         # Check for risk score
         risk_score = judgment_data.get("risk_score")
@@ -169,7 +169,7 @@ class DecisionExplainer:
             return f"high risk score ({risk_score:.2f})"
 
         # Default reasons
-        if decision == "ALLOW":
+        if decision == "ALLOW":  # noqa: SIM116
             return "no violations detected and all checks passed"
         elif decision == "RESTRICT":
             return "minor policy concerns detected"
@@ -180,7 +180,7 @@ class DecisionExplainer:
 
         return "standard governance evaluation"
 
-    def _extract_contributing_factors(self, judgment_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _extract_contributing_factors(self, judgment_data: dict[str, Any]) -> list[dict[str, Any]]:
         """Extract contributing factors from judgment data.
 
         Args:
@@ -239,7 +239,7 @@ class DecisionExplainer:
 
         return factors
 
-    def _extract_threshold_comparisons(self, judgment_data: Dict[str, Any]) -> Dict[str, Any]:
+    def _extract_threshold_comparisons(self, judgment_data: dict[str, Any]) -> dict[str, Any]:
         """Extract threshold comparisons.
 
         Args:
@@ -274,9 +274,9 @@ class DecisionExplainer:
         self,
         decision: str,
         primary_reason: str,
-        contributing_factors: List[Dict[str, Any]],
-        rules_matched: List[str],
-        threshold_comparisons: Dict[str, Any],
+        contributing_factors: list[dict[str, Any]],
+        rules_matched: list[str],
+        threshold_comparisons: dict[str, Any],
     ) -> str:
         """Generate natural language explanation.
 
@@ -339,7 +339,7 @@ class DecisionExplainer:
 
         return explanation
 
-    def explain_policy_match(self, matched_rule: Dict[str, Any], facts: Dict[str, Any]) -> str:
+    def explain_policy_match(self, matched_rule: dict[str, Any], facts: dict[str, Any]) -> str:
         """Explain why a policy rule matched.
 
         Args:
@@ -362,7 +362,7 @@ class DecisionExplainer:
 
         return explanation
 
-    def generate_decision_tree_viz(self, judgment_data: Dict[str, Any]) -> Dict[str, Any]:
+    def generate_decision_tree_viz(self, judgment_data: dict[str, Any]) -> dict[str, Any]:
         """Generate decision tree visualization data.
 
         Args:
@@ -430,8 +430,8 @@ class TransparencyReportGenerator:
         self.explainer = DecisionExplainer()
 
     def generate_report(
-        self, decisions: List[Dict[str, Any]], time_period: str = "recent"
-    ) -> Dict[str, Any]:
+        self, decisions: list[dict[str, Any]], time_period: str = "recent"
+    ) -> dict[str, Any]:
         """Generate transparency report.
 
         Args:

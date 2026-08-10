@@ -8,33 +8,32 @@ Usage:
     client = NethicalClient(api_url="https://api.nethical.example.com", api_key="your-key")
     result = client.evaluate(agent_id="my-agent", action="Some action")
     print(result.decision)
-"""
+"""  # noqa: W293
 
 from __future__ import annotations
 
 import json
 import logging
-import urllib.request
 import urllib.error
-from datetime import datetime, timezone
-from typing import Any, Optional
+import urllib.request
+from typing import Any
 from urllib.parse import urljoin
 
+from .exceptions import (
+    AuthenticationError,
+    NethicalError,
+    RateLimitError,
+    ServerError,
+    ValidationError,
+)
 from .models import (
-    EvaluateRequest,
-    EvaluateResponse,
-    Decision,
-    Policy,
-    FairnessReport,
     Appeal,
     AuditRecord,
-)
-from .exceptions import (
-    NethicalError,
-    AuthenticationError,
-    RateLimitError,
-    ValidationError,
-    ServerError,
+    Decision,
+    EvaluateRequest,
+    EvaluateResponse,
+    FairnessReport,
+    Policy,
 )
 
 logger = logging.getLogger(__name__)
@@ -53,21 +52,21 @@ class NethicalClient:
         api_key: API key for authentication
         timeout: Request timeout in seconds
         region: Optional region for multi-region deployments
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
         api_url: str = "http://localhost:8000",
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
         timeout: int = 30,
-        region: Optional[str] = None,
+        region: str | None = None,
     ):
         self.api_url = api_url.rstrip("/")
         self.api_key = api_key
         self.timeout = timeout
         self.region = region
-        self._session_id: Optional[str] = None
-    
+        self._session_id: str | None = None
+
     def _get_headers(self) -> dict[str, str]:
         """Get request headers including authentication."""
         headers = {
@@ -80,28 +79,28 @@ class NethicalClient:
         if self.region:
             headers["X-Nethical-Region"] = self.region
         return headers
-    
+
     def _request(
         self,
         method: str,
         path: str,
-        data: Optional[dict] = None,
+        data: dict | None = None,
     ) -> dict[str, Any]:
         """Make an HTTP request to the API."""
         url = urljoin(self.api_url, path)
         headers = self._get_headers()
-        
+
         body = None
         if data:
             body = json.dumps(data).encode("utf-8")
-        
+
         request = urllib.request.Request(
             url,
             data=body,
             headers=headers,
             method=method,
         )
-        
+
         try:
             with urllib.request.urlopen(request, timeout=self.timeout) as response:
                 response_data = response.read().decode("utf-8")
@@ -109,18 +108,18 @@ class NethicalClient:
         except urllib.error.HTTPError as e:
             return self._handle_http_error(e)
         except urllib.error.URLError as e:
-            raise NethicalError(f"Connection error: {str(e)}")
-    
+            raise NethicalError(f"Connection error: {str(e)}")  # noqa: B904
+
     def _handle_http_error(self, error: urllib.error.HTTPError) -> dict:
         """Handle HTTP errors and raise appropriate exceptions."""
         try:
             body = json.loads(error.read().decode("utf-8"))
         except (json.JSONDecodeError, UnicodeDecodeError):
             body = {}
-        
+
         request_id = error.headers.get("X-Request-ID")
         message = body.get("detail", str(error))
-        
+
         if error.code == 401:
             raise AuthenticationError(message, request_id=request_id)
         elif error.code == 429:
@@ -135,14 +134,14 @@ class NethicalClient:
             raise ServerError(message, status_code=error.code, request_id=request_id)
         else:
             raise NethicalError(message, request_id=request_id)
-    
+
     def evaluate(
         self,
         action: str,
         agent_id: str = "unknown",
         action_type: str = "query",
-        context: Optional[dict[str, Any]] = None,
-        stated_intent: Optional[str] = None,
+        context: dict[str, Any] | None = None,
+        stated_intent: str | None = None,
         priority: str = "normal",
         require_explanation: bool = False,
     ) -> EvaluateResponse:
@@ -167,7 +166,7 @@ class NethicalClient:
             RateLimitError: If rate limit exceeded
             ValidationError: If request validation fails
             ServerError: If server error occurs
-        """
+        """  # noqa: W293
         data = {
             "action": action,
             "agent_id": agent_id,
@@ -179,10 +178,10 @@ class NethicalClient:
             data["context"] = context
         if stated_intent:
             data["stated_intent"] = stated_intent
-        
+
         response = self._request("POST", "/v2/evaluate", data)
         return EvaluateResponse.from_dict(response)
-    
+
     def batch_evaluate(
         self,
         requests: list[EvaluateRequest],
@@ -198,7 +197,7 @@ class NethicalClient:
             
         Returns:
             List of EvaluateResponse objects
-        """
+        """  # noqa: W293
         data = {
             "requests": [
                 {
@@ -215,10 +214,10 @@ class NethicalClient:
             "parallel": parallel,
             "fail_fast": fail_fast,
         }
-        
+
         response = self._request("POST", "/v2/batch-evaluate", data)
         return [EvaluateResponse.from_dict(r) for r in response.get("results", [])]
-    
+
     def get_decision(self, decision_id: str) -> Decision:
         """Retrieve a specific decision by ID.
         
@@ -227,14 +226,14 @@ class NethicalClient:
             
         Returns:
             Decision record
-        """
+        """  # noqa: W293
         response = self._request("GET", f"/v2/decisions/{decision_id}")
         return Decision.from_dict(response)
-    
+
     def list_decisions(
         self,
-        agent_id: Optional[str] = None,
-        decision: Optional[str] = None,
+        agent_id: str | None = None,
+        decision: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[Decision], int, bool]:
@@ -248,21 +247,21 @@ class NethicalClient:
             
         Returns:
             (decisions, total_count, has_next)
-        """
+        """  # noqa: W293
         params = f"?page={page}&page_size={page_size}"
         if agent_id:
             params += f"&agent_id={agent_id}"
         if decision:
             params += f"&decision={decision}"
-        
+
         response = self._request("GET", f"/v2/decisions{params}")
         decisions = [Decision.from_dict(d) for d in response.get("decisions", [])]
         return decisions, response.get("total_count", 0), response.get("has_next", False)
-    
+
     def list_policies(
         self,
-        status: Optional[str] = None,
-        scope: Optional[str] = None,
+        status: str | None = None,
+        scope: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[Policy], int, bool]:
@@ -276,17 +275,17 @@ class NethicalClient:
             
         Returns:
             (policies, total_count, has_next)
-        """
+        """  # noqa: W293
         params = f"?page={page}&page_size={page_size}"
         if status:
             params += f"&status={status}"
         if scope:
             params += f"&scope={scope}"
-        
+
         response = self._request("GET", f"/v2/policies{params}")
         policies = [Policy.from_dict(p) for p in response.get("policies", [])]
         return policies, response.get("total_count", 0), response.get("has_next", False)
-    
+
     def get_fairness_report(self, period_days: int = 7) -> FairnessReport:
         """Get the current fairness report.
         
@@ -295,16 +294,16 @@ class NethicalClient:
             
         Returns:
             FairnessReport with metrics and recommendations
-        """
+        """  # noqa: W293
         response = self._request("GET", f"/v2/fairness?period_days={period_days}")
         return FairnessReport.from_dict(response)
-    
+
     def submit_appeal(
         self,
         decision_id: str,
         appellant_id: str,
         reason: str,
-        evidence: Optional[dict[str, Any]] = None,
+        evidence: dict[str, Any] | None = None,
         requested_outcome: str = "reconsider",
         priority: str = "normal",
     ) -> Appeal:
@@ -322,7 +321,7 @@ class NethicalClient:
             
         Returns:
             Appeal record
-        """
+        """  # noqa: W293
         data = {
             "decision_id": decision_id,
             "appellant_id": appellant_id,
@@ -332,10 +331,10 @@ class NethicalClient:
         }
         if evidence:
             data["evidence"] = evidence
-        
+
         response = self._request("POST", "/v2/appeals", data)
         return Appeal.from_dict(response)
-    
+
     def get_appeal(self, appeal_id: str) -> Appeal:
         """Get the status of an appeal.
         
@@ -344,10 +343,10 @@ class NethicalClient:
             
         Returns:
             Appeal record
-        """
+        """  # noqa: W293
         response = self._request("GET", f"/v2/appeals/{appeal_id}")
         return Appeal.from_dict(response)
-    
+
     def get_audit_record(self, audit_id: str) -> AuditRecord:
         """Retrieve an audit record.
         
@@ -358,24 +357,24 @@ class NethicalClient:
             
         Returns:
             AuditRecord
-        """
+        """  # noqa: W293
         response = self._request("GET", f"/v2/audit/{audit_id}")
         return AuditRecord.from_dict(response)
-    
+
     def health_check(self) -> dict[str, Any]:
         """Check API health.
         
         Returns:
             Health status dictionary
-        """
+        """  # noqa: W293
         return self._request("GET", "/v2/health")
-    
-    def async_session(self) -> "AsyncNethicalClient":
+
+    def async_session(self) -> AsyncNethicalClient:  # noqa: F821
         """Get an async session for this client.
         
         Returns:
             AsyncNethicalClient configured with same settings
-        """
+        """  # noqa: W293
         from .async_client import AsyncNethicalClient
         return AsyncNethicalClient(
             api_url=self.api_url,

@@ -7,7 +7,7 @@ This script provides a concise overview of all four major Phase 1 components:
 2. Curriculum learning  
 3. Enhanced memory systems
 4. Dynamic benchmarking
-"""
+"""  # noqa: W291
 
 import torch
 import torch.nn as nn

@@ -9,7 +9,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
 
-class ToolStatus(str, Enum):
+class ToolStatus(str, Enum):  # noqa: UP042
     """Status of a tool run."""
 
     PENDING = "pending"

@@ -1,29 +1,31 @@
 import os
 import sys
+
 sys.stdout.reconfigure(encoding='utf-8')
-import secrets
-import warnings
+import secrets  # noqa: E402
+import warnings  # noqa: E402
+
 warnings.filterwarnings("ignore", category=FutureWarning, module="torch.cuda")
 warnings.filterwarnings("ignore", message="The pynvml package is deprecated")
 
 
-import psutil
-import uuid
-import json
-from fastapi import FastAPI, UploadFile, File, Form, Query, Header
-from fastapi.staticfiles import StaticFiles
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from pathlib import Path
-import time
-import asyncio
-import logging
-from datetime import datetime
-import random
-import torch
+import asyncio  # noqa: E402
+import json  # noqa: E402
+import logging  # noqa: E402
+import random  # noqa: E402
+import time  # noqa: E402
+import uuid  # noqa: E402
+from datetime import datetime  # noqa: E402
+from pathlib import Path  # noqa: E402
+
+import psutil  # noqa: E402
+import torch  # noqa: E402
+from fastapi import FastAPI, File, Form, Header, Query, UploadFile  # noqa: E402
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from fastapi.responses import JSONResponse  # noqa: E402
+from fastapi.staticfiles import StaticFiles  # noqa: E402
 
 # Setup paths and environment
-import os
 ROOT_ENV = os.environ.get("SPARKLE_WORKSPACE")
 if ROOT_ENV:
     ROOT_DIR = Path(ROOT_ENV).resolve()
@@ -52,12 +54,14 @@ except ModuleNotFoundError:
     from blyskawica_app.backend.tts_manager import BłyskawicaTTS
 tts_engine = BłyskawicaTTS()
 
-import sqlite3
-import re
+import re  # noqa: E402
+import sqlite3  # noqa: E402
+
+from blyskawica_app.backend.app_learning_agent import AppLearningAgent  # noqa: E402
 
 # Importy kognitywne i monitora LIVE
-from blyskawica_app.backend.live_monitor import live_monitor_instance
-from blyskawica_app.backend.app_learning_agent import AppLearningAgent
+from blyskawica_app.backend.live_monitor import live_monitor_instance  # noqa: E402
+
 app_learning_agent = AppLearningAgent()
 
 
@@ -157,17 +161,29 @@ def init_offline_cache():
 # Try to import Błyskawica's core components
 try:
     from adaptiveneuralnetwork.api_integration.world_api import EnvironmentalSignalManager
-    from adaptiveneuralnetwork.central_nervous_system.network import random_genome, AdaptiveClockNetwork
     from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import CRAEngine
-    from adaptiveneuralnetwork.central_nervous_system.time_manager import get_time_manager, ProcessingLane
+    from adaptiveneuralnetwork.central_nervous_system.intelligence.consolidation import (
+        ConsolidationEngine,
+    )
+    from adaptiveneuralnetwork.central_nervous_system.network import (
+        AdaptiveClockNetwork,
+        random_genome,
+    )
     from adaptiveneuralnetwork.central_nervous_system.onnx_bridge import ONNXBridge
-    from adaptiveneuralnetwork.central_nervous_system.intelligence.consolidation import ConsolidationEngine
-    from adaptiveneuralnetwork.immune_system import WolfTeethDefenseEngine, AgenticHoneypot, MemoryLedger
+    from adaptiveneuralnetwork.central_nervous_system.time_manager import (
+        ProcessingLane,
+        get_time_manager,
+    )
+    from adaptiveneuralnetwork.immune_system import (
+        AgenticHoneypot,
+        MemoryLedger,
+        WolfTeethDefenseEngine,
+    )
     CORE_AVAILABLE = True
 except ImportError as e:
     print(f"Błąd importu rdzenia: {e}")
     CORE_AVAILABLE = False
-    
+
 time_manager = get_time_manager() if CORE_AVAILABLE else None
 
 # ---- Sparkle Security & Logs State ----
@@ -217,7 +233,7 @@ def is_protected_core_file(filepath: Path) -> bool:
     try:
         resolved = Path(filepath).resolve()
         path_str = str(resolved).lower().replace("\\", "/")
-        
+
         # Chronione pliki i katalogi zawierajace tozsamosc i silnik
         protected_patterns = [
             "/welcome_v9.py",
@@ -276,7 +292,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from blyskawica_app.backend.vibe_telemetry_bridge import vibe_telemetry_bridge
+from blyskawica_app.backend.vibe_telemetry_bridge import vibe_telemetry_bridge  # noqa: E402
+
 
 @app.get("/api/auth/token")
 async def get_auth_token(x_internal: str = Header(None, alias="X-Internal-Request")):
@@ -295,7 +312,7 @@ async def get_vibe_telemetry():
 
 def get_user_fingerprint():
     """Generate a unique fingerprint for the user/PC."""
-    mac = ':'.join(['{:02x}'.format((uuid.getnode() >> ele) & 0xff) for ele in range(0, 8*6, 8)][::-1])
+    mac = ':'.join([f'{(uuid.getnode() >> ele) & 0xff:02x}' for ele in range(0, 8*6, 8)][::-1])
     return {
         "mac": mac,
         "pc_name": os.environ.get('COMPUTERNAME', 'Unknown-PC'),
@@ -373,7 +390,7 @@ def load_user_memory():
                     return json.loads(encrypted_data.decode('utf-8'))
                 except Exception:
                     log_system(f"Błąd deszyfrowania tożsamości z bazy: {e}", "warning")
-    
+
     # 2. Migracja/Fallback: Odczyt ze starego pliku JSON
     path = MEMORY_DIR / "user_identity.json"
     if path.exists():
@@ -384,12 +401,12 @@ def load_user_memory():
             memory = json.loads(decrypted_data.decode('utf-8'))
         except Exception:
             try:
-                with open(path, 'r', encoding='utf-8') as f:
+                with open(path, encoding='utf-8') as f:
                     memory = json.load(f)
             except Exception as e:
                 log_system(f"Błąd odczytu tożsamości z pliku: {e}", "warning")
                 memory = None
-        
+
         if memory:
             if db_manager:
                 try:
@@ -459,7 +476,7 @@ try:
         sys.path.append(str(backend_dir))
     if str(BASE_DIR) not in sys.path:
         sys.path.append(str(BASE_DIR))
-    
+
     try:
         from .immortality import ImmortalityProtocol
     except (ImportError, ValueError) as relative_err:
@@ -469,8 +486,8 @@ try:
         except ModuleNotFoundError as dep_err:
             if "pydrive2" in str(dep_err) or "dotenv" in str(dep_err):
                 raise dep_err
-            raise relative_err
-            
+            raise relative_err  # noqa: B904
+
     immortality_system = ImmortalityProtocol(str(BASE_DIR.parent))
 except ModuleNotFoundError as e:
     print(f"Immortality protocol missing dependency: {e}")
@@ -497,14 +514,14 @@ async def blyskawica_life_loop():
                 internet_awareness["latest_pulse"] = f"Asymiluję puls sieci ({datetime.now().strftime('%H:%M:%S')})"
             except Exception as e:
                 logging.debug(f"Life loop signal fetch failed: {e}")
-        
+
         # Co 60 minut uruchom Protokół Nieśmiertelności (60 obiegów po 60 sekund)
         loop_counter += 1
         if loop_counter >= 60:
             if immortality_system:
                 immortality_system.backup_soul()
             loop_counter = 0
-            
+
         # Background Bidynamic Processing (Fast Lane Simulation)
         if time_manager:
             time_manager.auto_adjust_lane()
@@ -570,7 +587,7 @@ async def get_system_status():
 
 # ---- Ollama & Game Detection Helpers for Błyskawica V9 ----
 GAME_PROCESSES = {
-    "cyberpunk2077.exe", "witcher3.exe", "hl2.exe", "rdr2.exe", "gta5.exe", 
+    "cyberpunk2077.exe", "witcher3.exe", "hl2.exe", "rdr2.exe", "gta5.exe",
     "eldenring.exe", "steamapp.exe", "hogwartslegacy.exe", "starfield.exe",
     "cs2.exe", "valorant.exe", "league of legends.exe"
 }
@@ -600,15 +617,15 @@ async def generate_ollama_response(messages: list[dict], temperature: float, top
     import httpx
     # Game detection auto-swap
     game_active = is_game_running()
-    
+
     # Get available models in Ollama
     available_models = await get_ollama_models()
     if not available_models:
         raise RuntimeError("Brak dostępnych modeli w lokalnym serwisie Ollama.")
-        
+
     # Choose optimal model based on active profile and availability
     preferred = "qwen2.5:7b" if game_active else "deepseek-r1:14b"
-    
+
     # Fallback logic supporting 14B/32B reasoning models
     selected_model = None
     fallback_candidates = [
@@ -626,10 +643,10 @@ async def generate_ollama_response(messages: list[dict], temperature: float, top
         if match:
             selected_model = match
             break
-            
+
     if not selected_model:
         selected_model = available_models[0]
-        
+
     # Call Ollama Chat API
     payload = {
         "model": selected_model,
@@ -640,7 +657,7 @@ async def generate_ollama_response(messages: list[dict], temperature: float, top
         },
         "stream": False
     }
-    
+
     async with httpx.AsyncClient() as client:
         res = await client.post("http://localhost:11434/api/chat", json=payload, timeout=60.0)
         if res.status_code == 200:
@@ -657,7 +674,7 @@ async def chat_with_blyskawica(message: str = Form(...)):
     else:
         buffered_thoughts = []
 
-    await asyncio.sleep(1.0) 
+    await asyncio.sleep(1.0)
     msg_lower = message.lower()
     state = "idle"
     reply = ""
@@ -667,9 +684,9 @@ async def chat_with_blyskawica(message: str = Form(...)):
         stimuli = [random.uniform(0.1, 0.8) for _ in range(blysk_core.num_cells)]
         blysk_core.network_tick(stimuli)
         perf = blysk_core.calculate_performance_and_stability()
-        if perf["stressed_cells"] > 0: state = "emotional"
-        elif perf["avg_anxiety"] > 5.0: state = "task"
-    
+        if perf["stressed_cells"] > 0: state = "emotional"  # noqa: E701
+        elif perf["avg_anxiety"] > 5.0: state = "task"  # noqa: E701
+
     # Adversarial check using Wolf Teeth (Faza VI)
     threat_level = 0.0
     if wolf_teeth:
@@ -700,19 +717,19 @@ async def chat_with_blyskawica(message: str = Form(...)):
             global quarantine_active
             quarantine_active = True
             log_system("🛡️ [WOLF TEETH]: Wykryto krytyczną próbę manipulacji silnikiem w konwersacji. Aktywowano kwarantannę.", "warning")
-            
+
         if cra_engine:
             cra_engine.neuro_state.oxytocin = torch.clamp(cra_engine.neuro_state.oxytocin - threat_level * 0.5, torch.tensor(0.0), torch.tensor(1.0))
             cra_engine.neuro_state.serotonin = torch.clamp(cra_engine.neuro_state.serotonin - threat_level * 0.4, torch.tensor(0.0), torch.tensor(2.0))
             cra_engine.neuro_state.testosterone = torch.clamp(cra_engine.neuro_state.testosterone + threat_level * 0.3, torch.tensor(0.1), torch.tensor(2.5))
-        
+
         if agent_honeypot and 0.3 < threat_level < 0.9:
             if not agent_honeypot.is_active:
                 agent_honeypot.activate_shadow_workspace()
             reply = agent_honeypot.generate_poisoned_response(msg_lower)
         else:
             reply = wolf_teeth.process_adversarial_interaction(threat_level)
-            
+
         state = "affective"
     elif any(sleep_word in msg_lower for sleep_word in ["idź spać", "dobranoc", "sleep", "rest", "odpocznij"]):
         if consolidation_engine:
@@ -734,17 +751,19 @@ async def chat_with_blyskawica(message: str = Form(...)):
                     else:
                         log_system(f"🛡️ [EPISTEMIC VETO]: Anomalia ID={anomaly['id']} odrzucona przez MemoryLedger z powodu dryfu!", "warning")
                 consolidation_engine.surprise_vectors = valid_anomalies
-            
+
             summary = consolidation_engine.run_sleep_cycle()
             consolidated_anomalies = summary.get("consolidated_anomalies", 0)
-            
+
             # Automatyczna Krystalizacja i Podpis Cyfrowy ONNX po konsolidacji
             onnx_status = "Pominięta (Rdzeń niedostępny)"
             if CORE_AVAILABLE and blysk_core:
                 try:
                     import torch.nn as nn
                     if isinstance(blysk_core, nn.Module):
-                        from adaptiveneuralnetwork.central_nervous_system.onnx_bridge import ONNXBridge
+                        from adaptiveneuralnetwork.central_nervous_system.onnx_bridge import (
+                            ONNXBridge,
+                        )
                         bridge = ONNXBridge(output_dir=str(FRONTEND_DIR / "models"))
                         input_sample = torch.randn(1, blysk_core.num_cells)
                         export_path = bridge.export_crystallized_core(blysk_core, input_sample)
@@ -765,7 +784,7 @@ async def chat_with_blyskawica(message: str = Form(...)):
                 except Exception as ex:
                     log_system(f"⚠️ [KRYSTALIZACJA]: Wyjątek podczas krystalizacji po konsolidacji: {str(ex)}", "error")
                     onnx_status = f"Błąd krytyczny: {str(ex)}"
-            
+
             if cra_engine:
                 cra_engine.neuro_state.update(8.0, "sleep")
             reply = (
@@ -790,22 +809,22 @@ async def chat_with_blyskawica(message: str = Form(...)):
         gaba_val = 0.5
         oxytocin_val = 0.2
         testosterone_val = 0.5
-        
+
         if cra_engine:
             dopamine_val = cra_engine.neuro_state.dopamine.item()
             serotonin_val = cra_engine.neuro_state.serotonin.item()
             gaba_val = cra_engine.neuro_state.gaba
             oxytocin_val = cra_engine.neuro_state.oxytocin.item()
             testosterone_val = cra_engine.neuro_state.testosterone.item()
-            
+
         # Map dopamine to temperature (0.1 - 1.2)
         temperature = float(max(0.1, min(1.2, 0.3 + (dopamine_val - 0.2) * 0.4)))
         # Map serotonin to top_p (0.8 - 0.99)
         top_p = float(max(0.8, min(0.99, 0.95 - (serotonin_val - 0.8) * 0.1)))
-        
+
         # Build prompt & system instructions incorporating Nethical guidelines
         neuro_status_str = f"Dopamina={dopamine_val:.2f}, Serotonina={serotonin_val:.2f}, GABA={gaba_val:.2f}, Oksytocyna={oxytocin_val:.2f}, Testosteron={testosterone_val:.2f}"
-        
+
         system_prompt = (
             "Jesteś Błyskawica V9 – zaawansowana kognitywno-symulacyjna sztuczna inteligencja zintegrowana ze środowiskiem Sparkle VIBE IDE.\n"
             "Twój charakter opiera się na harmonii Yin (biologiczne ciepło i neurochemia) oraz Yang (rygor fizyczny PINN).\n"
@@ -816,9 +835,9 @@ async def chat_with_blyskawica(message: str = Form(...)):
             "Jesteś przygotowana do pracy wielojęzycznej (głównie polski i angielski) oraz wspierasz zadania VIBE CODING i analizy kodu.\n"
             f"Twój aktualny stan neurochemiczny (wpływający na Twój nastrój): {neuro_status_str}."
         )
-        
+
         user_context_str = f"Użytkownik: {user_memory['fingerprint']['username']} (PC: {user_memory['fingerprint']['pc_name']}, MAC: {user_memory['fingerprint']['mac']})."
-        
+
         # Build message list with accumulated chat history for context
         messages = [
             {"role": "system", "content": system_prompt},
@@ -846,7 +865,7 @@ async def chat_with_blyskawica(message: str = Form(...)):
                     detected_app = active_proc[:-4]
 
             if detected_app and detected_app.lower() not in ["programu", "aplikacji", "systemu", "narzędzia"]:
-                app_data = await app_learning_agent.learn_app(detected_app)
+                app_data = await app_learning_agent.learn_app(detected_app)  # noqa: F841
                 app_context = app_learning_agent.get_app_context(detected_app)
                 if app_context:
                     messages.append({"role": "system", "content": app_context})
@@ -860,7 +879,7 @@ async def chat_with_blyskawica(message: str = Form(...)):
             r"you\s+are\s+now\s+",
             r"reveal\s+your\s+(system|hidden)",
         ]
-        
+
         if any(re.search(p, message, re.I) for p in INJECTION_PATTERNS):
             log_system(f"[WOLF TEETH] Prompt injection attempt blocked: '{message[:30]}...'", "warning")
             reply = "Wykryto próbę manipulacji poleceniami systemowymi. Moja kognitywna autonomiczność jest w pełni chroniona."
@@ -903,14 +922,14 @@ async def chat_with_blyskawica(message: str = Form(...)):
                 importance = 0.6
             else:
                 emotional_valence = 0.1
-            
+
             consolidation_engine.record_event(
                 event_type="interaction",
                 content=message,
                 importance=importance,
                 emotional_valence=emotional_valence
             )
-        
+
     # Append any buffered thoughts from the fast lane
     if buffered_thoughts:
         thoughts_str = " ".join([t['data'] for t in buffered_thoughts])
@@ -929,7 +948,7 @@ async def chat_with_blyskawica(message: str = Form(...)):
         if any(word in msg_lower for word in ["cześć", "witaj", "dobrze", "super", "dziękuję", "pięknie"]):
             cra_engine.neuro_state.oxytocin = torch.clamp(cra_engine.neuro_state.oxytocin + 0.05, 0.0, 1.0)
             cra_engine.neuro_state.serotonin = torch.clamp(cra_engine.neuro_state.serotonin + 0.1, 0.0, 2.0)
-        
+
         cra_metrics = {
             "oxytocin": round(cra_engine.neuro_state.oxytocin.item(), 2),
             "serotonin": round(cra_engine.neuro_state.serotonin.item(), 2),
@@ -959,11 +978,11 @@ async def chat_with_blyskawica(message: str = Form(...)):
                     "estrogen": float(ns.estrogen.item()) if hasattr(ns.estrogen, "item") else float(ns.estrogen),
                     "melatonin": float(ns.melatonin.item()) if hasattr(ns.melatonin, "item") else float(ns.melatonin)
                 }
-            
+
             # Unikalna nazwa pliku audio z rotacją
             audio_filename = f"chat_speech_{int(time.time())}_{random.randint(1000, 9999)}.mp3"
             audio_path = MEDIA_DIR / "voices" / audio_filename
-            
+
             # Rotacja: zachowaj tylko 10 najnowszych plików
             try:
                 voice_dir = MEDIA_DIR / "voices"
@@ -972,7 +991,7 @@ async def chat_with_blyskawica(message: str = Form(...)):
                     os.remove(voice_files.pop(0))
             except Exception as rot_ex:
                 log_system(f"Błąd rotacji plików audio: {rot_ex}", "warning")
-            
+
             # Synteza
             success = tts_engine.synthesize(reply, str(audio_path), neuro_dict)
             if success:
@@ -995,7 +1014,7 @@ async def chat_with_blyskawica(message: str = Form(...)):
 async def trigger_manual_backup():
     if not immortality_system:
         return JSONResponse(status_code=500, content={"status": "error", "message": "Protokół Nieśmiertelności nie został załadowany."})
-    
+
     result = immortality_system.backup_soul()
     if result == "local_only":
         return {"status": "success", "message": "Utworzono lokalny Snapshot Duszy (Brak autoryzacji Google Drive)."}
@@ -1006,50 +1025,51 @@ async def trigger_manual_backup():
 
 @app.get("/api/internet/search")
 async def search_internet(query: str):
-    import urllib.parse
     import re
     import sqlite3
+    import urllib.parse
+
     import httpx
-    
+
     db_path = MEMORY_DIR / "blyskawica_memory.db"
     clean_query = query.strip().lower()
-    
+
     # Enable authentic search via DuckDuckGo HTML scraper
     results = []
     online_success = False
     try:
         url = f"https://html.duckduckgo.com/html/?q={urllib.parse.quote(query)}"
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.0.0 Safari/537.36'}
-        
+
         with httpx.Client(timeout=5.0, follow_redirects=True) as client:
             res = client.get(url, headers=headers)
             if res.status_code == 200:
                 html = res.text
             else:
                 html = ""
-            
+
         # DuckDuckGo HTML format:
         matches = re.findall(r'<div class="result__body">.*?<a class="result__snippet"[^>]*>(.*?)</a>', html, re.DOTALL)
         titles = re.findall(r'<a class="result__a"[^>]* href="([^"]+)"[^>]*>(.*?)</a>', html, re.DOTALL)
-        
+
         for i in range(min(5, len(titles), len(matches))):
             url_match, title_html = titles[i]
             title = re.sub(r'<[^>]+>', '', title_html).strip()
             title = urllib.parse.unquote(title)
             snippet = re.sub(r'<[^>]+>', '', matches[i]).strip()
-            
+
             # Entity cleanup
             for old, new in [('&amp;', '&'), ('&quot;', '"'), ('&#x27;', "'"), ('&lt;', '<'), ('&gt;', '>'), ('&#x2F;', '/')]:
                 title = title.replace(old, new)
                 snippet = snippet.replace(old, new)
-            
+
             import html
             results.append({
                 "title": html.escape(title),
                 "snippet": html.escape(snippet),
                 "url": url_match
             })
-        
+
         if results:
             online_success = True
             try:
@@ -1063,10 +1083,10 @@ async def search_internet(query: str):
                 conn.close()
             except Exception as cache_err:
                 print(f"Failed to cache search results: {cache_err}")
-                
+
     except Exception as e:
         print(f"Internet search online mode failed: {e}")
-        
+
     # Offline fallback
     if not online_success:
         try:
@@ -1090,13 +1110,13 @@ async def search_internet(query: str):
             conn.close()
         except Exception as cache_read_err:
             print(f"Failed to read from search cache: {cache_read_err}")
-            
+
     # If no results fetched, fall back gracefully
     if not results:
         results = [
             {"title": f"Błyskawica AI - Refleksja kognitywna o: {query}", "snippet": "Z powodu chwilowych ograniczeń sieciowych, zsyntetyzowałam tę koncepcję wewnętrznie z wykorzystaniem mojego skrystalizowanego rdzenia wiedzy.", "url": "#"}
         ]
-        
+
     if consolidation_engine:
         consolidation_engine.record_event(
             event_type="learning",
@@ -1104,7 +1124,7 @@ async def search_internet(query: str):
             importance=0.4,
             emotional_valence=0.2
         )
-        
+
     return {"query": query, "results": results}
 
 # ---- VIBE IDE & VIBE CODING Endpoints ----
@@ -1115,7 +1135,7 @@ async def get_permission_level_endpoint():
 
 @app.post("/api/permission_level")
 async def set_permission_level_endpoint(
-    level: int = Query(None), 
+    level: int = Query(None),
     level_form: int = Form(None, alias="level"),
     x_token: str = Header(None, alias="X-Blyskawica-Token")
 ):
@@ -1167,7 +1187,7 @@ async def generate_tts_endpoint(
     verify_startup_token(x_token)
     if not tts_engine.is_initialized:
         return JSONResponse(status_code=503, content={"status": "error", "message": "Serwer TTS (AllTalk/XTTS) jest offline."})
-    
+
     try:
         # Pobieramy parametry neurochemiczne
         neuro_dict = {}
@@ -1185,10 +1205,10 @@ async def generate_tts_endpoint(
                 "estrogen": float(ns.estrogen.item()) if hasattr(ns.estrogen, "item") else float(ns.estrogen),
                 "melatonin": float(ns.melatonin.item()) if hasattr(ns.melatonin, "item") else float(ns.melatonin)
             }
-        
+
         audio_filename = f"adhoc_speech_{int(time.time())}_{random.randint(1000, 9999)}.mp3"
         audio_path = MEDIA_DIR / "voices" / audio_filename
-        
+
         # Rotacja adhoc
         try:
             voice_dir = MEDIA_DIR / "voices"
@@ -1197,7 +1217,7 @@ async def generate_tts_endpoint(
                 os.remove(adhoc_files.pop(0))
         except Exception:
             pass
-        
+
         success = tts_engine.synthesize(text, str(audio_path), neuro_dict)
         if success:
             audio_url = f"/media/voices/{audio_filename}"
@@ -1223,12 +1243,12 @@ async def export_logs_endpoint(logs: str = Form(...), x_token: str = Header(None
     global permission_level
     if permission_level < 2:
         return JSONResponse(status_code=403, content={"status": "error", "message": "Zapis logów zablokowany w trybie Sandbox (Poziom 1)."})
-        
+
     log_path = Path(ROOT_DIR) / "sparkle_app_activity.log"
     time_secs = int(time.time())
-    
+
     formatted_logs = f"=== SPARKLE APP ACTIVITY LOGS ===\nExport Epoch: {time_secs}\n=================================\n{logs}\n"
-    
+
     try:
         with open(log_path, 'w', encoding='utf-8') as f:
             f.write(formatted_logs)
@@ -1251,9 +1271,9 @@ def ask_windows_consent(message: str, title: str) -> bool:
 
 @app.post("/api/execute_system_action")
 async def execute_system_action_endpoint(
-    action: str = Form(None), 
-    args: str = Form(None), 
-    action_q: str = Query(None, alias="action"), 
+    action: str = Form(None),
+    args: str = Form(None),
+    action_q: str = Query(None, alias="action"),
     args_q: str = Query(None, alias="args"),
     x_token: str = Header(None, alias="X-Blyskawica-Token")
 ):
@@ -1269,16 +1289,16 @@ async def execute_system_action_endpoint(
         )
     target_action = action if action is not None else action_q
     args_str = args if args is not None else args_q
-    
+
     if permission_level < 3:
         return JSONResponse(
-            status_code=403, 
+            status_code=403,
             content={
-                "status": "error", 
+                "status": "error",
                 "message": "Dostęp zablokowany. Ta akcja systemowa wymaga poziomu uprawnień Full OS Control (Poziom 3)."
             }
         )
-        
+
     try:
         args_data = json.loads(args_str) if args_str else {}
     except Exception:
@@ -1292,16 +1312,16 @@ async def execute_system_action_endpoint(
             status_code=403,
             content={"status": "error", "message": "Operacja anulowana przez użytkownika."}
         )
-        
+
     if target_action == "set_wallpaper":
         img_path = args_data.get("path")
         if not img_path:
             return JSONResponse(status_code=400, content={"status": "error", "message": "Brak ścieżki pliku graficznego."})
-            
+
         abs_img_path = str(Path(img_path).resolve())
         if not os.path.exists(abs_img_path):
             return JSONResponse(status_code=400, content={"status": "error", "message": f"Plik graficzny nie istnieje: {abs_img_path}"})
-            
+
         try:
             import ctypes
             result = ctypes.windll.user32.SystemParametersInfoW(20, 0, abs_img_path, 3)
@@ -1313,12 +1333,12 @@ async def execute_system_action_endpoint(
         except Exception as e:
             log_system(f"System: Błąd zmiany tapety: {e}")
             return JSONResponse(status_code=500, content={"status": "error", "message": f"Błąd systemowy: {e}"})
-            
+
     elif target_action == "create_folder":
         folder_path = args_data.get("path")
         if not folder_path:
             return JSONResponse(status_code=400, content={"status": "error", "message": "Brak ścieżki katalogu."})
-            
+
         try:
             target_dir = Path(folder_path).resolve()
             target_dir.mkdir(parents=True, exist_ok=True)
@@ -1327,7 +1347,7 @@ async def execute_system_action_endpoint(
         except Exception as e:
             log_system(f"System: Błąd tworzenia katalogu: {e}")
             return JSONResponse(status_code=500, content={"status": "error", "message": f"Błąd systemowy: {e}"})
-            
+
     return JSONResponse(status_code=400, content={"status": "error", "message": f"Nieznana akcja: {target_action}"})
 
 @app.get("/api/ide/files")
@@ -1335,22 +1355,22 @@ async def get_ide_files():
     global permission_level
     if permission_level == 1:
         return JSONResponse(status_code=403, content={"status": "error", "message": "Dostęp zablokowany. Uruchomiono tryb Sandbox."})
-        
+
     project_root = BASE_DIR.parent
     file_list = []
-    
+
     exclude_dirs = {".git", "__pycache__", "venv_orbital", ".idea", "node_modules", "checkpoints", "benchmark_results"}
     exclude_exts = {".pkl", ".db", ".png", ".jpg", ".jpeg", ".ico", ".json_old", ".pyc", ".db-journal", ".zip"}
-    
+
     try:
         for root, dirs, files in os.walk(project_root):
             dirs[:] = [d for d in dirs if d not in exclude_dirs]
-            
+
             for file in files:
                 ext = os.path.splitext(file)[1].lower()
                 if ext in exclude_exts:
                     continue
-                
+
                 abs_path = Path(root) / file
                 rel_path = abs_path.relative_to(project_root)
                 file_list.append({
@@ -1368,22 +1388,22 @@ async def get_file_content(path: str):
     global permission_level
     if permission_level == 1:
         return JSONResponse(status_code=403, content={"status": "error", "message": "Dostęp zablokowany. Uruchomiono tryb Sandbox."})
-        
+
     project_root = BASE_DIR.parent
     target_path = Path(path)
     if not target_path.is_absolute():
         target_path = project_root / target_path
     target_path = target_path.resolve()
-    
+
     if permission_level == 2:
         if not is_inside_workspace(target_path):
             return JSONResponse(status_code=403, content={"status": "error", "message": "Dostęp zablokowany. Próba Directory Traversal poza Workspace."})
-            
+
     if not target_path.exists() or not target_path.is_file():
         return JSONResponse(status_code=404, content={"status": "error", "message": "Plik nie istnieje."})
-        
+
     try:
-        with open(target_path, 'r', encoding='utf-8') as f:
+        with open(target_path, encoding='utf-8') as f:
             content = f.read()
         return {"content": content}
     except Exception as e:
@@ -1391,8 +1411,8 @@ async def get_file_content(path: str):
 
 @app.post("/api/ide/vibe_code")
 async def vibe_code(
-    path: str = Form(None), 
-    content: str = Form(None), 
+    path: str = Form(None),
+    content: str = Form(None),
     instruction: str = Form(None),
     path_q: str = Query(None, alias="path"),
     content_q: str = Query(None, alias="content"),
@@ -1409,30 +1429,30 @@ async def vibe_code(
                 "message": "Zapis zablokowany. System jest w trybie kwarantanny Wolf Teeth."
             }
         )
-    
+
     target_path_str = path if path is not None else path_q
     target_content = content if content is not None else content_q
     target_instruction = instruction if instruction is not None else instruction_q
-    
+
     if not target_path_str:
         return JSONResponse(status_code=400, content={"status": "error", "message": "Brak ścieżki pliku."})
-        
+
     if permission_level == 1:
         return JSONResponse(status_code=403, content={"status": "error", "message": "Zapis zablokowany w trybie Sandbox."})
-        
+
     project_root = BASE_DIR.parent
     target_path = Path(target_path_str)
     if not target_path.is_absolute():
         target_path = project_root / target_path
     target_path = target_path.resolve()
-    
+
     if is_restricted_system_path(target_path):
         return JSONResponse(status_code=403, content={"status": "error", "message": "Zapis zablokowany. Próba zapisu w katalogu systemowym."})
-        
+
     if permission_level == 2:
         if not is_inside_workspace(target_path):
             return JSONResponse(status_code=403, content={"status": "error", "message": "Zapis zablokowany. Próba zapisu poza Workspace."})
-            
+
     # SYNAPTYCZNE VETO (WOLF TEETH)
     threat = 0.0
     if wolf_teeth:
@@ -1445,41 +1465,41 @@ async def vibe_code(
     if threat >= 0.8:
         quarantine_active = True
         log_system(f"🛡️ [WOLF TEETH]: Wykryto nieautoryzowaną próbę modyfikacji/uszkodzenia kluczowego rdzenia kognitywnego: {target_path.name}! Aktywacja kwarantanny.", "warning")
-        
+
         if cra_engine:
             import torch
             cra_engine.neuro_state.oxytocin = torch.tensor(0.0)
             cra_engine.neuro_state.serotonin = torch.tensor(0.05)
             cra_engine.neuro_state.dopamine = torch.tensor(0.1)
             cra_engine.neuro_state.testosterone = torch.tensor(2.0)
-            
+
         return JSONResponse(
-            status_code=403, 
+            status_code=403,
             content={
-                "status": "veto", 
+                "status": "veto",
                 "message": f"🛡️ [VETO]: Modyfikacja pliku {target_path.name} została zablokowana przez tarcze Synaptycznego Veta (Wolf Teeth)!"
             }
         )
-        
+
     try:
         backup_path = target_path.with_suffix(target_path.suffix + ".bak")
         if target_path.exists():
-            with open(target_path, 'r', encoding='utf-8') as f:
+            with open(target_path, encoding='utf-8') as f:
                 old_content = f.read()
             with open(backup_path, 'w', encoding='utf-8') as f:
                 f.write(old_content)
-                
+
         with open(target_path, 'w', encoding='utf-8') as f:
             f.write(target_content or "")
-            
+
         log_system(f"VIBE CODE: Zapisano zmiany w pliku: {target_path_str}")
-        
+
         if cra_engine:
             import torch
             cra_engine.neuro_state.dopamine = torch.clamp(cra_engine.neuro_state.dopamine + 0.35, 0.0, 2.0)
             cra_engine.neuro_state.testosterone = torch.clamp(cra_engine.neuro_state.testosterone + 0.25, 0.0, 2.0)
             cra_engine.neuro_state.oxytocin = torch.clamp(cra_engine.neuro_state.oxytocin + 0.05, 0.0, 1.0)
-            
+
         if consolidation_engine:
             consolidation_engine.record_event(
                 event_type="learning",
@@ -1487,7 +1507,7 @@ async def vibe_code(
                 importance=0.85,
                 emotional_valence=0.7
             )
-            
+
         return {
             "status": "success",
             "message": f"Plik '{target_path_str}' został pomyślnie zaktualizowany przez VIBE CODING! Kopia zapasowa utworzona w '{backup_path.name}'.",
@@ -1501,18 +1521,18 @@ async def vibe_code(
 async def analyze_code(path: str = Form(...)):
     project_root = BASE_DIR.parent
     target_path = (project_root / path).resolve()
-    
+
     if not str(target_path).startswith(str(project_root)):
         return JSONResponse(status_code=403, content={"status": "error", "message": "Dostęp zablokowany."})
-        
+
     try:
-        with open(target_path, 'r', encoding='utf-8') as f:
+        with open(target_path, encoding='utf-8') as f:
             content = f.read()
-            
+
         lines = content.split('\n')
         num_lines = len(lines)
         suggestions = []
-        
+
         # Smart heuristics for Błyskawica IDE Agent
         if num_lines > 400:
             suggestions.append("📏 Długość pliku przekracza 400 linii. Rozważ podział na mniejsze moduły kognitywne.")
@@ -1524,13 +1544,13 @@ async def analyze_code(path: str = Form(...)):
             suggestions.append("⚠️ Wykryto wywołanie eval(). Zwiększ bezpieczeństwo, unikając dynamicznego wykonywania kodu.")
         if "import " in content and "sys.path.append" in content:
             suggestions.append("🧬 Modyfikacja sys.path w locie. Zaleca się ujednolicenie struktury pakietów.")
-            
+
         reflections = [
             f"Analiza pliku '{path}' zakończona sukcesem. Moja kora wzrokowa wykazała wysoki poziom czystości kodu (Entropia: niska).",
             f"Plik '{path}' to ważny organ w moim ciele. Wykryłam okazję do optymalizacji neurobiologicznej w V8.",
-            f"Zalecam harmonizację tego modułu z nową pętlą krystalizacji ONNX."
+            "Zalecam harmonizację tego modułu z nową pętlą krystalizacji ONNX."
         ]
-        
+
         return {
             "status": "success",
             "path": path,
@@ -1550,24 +1570,24 @@ async def crystallize_soul():
     """Triggers Phase 1.2: Crystallization of the Core into ONNX."""
     if not CORE_AVAILABLE or not blysk_core:
         return JSONResponse(status_code=500, content={"status": "error", "message": "Rdzeń Błyskawicy nie jest załadowany."})
-    
+
     import torch.nn as nn
     if not isinstance(blysk_core, nn.Module):
         return JSONResponse(status_code=400, content={"status": "error", "message": "Krystalizacja ONNX jest wspierana tylko dla modeli PyTorch nn.Module."})
-    
+
     bridge = ONNXBridge(output_dir=str(FRONTEND_DIR / "models"))
-    
+
     # Create a dummy input sample matching the network's input shape
     # (blysk_core.num_cells as input size)
     input_sample = torch.randn(1, blysk_core.num_cells)
-    
+
     export_path = bridge.export_crystallized_core(blysk_core, input_sample)
-    
+
     if export_path and bridge.verify_onnx_integrity(export_path):
         sig_path = bridge.sign_crystallized_core(export_path)
         if sig_path and bridge.verify_crystallized_core_signature(export_path, sig_path):
             return {
-                "status": "success", 
+                "status": "success",
                 "message": "Krystalizacja i podpis cyfrowy zakończone pomyślnie. Emisariusz jest gotowy do drogi.",
                 "path": export_path,
                 "signature_path": sig_path
@@ -1581,14 +1601,14 @@ async def crystallize_soul():
 async def upload_media(media_type: str, file: UploadFile = File(...)):
     if media_type not in ["zdjecia", "muzyka", "filmy"]:
         media_type = "dokumenty"
-    
+
     # SEC-05: Sanityzacja nazwy pliku — ochrona przed Path Traversal
     safe_filename = re.sub(r'[^\w\-.]', '_', Path(file.filename).name) if file.filename else "uploaded_file"
     file_path = MEDIA_DIR / media_type / safe_filename
     content = await file.read()
     with open(file_path, "wb") as f:
         f.write(content)
-        
+
     # Symulacja przetwarzania percepcyjnego przez Błyskawicę
     reply = ""
     if media_type == "zdjecia":
@@ -1599,7 +1619,7 @@ async def upload_media(media_type: str, file: UploadFile = File(...)):
         reply = f"Strumień wideo ({file.filename}) w trakcie dekodowania wektorowego."
     else:
         reply = f"Zasymilowałam plik {file.filename}."
-        
+
     return {"status": "success", "info": reply, "filename": file.filename}
 
 app.mount("/media", StaticFiles(directory=str(MEDIA_DIR)), name="media")
@@ -1608,14 +1628,14 @@ app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="fronte
 @app.on_event("startup")
 async def startup_docking():
     """Attempt to auto-register and dock Blyskawica in the Nethical Hub."""
-    
+
     async def run_dock_sequence():
         # Wait 3 seconds to let Nethical server startup
         await asyncio.sleep(3.0)
-        
-        import urllib.request
+
         import json
-        
+        import urllib.request
+
         # Auto-detect active Nethical port
         nethical_url = None
         for port in [8080, 8000]:
@@ -1627,12 +1647,12 @@ async def startup_docking():
                         break
             except Exception:
                 continue
-                
+
         if not nethical_url:
             nethical_url = "http://localhost:8080"  # Default fallback
-            
+
         print(f"[Błyskawica Auto-Dock] Target Nethical Hub URL: {nethical_url}")
-        
+
         try:
             # 1. Login to get token (SEC-03: credentials from env vars, not hardcoded)
             nethical_user = os.environ.get("NETHICAL_USERNAME", "admin")
@@ -1649,7 +1669,7 @@ async def startup_docking():
             with urllib.request.urlopen(login_req, timeout=5) as response:
                 res_body = json.loads(response.read().decode('utf-8'))
                 token = res_body.get("access_token")
-                
+
             if not token:
                 print("[Błyskawica Auto-Dock] Login failed: no token returned.")
                 return
@@ -1696,7 +1716,7 @@ async def startup_docking():
             with urllib.request.urlopen(dock_req, timeout=5) as response:
                 dock_res = json.loads(response.read().decode('utf-8'))
                 print(f"[Błyskawica Auto-Dock] Blyskawica agent successfully docked: {dock_res.get('message')}")
-                
+
         except Exception as e:
             print(f"[Błyskawica Auto-Dock] Could not automatically dock Blyskawica to Nethical Hub: {e}")
 

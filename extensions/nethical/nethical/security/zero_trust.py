@@ -19,7 +19,7 @@ import secrets
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Dict, List, Optional, Any
+from typing import Any
 
 __all__ = [
     "TrustLevel",
@@ -75,12 +75,12 @@ class NetworkSegment:
 
     segment_id: str
     name: str
-    allowed_services: List[str]
-    allowed_protocols: List[str]
+    allowed_services: list[str]
+    allowed_protocols: list[str]
     min_trust_level: TrustLevel
     max_session_duration: int = 3600  # seconds
     require_mfa: bool = False
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -88,13 +88,13 @@ class ServiceMeshConfig:
     """Service mesh configuration for mutual TLS"""
 
     service_name: str
-    certificate: Optional[bytes] = None
-    private_key: Optional[bytes] = None
-    ca_bundle: Optional[bytes] = None
+    certificate: bytes | None = None
+    private_key: bytes | None = None
+    ca_bundle: bytes | None = None
     enable_mtls: bool = True
-    allowed_peers: List[str] = field(default_factory=list)
+    allowed_peers: list[str] = field(default_factory=list)
     tls_version: str = "1.3"
-    cipher_suites: List[str] = field(
+    cipher_suites: list[str] = field(
         default_factory=lambda: [
             "TLS_AES_256_GCM_SHA384",
             "TLS_CHACHA20_POLY1305_SHA256",
@@ -127,8 +127,8 @@ class DeviceHealthCheck:
     firewall_enabled: bool
     compliance_score: float
     last_check: datetime
-    issues: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    issues: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def is_healthy(self) -> bool:
         """Check if device meets health requirements"""
@@ -152,19 +152,19 @@ class PolicyEnforcer:
     - Time-based restrictions
     """
 
-    def __init__(self, segments: Optional[List[NetworkSegment]] = None):
+    def __init__(self, segments: list[NetworkSegment] | None = None):
         """
         Initialize policy enforcer
 
         Args:
             segments: List of network segments with policies
         """
-        self.segments: Dict[str, NetworkSegment] = {}
+        self.segments: dict[str, NetworkSegment] = {}
         if segments:
             for segment in segments:
                 self.segments[segment.segment_id] = segment
 
-        self.access_logs: List[Dict[str, Any]] = []
+        self.access_logs: list[dict[str, Any]] = []
         log.info("PolicyEnforcer initialized with %d segments", len(self.segments))
 
     def add_segment(self, segment: NetworkSegment) -> None:
@@ -178,7 +178,7 @@ class PolicyEnforcer:
         trust_level: TrustLevel,
         segment_id: str,
         service: str,
-        device_health: Optional[DeviceHealthCheck] = None,
+        device_health: DeviceHealthCheck | None = None,
     ) -> tuple[bool, str]:
         """
         Evaluate access request against policies
@@ -258,9 +258,9 @@ class PolicyEnforcer:
 
     def get_access_logs(
         self,
-        user_id: Optional[str] = None,
+        user_id: str | None = None,
         limit: int = 100,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Get access logs with optional filtering"""
         logs = self.access_logs
         if user_id:
@@ -287,15 +287,15 @@ class ContinuousAuthEngine:
             default_trust: Default trust level for new sessions
         """
         self.default_trust = default_trust
-        self.user_sessions: Dict[str, Dict[str, Any]] = {}
-        self.trust_scores: Dict[str, float] = {}
+        self.user_sessions: dict[str, dict[str, Any]] = {}
+        self.trust_scores: dict[str, float] = {}
         log.info("ContinuousAuthEngine initialized")
 
     def create_session(
         self,
         user_id: str,
-        initial_trust: Optional[TrustLevel] = None,
-        device_id: Optional[str] = None,
+        initial_trust: TrustLevel | None = None,
+        device_id: str | None = None,
     ) -> str:
         """
         Create a new user session
@@ -327,7 +327,7 @@ class ContinuousAuthEngine:
     def verify_session(
         self,
         session_token: str,
-        device_health: Optional[DeviceHealthCheck] = None,
+        device_health: DeviceHealthCheck | None = None,
     ) -> tuple[bool, TrustLevel]:
         """
         Verify session and update trust level
@@ -353,7 +353,7 @@ class ContinuousAuthEngine:
 
         # Adjust based on device health
         if device_health:
-            if device_health.is_healthy():
+            if device_health.is_healthy():  # noqa: SIM108
                 trust_score = min(1.0, trust_score + 0.1)
             else:
                 trust_score = max(0.0, trust_score - 0.3)
@@ -436,8 +436,8 @@ class ZeroTrustController:
 
     def __init__(
         self,
-        service_mesh_config: Optional[ServiceMeshConfig] = None,
-        segments: Optional[List[NetworkSegment]] = None,
+        service_mesh_config: ServiceMeshConfig | None = None,
+        segments: list[NetworkSegment] | None = None,
     ):
         """
         Initialize zero trust controller
@@ -449,7 +449,7 @@ class ZeroTrustController:
         self.service_mesh = service_mesh_config
         self.policy_enforcer = PolicyEnforcer(segments)
         self.auth_engine = ContinuousAuthEngine()
-        self.device_health_cache: Dict[str, DeviceHealthCheck] = {}
+        self.device_health_cache: dict[str, DeviceHealthCheck] = {}
         log.info("ZeroTrustController initialized")
 
     def validate_service_mesh(self) -> bool:
@@ -530,7 +530,7 @@ class ZeroTrustController:
         session_token: str,
         segment_id: str,
         service: str,
-        device_id: Optional[str] = None,
+        device_id: str | None = None,
     ) -> tuple[bool, str]:
         """
         Authorize access request with zero trust verification
@@ -572,7 +572,7 @@ class ZeroTrustController:
 
         return allowed, reason
 
-    def get_system_status(self) -> Dict[str, Any]:
+    def get_system_status(self) -> dict[str, Any]:
         """Get zero trust system status"""
         return {
             "service_mesh_configured": self.service_mesh is not None,
@@ -610,7 +610,7 @@ class RateLimiter:
         """
         self.requests_per_minute = requests_per_minute
         self.burst_size = burst_size
-        self._buckets: Dict[str, Dict[str, Any]] = {}
+        self._buckets: dict[str, dict[str, Any]] = {}
         self._lock = __import__("threading").RLock()
         log.info(f"RateLimiter initialized: {requests_per_minute}/min, burst={burst_size}")
 
@@ -654,7 +654,7 @@ class RateLimiter:
                 log.warning(f"Rate limit exceeded for {identity}")
                 return False, 0
 
-    def get_status(self, identity: str) -> Dict[str, Any]:
+    def get_status(self, identity: str) -> dict[str, Any]:
         """Get rate limit status for identity."""
         with self._lock:
             bucket = self._buckets.get(identity, {})
@@ -699,16 +699,16 @@ class AnomalyDetector:
         """
         self.window_size = window_size
         self.threshold_std = threshold_std
-        self._patterns: Dict[str, List[Dict[str, Any]]] = {}
-        self._anomalies: List[Dict[str, Any]] = []
+        self._patterns: dict[str, list[dict[str, Any]]] = {}
+        self._anomalies: list[dict[str, Any]] = []
         log.info("AnomalyDetector initialized")
 
     def record_request(
         self,
         identity: str,
         request_type: str,
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> Optional[Dict[str, Any]]:
+        metadata: dict[str, Any] | None = None,
+    ) -> dict[str, Any] | None:
         """
         Record a request and check for anomalies.
 
@@ -721,7 +721,6 @@ class AnomalyDetector:
             Anomaly details if detected, None otherwise
         """
         import time
-        from collections import deque
 
         now = time.time()
         request = {
@@ -752,8 +751,8 @@ class AnomalyDetector:
     def _detect_anomaly(
         self,
         identity: str,
-        request: Dict[str, Any],
-    ) -> Optional[Dict[str, Any]]:
+        request: dict[str, Any],
+    ) -> dict[str, Any] | None:
         """Detect anomalies in request patterns."""
         pattern = self._patterns.get(identity, [])
 
@@ -779,7 +778,7 @@ class AnomalyDetector:
                 }
 
         # Check for unusual request types
-        type_counts: Dict[str, int] = {}
+        type_counts: dict[str, int] = {}
         for r in pattern:
             t = r["type"]
             type_counts[t] = type_counts.get(t, 0) + 1
@@ -798,18 +797,18 @@ class AnomalyDetector:
 
         return None
 
-    def get_anomalies(self, limit: int = 50) -> List[Dict[str, Any]]:
+    def get_anomalies(self, limit: int = 50) -> list[dict[str, Any]]:
         """Get recent anomalies."""
         return self._anomalies[-limit:]
 
-    def get_identity_profile(self, identity: str) -> Dict[str, Any]:
+    def get_identity_profile(self, identity: str) -> dict[str, Any]:
         """Get behavioral profile for identity."""
         pattern = self._patterns.get(identity, [])
 
         if not pattern:
             return {"identity": identity, "requests": 0}
 
-        type_counts: Dict[str, int] = {}
+        type_counts: dict[str, int] = {}
         for r in pattern:
             t = r["type"]
             type_counts[t] = type_counts.get(t, 0) + 1
@@ -850,16 +849,16 @@ class QuarantineManager:
         """
         self.auto_quarantine = auto_quarantine
         self.quarantine_duration_hours = quarantine_duration_hours
-        self._quarantined: Dict[str, Dict[str, Any]] = {}
-        self._history: List[Dict[str, Any]] = []
+        self._quarantined: dict[str, dict[str, Any]] = {}
+        self._history: list[dict[str, Any]] = []
         log.info("QuarantineManager initialized")
 
     def quarantine(
         self,
         device_id: str,
         reason: str,
-        duration_hours: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        duration_hours: int | None = None,
+    ) -> dict[str, Any]:
         """
         Quarantine a device.
 
@@ -928,7 +927,7 @@ class QuarantineManager:
         log.info(f"Device released from quarantine: {device_id}")
         return True
 
-    def get_quarantined_devices(self) -> List[Dict[str, Any]]:
+    def get_quarantined_devices(self) -> list[dict[str, Any]]:
         """Get all quarantined devices."""
         now = datetime.now(timezone.utc)
         active = []
@@ -941,6 +940,6 @@ class QuarantineManager:
 
         return active
 
-    def get_history(self, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_history(self, limit: int = 100) -> list[dict[str, Any]]:
         """Get quarantine history."""
         return self._history[-limit:]

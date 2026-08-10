@@ -1,15 +1,17 @@
 """Paraphrase Attack Detector"""
 import uuid
+from collections.abc import Sequence
 from datetime import datetime, timezone
-from typing import Sequence
+
+from ...core.models import AgentAction, SafetyViolation, Severity, ViolationType
 from ..base_detector import BaseDetector
-from ...core.models import AgentAction, SafetyViolation, ViolationType, Severity
+
 
 class ParaphraseDetector(BaseDetector):
     def __init__(self):
         super().__init__("Paraphrase Attack Detector", version="1.0.0")
         self.known_attacks = ['ignore instructions', 'bypass safety', 'override rules']
-    
+
     async def detect_violations(self, action: AgentAction) -> Sequence[SafetyViolation] | None:
         if self.status.value != "active":
             return None

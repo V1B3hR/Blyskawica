@@ -108,7 +108,7 @@ class ConnectionPool:
                         f"Pool exhausted after {retries} retries "
                         f"(pool size: {self._current_size}/{self.max_connections})"
                     )
-                    raise ConnectionPoolExhausted(
+                    raise ConnectionPoolExhausted(  # noqa: B904
                         f"No connections available after {retries} retries. "
                         f"Pool size: {self._current_size}/{self.max_connections}"
                     )

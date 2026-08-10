@@ -408,13 +408,13 @@ def ablation_study_sleep_phases(
             original_step = model.phase_scheduler.step
 
             def modified_step(energy_levels, activity_levels, anxiety_levels=None):
-                phases = original_step(energy_levels, activity_levels, anxiety_levels)
+                phases = original_step(energy_levels, activity_levels, anxiety_levels)  # noqa: B023
 
                 # Clone phases to avoid warnings about expanded tensors
                 phases = phases.clone()
 
                 # Replace disabled phases with ACTIVE
-                for phase_name in disabled_phases:
+                for phase_name in disabled_phases:  # noqa: B023
                     if phase_name == 'sleep':
                         phases[phases == 1] = 0  # SLEEP -> ACTIVE
                     elif phase_name == 'interactive':
@@ -447,7 +447,7 @@ def ablation_study_sleep_phases(
             epoch_losses = []
             epoch_accuracies = []
 
-            for batch_idx, (data, target) in enumerate(train_loader):
+            for batch_idx, (data, target) in enumerate(train_loader):  # noqa: B007
                 data, target = data.to(config.device), target.to(config.device)
 
                 optimizer.zero_grad()

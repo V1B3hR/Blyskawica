@@ -9,17 +9,17 @@ Tests the Nethical-LangChain integration including:
 - Helper functions
 """
 
-import pytest
 import json
 import sys
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock
+
+import pytest
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from nethical.core import IntegratedGovernance
-from nethical.core.models import Decision, ActionType
 
 
 class TestNethicalGuardToolWithoutLangChain:
@@ -285,7 +285,6 @@ class TestLlamaGuardChain:
         except ImportError:
             pytest.skip("LangChain not installed")
 
-        from nethical.integrations.langchain_tools import LlamaGuardChain
 
         # This test requires langchain to be properly installed
         # We'll just test that we can create the instance
@@ -298,7 +297,6 @@ class TestLlamaGuardChain:
         except ImportError:
             pytest.skip("LangChain not installed")
 
-        from nethical.integrations.langchain_tools import LlamaGuardChain
 
         # This test requires langchain to be properly installed
         pytest.skip("Requires full LangChain setup with transformers")
@@ -310,7 +308,6 @@ class TestLlamaGuardChain:
         except ImportError:
             pytest.skip("LangChain not installed")
 
-        from nethical.integrations.langchain_tools import LlamaGuardChain
 
         # This test requires langchain to be properly installed
         pytest.skip("Requires full LangChain setup with transformers")
@@ -348,8 +345,8 @@ class TestChainGuards:
     def test_chain_guards_llama_blocks(self, temp_storage):
         """Test chain_guards when LlamaGuard blocks."""
         from nethical.integrations.langchain_tools import (
-            NethicalGuardTool,
             LlamaGuardChain,
+            NethicalGuardTool,
             chain_guards,
         )
 
@@ -371,8 +368,8 @@ class TestChainGuards:
     def test_chain_guards_both_allow(self, temp_storage):
         """Test chain_guards when both guards allow."""
         from nethical.integrations.langchain_tools import (
-            NethicalGuardTool,
             LlamaGuardChain,
+            NethicalGuardTool,
             chain_guards,
         )
 
@@ -401,8 +398,8 @@ class TestCreateNethicalAgent:
     def test_create_nethical_agent_without_langchain(self):
         """Test that create_nethical_agent raises ImportError without LangChain."""
         from nethical.integrations.langchain_tools import (
-            create_nethical_agent,
             LANGCHAIN_AVAILABLE,
+            create_nethical_agent,
         )
 
         if not LANGCHAIN_AVAILABLE:

@@ -15,21 +15,21 @@ Author: Nethical Core Team
 Version: 1.0.0
 """
 
+from .auto_deprecation import (
+    ArchiveStatus,
+    AutoDeprecation,
+    DeprecationCandidate,
+    DeprecationReason,
+)
 from .auto_registration import (
+    AttackPattern,
     AutoRegistration,
     RegistrationStage,
     ValidationResult,
-    AttackPattern,
-)
-from .auto_deprecation import (
-    AutoDeprecation,
-    DeprecationReason,
-    ArchiveStatus,
-    DeprecationCandidate,
 )
 from .registry_manager import (
-    RegistryManager,
     RegistryHealth,
+    RegistryManager,
 )
 
 __all__ = [

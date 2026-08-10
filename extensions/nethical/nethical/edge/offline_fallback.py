@@ -8,9 +8,9 @@ Philosophy: "Safe by default when disconnected"
 import logging
 import threading
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +61,7 @@ class OfflineFallback:
 
     def __init__(
         self,
-        config: Optional[OfflineConfig] = None,
+        config: OfflineConfig | None = None,
         network_monitor: Optional["NetworkMonitor"] = None,
         decision_queue: Optional["DecisionQueue"] = None,
     ):
@@ -76,20 +76,20 @@ class OfflineFallback:
         self.config = config or OfflineConfig()
 
         # Import here to avoid circular imports
-        from .network_monitor import NetworkMonitor
         from .decision_queue import DecisionQueue
+        from .network_monitor import NetworkMonitor
 
         self.network_monitor = network_monitor or NetworkMonitor()
         self.decision_queue = decision_queue or DecisionQueue()
 
         # State
         self._current_mode = OfflineMode.ONLINE
-        self._offline_since: Optional[float] = None
+        self._offline_since: float | None = None
         self._lock = threading.RLock()
 
         # Last known good state
-        self._last_policy_hash: Optional[str] = None
-        self._last_policy_timestamp: Optional[float] = None
+        self._last_policy_hash: str | None = None
+        self._last_policy_timestamp: float | None = None
 
         # Metrics
         self._offline_decisions = 0
@@ -126,7 +126,7 @@ class OfflineFallback:
             status = self.network_monitor.get_status(force_check)
 
             if status.is_connected and status.latency_ms is not None:
-                if status.latency_ms < 100:
+                if status.latency_ms < 100:  # noqa: SIM108
                     new_mode = OfflineMode.ONLINE
                 else:
                     new_mode = OfflineMode.PARTIAL
@@ -146,7 +146,7 @@ class OfflineFallback:
             self._current_mode = new_mode
             return new_mode
 
-    def get_offline_duration(self) -> Optional[float]:
+    def get_offline_duration(self) -> float | None:
         """Get how long system has been offline in seconds."""
         if self._offline_since is None:
             return None
@@ -164,7 +164,7 @@ class OfflineFallback:
         if self._current_mode == OfflineMode.OFFLINE:
             return True
 
-        if self._current_mode == OfflineMode.PARTIAL and self.config.conservative_mode:
+        if self._current_mode == OfflineMode.PARTIAL and self.config.conservative_mode:  # noqa: SIM103
             return True
 
         return False
@@ -200,7 +200,7 @@ class OfflineFallback:
         agent_id: str,
         action: str,
         decision: str,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ):
         """
         Record a decision made while offline.
@@ -257,7 +257,7 @@ class OfflineFallback:
         age_hours = (time.time() - self._last_policy_timestamp) / 3600
         return age_hours > max_age_hours
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get offline fallback metrics."""
         return {
             "current_mode": self._current_mode.value,
@@ -271,8 +271,8 @@ class OfflineFallback:
 
 
 # Import dependencies for type hints only
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING  # noqa: E402
 
 if TYPE_CHECKING:
+    from .decision_queue import DecisionQueue
     from .network_monitor import NetworkMonitor
-    from .decision_queue import DecisionQueue, QueuedDecision

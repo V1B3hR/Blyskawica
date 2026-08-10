@@ -344,8 +344,8 @@ def create_visualization_summary(results_dict):
         # Demo 1: Self-supervised learning losses
         if 'self_supervised' in results_dict:
             losses_history = results_dict['self_supervised']['losses']
-            prediction_losses = [l['prediction_loss'] for l in losses_history]
-            contrastive_losses = [l['contrastive_loss'] for l in losses_history]
+            prediction_losses = [l['prediction_loss'] for l in losses_history]  # noqa: E741
+            contrastive_losses = [l['contrastive_loss'] for l in losses_history]  # noqa: E741
 
             axes[0, 0].plot(prediction_losses, label='Prediction Loss', color='blue')
             axes[0, 0].plot(contrastive_losses, label='Contrastive Loss', color='red')
@@ -374,7 +374,7 @@ def create_visualization_summary(results_dict):
 
             # Combine legends
             lines = line1 + line2
-            labels = [l.get_label() for l in lines]
+            labels = [l.get_label() for l in lines]  # noqa: E741
             ax2.legend(lines, labels, loc='upper left')
             ax2.grid(True)
 
@@ -411,7 +411,7 @@ def create_visualization_summary(results_dict):
 
             # Combine legends
             lines = line1 + line2 + line3
-            labels = [l.get_label() for l in lines]
+            labels = [l.get_label() for l in lines]  # noqa: E741
             ax4.legend(lines, labels, loc='upper left')
             ax4.grid(True)
 

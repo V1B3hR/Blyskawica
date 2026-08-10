@@ -8,7 +8,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any
 
-from .providers import ThreatProvider, ThreatData
+from .providers import ThreatData, ThreatProvider
 
 
 @dataclass
@@ -144,7 +144,7 @@ class ThreatEnricher:
         all_tags = set()
         for td in threat_data:
             all_tags.update(td.tags)
-        return sorted(list(all_tags))
+        return sorted(list(all_tags))  # noqa: C414
 
     def _aggregate_metadata(self, threat_data: list[ThreatData]) -> dict[str, Any]:
         """Aggregate metadata from multiple sources."""

@@ -6,11 +6,12 @@ Part of the modular Purity Refactor.
 
 import logging
 import time
-from collections import deque, defaultdict
+from collections import defaultdict, deque
+
 import numpy as np
-import torch
-from .config import NeuromorphicConfig, AdaptationMode
+
 from ..device_manager import device_manager
+from .config import NeuromorphicConfig
 
 logger = logging.getLogger(__name__)
 
@@ -77,12 +78,12 @@ class RealTimeParameterManager:
             return
 
         avg_perf = np.mean(list(self.performance_history)[-10:])
-        
+
         # Adaptive Learning Rate scaling based on performance
         if avg_perf < self.config.real_time_adaptation.performance_threshold:
             # Performance dip: increase learning exploration
             for rule in self.config.plasticity_rules:
                 if rule.adaptive_learning_rate:
                     rule.learning_rate = min(rule.learning_rate * 1.05, rule.max_learning_rate)
-        
+
         self.last_update = now

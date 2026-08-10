@@ -9,7 +9,7 @@ import hashlib
 import json
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -26,14 +26,14 @@ class ContextFingerprint:
     """
 
     hash: str
-    components: Dict[str, str]
+    components: dict[str, str]
     version: str = "1.0"
 
 
 def compute_fingerprint(
     action: str,
     action_type: str,
-    context: Optional[Dict[str, Any]] = None,
+    context: dict[str, Any] | None = None,
     include_timestamp: bool = False,
 ) -> str:
     """
@@ -92,7 +92,7 @@ def compute_fingerprint(
 def compute_detailed_fingerprint(
     action: str,
     action_type: str,
-    context: Optional[Dict[str, Any]] = None,
+    context: dict[str, Any] | None = None,
 ) -> ContextFingerprint:
     """
     Compute detailed context fingerprint with metadata.

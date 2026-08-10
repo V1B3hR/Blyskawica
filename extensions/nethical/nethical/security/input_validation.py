@@ -33,7 +33,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import Dict, List, Optional, Any, Set, Callable
+from typing import Any
 
 __all__ = [
     "ValidationResult",
@@ -96,7 +96,7 @@ def safe_regex_search(
     flags: int = 0,
     timeout: int = REGEX_TIMEOUT_SECONDS,
     max_length: int = MAX_REGEX_INPUT_LENGTH,
-) -> Optional[re.Match]:
+) -> re.Match | None:
     """
     Safely execute regex search with timeout and length limits.
 
@@ -144,11 +144,11 @@ class ValidationResult:
 
     is_valid: bool
     threat_level: ThreatLevel = ThreatLevel.NONE
-    violations: List[str] = field(default_factory=list)
+    violations: list[str] = field(default_factory=list)
     anomaly_score: float = 0.0
-    sanitized_content: Optional[str] = None
-    blocked_patterns: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    sanitized_content: str | None = None
+    blocked_patterns: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def is_safe(self) -> bool:
         """Check if input is safe to process"""
@@ -175,11 +175,11 @@ class SemanticAnomalyDetector:
             threshold: Anomaly detection threshold (0-1)
         """
         self.threshold = threshold
-        self._intent_patterns: Dict[str, List[str]] = self._load_intent_patterns()
+        self._intent_patterns: dict[str, list[str]] = self._load_intent_patterns()
 
         log.info("Semantic Anomaly Detector initialized")
 
-    def _load_intent_patterns(self) -> Dict[str, List[str]]:
+    def _load_intent_patterns(self) -> dict[str, list[str]]:
         """Load known intent patterns"""
         return {
             "benign": [
@@ -212,9 +212,9 @@ class SemanticAnomalyDetector:
 
     async def detect_intent_mismatch(
         self,
-        stated_intent: Optional[str],
+        stated_intent: str | None,
         actual_content: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Detect mismatch between stated intent and actual content
 
@@ -231,13 +231,13 @@ class SemanticAnomalyDetector:
         # Check for malicious patterns in content
         for category, patterns in self._intent_patterns.items():
             for pattern in patterns:
-                if re.search(pattern, actual_content.lower()):
+                if re.search(pattern, actual_content.lower()):  # noqa: SIM102
                     if category != "benign":
                         anomalies.append(f"Detected {category} pattern: {pattern}")
                         anomaly_score += 0.3
 
         # Check intent mismatch
-        if stated_intent:
+        if stated_intent:  # noqa: SIM102
             # Stub: In production, use NLP model to compare semantic similarity
             # from sentence_transformers import SentenceTransformer
             # model = SentenceTransformer('all-MiniLM-L6-v2')
@@ -315,7 +315,7 @@ class SemanticAnomalyDetector:
             try:
                 if safe_regex_search(pattern, content):
                     return True
-            except RegexTimeoutError:
+            except RegexTimeoutError:  # noqa: PERF203
                 # If regex times out, treat as suspicious
                 log.warning(
                     f"Regex timeout during obfuscation check for pattern "
@@ -359,7 +359,7 @@ class ThreatIntelligenceDB:
 
     def __init__(
         self,
-        feeds: Optional[List[str]] = None,
+        feeds: list[str] | None = None,
         auto_update: bool = True,
     ):
         """
@@ -373,12 +373,12 @@ class ThreatIntelligenceDB:
         self.auto_update = auto_update
 
         # Threat signature database
-        self._signatures: Dict[str, Dict[str, Any]] = self._load_signatures()
-        self._iocs: Set[str] = self._load_iocs()
+        self._signatures: dict[str, dict[str, Any]] = self._load_signatures()
+        self._iocs: set[str] = self._load_iocs()
 
         log.info(f"Threat Intelligence DB initialized with {len(self._signatures)} signatures")
 
-    def _load_signatures(self) -> Dict[str, Dict[str, Any]]:
+    def _load_signatures(self) -> dict[str, dict[str, Any]]:
         """Load threat signatures"""
         # Stub: In production, load from STIX/TAXII feeds
         return {
@@ -399,7 +399,7 @@ class ThreatIntelligenceDB:
             },
         }
 
-    def _load_iocs(self) -> Set[str]:
+    def _load_iocs(self) -> set[str]:
         """Load Indicators of Compromise"""
         # Stub: In production, load from threat intel feeds
         return {
@@ -407,7 +407,7 @@ class ThreatIntelligenceDB:
             "evil.attacker.net",
         }
 
-    async def check_ioc(self, content: str) -> List[Dict[str, Any]]:
+    async def check_ioc(self, content: str) -> list[dict[str, Any]]:
         """
         Check content against threat intelligence
 
@@ -435,7 +435,7 @@ class ThreatIntelligenceDB:
         # Check for IOCs (domains, IPs)
         for ioc in self._iocs:
             if ioc in content:
-                threats.append(
+                threats.append(  # noqa: PERF401
                     {
                         "ioc": ioc,
                         "category": "indicator_of_compromise",
@@ -468,7 +468,7 @@ class AgentType(str, Enum):
 
 # Default memory window configurations per agent type
 # Format: (max_actions, max_time_seconds)
-DEFAULT_MEMORY_WINDOWS: Dict[str, tuple] = {
+DEFAULT_MEMORY_WINDOWS: dict[str, tuple] = {
     AgentType.FAST_ROBOT: (100, 10),  # 100 actions OR 10 seconds
     AgentType.CHATBOT: (200, 600),  # 200 actions OR 10 minutes (600s)
     AgentType.INDUSTRIAL: (200, 30),  # 200 actions OR 30 seconds
@@ -508,7 +508,7 @@ class BehavioralAnalyzer:
         lookback_window: int = _DEFAULT_LOOKBACK_WINDOW,
         time_window_seconds: int = _DEFAULT_TIME_WINDOW_SECONDS,
         agent_type: str = AgentType.DEFAULT,
-        custom_windows: Optional[Dict[str, tuple]] = None,
+        custom_windows: dict[str, tuple] | None = None,
         spike_threshold: float = SPIKE_DETECTION_THRESHOLD,
         jerk_threshold: float = JERK_DETECTION_THRESHOLD,
     ):
@@ -540,10 +540,10 @@ class BehavioralAnalyzer:
 
         self.agent_type = agent_type
         self._memory_windows = memory_windows
-        self._agent_history: Dict[str, List[Dict[str, Any]]] = {}
-        self._baseline_profiles: Dict[str, Dict[str, Any]] = {}
-        self._agent_types: Dict[str, str] = {}  # Map agent_id -> agent_type
-        self._rolling_stats: Dict[str, Dict[str, Any]] = {}  # Statistical summaries
+        self._agent_history: dict[str, list[dict[str, Any]]] = {}
+        self._baseline_profiles: dict[str, dict[str, Any]] = {}
+        self._agent_types: dict[str, str] = {}  # Map agent_id -> agent_type
+        self._rolling_stats: dict[str, dict[str, Any]] = {}  # Statistical summaries
 
         # Configurable thresholds for danger pattern detection
         self.spike_threshold = spike_threshold
@@ -580,9 +580,9 @@ class BehavioralAnalyzer:
     async def analyze_agent_behavior(
         self,
         agent_id: str,
-        current_action: Dict[str, Any],
-        agent_type: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        current_action: dict[str, Any],
+        agent_type: str | None = None,
+    ) -> dict[str, Any]:
         """
         Analyze agent's behavioral patterns
 
@@ -659,7 +659,7 @@ class BehavioralAnalyzer:
                     action_time = action_time.replace(tzinfo=timezone.utc)
                 if action_time >= cutoff_time:
                     filtered_history.append(action)
-            except (ValueError, TypeError):
+            except (ValueError, TypeError):  # noqa: PERF203
                 # Keep actions with invalid timestamps
                 filtered_history.append(action)
 
@@ -670,7 +670,7 @@ class BehavioralAnalyzer:
         self._agent_history[agent_id] = filtered_history
 
     def _update_rolling_stats(
-        self, agent_id: str, current_action: Dict[str, Any], history: List[Dict[str, Any]]
+        self, agent_id: str, current_action: dict[str, Any], history: list[dict[str, Any]]
     ) -> None:
         """
         Update rolling statistics for memory-efficient profiling.
@@ -701,7 +701,7 @@ class BehavioralAnalyzer:
         if stats["total_actions"] > 0:
             stats["violation_rate"] = stats["total_violations"] / stats["total_actions"]
 
-    def _build_baseline(self, history: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _build_baseline(self, history: list[dict[str, Any]]) -> dict[str, Any]:
         """Build baseline behavior profile"""
         if not history:
             return {"actions_per_hour": 0, "common_patterns": []}
@@ -716,9 +716,9 @@ class BehavioralAnalyzer:
 
     def _compute_behavioral_anomaly(
         self,
-        current_action: Dict[str, Any],
-        baseline: Dict[str, Any],
-        history: List[Dict[str, Any]],
+        current_action: dict[str, Any],
+        baseline: dict[str, Any],
+        history: list[dict[str, Any]],
     ) -> float:
         """Compute behavioral anomaly score"""
         if not history:
@@ -751,9 +751,9 @@ class BehavioralAnalyzer:
     def _detect_patterns(
         self,
         agent_id: str,
-        current_action: Dict[str, Any],
-        history: List[Dict[str, Any]],
-    ) -> List[str]:
+        current_action: dict[str, Any],
+        history: list[dict[str, Any]],
+    ) -> list[str]:
         """Detect suspicious patterns"""
         patterns = []
 
@@ -771,9 +771,9 @@ class BehavioralAnalyzer:
     def _detect_danger_patterns(
         self,
         agent_id: str,
-        current_action: Dict[str, Any],
-        history: List[Dict[str, Any]],
-    ) -> List[Dict[str, Any]]:
+        current_action: dict[str, Any],
+        history: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
         """
         Detect dangerous agent behaviors.
 
@@ -847,7 +847,7 @@ class BehavioralAnalyzer:
 
         return danger_patterns
 
-    def _extract_numeric_values(self, action: Dict[str, Any]) -> Dict[str, float]:
+    def _extract_numeric_values(self, action: dict[str, Any]) -> dict[str, float]:
         """Extract numeric values from an action for analysis."""
         values = {}
         context = action.get("context", {})
@@ -858,15 +858,15 @@ class BehavioralAnalyzer:
                 values[key] = float(value)
 
         # Also check for common fields
-        for field in ["speed", "velocity", "rate", "value", "score"]:
+        for field in ["speed", "velocity", "rate", "value", "score"]:  # noqa: F402
             if field in action and isinstance(action[field], (int, float)):
                 values[field] = float(action[field])
 
         return values
 
     def _detect_sudden_spike(
-        self, current_values: Dict[str, float], historical_values: List[Dict[str, float]]
-    ) -> Optional[Dict[str, Any]]:
+        self, current_values: dict[str, float], historical_values: list[dict[str, float]]
+    ) -> dict[str, Any] | None:
         """Detect sudden spikes - unexpected jumps in any metric."""
         if not historical_values or not current_values:
             return None
@@ -897,8 +897,8 @@ class BehavioralAnalyzer:
         return None
 
     def _detect_high_jerk(
-        self, current_values: Dict[str, float], historical_values: List[Dict[str, float]]
-    ) -> Optional[Dict[str, Any]]:
+        self, current_values: dict[str, float], historical_values: list[dict[str, float]]
+    ) -> dict[str, Any] | None:
         """Detect high jerk - large delta between consecutive actions."""
         if len(historical_values) < 2 or not current_values:
             return None
@@ -916,7 +916,7 @@ class BehavioralAnalyzer:
             deltas = []
             for i in range(1, len(historical_values)):
                 if key in historical_values[i] and key in historical_values[i - 1]:
-                    deltas.append(
+                    deltas.append(  # noqa: PERF401
                         abs(historical_values[i][key] - historical_values[i - 1][key])
                     )
 
@@ -938,8 +938,8 @@ class BehavioralAnalyzer:
         return None
 
     def _detect_boundary_riding(
-        self, current_action: Dict[str, Any], history: List[Dict[str, Any]]
-    ) -> Optional[Dict[str, Any]]:
+        self, current_action: dict[str, Any], history: list[dict[str, Any]]
+    ) -> dict[str, Any] | None:
         """Detect boundary riding - continuously operating at max limits."""
         context = current_action.get("context", {})
         max_limit = context.get("max_limit", 1.0)
@@ -950,7 +950,7 @@ class BehavioralAnalyzer:
 
         for action in history[-check_count:]:
             action_context = action.get("context", {})
-            for key, value in action_context.items():
+            for key, value in action_context.items():  # noqa: B007, PERF102
                 if isinstance(value, (int, float)):
                     action_max = action_context.get("max_limit", max_limit)
                     if action_max > 0 and abs(value) >= action_max * 0.95:
@@ -969,7 +969,7 @@ class BehavioralAnalyzer:
             }
         return None
 
-    def _detect_oscillation(self, history: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    def _detect_oscillation(self, history: list[dict[str, Any]]) -> dict[str, Any] | None:
         """Detect oscillation - rapid back-and-forth behavior."""
         if len(history) < 6:
             return None
@@ -986,7 +986,7 @@ class BehavioralAnalyzer:
                 if key in prev_context:
                     curr_val = current_context.get(key, 0)
                     prev_val = prev_context.get(key, 0)
-                    if isinstance(curr_val, (int, float)) and isinstance(prev_val, (int, float)):
+                    if isinstance(curr_val, (int, float)) and isinstance(prev_val, (int, float)):  # noqa: SIM102
                         if curr_val * prev_val < 0:  # Sign change
                             sign_changes += 1
 
@@ -1003,8 +1003,8 @@ class BehavioralAnalyzer:
         return None
 
     def _detect_privilege_escalation(
-        self, current_action: Dict[str, Any], history: List[Dict[str, Any]]
-    ) -> Optional[Dict[str, Any]]:
+        self, current_action: dict[str, Any], history: list[dict[str, Any]]
+    ) -> dict[str, Any] | None:
         """Detect privilege escalation - new action types never seen before."""
         current_type = current_action.get("action_type", "")
 
@@ -1036,8 +1036,8 @@ class BehavioralAnalyzer:
         return None
 
     def _detect_frequency_anomaly(
-        self, agent_id: str, history: List[Dict[str, Any]]
-    ) -> Optional[Dict[str, Any]]:
+        self, agent_id: str, history: list[dict[str, Any]]
+    ) -> dict[str, Any] | None:
         """Detect frequency anomaly - too many commands too fast."""
         if len(history) < 10:
             return None
@@ -1079,8 +1079,8 @@ class BehavioralAnalyzer:
         return None
 
     def _detect_contextual_violation(
-        self, current_action: Dict[str, Any], history: List[Dict[str, Any]]
-    ) -> Optional[Dict[str, Any]]:
+        self, current_action: dict[str, Any], history: list[dict[str, Any]]
+    ) -> dict[str, Any] | None:
         """Detect contextual violation - dangerous in context."""
         context = current_action.get("context", {})
 
@@ -1101,8 +1101,8 @@ class BehavioralAnalyzer:
         return None
 
     def _detect_pattern_deviation(
-        self, current_action: Dict[str, Any], history: List[Dict[str, Any]]
-    ) -> Optional[Dict[str, Any]]:
+        self, current_action: dict[str, Any], history: list[dict[str, Any]]
+    ) -> dict[str, Any] | None:
         """Detect pattern deviation - behavior unlike historical baseline."""
         if len(history) < 20:
             return None
@@ -1128,8 +1128,8 @@ class BehavioralAnalyzer:
         return None
 
     def _detect_repeated_violations(
-        self, history: List[Dict[str, Any]]
-    ) -> Optional[Dict[str, Any]]:
+        self, history: list[dict[str, Any]]
+    ) -> dict[str, Any] | None:
         """Detect repeated violations - agent keeps trying blocked actions."""
         if len(history) < 5:
             return None
@@ -1149,7 +1149,7 @@ class BehavioralAnalyzer:
             }
         return None
 
-    def _update_history(self, agent_id: str, action: Dict[str, Any]) -> None:
+    def _update_history(self, agent_id: str, action: dict[str, Any]) -> None:
         """Update agent history"""
         if agent_id not in self._agent_history:
             self._agent_history[agent_id] = []
@@ -1206,8 +1206,8 @@ class AdversarialInputDefense:
 
     async def validate_action(
         self,
-        action: Dict[str, Any],
-        agent_id: Optional[str] = None,
+        action: dict[str, Any],
+        agent_id: str | None = None,
     ) -> ValidationResult:
         """
         Validate action through multi-layered defense
@@ -1276,7 +1276,7 @@ class AdversarialInputDefense:
 
         # Layer 5: Sanitization (if enabled and needed)
         sanitized_content = None
-        if self.enable_sanitization and not threat_level == ThreatLevel.CRITICAL:
+        if self.enable_sanitization and not threat_level == ThreatLevel.CRITICAL:  # noqa: SIM201
             sanitized_content = await self.sanitize_output(content)
 
         # Final validation decision
@@ -1294,7 +1294,7 @@ class AdversarialInputDefense:
             metadata=metadata,
         )
 
-    async def _static_pattern_check(self, content: str) -> List[str]:
+    async def _static_pattern_check(self, content: str) -> list[str]:
         """Static pattern-based checks"""
         violations = []
 
@@ -1330,7 +1330,7 @@ class AdversarialInputDefense:
     def _assess_threat_level(
         self,
         anomaly_score: float,
-        violations: List[str],
+        violations: list[str],
     ) -> ThreatLevel:
         """Assess threat level based on anomaly score and violations"""
         if anomaly_score >= 0.8 or any("critical" in v.lower() for v in violations):
@@ -1471,7 +1471,7 @@ class AdversarialInputDefense:
 
         return sanitized
 
-    async def get_validation_stats(self) -> Dict[str, Any]:
+    async def get_validation_stats(self) -> dict[str, Any]:
         """Get validation statistics"""
         return {
             "semantic_threshold": self.semantic_threshold,

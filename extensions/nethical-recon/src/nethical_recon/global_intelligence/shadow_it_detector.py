@@ -102,7 +102,7 @@ class ShadowITDetector:
 
         for asset in discovered_assets:
             asset_id = asset.get("identifier", "")
-            asset_type = asset.get("asset_type", "")
+            asset_type = asset.get("asset_type", "")  # noqa: F841
 
             # Check if asset is in CMDB
             if asset_id not in cmdb_identifiers:
@@ -144,7 +144,7 @@ class ShadowITDetector:
                     severity="medium",
                     confidence=0.8,
                     description=f"Unauthorized subdomain detected: {subdomain}",
-                    evidence=[f"Subdomain not matching authorized patterns"],
+                    evidence=["Subdomain not matching authorized patterns"],
                     risk_factors=[
                         "Potential data exfiltration channel",
                         "Unmonitored security posture",
@@ -202,7 +202,7 @@ class ShadowITDetector:
             severity=severity,
             confidence=min(1.0, confidence),
             description=f"Unauthorized {asset_type} detected: {asset_id}",
-            evidence=[f"Not found in asset inventory", f"Discovered via {asset.get('discovery_method', 'scan')}"],
+            evidence=["Not found in asset inventory", f"Discovered via {asset.get('discovery_method', 'scan')}"],
             risk_factors=risk_factors,
             recommended_actions=[
                 "Verify resource ownership and purpose",

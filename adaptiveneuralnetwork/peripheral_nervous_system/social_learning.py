@@ -60,7 +60,7 @@ class SocialLearningAgent:
     2. Retention - remembering what was observed
     3. Reproduction - being able to reproduce the behavior
     4. Motivation - having incentive to perform the behavior
-    """
+    """  # noqa: W293
 
     def __init__(self, agent_id: int, learning_rate: float = 0.1):
         self.agent_id = agent_id
@@ -102,7 +102,7 @@ class SocialLearningAgent:
         
         Following Bandura's attention process, determines how much attention
         to pay based on model characteristics and behavior properties.
-        """
+        """  # noqa: W293
         # Calculate attention weight based on multiple factors
         model_trust = self.trust_scores.get(model_agent_id, 0.5)
         model_competence = min(1.0, model_trust * 1.2)  # Trust influences perceived competence
@@ -142,7 +142,7 @@ class SocialLearningAgent:
         Retain an observation in memory (Retention process).
         
         Stores behavioral patterns and updates success expectations.
-        """
+        """  # noqa: W293
         self.behavioral_memory.append(observation)
 
         # Update success patterns
@@ -161,7 +161,7 @@ class SocialLearningAgent:
         Assess ability to reproduce a behavior (Reproduction process).
         
         Returns confidence score (0-1) of being able to reproduce the behavior.
-        """
+        """  # noqa: W293
         # Base confidence from previous practice
         base_confidence = self.skill_confidence.get(behavior, 0.1)
 
@@ -181,7 +181,7 @@ class SocialLearningAgent:
         Calculate motivation to perform a behavior (Motivation process).
         
         Combines intrinsic motivation, expected rewards, and social factors.
-        """
+        """  # noqa: W293
         # Expected reward from observation
         if behavior in self.successful_patterns:
             expected_reward = np.mean(self.successful_patterns[behavior])
@@ -204,7 +204,7 @@ class SocialLearningAgent:
         Decide whether to imitate a behavior based on all four processes.
         
         This integrates Bandura's four processes to make a final decision.
-        """
+        """  # noqa: W293
         # Must have observed the behavior (attention/retention)
         if behavior not in self.successful_patterns:
             return False
@@ -280,7 +280,7 @@ class SocialLearningAgent:
         Evaluate if consensus has been reached on a proposal.
         
         Returns (consensus_reached, consensus_strength)
-        """
+        """  # noqa: W293
         total_votes = len(proposal.support_votes) + len(proposal.reject_votes)
         if total_votes == 0:
             return False, 0.0
@@ -308,7 +308,7 @@ class SocialLearningAgent:
         Handle ambiguous or conflicting signals from multiple sources.
         
         Uses trust scores and past experience to resolve ambiguity.
-        """
+        """  # noqa: W293
         interpretations = []
 
         # Get different interpretations based on past experience
@@ -480,7 +480,7 @@ class SwarmIntelligenceBehavior:
     
     Implements particle swarm optimization-inspired collective behaviors,
     ant colony optimization patterns, and flocking behaviors.
-    """
+    """  # noqa: W293
 
     def __init__(self, agent_id: int, swarm_size: int):
         self.agent_id = agent_id
@@ -603,7 +603,7 @@ class NegotiationProtocol:
     
     Implements auction-based mechanisms, voting protocols, and 
     game-theory inspired negotiation strategies.
-    """
+    """  # noqa: W291, W293
 
     def __init__(self, agent_id: int):
         self.agent_id = agent_id
@@ -789,7 +789,7 @@ class CompetitiveCooperativeEnvironment:
     
     Manages resource allocation, territory control, coalition formation,
     and mixed-motive games.
-    """
+    """  # noqa: W293
 
     def __init__(self, num_agents: int, environment_type: str = 'mixed'):
         self.num_agents = num_agents
@@ -952,7 +952,7 @@ class CompetitiveCooperativeEnvironment:
         """Attempt to form a coalition between agents."""
         # All agents must agree to join
         for agent_id in coalition:
-            agent = next(a for a in self.agents if a['id'] == agent_id)
+            agent = next(a for a in self.agents if a['id'] == agent_id)  # noqa: F841
 
             # Simple decision: join if potential partners have good reputation
             partners = [aid for aid in coalition if aid != agent_id]

@@ -20,8 +20,10 @@ logger = logging.getLogger("hybrid_vibe_benchmark")
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from blyskawica_app.backend.vibe_telemetry_bridge import vibe_telemetry_bridge
-from adaptiveneuralnetwork.central_nervous_system.bio_quantum_kegg_pipeline import BioQuantumKEGGPipeline
+from adaptiveneuralnetwork.central_nervous_system.bio_quantum_kegg_pipeline import (  # noqa: E402
+    BioQuantumKEGGPipeline,
+)
+from blyskawica_app.backend.vibe_telemetry_bridge import vibe_telemetry_bridge  # noqa: E402
 
 
 def run_benchmark():

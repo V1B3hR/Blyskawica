@@ -3,12 +3,14 @@ import logging
 import os
 import sys
 import time
+
 import numpy as np
+from gcs.closed_loop_agent import ClosedLoopAgent
 
 # --- GCS Core Modules ---
 from gcs.config_loader import load_config
 from gcs.training import Trainer
-from gcs.closed_loop_agent import ClosedLoopAgent
+
 # Optional: from gcs.security import SecurityManager
 # Optional: from gcs.online_learning_module import OnlineLearningModule
 
@@ -67,8 +69,8 @@ def main():
     parser.add_argument(
         'mode',
         choices=[
-            'train-foundational', 
-            'train-affective', 
+            'train-foundational',
+            'train-affective',
             'run-closed-loop'
             # Optional: 'security', 'online-learning'
         ],
@@ -78,8 +80,8 @@ def main():
   - run-closed-loop:    Run the live, interactive agent with simulated data."""
     )
     parser.add_argument(
-        '--config', 
-        type=str, 
+        '--config',
+        type=str,
         default=os.path.join(os.path.dirname(__file__), '..', 'config.yaml'),
         help='Path to config file. Default: ../config.yaml'
     )

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import re
-from typing import Dict, Any, Optional, Tuple, List, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 import yaml
 
@@ -28,7 +29,7 @@ class PolicyEngine:
     - Deterministic final_decision with deny-overrides strategy (configurable)
     """
 
-    def __init__(self, rules: Dict[str, Any], region: Region):
+    def __init__(self, rules: dict[str, Any], region: Region):
         self.rules = rules or {}
         self.region = region
 
@@ -39,7 +40,7 @@ class PolicyEngine:
         self.strict: bool = bool(defaults.get("strict", False))  # if True, unknown ops raise
 
     @staticmethod
-    def load(path: str, region: Region) -> "PolicyEngine":
+    def load(path: str, region: Region) -> PolicyEngine:
         """
         Load YAML, apply region overlays (deep merge), and instantiate engine.
         File structure example:
@@ -64,7 +65,7 @@ class PolicyEngine:
               defaults:
                 decision: RESTRICT
         """
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             try:
                 data = yaml.safe_load(f) or {}
             except Exception as e:
@@ -74,7 +75,7 @@ class PolicyEngine:
         merged = _deep_merge_dicts(dict(data), overlays)
         return PolicyEngine(merged, region)
 
-    def evaluate(self, facts: Dict[str, Any]) -> Dict[str, Any]:
+    def evaluate(self, facts: dict[str, Any]) -> dict[str, Any]:
         """
         Evaluate input facts against rules.
 
@@ -103,7 +104,7 @@ class PolicyEngine:
         eval_facts = dict(facts or {})
         eval_facts.setdefault("region", self.region.value)
 
-        rules: List[Mapping[str, Any]] = self.rules.get("rules") or []
+        rules: list[Mapping[str, Any]] = self.rules.get("rules") or []
         # Sort by priority (higher first), then by defined order to ensure determinism
         rules_sorted = sorted(
             enumerate(rules),
@@ -164,7 +165,7 @@ class PolicyEngine:
                 # Allow rules to mutate local evaluation context (non-persistent outside the call)
                 if isinstance(action.get("set"), dict):
                     for k, v in action["set"].items():
-                        eval_facts[k] = v
+                        eval_facts[k] = v  # noqa: PERF403
 
                 # Halt if requested
                 if bool(rule.get("halt_on_match") or action.get("halt")):
@@ -178,7 +179,7 @@ class PolicyEngine:
     # Condition evaluation
     # --------------------------
 
-    def _eval_condition(self, cond: Any, facts: Dict[str, Any]) -> bool:
+    def _eval_condition(self, cond: Any, facts: dict[str, Any]) -> bool:
         """
         Evaluate a condition which can be:
         - dict with 'all', 'any', 'not'
@@ -243,7 +244,7 @@ class PolicyEngine:
             raise PolicyError(f"Unsupported condition structure: {cond!r}")
         return False
 
-    def _eval_string_atom(self, expr: str, facts: Dict[str, Any]) -> bool:
+    def _eval_string_atom(self, expr: str, facts: dict[str, Any]) -> bool:
         """
         Backwards-compatible support for 'path op value' with simple tokenization.
         Supported ops: ==, !=, >=, <=, >, <, in
@@ -261,7 +262,7 @@ class PolicyEngine:
                 raise
             return False
 
-    def _eval_op(self, op: str, left_path: str, right_val: Any, facts: Dict[str, Any]) -> bool:
+    def _eval_op(self, op: str, left_path: str, right_val: Any, facts: dict[str, Any]) -> bool:
         op = str(op).lower().strip()
         left_val = self._get_fact(left_path, facts)
 
@@ -295,7 +296,7 @@ class PolicyEngine:
             raise PolicyError(f"Unknown operator: {op}")
         return False
 
-    def _compute_final_decision(self, decisions: List[str]) -> str:
+    def _compute_final_decision(self, decisions: list[str]) -> str:
         """
         Default deny-overrides: if any decision is DENY/RESTRICT, choose that. Else ALLOW if present. Else default.
         """
@@ -315,7 +316,7 @@ class PolicyEngine:
     # Fact access helpers
     # --------------------------
 
-    def _path_exists(self, path: str, facts: Dict[str, Any]) -> bool:
+    def _path_exists(self, path: str, facts: dict[str, Any]) -> bool:
         try:
             val = self._get_fact(path, facts)
             if isinstance(val, list):
@@ -324,7 +325,7 @@ class PolicyEngine:
         except Exception:
             return False
 
-    def _get_fact(self, path: str, facts: Dict[str, Any]) -> Any:
+    def _get_fact(self, path: str, facts: dict[str, Any]) -> Any:
         """
         Get nested value from facts using dot notation with optional list index:
           - "a.b.c"
@@ -359,7 +360,7 @@ class PolicyEngine:
 # --------------------------
 
 
-def _deep_merge_dicts(base: Dict[str, Any], overlay: Dict[str, Any]) -> Dict[str, Any]:
+def _deep_merge_dicts(base: dict[str, Any], overlay: dict[str, Any]) -> dict[str, Any]:
     """
     Deep merge overlay into base. Lists are replaced by overlay lists (no deep-merge for lists).
     """
@@ -379,7 +380,7 @@ def _is_rule_enabled(rule: Mapping[str, Any]) -> bool:
     return enabled is None or bool(enabled)  # default enabled
 
 
-def _append_unique(arr: List[Any], item: Any) -> None:
+def _append_unique(arr: list[Any], item: Any) -> None:
     if item not in arr:
         arr.append(item)
 
@@ -425,9 +426,9 @@ def _parse_literal(token: str) -> Any:
     return s
 
 
-def _split_path(path: str) -> List[str]:
+def _split_path(path: str) -> list[str]:
     # Simple split by dot not inside brackets
-    parts: List[str] = []
+    parts: list[str] = []
     buf = []
     bracket = 0
     for ch in path:
@@ -445,7 +446,7 @@ def _split_path(path: str) -> List[str]:
     return parts
 
 
-def _parse_segment(seg: str) -> Tuple[str, Optional[int]]:
+def _parse_segment(seg: str) -> tuple[str, int | None]:
     """
     Parse "key[0]" or "key" -> (key, index or None)
     Wildcards are not supported; index must be integer if provided.
@@ -458,13 +459,13 @@ def _parse_segment(seg: str) -> Tuple[str, Optional[int]]:
     return key, idx
 
 
-def _to_list(val: Any) -> List[Any]:
+def _to_list(val: Any) -> list[Any]:
     if isinstance(val, list):
         return val
     return [val]
 
 
-def _coerce_number(val: Any) -> Optional[float]:
+def _coerce_number(val: Any) -> float | None:
     if isinstance(val, (int, float)):
         return float(val)
     if isinstance(val, str):
@@ -529,7 +530,7 @@ def _ends_any(left: Any, right: Any) -> bool:
     return False
 
 
-def _extract_regex(spec: Any) -> Tuple[str, int]:
+def _extract_regex(spec: Any) -> tuple[str, int]:
     """
     Accepts:
       - pattern string

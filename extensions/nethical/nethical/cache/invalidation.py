@@ -12,9 +12,10 @@ Features:
 import logging
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -44,8 +45,8 @@ class InvalidationEvent:
     """
 
     event_type: InvalidationType
-    pattern: Optional[str] = None
-    keys: List[str] = field(default_factory=list)
+    pattern: str | None = None
+    keys: list[str] = field(default_factory=list)
     timestamp: float = field(default_factory=time.time)
     source: str = "local"
     propagate: bool = True
@@ -82,7 +83,7 @@ class InvalidationManager:
         self.event_propagation = event_propagation
 
         # Subscribers
-        self._subscribers: List[Callable[[InvalidationEvent], None]] = []
+        self._subscribers: list[Callable[[InvalidationEvent], None]] = []
         self._lock = threading.RLock()
 
         # Metrics
@@ -113,7 +114,7 @@ class InvalidationManager:
             for subscriber in self._subscribers:
                 try:
                     subscriber(event)
-                except Exception as e:
+                except Exception as e:  # noqa: PERF203
                     logger.error(f"Subscriber error: {e}")
 
             # Propagate if needed
@@ -160,7 +161,7 @@ class InvalidationManager:
         )
         self.invalidate(event)
 
-    def _invalidate_keys(self, keys: List[str]):
+    def _invalidate_keys(self, keys: list[str]):
         """Invalidate specific keys."""
         if self.cache_hierarchy:
             for key in keys:
@@ -198,7 +199,7 @@ class InvalidationManager:
             if callback in self._subscribers:
                 self._subscribers.remove(callback)
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get invalidation metrics."""
         return {
             "total_invalidations": self._total_invalidations,
@@ -208,7 +209,7 @@ class InvalidationManager:
 
 
 # Type hints
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING  # noqa: E402
 
 if TYPE_CHECKING:
     from .cache_hierarchy import CacheHierarchy

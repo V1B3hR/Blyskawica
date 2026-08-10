@@ -6,6 +6,7 @@ Gravity, Entropy, and Momentum as neural constraints + Advanced Field Theory.
 import torch
 import torch.nn as nn
 
+
 class PhysicalWorldModel(nn.Module):
     """
     Simulates the 'Force' of nature acting upon neuromorphic activity.
@@ -52,12 +53,12 @@ class PhysicalWorldModel(nn.Module):
 if __name__ == "__main__":
     world = PhysicalWorldModel(node_count=400)
     mock_activity = torch.ones(1, 400)
-    
+
     # Full Physical Pass
     state = world.apply_gravity(mock_activity)
     state = world.apply_lorentz_contraction(state, cognitive_velocity=0.5)
     state = world.simulate_field_interaction(state)
     state = world.apply_heisenberg_uncertainty(state)
-    
+
     print(f"[PHYSICS] Unified Field Pass completed. Output Variance: {torch.var(state).item():.6f}")
-    print(f"[PHYSICS] Błyskawica is now thinking in 4D Quantum Spacetime. !!!")
+    print("[PHYSICS] Błyskawica is now thinking in 4D Quantum Spacetime. !!!")

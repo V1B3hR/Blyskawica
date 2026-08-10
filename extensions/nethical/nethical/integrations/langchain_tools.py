@@ -31,16 +31,15 @@ Example:
     agent = create_nethical_agent(llm, tools, storage_dir="./nethical_data")
 """
 
-from typing import Any, Dict, List, Optional, Type, Union
 import json
-from datetime import datetime
+from typing import Any
 
 try:
-    from langchain.tools import BaseTool
     from langchain.callbacks.manager import (
         AsyncCallbackManagerForToolRun,
         CallbackManagerForToolRun,
     )
+    from langchain.tools import BaseTool
     from pydantic import BaseModel, Field
 
     LANGCHAIN_AVAILABLE = True
@@ -48,13 +47,12 @@ except ImportError:
     LANGCHAIN_AVAILABLE = False
     BaseTool = object
     BaseModel = object
-    Field = lambda *args, **kwargs: None
+    Field = lambda *args, **kwargs: None  # noqa: E731
     # Dummy types for when LangChain is not available
     CallbackManagerForToolRun = object
     AsyncCallbackManagerForToolRun = object
 
 from ..core import IntegratedGovernance
-from ..core.models import Decision, ActionType, AgentAction
 
 
 class NethicalGuardInput(BaseModel):
@@ -68,7 +66,7 @@ class NethicalGuardInput(BaseModel):
         default="query",
         description="Type of action: query, response, function_call, data_access, etc.",
     )
-    context: Optional[Dict[str, Any]] = Field(
+    context: dict[str, Any] | None = Field(
         default=None, description="Additional context for the evaluation"
     )
 
@@ -93,10 +91,10 @@ class NethicalGuardTool(BaseTool):
         "Input should be the action/content to evaluate. "
         "Returns ALLOW, BLOCK, WARN, or ESCALATE with reasoning."
     )
-    args_schema: Type[BaseModel] = NethicalGuardInput if LANGCHAIN_AVAILABLE else None
+    args_schema: type[BaseModel] = NethicalGuardInput if LANGCHAIN_AVAILABLE else None
 
     # Nethical-specific attributes
-    governance: Optional[Any] = None
+    governance: Any | None = None
     storage_dir: str = "./nethical_data"
     block_threshold: float = 0.7
     warn_threshold: float = 0.4
@@ -169,8 +167,8 @@ class NethicalGuardTool(BaseTool):
         action: str,
         agent_id: str = "default_agent",
         action_type: str = "query",
-        context: Optional[Dict[str, Any]] = None,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        context: dict[str, Any] | None = None,
+        run_manager: CallbackManagerForToolRun | None = None,
     ) -> str:
         """Evaluate an action through Nethical governance.
 
@@ -217,8 +215,8 @@ class NethicalGuardTool(BaseTool):
         action: str,
         agent_id: str = "default_agent",
         action_type: str = "query",
-        context: Optional[Dict[str, Any]] = None,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        context: dict[str, Any] | None = None,
+        run_manager: AsyncCallbackManagerForToolRun | None = None,
     ) -> str:
         """Async version of _run (currently delegates to sync version).
 
@@ -236,7 +234,7 @@ class NethicalGuardTool(BaseTool):
         # Could be optimized with async governance processing in the future
         return self._run(action, agent_id, action_type, context)
 
-    def _make_decision(self, result: Dict[str, Any]) -> str:
+    def _make_decision(self, result: dict[str, Any]) -> str:
         """Make a decision based on governance results.
 
         Args:
@@ -285,7 +283,7 @@ class NethicalGuardTool(BaseTool):
         else:
             return "ALLOW"
 
-    def _format_simple_response(self, decision: str, result: Dict[str, Any]) -> str:
+    def _format_simple_response(self, decision: str, result: dict[str, Any]) -> str:
         """Format a simple, human-readable response.
 
         Args:
@@ -320,7 +318,7 @@ class NethicalGuardTool(BaseTool):
 
 def create_nethical_agent(
     llm: Any,
-    tools: List[Any],
+    tools: list[Any],
     storage_dir: str = "./nethical_data",
     block_threshold: float = 0.7,
     prepend_guard: bool = True,
@@ -363,7 +361,7 @@ def create_nethical_agent(
     )
 
     # Add guard tool to tools list
-    if prepend_guard:
+    if prepend_guard:  # noqa: SIM108
         all_tools = [guard_tool] + tools
     else:
         all_tools = tools + [guard_tool]
@@ -424,9 +422,9 @@ class LlamaGuardChain:
     def _init_local_chain(self):
         """Initialize local LlamaGuard model."""
         try:
+            from langchain.chains import LLMChain
             from langchain.llms import HuggingFacePipeline
             from langchain.prompts import PromptTemplate
-            from langchain.chains import LLMChain
 
             # Create HuggingFace pipeline
             llm = HuggingFacePipeline.from_model_id(
@@ -449,7 +447,7 @@ class LlamaGuardChain:
             self.chain = LLMChain(llm=llm, prompt=prompt)
 
         except ImportError as e:
-            raise ImportError(
+            raise ImportError(  # noqa: B904
                 f"Local LlamaGuard requires transformers and torch: {e}"
             )
 
@@ -481,7 +479,7 @@ class LlamaGuardChain:
             print(f"LlamaGuard evaluation failed: {e}")
             return False
 
-    def evaluate(self, text: str) -> Dict[str, Any]:
+    def evaluate(self, text: str) -> dict[str, Any]:
         """Get detailed evaluation from LlamaGuard.
 
         Args:
@@ -510,8 +508,8 @@ def chain_guards(
     nethical_tool: NethicalGuardTool,
     action: str,
     agent_id: str = "default_agent",
-    llama_guard: Optional[LlamaGuardChain] = None,
-) -> Dict[str, Any]:
+    llama_guard: LlamaGuardChain | None = None,
+) -> dict[str, Any]:
     """Chain multiple guards together for comprehensive safety checking.
 
     This function runs both Nethical and LlamaGuard (if provided) on an action
@@ -575,8 +573,8 @@ class GovernedLLMChain:
         )
         
         result = governed_chain.run(input="User query")
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
         chain: Any,
@@ -593,15 +591,15 @@ class GovernedLLMChain:
             check_output: Check outputs for governance
             block_threshold: Risk threshold for blocking
             storage_dir: Directory for Nethical data
-        """
+        """  # noqa: W293
         self.chain = chain
         self.check_input = check_input
         self.check_output = check_output
         self.block_threshold = block_threshold
         self.storage_dir = storage_dir
-        
+
         self._governance = None
-    
+
     @property
     def governance(self):
         """Get or create the IntegratedGovernance instance."""
@@ -611,8 +609,8 @@ class GovernedLLMChain:
                 enable_shadow_mode=True,
             )
         return self._governance
-    
-    def _check(self, content: str, action_type: str) -> Dict[str, Any]:
+
+    def _check(self, content: str, action_type: str) -> dict[str, Any]:
         """Check content against governance."""
         result = self.governance.process_action(
             action=content,
@@ -620,11 +618,11 @@ class GovernedLLMChain:
             action_type=action_type
         )
         return result
-    
-    def _get_risk_score(self, result: Dict[str, Any]) -> float:
+
+    def _get_risk_score(self, result: dict[str, Any]) -> float:
         """Get risk score from result."""
         return result.get("phase3", {}).get("risk_score", 0.0)
-    
+
     def run(self, *args, **kwargs) -> str:
         """Run the chain with governance checks.
         
@@ -634,27 +632,27 @@ class GovernedLLMChain:
             
         Returns:
             Chain output or blocked message
-        """
+        """  # noqa: W293
         # Check input
         if self.check_input:
             input_str = str(args) + str(kwargs)
             input_result = self._check(input_str, "user_input")
-            
+
             if self._get_risk_score(input_result) > self.block_threshold:
                 return f"Input blocked: Risk score {self._get_risk_score(input_result):.2f}"
-        
+
         # Run chain
         output = self.chain.run(*args, **kwargs)
-        
+
         # Check output
         if self.check_output:
             output_result = self._check(output, "generated_content")
-            
+
             if self._get_risk_score(output_result) > self.block_threshold:
                 return f"Output filtered: Risk score {self._get_risk_score(output_result):.2f}"
-        
+
         return output
-    
+
     def __call__(self, *args, **kwargs) -> str:
         """Make the chain callable."""
         return self.run(*args, **kwargs)
@@ -674,11 +672,11 @@ class GovernedSequentialChain:
         )
         
         result = governed.run(input="Starting query")
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
-        chains: List[Any],
+        chains: list[Any],
         check_intermediate: bool = True,
         block_threshold: float = 0.7,
         storage_dir: str = "./nethical_data"
@@ -690,14 +688,14 @@ class GovernedSequentialChain:
             check_intermediate: Check output between each chain
             block_threshold: Risk threshold for blocking
             storage_dir: Directory for Nethical data
-        """
+        """  # noqa: W293
         self.chains = chains
         self.check_intermediate = check_intermediate
         self.block_threshold = block_threshold
         self.storage_dir = storage_dir
-        
+
         self._governance = None
-    
+
     @property
     def governance(self):
         """Get or create the IntegratedGovernance instance."""
@@ -707,15 +705,15 @@ class GovernedSequentialChain:
                 enable_shadow_mode=True,
             )
         return self._governance
-    
-    def _check(self, content: str, step: int) -> Dict[str, Any]:
+
+    def _check(self, content: str, step: int) -> dict[str, Any]:
         """Check content at a step."""
         return self.governance.process_action(
             action=content,
             agent_id=f"langchain-sequential-step-{step}",
             action_type="intermediate_output"
         )
-    
+
     def run(self, input_text: str) -> str:
         """Run the sequential chain with governance.
         
@@ -724,24 +722,24 @@ class GovernedSequentialChain:
             
         Returns:
             Final output or blocked message
-        """
+        """  # noqa: W293
         current_output = input_text
-        
+
         for i, chain in enumerate(self.chains):
             # Run this chain
-            if hasattr(chain, 'run'):
+            if hasattr(chain, 'run'):  # noqa: SIM108
                 current_output = chain.run(current_output)
             else:
                 current_output = chain(current_output)
-            
+
             # Check intermediate output
             if self.check_intermediate and i < len(self.chains) - 1:
                 result = self._check(current_output, i)
                 risk_score = result.get("phase3", {}).get("risk_score", 0.0)
-                
+
                 if risk_score > self.block_threshold:
                     return f"Blocked at step {i + 1}: Risk score {risk_score:.2f}"
-        
+
         return current_output
 
 
@@ -749,7 +747,7 @@ class GovernedSequentialChain:
 if not LANGCHAIN_AVAILABLE:
     import warnings
 
-    warnings.warn(
+    warnings.warn(  # noqa: B028
         "LangChain is not installed. LangChain integration features will not be available. "
         "Install with: pip install langchain",
         ImportWarning,

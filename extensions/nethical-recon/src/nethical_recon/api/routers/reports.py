@@ -1,6 +1,6 @@
 """Report generation endpoints."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Annotated
 from uuid import UUID
 
@@ -68,7 +68,7 @@ async def get_job_report(
             job_id=job.id,
             job_name=job.name,
             target=target.value,
-            generated_at=datetime.now(timezone.utc),
+            generated_at=datetime.now(UTC),
             tools=job.tools,
             findings_count=len(all_findings),
             findings_by_severity=findings_by_severity,

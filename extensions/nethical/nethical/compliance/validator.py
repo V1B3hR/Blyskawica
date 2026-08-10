@@ -26,18 +26,18 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from .gdpr import GDPRComplianceValidator, GDPRValidationResult
-from .eu_ai_act import EUAIActValidator, ConformityAssessmentResult, AIRiskLevel
 from .data_residency import DataResidencyManager
+from .eu_ai_act import AIRiskLevel, EUAIActValidator
+from .gdpr import GDPRComplianceValidator, GDPRValidationResult
 
 logger = logging.getLogger(__name__)
 
 
 class ComplianceFramework(str, Enum):
     """Supported compliance frameworks."""
-    
+
     GDPR = "gdpr"
     CCPA = "ccpa"
     EU_AI_ACT = "eu_ai_act"
@@ -48,7 +48,7 @@ class ComplianceFramework(str, Enum):
 
 class ComplianceStatus(str, Enum):
     """Overall compliance status."""
-    
+
     COMPLIANT = "compliant"
     PARTIAL = "partial"
     NON_COMPLIANT = "non_compliant"
@@ -58,18 +58,18 @@ class ComplianceStatus(str, Enum):
 @dataclass
 class ValidationResult:
     """Result of a single validation check."""
-    
+
     framework: ComplianceFramework
     check_id: str
     check_name: str
     status: ComplianceStatus
-    evidence: List[str] = field(default_factory=list)
-    gaps: List[str] = field(default_factory=list)
-    recommendations: List[str] = field(default_factory=list)
-    code_modules: List[str] = field(default_factory=list)
-    test_evidence: List[str] = field(default_factory=list)
-    
-    def to_dict(self) -> Dict[str, Any]:
+    evidence: list[str] = field(default_factory=list)
+    gaps: list[str] = field(default_factory=list)
+    recommendations: list[str] = field(default_factory=list)
+    code_modules: list[str] = field(default_factory=list)
+    test_evidence: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "framework": self.framework.value,
@@ -87,19 +87,19 @@ class ValidationResult:
 @dataclass
 class ComplianceReport:
     """Comprehensive compliance report."""
-    
+
     report_id: str
     generated_at: datetime
-    frameworks_validated: List[ComplianceFramework]
+    frameworks_validated: list[ComplianceFramework]
     overall_status: ComplianceStatus
     compliance_score: float
-    validation_results: List[ValidationResult]
-    gdpr_summary: Optional[Dict[str, Any]] = None
-    eu_ai_act_summary: Optional[Dict[str, Any]] = None
-    data_residency_summary: Optional[Dict[str, Any]] = None
-    recommendations: List[str] = field(default_factory=list)
-    
-    def to_dict(self) -> Dict[str, Any]:
+    validation_results: list[ValidationResult]
+    gdpr_summary: dict[str, Any] | None = None
+    eu_ai_act_summary: dict[str, Any] | None = None
+    data_residency_summary: dict[str, Any] | None = None
+    recommendations: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "report_id": self.report_id,
@@ -113,17 +113,17 @@ class ComplianceReport:
             "data_residency_summary": self.data_residency_summary,
             "recommendations": self.recommendations,
         }
-    
+
     def to_json(self, indent: int = 2) -> str:
         """Convert to JSON string."""
         return json.dumps(self.to_dict(), indent=indent)
-    
+
     def save(self, path: str) -> None:
         """Save report to file.
         
         Args:
             path: File path to save report
-        """
+        """  # noqa: W293
         output_path = Path(path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(self.to_json())
@@ -140,35 +140,35 @@ class ComplianceValidator:
         gdpr_validator: GDPR compliance validator
         eu_ai_act_validator: EU AI Act compliance validator
         data_residency_manager: Data residency manager
-    """
-    
+    """  # noqa: W293
+
     # Minimum score for compliance
     COMPLIANCE_THRESHOLD = 80.0
-    
+
     def __init__(
         self,
-        system_characteristics: Optional[Dict[str, Any]] = None,
+        system_characteristics: dict[str, Any] | None = None,
     ) -> None:
         """Initialize Compliance Validator.
         
         Args:
             system_characteristics: AI system characteristics for risk classification
-        """
+        """  # noqa: W293
         self.system_characteristics = system_characteristics or {}
-        
+
         # Initialize sub-validators
         self.gdpr_validator = GDPRComplianceValidator()
         self.eu_ai_act_validator = EUAIActValidator(system_characteristics)
         self.data_residency_manager = DataResidencyManager()
-        
-        self.validation_results: List[ValidationResult] = []
-        
+
+        self.validation_results: list[ValidationResult] = []
+
         logger.info("ComplianceValidator initialized")
-    
+
     def validate(
         self,
         framework: ComplianceFramework = ComplianceFramework.ALL,
-        configs: Optional[Dict[str, Any]] = None,
+        configs: dict[str, Any] | None = None,
     ) -> ComplianceReport:
         """Run compliance validation for specified framework(s).
         
@@ -178,55 +178,55 @@ class ComplianceValidator:
             
         Returns:
             ComplianceReport with validation results
-        """
+        """  # noqa: W293
         configs = configs or {}
         self.validation_results = []
-        frameworks_validated: List[ComplianceFramework] = []
+        frameworks_validated: list[ComplianceFramework] = []
         gdpr_summary = None
         eu_ai_act_summary = None
         data_residency_summary = None
-        
+
         # Validate GDPR
         if framework in (ComplianceFramework.GDPR, ComplianceFramework.ALL):
             gdpr_results = self._validate_gdpr(configs.get("gdpr", {}))
             self.validation_results.extend(gdpr_results)
             frameworks_validated.append(ComplianceFramework.GDPR)
             gdpr_summary = self.gdpr_validator.get_compliance_summary()
-        
+
         # Validate EU AI Act
         if framework in (ComplianceFramework.EU_AI_ACT, ComplianceFramework.ALL):
             eu_ai_results = self._validate_eu_ai_act(configs.get("eu_ai_act", {}))
             self.validation_results.extend(eu_ai_results)
             frameworks_validated.append(ComplianceFramework.EU_AI_ACT)
             eu_ai_act_summary = self.eu_ai_act_validator.get_compliance_summary()
-        
+
         # Validate CCPA
         if framework in (ComplianceFramework.CCPA, ComplianceFramework.ALL):
             ccpa_results = self._validate_ccpa(configs.get("ccpa", {}))
             self.validation_results.extend(ccpa_results)
             frameworks_validated.append(ComplianceFramework.CCPA)
-        
+
         # Validate ISO 27001
         if framework in (ComplianceFramework.ISO_27001, ComplianceFramework.ALL):
             iso_results = self._validate_iso_27001(configs.get("iso_27001", {}))
             self.validation_results.extend(iso_results)
             frameworks_validated.append(ComplianceFramework.ISO_27001)
-        
+
         # Validate NIST AI RMF
         if framework in (ComplianceFramework.NIST_AI_RMF, ComplianceFramework.ALL):
             nist_results = self._validate_nist_ai_rmf(configs.get("nist_ai_rmf", {}))
             self.validation_results.extend(nist_results)
             frameworks_validated.append(ComplianceFramework.NIST_AI_RMF)
-        
+
         # Get data residency summary
         data_residency_summary = self.data_residency_manager.get_violations_summary()
-        
+
         # Calculate overall compliance
         overall_status, compliance_score = self._calculate_overall_compliance()
-        
+
         # Collect recommendations
         recommendations = self._collect_recommendations()
-        
+
         return ComplianceReport(
             report_id=f"COMP-{uuid.uuid4().hex[:8].upper()}",
             generated_at=datetime.now(timezone.utc),
@@ -239,11 +239,11 @@ class ComplianceValidator:
             data_residency_summary=data_residency_summary,
             recommendations=recommendations,
         )
-    
+
     def _validate_gdpr(
         self,
-        config: Dict[str, Any],
-    ) -> List[ValidationResult]:
+        config: dict[str, Any],
+    ) -> list[ValidationResult]:
         """Validate GDPR compliance.
         
         Args:
@@ -251,9 +251,9 @@ class ComplianceValidator:
             
         Returns:
             List of ValidationResults
-        """
-        results: List[ValidationResult] = []
-        
+        """  # noqa: W293
+        results: list[ValidationResult] = []
+
         # Validate Article 5 (Principles)
         art5_result = self.gdpr_validator.validate_article_5(
             config.get("processing_activities", {
@@ -266,7 +266,7 @@ class ComplianceValidator:
             })
         )
         results.append(self._convert_gdpr_result(art5_result, "GDPR-5", "Data Processing Principles"))
-        
+
         # Validate Article 22 (Automated Decision-Making)
         art22_result = self.gdpr_validator.validate_article_22(
             config.get("automated_decision", {
@@ -279,7 +279,7 @@ class ComplianceValidator:
             })
         )
         results.append(self._convert_gdpr_result(art22_result, "GDPR-22", "Automated Decision-Making"))
-        
+
         # Validate Article 25 (Privacy by Design)
         art25_result = self.gdpr_validator.validate_article_25(
             config.get("design_controls", {
@@ -291,13 +291,13 @@ class ComplianceValidator:
             })
         )
         results.append(self._convert_gdpr_result(art25_result, "GDPR-25", "Data Protection by Design"))
-        
+
         return results
-    
+
     def _validate_eu_ai_act(
         self,
-        config: Dict[str, Any],
-    ) -> List[ValidationResult]:
+        config: dict[str, Any],
+    ) -> list[ValidationResult]:
         """Validate EU AI Act compliance.
         
         Args:
@@ -305,12 +305,12 @@ class ComplianceValidator:
             
         Returns:
             List of ValidationResults
-        """
-        results: List[ValidationResult] = []
-        
+        """  # noqa: W293
+        results: list[ValidationResult] = []
+
         # Classify risk level first
         risk_level = self.eu_ai_act_validator.classify_risk_level()
-        
+
         # Add risk classification result
         results.append(ValidationResult(
             framework=ComplianceFramework.EU_AI_ACT,
@@ -319,7 +319,7 @@ class ComplianceValidator:
             status=ComplianceStatus.COMPLIANT if risk_level != AIRiskLevel.UNACCEPTABLE else ComplianceStatus.NON_COMPLIANT,
             evidence=[f"System classified as {risk_level.value} risk"],
         ))
-        
+
         # For high-risk systems, validate articles
         if risk_level == AIRiskLevel.HIGH:
             # Article 9: Risk Management
@@ -333,7 +333,7 @@ class ComplianceValidator:
                 })
             )
             results.append(self._convert_eu_ai_result(art9))
-            
+
             # Article 10: Data Governance
             art10 = self.eu_ai_act_validator.validate_article_10(
                 config.get("data_governance", {
@@ -345,7 +345,7 @@ class ComplianceValidator:
                 })
             )
             results.append(self._convert_eu_ai_result(art10))
-            
+
             # Article 11: Documentation
             art11 = self.eu_ai_act_validator.validate_article_11(
                 config.get("documentation", {
@@ -357,7 +357,7 @@ class ComplianceValidator:
                 })
             )
             results.append(self._convert_eu_ai_result(art11))
-            
+
             # Article 12: Logging
             art12 = self.eu_ai_act_validator.validate_article_12(
                 config.get("logging", {
@@ -368,7 +368,7 @@ class ComplianceValidator:
                 })
             )
             results.append(self._convert_eu_ai_result(art12))
-            
+
             # Article 13: Transparency
             art13 = self.eu_ai_act_validator.validate_article_13(
                 config.get("transparency", {
@@ -379,7 +379,7 @@ class ComplianceValidator:
                 })
             )
             results.append(self._convert_eu_ai_result(art13))
-            
+
             # Article 14: Human Oversight
             art14 = self.eu_ai_act_validator.validate_article_14(
                 config.get("oversight", {
@@ -390,7 +390,7 @@ class ComplianceValidator:
                 })
             )
             results.append(self._convert_eu_ai_result(art14))
-            
+
             # Article 15: Security
             art15 = self.eu_ai_act_validator.validate_article_15(
                 config.get("security", {
@@ -402,13 +402,13 @@ class ComplianceValidator:
                 })
             )
             results.append(self._convert_eu_ai_result(art15))
-        
+
         return results
-    
+
     def _validate_ccpa(
         self,
-        config: Dict[str, Any],
-    ) -> List[ValidationResult]:
+        config: dict[str, Any],
+    ) -> list[ValidationResult]:
         """Validate CCPA compliance.
         
         Args:
@@ -416,9 +416,9 @@ class ComplianceValidator:
             
         Returns:
             List of ValidationResults
-        """
-        results: List[ValidationResult] = []
-        
+        """  # noqa: W293
+        results: list[ValidationResult] = []
+
         # CCPA Consumer Rights
         consumer_rights = config.get("consumer_rights", {
             "right_to_know": True,
@@ -426,36 +426,36 @@ class ComplianceValidator:
             "right_to_opt_out": True,
             "right_to_non_discrimination": True,
         })
-        
+
         evidence = []
         gaps = []
-        
+
         if consumer_rights.get("right_to_know"):
             evidence.append("Right to know implemented")
         else:
             gaps.append("Right to know not implemented")
-        
+
         if consumer_rights.get("right_to_delete"):
             evidence.append("Right to delete implemented")
         else:
             gaps.append("Right to delete not implemented")
-        
+
         if consumer_rights.get("right_to_opt_out"):
             evidence.append("Right to opt-out implemented")
         else:
             gaps.append("Right to opt-out not implemented")
-        
+
         if consumer_rights.get("right_to_non_discrimination"):
             evidence.append("Right to non-discrimination implemented")
         else:
             gaps.append("Non-discrimination not verified")
-        
+
         status = (
             ComplianceStatus.COMPLIANT if len(gaps) == 0
             else ComplianceStatus.PARTIAL if len(gaps) <= 1
             else ComplianceStatus.NON_COMPLIANT
         )
-        
+
         results.append(ValidationResult(
             framework=ComplianceFramework.CCPA,
             check_id="CCPA-1798.100-125",
@@ -465,13 +465,13 @@ class ComplianceValidator:
             gaps=gaps,
             recommendations=[f"Address: {gap}" for gap in gaps],
         ))
-        
+
         return results
-    
+
     def _validate_iso_27001(
         self,
-        config: Dict[str, Any],
-    ) -> List[ValidationResult]:
+        config: dict[str, Any],
+    ) -> list[ValidationResult]:
         """Validate ISO 27001 compliance.
         
         Args:
@@ -479,9 +479,9 @@ class ComplianceValidator:
             
         Returns:
             List of ValidationResults
-        """
-        results: List[ValidationResult] = []
-        
+        """  # noqa: W293
+        results: list[ValidationResult] = []
+
         # Annex A Controls
         controls = config.get("controls", {
             "access_control": True,
@@ -494,40 +494,40 @@ class ComplianceValidator:
             "business_continuity": True,
             "compliance": True,
         })
-        
+
         evidence = []
         gaps = []
         code_modules = []
-        
+
         if controls.get("access_control"):
             evidence.append("Access control implemented (A.9)")
             code_modules.append("nethical/core/rbac.py")
         else:
             gaps.append("Access control gaps (A.9)")
-        
+
         if controls.get("cryptography"):
             evidence.append("Cryptography controls (A.10)")
             code_modules.append("nethical/security/encryption.py")
         else:
             gaps.append("Cryptography gaps (A.10)")
-        
+
         if controls.get("operations_security"):
             evidence.append("Operations security (A.12)")
         else:
             gaps.append("Operations security gaps (A.12)")
-        
+
         if controls.get("incident_management"):
             evidence.append("Incident management (A.16)")
             code_modules.append("nethical/security/soc_integration.py")
         else:
             gaps.append("Incident management gaps (A.16)")
-        
+
         status = (
             ComplianceStatus.COMPLIANT if len(gaps) == 0
             else ComplianceStatus.PARTIAL if len(gaps) <= 2
             else ComplianceStatus.NON_COMPLIANT
         )
-        
+
         results.append(ValidationResult(
             framework=ComplianceFramework.ISO_27001,
             check_id="ISO27001-ANNEX-A",
@@ -538,13 +538,13 @@ class ComplianceValidator:
             recommendations=[f"Implement: {gap}" for gap in gaps],
             code_modules=code_modules,
         ))
-        
+
         return results
-    
+
     def _validate_nist_ai_rmf(
         self,
-        config: Dict[str, Any],
-    ) -> List[ValidationResult]:
+        config: dict[str, Any],
+    ) -> list[ValidationResult]:
         """Validate NIST AI RMF compliance.
         
         Args:
@@ -552,35 +552,35 @@ class ComplianceValidator:
             
         Returns:
             List of ValidationResults
-        """
-        results: List[ValidationResult] = []
-        
+        """  # noqa: W293
+        results: list[ValidationResult] = []
+
         # GOVERN function
         govern = config.get("govern", {
             "policies_established": True,
             "accountability_defined": True,
             "workforce_trained": True,
         })
-        
+
         govern_evidence = []
         govern_gaps = []
-        
+
         if govern.get("policies_established"):
             govern_evidence.append("AI governance policies established")
         else:
             govern_gaps.append("Policies not established")
-        
+
         if govern.get("accountability_defined"):
             govern_evidence.append("Accountability structures defined")
         else:
             govern_gaps.append("Accountability not defined")
-        
+
         govern_status = (
             ComplianceStatus.COMPLIANT if len(govern_gaps) == 0
             else ComplianceStatus.PARTIAL if len(govern_gaps) == 1
             else ComplianceStatus.NON_COMPLIANT
         )
-        
+
         results.append(ValidationResult(
             framework=ComplianceFramework.NIST_AI_RMF,
             check_id="NIST-AI-GOVERN",
@@ -591,38 +591,38 @@ class ComplianceValidator:
             recommendations=[f"Address: {gap}" for gap in govern_gaps],
             code_modules=["nethical/core/governance.py"],
         ))
-        
+
         # MEASURE function
         measure = config.get("measure", {
             "metrics_defined": True,
             "testing_implemented": True,
             "bias_measured": True,
         })
-        
+
         measure_evidence = []
         measure_gaps = []
-        
+
         if measure.get("metrics_defined"):
             measure_evidence.append("AI metrics defined")
         else:
             measure_gaps.append("Metrics not defined")
-        
+
         if measure.get("testing_implemented"):
             measure_evidence.append("Testing implemented")
         else:
             measure_gaps.append("Testing incomplete")
-        
+
         if measure.get("bias_measured"):
             measure_evidence.append("Bias measurement implemented")
         else:
             measure_gaps.append("Bias measurement incomplete")
-        
+
         measure_status = (
             ComplianceStatus.COMPLIANT if len(measure_gaps) == 0
             else ComplianceStatus.PARTIAL if len(measure_gaps) == 1
             else ComplianceStatus.NON_COMPLIANT
         )
-        
+
         results.append(ValidationResult(
             framework=ComplianceFramework.NIST_AI_RMF,
             check_id="NIST-AI-MEASURE",
@@ -633,9 +633,9 @@ class ComplianceValidator:
             recommendations=[f"Implement: {gap}" for gap in measure_gaps],
             code_modules=["nethical/governance/ethics_benchmark.py"],
         ))
-        
+
         return results
-    
+
     def _convert_gdpr_result(
         self,
         gdpr_result: GDPRValidationResult,
@@ -651,13 +651,13 @@ class ComplianceValidator:
             
         Returns:
             ValidationResult
-        """
+        """  # noqa: W293
         status_map = {
             "compliant": ComplianceStatus.COMPLIANT,
             "partial": ComplianceStatus.PARTIAL,
             "non_compliant": ComplianceStatus.NON_COMPLIANT,
         }
-        
+
         return ValidationResult(
             framework=ComplianceFramework.GDPR,
             check_id=check_id,
@@ -667,7 +667,7 @@ class ComplianceValidator:
             gaps=gdpr_result.gaps,
             recommendations=gdpr_result.recommendations,
         )
-    
+
     def _convert_eu_ai_result(
         self,
         article_result: Any,
@@ -679,13 +679,13 @@ class ComplianceValidator:
             
         Returns:
             ValidationResult
-        """
+        """  # noqa: W293
         status_map = {
             "compliant": ComplianceStatus.COMPLIANT,
             "partial": ComplianceStatus.PARTIAL,
             "non_compliant": ComplianceStatus.NON_COMPLIANT,
         }
-        
+
         return ValidationResult(
             framework=ComplianceFramework.EU_AI_ACT,
             check_id=f"EU-AI-{article_result.article.value.split('_')[1]}",
@@ -697,16 +697,16 @@ class ComplianceValidator:
             code_modules=article_result.code_modules,
             test_evidence=article_result.test_evidence,
         )
-    
+
     def _calculate_overall_compliance(self) -> tuple[ComplianceStatus, float]:
         """Calculate overall compliance status and score.
         
         Returns:
             Tuple of (ComplianceStatus, score)
-        """
+        """  # noqa: W293
         if not self.validation_results:
             return ComplianceStatus.PENDING, 0.0
-        
+
         total = len(self.validation_results)
         compliant = sum(
             1 for r in self.validation_results
@@ -716,37 +716,37 @@ class ComplianceValidator:
             1 for r in self.validation_results
             if r.status == ComplianceStatus.PARTIAL
         )
-        
+
         score = ((compliant + (partial * 0.5)) / total * 100)
-        
+
         # Check for any non-compliant
         has_non_compliant = any(
             r.status == ComplianceStatus.NON_COMPLIANT
             for r in self.validation_results
         )
-        
+
         if has_non_compliant:
             status = ComplianceStatus.NON_COMPLIANT
         elif score >= self.COMPLIANCE_THRESHOLD:
             status = ComplianceStatus.COMPLIANT
         else:
             status = ComplianceStatus.PARTIAL
-        
+
         return status, round(score, 2)
-    
-    def _collect_recommendations(self) -> List[str]:
+
+    def _collect_recommendations(self) -> list[str]:
         """Collect all recommendations from validation results.
         
         Returns:
             List of recommendations
-        """
-        recommendations: List[str] = []
-        
+        """  # noqa: W293
+        recommendations: list[str] = []
+
         for result in self.validation_results:
             for rec in result.recommendations:
                 if rec not in recommendations:
                     recommendations.append(rec)
-        
+
         return recommendations
 
 

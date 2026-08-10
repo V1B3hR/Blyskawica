@@ -10,7 +10,7 @@ This script demonstrates:
 
 Usage:
     python demo_v030_features.py [--backend pytorch|jax|neuromorphic] [--quick]
-"""
+"""  # noqa: W291
 
 import os
 import sys
@@ -30,7 +30,10 @@ from adaptiveneuralnetwork.api import AdaptiveConfig, create_adaptive_model
 from adaptiveneuralnetwork.api.backend_factory import get_backend_info, list_available_backends
 from adaptiveneuralnetwork.benchmarks.multimodal import run_multimodal_benchmark
 from adaptiveneuralnetwork.benchmarks.vision.cifar10 import CIFAR10Benchmark
-from adaptiveneuralnetwork.central_nervous_system.neuromorphic import NeuromorphicPlatform, create_neuromorphic_model
+from adaptiveneuralnetwork.central_nervous_system.neuromorphic import (
+    NeuromorphicPlatform,
+    create_neuromorphic_model,
+)
 from adaptiveneuralnetwork.training.datasets import CIFAR10Corrupted
 
 logger = logging.getLogger(__name__)
@@ -74,7 +77,7 @@ def demo_backend_selection():
     # JAX model (if available)
     if backends["jax"]:
         try:
-            jax_model = create_adaptive_model(config=config, backend="jax")
+            jax_model = create_adaptive_model(config=config, backend="jax")  # noqa: F841
             print("  ✓ JAX model: Created successfully")
         except Exception as e:
             print(f"  ✗ JAX model failed: {e}")
@@ -115,7 +118,7 @@ def demo_cifar10_robustness(quick_mode=False):
 
     try:
         # Create benchmark
-        benchmark = CIFAR10Benchmark(config, device=torch.device('cpu'))
+        benchmark = CIFAR10Benchmark(config, device=torch.device('cpu'))  # noqa: F841
 
         # Test a few corruption types
         test_corruptions = ['gaussian_noise', 'brightness'] if quick_mode else ['gaussian_noise', 'brightness', 'contrast']
@@ -202,7 +205,7 @@ def demo_multimodal_learning(quick_mode=False):
         # Configure for demo
         epochs = 1 if quick_mode else 3
         batch_size = 8 if quick_mode else 16
-        num_samples = 32 if quick_mode else 100
+        num_samples = 32 if quick_mode else 100  # noqa: F841
 
         config = AdaptiveConfig(
             num_nodes=16 if quick_mode else 32,

@@ -12,31 +12,32 @@ Usage:
     # Streaming
     async for decision in client.stream_decisions():
         print(decision)
-"""
+"""  # noqa: W293
 
 from __future__ import annotations
 
 import asyncio
 import json
 import logging
-from typing import Any, AsyncIterator, Optional
+from collections.abc import AsyncIterator
+from typing import Any
 from urllib.parse import urljoin
 
+from .exceptions import (
+    AuthenticationError,
+    NethicalError,
+    RateLimitError,
+    ServerError,
+    ValidationError,
+)
 from .models import (
-    EvaluateRequest,
-    EvaluateResponse,
-    Decision,
-    Policy,
-    FairnessReport,
     Appeal,
     AuditRecord,
-)
-from .exceptions import (
-    NethicalError,
-    AuthenticationError,
-    RateLimitError,
-    ValidationError,
-    ServerError,
+    Decision,
+    EvaluateRequest,
+    EvaluateResponse,
+    FairnessReport,
+    Policy,
 )
 
 logger = logging.getLogger(__name__)
@@ -60,41 +61,41 @@ class AsyncNethicalClient:
         api_key: API key for authentication
         timeout: Request timeout in seconds
         region: Optional region for multi-region deployments
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
         api_url: str = "http://localhost:8000",
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
         timeout: int = 30,
-        region: Optional[str] = None,
+        region: str | None = None,
     ):
         self.api_url = api_url.rstrip("/")
         self.api_key = api_key
         self.timeout = timeout
         self.region = region
         self._session = None
-    
-    async def __aenter__(self) -> "AsyncNethicalClient":
+
+    async def __aenter__(self) -> AsyncNethicalClient:
         """Async context manager entry."""
         await self._ensure_session()
         return self
-    
+
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         """Async context manager exit."""
         await self.close()
-    
+
     async def _ensure_session(self) -> None:
         """Ensure HTTP session is created."""
         # In production, this would create an aiohttp session
         pass
-    
+
     async def close(self) -> None:
         """Close the client and cleanup resources."""
         if self._session:
             # In production: await self._session.close()
             self._session = None
-    
+
     def _get_headers(self) -> dict[str, str]:
         """Get request headers including authentication."""
         headers = {
@@ -107,35 +108,35 @@ class AsyncNethicalClient:
         if self.region:
             headers["X-Nethical-Region"] = self.region
         return headers
-    
+
     async def _request(
         self,
         method: str,
         path: str,
-        data: Optional[dict] = None,
+        data: dict | None = None,
     ) -> dict[str, Any]:
         """Make an async HTTP request to the API.
         
         Note: This is a placeholder. In production, use aiohttp.
-        """
+        """  # noqa: W293
         # For now, use sync request wrapped in executor
-        import urllib.request
         import urllib.error
-        
+        import urllib.request
+
         url = urljoin(self.api_url, path)
         headers = self._get_headers()
-        
+
         body = None
         if data:
             body = json.dumps(data).encode("utf-8")
-        
+
         request = urllib.request.Request(
             url,
             data=body,
             headers=headers,
             method=method,
         )
-        
+
         def do_request():
             try:
                 with urllib.request.urlopen(request, timeout=self.timeout) as response:
@@ -144,21 +145,21 @@ class AsyncNethicalClient:
             except urllib.error.HTTPError as e:
                 return self._handle_http_error(e)
             except urllib.error.URLError as e:
-                raise NethicalError(f"Connection error: {str(e)}")
-        
+                raise NethicalError(f"Connection error: {str(e)}")  # noqa: B904
+
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, do_request)
-    
+
     def _handle_http_error(self, error) -> dict:
         """Handle HTTP errors and raise appropriate exceptions."""
         try:
             body = json.loads(error.read().decode("utf-8"))
         except (json.JSONDecodeError, UnicodeDecodeError):
             body = {}
-        
+
         request_id = error.headers.get("X-Request-ID")
         message = body.get("detail", str(error))
-        
+
         if error.code == 401:
             raise AuthenticationError(message, request_id=request_id)
         elif error.code == 429:
@@ -173,14 +174,14 @@ class AsyncNethicalClient:
             raise ServerError(message, status_code=error.code, request_id=request_id)
         else:
             raise NethicalError(message, request_id=request_id)
-    
+
     async def evaluate(
         self,
         action: str,
         agent_id: str = "unknown",
         action_type: str = "query",
-        context: Optional[dict[str, Any]] = None,
-        stated_intent: Optional[str] = None,
+        context: dict[str, Any] | None = None,
+        stated_intent: str | None = None,
         priority: str = "normal",
         require_explanation: bool = False,
     ) -> EvaluateResponse:
@@ -197,7 +198,7 @@ class AsyncNethicalClient:
             
         Returns:
             EvaluateResponse with decision and metadata
-        """
+        """  # noqa: W293
         data = {
             "action": action,
             "agent_id": agent_id,
@@ -209,10 +210,10 @@ class AsyncNethicalClient:
             data["context"] = context
         if stated_intent:
             data["stated_intent"] = stated_intent
-        
+
         response = await self._request("POST", "/v2/evaluate", data)
         return EvaluateResponse.from_dict(response)
-    
+
     async def batch_evaluate(
         self,
         requests: list[EvaluateRequest],
@@ -228,7 +229,7 @@ class AsyncNethicalClient:
             
         Returns:
             List of responses
-        """
+        """  # noqa: W293
         data = {
             "requests": [
                 {
@@ -245,14 +246,14 @@ class AsyncNethicalClient:
             "parallel": parallel,
             "fail_fast": fail_fast,
         }
-        
+
         response = await self._request("POST", "/v2/batch-evaluate", data)
         return [EvaluateResponse.from_dict(r) for r in response.get("results", [])]
-    
+
     async def stream_decisions(
         self,
-        agent_id: Optional[str] = None,
-        decision_types: Optional[list[str]] = None,
+        agent_id: str | None = None,
+        decision_types: list[str] | None = None,
     ) -> AsyncIterator[Decision]:
         """Stream governance decisions in real-time.
         
@@ -264,22 +265,22 @@ class AsyncNethicalClient:
             
         Yields:
             Decision objects as they occur
-        """
+        """  # noqa: W293
         # In production, this would use websockets library
         logger.info("Starting decision stream (placeholder)")
         # Placeholder - would yield decisions from WebSocket
         return
         yield  # type: ignore
-    
+
     async def get_decision(self, decision_id: str) -> Decision:
         """Retrieve a specific decision by ID."""
         response = await self._request("GET", f"/v2/decisions/{decision_id}")
         return Decision.from_dict(response)
-    
+
     async def list_decisions(
         self,
-        agent_id: Optional[str] = None,
-        decision: Optional[str] = None,
+        agent_id: str | None = None,
+        decision: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[Decision], int, bool]:
@@ -289,15 +290,15 @@ class AsyncNethicalClient:
             params += f"&agent_id={agent_id}"
         if decision:
             params += f"&decision={decision}"
-        
+
         response = await self._request("GET", f"/v2/decisions{params}")
         decisions = [Decision.from_dict(d) for d in response.get("decisions", [])]
         return decisions, response.get("total_count", 0), response.get("has_next", False)
-    
+
     async def list_policies(
         self,
-        status: Optional[str] = None,
-        scope: Optional[str] = None,
+        status: str | None = None,
+        scope: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[Policy], int, bool]:
@@ -307,22 +308,22 @@ class AsyncNethicalClient:
             params += f"&status={status}"
         if scope:
             params += f"&scope={scope}"
-        
+
         response = await self._request("GET", f"/v2/policies{params}")
         policies = [Policy.from_dict(p) for p in response.get("policies", [])]
         return policies, response.get("total_count", 0), response.get("has_next", False)
-    
+
     async def get_fairness_report(self, period_days: int = 7) -> FairnessReport:
         """Get the current fairness report."""
         response = await self._request("GET", f"/v2/fairness?period_days={period_days}")
         return FairnessReport.from_dict(response)
-    
+
     async def submit_appeal(
         self,
         decision_id: str,
         appellant_id: str,
         reason: str,
-        evidence: Optional[dict[str, Any]] = None,
+        evidence: dict[str, Any] | None = None,
         requested_outcome: str = "reconsider",
         priority: str = "normal",
     ) -> Appeal:
@@ -336,20 +337,20 @@ class AsyncNethicalClient:
         }
         if evidence:
             data["evidence"] = evidence
-        
+
         response = await self._request("POST", "/v2/appeals", data)
         return Appeal.from_dict(response)
-    
+
     async def get_appeal(self, appeal_id: str) -> Appeal:
         """Get the status of an appeal."""
         response = await self._request("GET", f"/v2/appeals/{appeal_id}")
         return Appeal.from_dict(response)
-    
+
     async def get_audit_record(self, audit_id: str) -> AuditRecord:
         """Retrieve an audit record."""
         response = await self._request("GET", f"/v2/audit/{audit_id}")
         return AuditRecord.from_dict(response)
-    
+
     async def health_check(self) -> dict[str, Any]:
         """Check API health."""
         return await self._request("GET", "/v2/health")

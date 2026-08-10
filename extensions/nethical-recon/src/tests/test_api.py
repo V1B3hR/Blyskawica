@@ -2,11 +2,8 @@
 
 import pytest
 from fastapi.testclient import TestClient
-
 from nethical_recon.api import create_app
 from nethical_recon.api.config import APIConfig
-from nethical_recon.core.models import Target, TargetScope, TargetType
-from nethical_recon.core.storage import init_database
 
 
 @pytest.fixture

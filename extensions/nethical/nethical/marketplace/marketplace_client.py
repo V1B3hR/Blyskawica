@@ -13,26 +13,24 @@ Enhancements:
 - Improved install/uninstall/update flows, with status validation against filesystem.
 """
 
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set, Tuple
-from enum import Enum
-from datetime import datetime
-import json
-import sqlite3
-from pathlib import Path
-import shutil
-import importlib.util
-import sys
-import logging
-import threading
 import hashlib
-import urllib.request
-from urllib.parse import urlparse
-import zipfile
-import tarfile
+import importlib.util
 import itertools
+import json
+import logging
+import shutil
+import sqlite3
+import sys
+import tarfile
+import threading
 import time
-
+import urllib.request
+import zipfile
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from pathlib import Path
+from urllib.parse import urlparse
 
 # -----------------------------------------------------------------------------
 # Logging
@@ -93,9 +91,9 @@ class PluginVersion:
     release_date: datetime
     compatibility: str  # Compatible Nethical version range, e.g. ">=0.1.0,<0.3.0"
     changelog: str = ""
-    download_url: Optional[str] = None
-    checksum_sha256: Optional[str] = None  # Optional SHA256 for integrity
-    size_bytes: Optional[int] = None  # Optional expected size
+    download_url: str | None = None
+    checksum_sha256: str | None = None  # Optional SHA256 for integrity
+    size_bytes: int | None = None  # Optional expected size
 
     def is_compatible(self, nethical_version: str) -> bool:
         """Check if this version is compatible with given Nethical version.
@@ -124,23 +122,23 @@ class PluginInfo:
     category: str
     rating: float = 0.0
     download_count: int = 0
-    tags: Set[str] = field(default_factory=set)
-    versions: List[PluginVersion] = field(default_factory=list)
+    tags: set[str] = field(default_factory=set)
+    versions: list[PluginVersion] = field(default_factory=list)
     latest_version: str = "0.1.0"
-    dependencies: List[str] = field(default_factory=list)  # e.g., ["dep-a", "dep-b@>=1.0.0"]
+    dependencies: list[str] = field(default_factory=list)  # e.g., ["dep-a", "dep-b@>=1.0.0"]
     license: str = "MIT"
-    homepage: Optional[str] = None
-    repository: Optional[str] = None
+    homepage: str | None = None
+    repository: str | None = None
     certified: bool = False
 
-    def get_version(self, version: str) -> Optional[PluginVersion]:
+    def get_version(self, version: str) -> PluginVersion | None:
         """Get specific version information."""
         for v in self.versions:
             if v.version == version:
                 return v
         return None
 
-    def get_latest_version(self) -> Optional[PluginVersion]:
+    def get_latest_version(self) -> PluginVersion | None:
         """Get latest version information."""
         return self.get_version(self.latest_version)
 
@@ -149,12 +147,12 @@ class PluginInfo:
 class SearchFilters:
     """Filters for marketplace search."""
 
-    category: Optional[str] = None
+    category: str | None = None
     min_rating: float = 0.0
-    compatible_version: Optional[str] = None
+    compatible_version: str | None = None
     certified_only: bool = False
-    tags: Set[str] = field(default_factory=set)
-    author: Optional[str] = None
+    tags: set[str] = field(default_factory=set)
+    author: str | None = None
 
 
 # -----------------------------------------------------------------------------
@@ -176,7 +174,7 @@ class MarketplaceClient:
     def __init__(
         self,
         storage_dir: str = "./nethical_marketplace",
-        marketplace_url: Optional[str] = None,
+        marketplace_url: str | None = None,
         nethical_version: str = "0.1.0",
         request_timeout_s: float = 30.0,
         download_retries: int = 2,
@@ -210,10 +208,10 @@ class MarketplaceClient:
 
         # Locks
         self._registry_lock = threading.RLock()
-        self._plugin_locks: Dict[str, threading.RLock] = {}
+        self._plugin_locks: dict[str, threading.RLock] = {}
 
         # In-memory plugin registry cache
-        self._plugin_registry: Dict[str, PluginInfo] = {}
+        self._plugin_registry: dict[str, PluginInfo] = {}
         self._load_registry_cache()
 
     # -------------------------------------------------------------------------
@@ -334,80 +332,79 @@ class MarketplaceClient:
     # -------------------------------------------------------------------------
     def _load_registry_cache(self):
         """Load plugin registry from database into memory."""
-        with self._registry_lock:
-            with self._connect() as conn:
-                cursor = conn.cursor()
+        with self._registry_lock, self._connect() as conn:
+            cursor = conn.cursor()
 
-                # Load basic plugin info
-                cursor.execute("SELECT * FROM plugins")
-                plugins_rows = cursor.fetchall()
+            # Load basic plugin info
+            cursor.execute("SELECT * FROM plugins")
+            plugins_rows = cursor.fetchall()
 
-                new_registry: Dict[str, PluginInfo] = {}
+            new_registry: dict[str, PluginInfo] = {}
 
-                for row in plugins_rows:
-                    plugin_id = row["plugin_id"]
+            for row in plugins_rows:
+                plugin_id = row["plugin_id"]
 
-                    # Load tags
-                    cursor.execute("SELECT tag FROM plugin_tags WHERE plugin_id = ?", (plugin_id,))
-                    tags = {tag_row["tag"] for tag_row in cursor.fetchall()}
+                # Load tags
+                cursor.execute("SELECT tag FROM plugin_tags WHERE plugin_id = ?", (plugin_id,))
+                tags = {tag_row["tag"] for tag_row in cursor.fetchall()}
 
-                    # Load dependencies
-                    cursor.execute(
-                        "SELECT dependency FROM plugin_dependencies WHERE plugin_id = ?",
-                        (plugin_id,),
-                    )
-                    dependencies = [dep_row["dependency"] for dep_row in cursor.fetchall()]
+                # Load dependencies
+                cursor.execute(
+                    "SELECT dependency FROM plugin_dependencies WHERE plugin_id = ?",
+                    (plugin_id,),
+                )
+                dependencies = [dep_row["dependency"] for dep_row in cursor.fetchall()]
 
-                    # Load versions
-                    cursor.execute(
-                        "SELECT * FROM plugin_versions WHERE plugin_id = ?", (plugin_id,)
-                    )
-                    versions = []
-                    for v_row in cursor.fetchall():
-                        versions.append(
-                            PluginVersion(
-                                version=v_row["version"],
-                                release_date=(
-                                    datetime.fromisoformat(v_row["release_date"])
-                                    if v_row["release_date"]
-                                    else datetime.now()
-                                ),
-                                compatibility=v_row["compatibility"] or ">=0.1.0",
-                                changelog=v_row["changelog"] or "",
-                                download_url=v_row["download_url"],
-                                checksum_sha256=v_row["checksum_sha256"],
-                                size_bytes=v_row["size_bytes"],
-                            )
+                # Load versions
+                cursor.execute(
+                    "SELECT * FROM plugin_versions WHERE plugin_id = ?", (plugin_id,)
+                )
+                versions = []
+                for v_row in cursor.fetchall():
+                    versions.append(  # noqa: PERF401
+                        PluginVersion(
+                            version=v_row["version"],
+                            release_date=(
+                                datetime.fromisoformat(v_row["release_date"])
+                                if v_row["release_date"]
+                                else datetime.now()
+                            ),
+                            compatibility=v_row["compatibility"] or ">=0.1.0",
+                            changelog=v_row["changelog"] or "",
+                            download_url=v_row["download_url"],
+                            checksum_sha256=v_row["checksum_sha256"],
+                            size_bytes=v_row["size_bytes"],
                         )
-
-                    new_registry[plugin_id] = PluginInfo(
-                        plugin_id=plugin_id,
-                        name=row["name"],
-                        description=row["description"] or "",
-                        author=row["author"] or "",
-                        category=row["category"] or "",
-                        rating=row["rating"] or 0.0,
-                        download_count=row["download_count"] or 0,
-                        latest_version=row["latest_version"] or "0.1.0",
-                        license=row["license"] or "MIT",
-                        homepage=row["homepage"],
-                        repository=row["repository"],
-                        certified=bool(row["certified"]),
-                        tags=tags,
-                        dependencies=dependencies,
-                        versions=versions,
                     )
 
-                self._plugin_registry = new_registry
+                new_registry[plugin_id] = PluginInfo(
+                    plugin_id=plugin_id,
+                    name=row["name"],
+                    description=row["description"] or "",
+                    author=row["author"] or "",
+                    category=row["category"] or "",
+                    rating=row["rating"] or 0.0,
+                    download_count=row["download_count"] or 0,
+                    latest_version=row["latest_version"] or "0.1.0",
+                    license=row["license"] or "MIT",
+                    homepage=row["homepage"],
+                    repository=row["repository"],
+                    certified=bool(row["certified"]),
+                    tags=tags,
+                    dependencies=dependencies,
+                    versions=versions,
+                )
+
+            self._plugin_registry = new_registry
 
     # -------------------------------------------------------------------------
     # Version utilities
     # -------------------------------------------------------------------------
     @staticmethod
-    def _parse_version_tuple(v: str) -> Tuple[int, ...]:
+    def _parse_version_tuple(v: str) -> tuple[int, ...]:
         """Parse a semantic version into a tuple of ints, ignoring pre-release/build metadata."""
         # Basic split by '.', ignore suffixes like '-alpha'
-        parts: List[int] = []
+        parts: list[int] = []
         for part in v.split("."):
             # Strip any pre-release metadata e.g. '1-alpha' -> '1'
             num = ""
@@ -471,7 +468,7 @@ class MarketplaceClient:
         return True
 
     @staticmethod
-    def _parse_dependency(dep: str) -> Tuple[str, Optional[str]]:
+    def _parse_dependency(dep: str) -> tuple[str, str | None]:
         """Parse a dependency spec like 'plugin-id@>=1.2.0,<2.0.0'."""
         if "@" in dep:
             pid, constraints = dep.split("@", 1)
@@ -483,15 +480,15 @@ class MarketplaceClient:
     # -------------------------------------------------------------------------
     def search(
         self,
-        query: Optional[str] = None,
-        category: Optional[str] = None,
+        query: str | None = None,
+        category: str | None = None,
         min_rating: float = 0.0,
-        compatible_version: Optional[str] = None,
+        compatible_version: str | None = None,
         certified_only: bool = False,
-        tags: Optional[Set[str]] = None,
+        tags: set[str] | None = None,
         limit: int = 100,
-        author: Optional[str] = None,
-    ) -> List[PluginInfo]:
+        author: str | None = None,
+    ) -> list[PluginInfo]:
         """Search for plugins in the marketplace.
 
         Args:
@@ -511,7 +508,7 @@ class MarketplaceClient:
         tags = tags or set()
 
         with self._registry_lock:
-            results: List[PluginInfo] = []
+            results: list[PluginInfo] = []
 
             for plugin in self._plugin_registry.values():
                 # Apply filters
@@ -551,7 +548,7 @@ class MarketplaceClient:
     # Install / Uninstall / Update
     # -------------------------------------------------------------------------
     def install(
-        self, plugin_id: str, version: Optional[str] = None, force: bool = False
+        self, plugin_id: str, version: str | None = None, force: bool = False
     ) -> InstallStatus:
         """Install a plugin from the marketplace.
 
@@ -705,7 +702,7 @@ class MarketplaceClient:
                 logger.exception("Failed uninstalling plugin '%s': %s", plugin_id, e)
                 raise UninstallationError(str(e)) from e
 
-    def list_installed(self) -> List[PluginInfo]:
+    def list_installed(self) -> list[PluginInfo]:
         """List all installed plugins.
 
         Returns:
@@ -720,7 +717,7 @@ class MarketplaceClient:
                 (InstallStatus.INSTALLED.value,),
             ).fetchall()
 
-        installed: List[PluginInfo] = []
+        installed: list[PluginInfo] = []
         with self._registry_lock:
             for row in rows:
                 plugin_id = row["plugin_id"]
@@ -751,13 +748,13 @@ class MarketplaceClient:
         logger.info("Updating plugin '%s' to latest version %s", plugin_id, plugin.latest_version)
         return self.install(plugin_id, version=plugin.latest_version, force=True)
 
-    def check_updates(self) -> List[str]:
+    def check_updates(self) -> list[str]:
         """Check for available updates for installed plugins.
 
         Returns:
             List of plugin IDs that have updates available
         """
-        updates_available: List[str] = []
+        updates_available: list[str] = []
         with self._connect() as conn:
             rows = conn.execute(
                 """
@@ -774,7 +771,7 @@ class MarketplaceClient:
                 if not plugin:
                     continue
                 # Only suggest update if latest is greater than installed
-                if plugin.latest_version and installed_version:
+                if plugin.latest_version and installed_version:  # noqa: SIM102
                     if self._compare_versions(plugin.latest_version, installed_version) > 0:
                         updates_available.append(plugin_id)
         return updates_available
@@ -873,7 +870,7 @@ class MarketplaceClient:
         logger.info("Registered/updated plugin '%s' in local marketplace", plugin_info.plugin_id)
         return True
 
-    def get_plugin_info(self, plugin_id: str) -> Optional[PluginInfo]:
+    def get_plugin_info(self, plugin_id: str) -> PluginInfo | None:
         """Get detailed information about a plugin.
 
         Args:
@@ -909,7 +906,7 @@ class MarketplaceClient:
             return InstallStatus(row["install_status"])
         return InstallStatus.NOT_INSTALLED
 
-    def _get_installed_version(self, plugin_id: str) -> Optional[str]:
+    def _get_installed_version(self, plugin_id: str) -> str | None:
         with self._connect() as conn:
             row = conn.execute(
                 """
@@ -919,7 +916,7 @@ class MarketplaceClient:
             ).fetchone()
         return row["installed_version"] if row and row["installed_version"] else None
 
-    def _is_plugin_files_present(self, plugin_id: str, version: Optional[str]) -> bool:
+    def _is_plugin_files_present(self, plugin_id: str, version: str | None) -> bool:
         plugin_dir = self.plugins_dir / plugin_id
         if not plugin_dir.exists():
             return False
@@ -931,12 +928,12 @@ class MarketplaceClient:
         # Heuristic: any python file, package, or manifest means presence
         if any(plugin_dir.glob("__init__.py")) or any(plugin_dir.rglob("*.py")):
             return True
-        if (plugin_dir / "plugin.json").exists():
+        if (plugin_dir / "plugin.json").exists():  # noqa: SIM103
             return True
         return False
 
     def _update_install_metadata(
-        self, plugin_id: str, version: Optional[str], status: InstallStatus
+        self, plugin_id: str, version: str | None, status: InstallStatus
     ):
         with self._connect() as conn:
             now = datetime.now().isoformat()
@@ -972,14 +969,14 @@ class MarketplaceClient:
                 f"Unsupported URL scheme: {parsed.scheme}. "
                 f"Only http and https are allowed."
             )
-        
+
         safe_name = f"{plugin_id}-{version}"
         dest = self.cache_dir / safe_name
         # If already downloaded, reuse
         if dest.exists() and dest.stat().st_size > 0:
             return dest
 
-        last_error: Optional[Exception] = None
+        last_error: Exception | None = None
         for attempt in range(1, self.download_retries + 2):
             try:
                 logger.info("Downloading %s (attempt %d)", url, attempt)
@@ -987,7 +984,7 @@ class MarketplaceClient:
                     data = resp.read()
                 dest.write_bytes(data)
                 return dest
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 last_error = e
                 logger.warning(
                     "Download failed (attempt %d/%d): %s", attempt, self.download_retries + 1, e
@@ -1061,7 +1058,7 @@ class MarketplaceClient:
     # -------------------------------------------------------------------------
     # Optional: plugin dynamic loading utilities
     # -------------------------------------------------------------------------
-    def load_plugin_module(self, plugin_id: str, module_name: Optional[str] = None):
+    def load_plugin_module(self, plugin_id: str, module_name: str | None = None):
         """Dynamically load a plugin's module from its directory.
 
         Args:
@@ -1100,7 +1097,7 @@ class MarketplaceClient:
     # -------------------------------------------------------------------------
     # Public convenience: list available plugins
     # -------------------------------------------------------------------------
-    def list_available(self) -> List[str]:
+    def list_available(self) -> list[str]:
         """List all plugin IDs available in the local marketplace registry."""
         with self._registry_lock:
             return sorted(self._plugin_registry.keys())

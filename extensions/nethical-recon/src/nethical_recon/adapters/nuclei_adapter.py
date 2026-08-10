@@ -99,7 +99,7 @@ class NucleiAdapter(ToolPlugin):
             severity = self._map_severity(severity_str)
 
             # Extract affected URL/host
-            matched_at = vuln.get("matched-at", vuln.get("host", ""))
+            matched_at = vuln.get("matched-at", vuln.get("host", ""))  # noqa: F841
             host = vuln.get("host", "")
 
             # Extract tags

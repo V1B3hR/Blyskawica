@@ -3,7 +3,7 @@
 import asyncio
 import time
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -112,9 +112,9 @@ def create_app(config: APIConfig | None = None) -> FastAPI:
                 return "healthy"
 
             db_status = await asyncio.wait_for(check_db(), timeout=3.0)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             db_status = "timeout"
-        except Exception as e:
+        except Exception:
             db_status = "unhealthy"
 
         # Check worker connection with timeout
@@ -139,9 +139,9 @@ def create_app(config: APIConfig | None = None) -> FastAPI:
                 return "healthy" if stats else "unhealthy"
 
             worker_status = await asyncio.wait_for(check_worker(), timeout=3.0)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             worker_status = "timeout"
-        except Exception as e:
+        except Exception:
             worker_status = "unhealthy"
 
         # Determine overall status
@@ -150,7 +150,7 @@ def create_app(config: APIConfig | None = None) -> FastAPI:
         return HealthResponse(
             status=overall_status,
             version=config.version,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             database=db_status,
             worker=worker_status,
         )

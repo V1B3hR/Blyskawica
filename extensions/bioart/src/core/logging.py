@@ -9,15 +9,16 @@ Implements M0 requirement: "Logging: correlate job_id, step_id; timing and error
 
 import json
 import logging
+
+# Thread-local storage for correlation context
+import threading
 import time
 import uuid
 from contextlib import contextmanager
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
 from functools import wraps
+from typing import Dict, Optional
 
-# Thread-local storage for correlation context
-import threading
 _context = threading.local()
 
 

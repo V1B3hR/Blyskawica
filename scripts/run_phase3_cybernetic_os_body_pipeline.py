@@ -8,7 +8,6 @@ triggering somatic health diagnostics and Engineer Persona optimization recommen
 
 import json
 import logging
-import os
 import sys
 import time
 from pathlib import Path
@@ -19,8 +18,12 @@ logger = logging.getLogger("cybernetic_os_body")
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from adaptiveneuralnetwork.applications.identity_garderoba_pipeline import IdentityGarderobaEngine
-from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import NeuromodulationState
+from adaptiveneuralnetwork.applications.identity_garderoba_pipeline import (  # noqa: E402
+    IdentityGarderobaEngine,  # noqa: E402
+)
+from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import (  # noqa: E402
+    NeuromodulationState,  # noqa: E402
+)
 
 
 def run_phase3_cybernetic_pipeline():

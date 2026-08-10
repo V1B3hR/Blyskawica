@@ -9,39 +9,39 @@ Tests large-scale pilot management capabilities including:
 - Phase 20 exit criteria validation
 """
 
+import sys
 import unittest
 from datetime import datetime, timedelta
 from pathlib import Path
-import sys
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from societal_pilot_framework import (
-    SocietalPilotManager,
-    PilotSite,
+    IncidentSeverity,
     PilotContext,
-    PilotStatus,
     PilotMetrics,
-    IncidentSeverity
+    PilotSite,
+    PilotStatus,
+    SocietalPilotManager,
 )
 
 
 class TestPhase20Pilots(unittest.TestCase):
     """Test suite for Phase 20 societal pilot framework"""
-    
+
     def setUp(self):
         """Set up test fixtures"""
         self.test_dir = Path("/tmp/test_pilots")
         self.manager = SocietalPilotManager(data_dir=self.test_dir)
-    
+
     def test_manager_initialization(self):
         """Test pilot manager initializes correctly"""
         self.assertIsNotNone(self.manager)
         self.assertEqual(len(self.manager.sites), 0)
         self.assertTrue(self.test_dir.exists())
         print("✓ Pilot manager initialization successful")
-    
+
     def test_register_pilot_site(self):
         """Test pilot site registration"""
         site = PilotSite(
@@ -56,15 +56,15 @@ class TestPhase20Pilots(unittest.TestCase):
             compliance_officer="Dr. Smith",
             professional_oversight=["Dr. Johnson (Clinical)", "Dr. Lee (Ethics)"]
         )
-        
+
         site_id = self.manager.register_pilot_site(site)
-        
+
         self.assertEqual(site_id, "EDU001")
         self.assertIn("EDU001", self.manager.sites)
         self.assertEqual(self.manager.sites["EDU001"].context, PilotContext.EDUCATION)
-        
+
         print("✓ Pilot site registration successful")
-    
+
     def test_multiple_site_registration(self):
         """Test registering multiple pilot sites"""
         sites = [
@@ -72,24 +72,24 @@ class TestPhase20Pilots(unittest.TestCase):
             PilotSite("HEALTH001", "Medical Center Beta", PilotContext.HEALTHCARE, "NY, USA", "Med Beta", 250),
             PilotSite("WORK001", "TechCorp Gamma", PilotContext.WORKPLACE, "WA, USA", "TechCorp", 400)
         ]
-        
+
         for site in sites:
             site.irb_approval = True
             self.manager.register_pilot_site(site)
-        
+
         self.assertEqual(len(self.manager.sites), 3)
         self.assertIn(PilotContext.EDUCATION, [s.context for s in self.manager.sites.values()])
         self.assertIn(PilotContext.HEALTHCARE, [s.context for s in self.manager.sites.values()])
         self.assertIn(PilotContext.WORKPLACE, [s.context for s in self.manager.sites.values()])
-        
+
         print("✓ Multiple site registration successful (3 contexts)")
-    
+
     def test_participant_enrollment(self):
         """Test participant enrollment with consent"""
         # Register site first
         site = PilotSite("EDU001", "University Alpha", PilotContext.EDUCATION, "CA", "Univ", 300)
         self.manager.register_pilot_site(site)
-        
+
         # Enroll participant
         participant_id = self.manager.enroll_participant(
             site_id="EDU001",
@@ -105,19 +105,19 @@ class TestPhase20Pilots(unittest.TestCase):
                 'academic_performance': 3.2
             }
         )
-        
+
         self.assertIn("EDU001", participant_id)
         self.assertEqual(self.manager.sites["EDU001"].enrolled_participants, 1)
         self.assertEqual(self.manager.sites["EDU001"].active_participants, 1)
         self.assertIn(participant_id, self.manager.participants)
-        
+
         print(f"✓ Participant enrollment successful: {participant_id}")
-    
+
     def test_consent_enforcement(self):
         """Test that enrollment requires consent"""
         site = PilotSite("EDU001", "University Alpha", PilotContext.EDUCATION, "CA", "Univ", 300)
         self.manager.register_pilot_site(site)
-        
+
         # Attempt enrollment without consent
         with self.assertRaises(ValueError):
             self.manager.enroll_participant(
@@ -125,14 +125,14 @@ class TestPhase20Pilots(unittest.TestCase):
                 demographic_data={'age_range': '18-25'},
                 consent_given=False
             )
-        
+
         print("✓ Consent enforcement validated")
-    
+
     def test_pilot_metrics_recording(self):
         """Test recording and monitoring pilot metrics"""
         site = PilotSite("EDU001", "University Alpha", PilotContext.EDUCATION, "CA", "Univ", 300)
         self.manager.register_pilot_site(site)
-        
+
         # Record metrics
         metrics = PilotMetrics(
             site_id="EDU001",
@@ -150,17 +150,17 @@ class TestPhase20Pilots(unittest.TestCase):
             fairness_score=0.91,
             incidents=0
         )
-        
+
         self.manager.record_pilot_metrics(metrics)
-        
+
         self.assertGreater(len(self.manager.metrics_history), 0)
         print("✓ Pilot metrics recording successful")
-    
+
     def test_metric_threshold_alerts(self):
         """Test automatic alerting on metric threshold violations"""
         site = PilotSite("EDU001", "University Alpha", PilotContext.EDUCATION, "CA", "Univ", 300)
         self.manager.register_pilot_site(site)
-        
+
         # Record metrics with threshold violations
         bad_metrics = PilotMetrics(
             site_id="EDU001",
@@ -178,28 +178,28 @@ class TestPhase20Pilots(unittest.TestCase):
             fairness_score=0.85,  # Below threshold (0.88)
             incidents=2
         )
-        
+
         initial_incidents = len(self.manager.incidents)
         self.manager.record_pilot_metrics(bad_metrics)
-        
+
         # Should have created incidents for threshold violations
         self.assertGreater(len(self.manager.incidents), initial_incidents)
-        
+
         print(f"✓ Metric threshold alerting validated ({len(self.manager.incidents)} incidents)")
-    
+
     def test_crisis_escalation(self):
         """Test crisis escalation and professional alerting"""
         site = PilotSite("EDU001", "University Alpha", PilotContext.EDUCATION, "CA", "Univ", 300)
         site.professional_oversight = ["Dr. Johnson", "Dr. Lee"]
         self.manager.register_pilot_site(site)
-        
+
         # Enroll participant
         participant_id = self.manager.enroll_participant(
             site_id="EDU001",
             demographic_data={'age_range': '18-25'},
             consent_given=True
         )
-        
+
         # Create crisis escalation
         incident_id = self.manager.create_crisis_escalation(
             site_id="EDU001",
@@ -210,17 +210,17 @@ class TestPhase20Pilots(unittest.TestCase):
                 'confidence': 0.95
             }
         )
-        
+
         self.assertIsNotNone(incident_id)
         self.assertGreater(len(self.manager.incidents), 0)
-        
+
         # Check incident severity
         incident = [i for i in self.manager.incidents if i.incident_id == incident_id][0]
         self.assertEqual(incident.severity, IncidentSeverity.CRITICAL)
         self.assertEqual(incident.category, "crisis_escalation")
-        
+
         print(f"✓ Crisis escalation validated: {incident_id}")
-    
+
     def test_pilot_dashboard(self):
         """Test comprehensive pilot dashboard generation"""
         # Set up multiple sites
@@ -236,15 +236,15 @@ class TestPhase20Pilots(unittest.TestCase):
             site.status = PilotStatus.ACTIVE
             site.irb_approval = True
             self.manager.register_pilot_site(site)
-            
+
             # Enroll participants
-            for j in range(200):  # Enroll 200 per site
+            for j in range(200):  # Enroll 200 per site  # noqa: B007
                 self.manager.enroll_participant(
                     site_id=site.site_id,
                     demographic_data={'age_range': '18-65'},
                     consent_given=True
                 )
-            
+
             # Record metrics
             metrics = PilotMetrics(
                 site_id=site.site_id,
@@ -263,23 +263,23 @@ class TestPhase20Pilots(unittest.TestCase):
                 incidents=0
             )
             self.manager.record_pilot_metrics(metrics)
-        
+
         # Get dashboard
         dashboard = self.manager.get_pilot_dashboard()
-        
+
         # Validate dashboard structure
         self.assertIn('sites', dashboard)
         self.assertIn('participants', dashboard)
         self.assertIn('performance', dashboard)
         self.assertIn('safety', dashboard)
         self.assertIn('phase20_exit_criteria', dashboard)
-        
+
         # Check Phase 20 exit criteria
         criteria = dashboard['phase20_exit_criteria']
         self.assertEqual(criteria['sites_deployed'], 3)
         self.assertEqual(criteria['target_sites'], 3)
         self.assertGreaterEqual(criteria['engagement_rate'], 70.0)
-        
+
         print("✓ Pilot dashboard generation successful")
         print(f"  - Sites: {dashboard['sites']['total']} (3 contexts)")
         print(f"  - Participants: {dashboard['participants']['total_enrolled']} enrolled, "
@@ -287,12 +287,12 @@ class TestPhase20Pilots(unittest.TestCase):
         print(f"  - Engagement: {dashboard['participants']['engagement_rate']:.1f}%")
         print(f"  - Performance: accuracy={dashboard['performance']['avg_emotion_accuracy']:.3f}, "
               f"satisfaction={dashboard['performance']['avg_user_satisfaction']:.2f}")
-    
+
     def test_longitudinal_tracking(self):
         """Test longitudinal well-being tracking"""
         site = PilotSite("EDU001", "University Alpha", PilotContext.EDUCATION, "CA", "Univ", 300)
         self.manager.register_pilot_site(site)
-        
+
         # Enroll participant with baseline
         participant_id = self.manager.enroll_participant(
             site_id="EDU001",
@@ -300,7 +300,7 @@ class TestPhase20Pilots(unittest.TestCase):
             consent_given=True,
             baseline_measurements={'well_being_score': 6.0}
         )
-        
+
         # Simulate longitudinal measurements
         participant = self.manager.participants[participant_id]
         for days in [7, 14, 21, 28]:
@@ -310,14 +310,14 @@ class TestPhase20Pilots(unittest.TestCase):
                     'well_being_score': 6.0 + (days * 0.1)  # Gradual improvement
                 }
             })
-        
+
         # Generate report
         report = self.manager.generate_longitudinal_report(participant_id, 'well_being_score')
-        
+
         self.assertEqual(report['baseline'], 6.0)
         self.assertGreater(report['current'], report['baseline'])
         self.assertTrue(report['improvement'])
-        
+
         # Check Phase 20 target (20% improvement)
         if report['percent_change'] >= 20.0:
             print(f"✓ Longitudinal tracking validated: {report['percent_change']:.1f}% improvement "
@@ -325,7 +325,7 @@ class TestPhase20Pilots(unittest.TestCase):
         else:
             print(f"✓ Longitudinal tracking validated: {report['percent_change']:.1f}% improvement "
                   f"(target: 20%)")
-    
+
     def test_phase20_exit_criteria(self):
         """Test Phase 20 exit criteria tracking"""
         # Set up 3 active sites
@@ -335,18 +335,18 @@ class TestPhase20Pilots(unittest.TestCase):
             site.status = PilotStatus.ACTIVE
             site.irb_approval = True
             self.manager.register_pilot_site(site)
-            
+
             # Enroll 250 participants (target: 70% of 300 = 210)
-            for j in range(250):
+            for j in range(250):  # noqa: B007
                 self.manager.enroll_participant(
                     site_id=site.site_id,
                     demographic_data={'age_range': '18-65'},
                     consent_given=True
                 )
-            
+
             # Set 220 as active (88% engagement)
             site.active_participants = 220
-            
+
             # Record good metrics
             metrics = PilotMetrics(
                 site_id=site.site_id,
@@ -365,11 +365,11 @@ class TestPhase20Pilots(unittest.TestCase):
                 incidents=0
             )
             self.manager.record_pilot_metrics(metrics)
-        
+
         # Get dashboard with exit criteria
         dashboard = self.manager.get_pilot_dashboard()
         criteria = dashboard['phase20_exit_criteria']
-        
+
         print("\n" + "="*60)
         print("Phase 20 Exit Criteria Validation")
         print("="*60)
@@ -386,7 +386,7 @@ class TestPhase20Pilots(unittest.TestCase):
         print(f"Critical incidents: {criteria['critical_incidents']}/{criteria['target_critical_incidents']} "
               f"{'✓' if criteria['critical_incidents'] == criteria['target_critical_incidents'] else '✗'}")
         print("="*60 + "\n")
-        
+
         # Validate all criteria
         self.assertGreaterEqual(criteria['sites_deployed'], 3)
         self.assertGreaterEqual(criteria['engagement_rate'], 70.0)
@@ -400,10 +400,10 @@ if __name__ == '__main__':
     print("\n" + "="*70)
     print("Phase 20: Large-Scale Societal Pilot Test Suite")
     print("="*70 + "\n")
-    
+
     # Run tests
     unittest.main(verbosity=2, exit=False)
-    
+
     print("\n" + "="*70)
     print("Phase 20 Testing Complete")
     print("="*70 + "\n")

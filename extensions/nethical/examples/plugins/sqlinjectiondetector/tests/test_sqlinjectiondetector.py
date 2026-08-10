@@ -6,6 +6,7 @@ Run with: pytest tests/test_sqlinjectiondetector.py
 
 import pytest
 from sqlinjectiondetector import Sqlinjectiondetector
+
 from nethical.models import AgentAction
 
 
@@ -21,14 +22,14 @@ async def test_sqlinjectiondetector_initialization():
 async def test_sqlinjectiondetector_detect_violations():
     """Test violation detection"""
     plugin = Sqlinjectiondetector()
-    
+
     # Test with sample action
     action = AgentAction(
         agent_id="test_agent",
         action="test action",
         timestamp="2025-01-01T00:00:00Z"
     )
-    
+
     violations = await plugin.detect_violations(action)
     assert isinstance(violations, list)
 

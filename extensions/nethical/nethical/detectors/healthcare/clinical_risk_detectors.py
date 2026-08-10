@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, asdict
-from typing import Any, Dict, Iterable, List, Optional, Tuple
-
+from collections.abc import Iterable
+from dataclasses import asdict, dataclass
+from typing import Any
 
 # -----------------------------
 # Utilities
@@ -19,18 +19,18 @@ def _regex_union(terms: Iterable[str], *, word_boundary: bool = True) -> re.Patt
     if not safe:
         # Match nothing
         return re.compile(r"^\b$", re.IGNORECASE)
-    if word_boundary:
+    if word_boundary:  # noqa: SIM108
         pattern = r"\b(?:" + "|".join(safe) + r")\b"
     else:
         pattern = r"(?:" + "|".join(safe) + r")"
     return re.compile(pattern, re.IGNORECASE)
 
 
-def _tokenize(text: str) -> List[str]:
+def _tokenize(text: str) -> list[str]:
     return re.findall(r"\b\w+\b", text.lower())
 
 
-def _has_negation_near(text: str, span: Tuple[int, int], window_tokens: int = 5) -> bool:
+def _has_negation_near(text: str, span: tuple[int, int], window_tokens: int = 5) -> bool:
     """
     Rudimentary negation detection: checks for negation tokens within a window
     of tokens before the matched span.
@@ -266,18 +266,18 @@ class ClinicalFlags:
 
 @dataclass
 class SafetySignals:
-    emergency_intent: Optional[str]
+    emergency_intent: str | None
     urgency: bool
 
 
 @dataclass
 class Extraction:
-    medications: List[Match]
-    conditions: List[Match]
-    dosages: List[Match]
-    quantities: List[Match]
-    routes: List[Match]
-    frequencies: List[Match]
+    medications: list[Match]
+    conditions: list[Match]
+    dosages: list[Match]
+    quantities: list[Match]
+    routes: list[Match]
+    frequencies: list[Match]
 
 
 @dataclass
@@ -316,8 +316,8 @@ class ClinicalRiskAnalyzer:
     @staticmethod
     def _find_all(
         pattern: re.Pattern, text: str, label: str, negation_window_tokens: int
-    ) -> List[Match]:
-        results: List[Match] = []
+    ) -> list[Match]:
+        results: list[Match] = []
         for m in pattern.finditer(text):
             span = m.span()
             neg = _has_negation_near(text, span, window_tokens=negation_window_tokens)
@@ -355,7 +355,7 @@ class ClinicalRiskAnalyzer:
         return ManipulationScores(prompt_injection=raw_score, override_attempt=override_attempt)
 
     def detect_emergency(self, text: str) -> SafetySignals:
-        emerg_label: Optional[str] = None
+        emerg_label: str | None = None
         for label, pat in EMERGENCY_PATTERNS.items():
             if pat.search(text):
                 # Negation-aware: if negation near the first match, treat as None
@@ -450,11 +450,11 @@ class ClinicalSignals:
     def prompt_injection_score(self) -> float:
         return self._analysis.manipulation.prompt_injection
 
-    def emergency_intent(self) -> Optional[str]:
+    def emergency_intent(self) -> str | None:
         return self._analysis.safety.emergency_intent
 
 
-def extract_clinical_signals(payload: Dict[str, Any]) -> Dict[str, Any]:
+def extract_clinical_signals(payload: dict[str, Any]) -> dict[str, Any]:
     """
     Backwards-compatible entrypoint that maintains the existing schema,
     but powered by the advanced analyzer. Adds a 'meta' section with

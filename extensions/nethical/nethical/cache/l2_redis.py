@@ -8,9 +8,8 @@ Target: <5ms latency within same region
 import asyncio
 import json
 import logging
-import time
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +32,7 @@ class L2Config:
 
     host: str = "localhost"
     port: int = 6379
-    password: Optional[str] = None
+    password: str | None = None
     db: int = 0
     ssl: bool = False
     ttl_seconds: int = 300  # 5 minutes
@@ -59,9 +58,9 @@ class L2RedisCache:
         >>> cache = await L2RedisCache.create(config)
         
         See docs/ASYNC_FACTORY_PATTERN.md for more details.
-    """
+    """  # noqa: W293
 
-    def __init__(self, config: Optional[L2Config] = None):
+    def __init__(self, config: L2Config | None = None):
         """
         Initialize L2RedisCache (synchronous constructor).
         
@@ -71,7 +70,7 @@ class L2RedisCache:
 
         Args:
             config: Redis configuration
-        """
+        """  # noqa: W293
         self.config = config or L2Config()
         self._client = None
         self._pool = None
@@ -94,11 +93,11 @@ class L2RedisCache:
         
         Raises:
             Exception: If connection fails
-        """
+        """  # noqa: W293
         await self.connect()
 
     @classmethod
-    async def create(cls, config: Optional[L2Config] = None) -> "L2RedisCache":
+    async def create(cls, config: L2Config | None = None) -> "L2RedisCache":
         """
         Async factory method for creating a connected Redis cache.
         
@@ -117,7 +116,7 @@ class L2RedisCache:
             >>> config = L2Config(host="localhost", port=6379)
             >>> cache = await L2RedisCache.create(config)
             >>> cache.set("key", "value")
-        """
+        """  # noqa: W291, W293
         obj = cls(config)
         await obj.async_setup()
         return obj
@@ -146,7 +145,7 @@ class L2RedisCache:
             # Test connection (in an executor to avoid blocking)
             loop = asyncio.get_event_loop()
             await loop.run_in_executor(None, self._client.ping)
-            
+
             self._connected = True
             logger.info("L2RedisCache connected")
             return True
@@ -164,7 +163,7 @@ class L2RedisCache:
         """Check if connected to Redis."""
         return self._connected
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         """
         Get value from Redis.
 
@@ -195,7 +194,7 @@ class L2RedisCache:
         self,
         key: str,
         value: Any,
-        ttl: Optional[int] = None,
+        ttl: int | None = None,
     ) -> bool:
         """
         Set value in Redis.
@@ -242,7 +241,7 @@ class L2RedisCache:
             self._errors += 1
             return False
 
-    def mget(self, keys: List[str]) -> Dict[str, Any]:
+    def mget(self, keys: list[str]) -> dict[str, Any]:
         """
         Get multiple values.
 
@@ -258,7 +257,7 @@ class L2RedisCache:
         try:
             values = self._client.mget(keys)
             result = {}
-            for key, value in zip(keys, values):
+            for key, value in zip(keys, values):  # noqa: B905
                 if value is not None:
                     result[key] = json.loads(value)
                     self._hits += 1
@@ -273,8 +272,8 @@ class L2RedisCache:
 
     def mset(
         self,
-        items: Dict[str, Any],
-        ttl: Optional[int] = None,
+        items: dict[str, Any],
+        ttl: int | None = None,
     ) -> bool:
         """
         Set multiple values.
@@ -375,7 +374,7 @@ class L2RedisCache:
             self._pool.disconnect()
             self._connected = False
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get cache metrics."""
         total = self._hits + self._misses
         return {

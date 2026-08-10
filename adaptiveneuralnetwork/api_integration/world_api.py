@@ -155,7 +155,7 @@ class EnvironmentalSignalManager:
             
         Returns:
             Dictionary mapping state variables to their new values
-        """
+        """  # noqa: W293
         params = location_params or {}
 
         if source_name:

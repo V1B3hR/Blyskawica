@@ -7,20 +7,20 @@ This module provides REST API endpoints for:
 - Version management
 """
 
-from typing import Dict, Any, Optional
 from dataclasses import dataclass
+from typing import Any
 
+from ..core.ethical_taxonomy import EthicalTaxonomy
 from ..core.taxonomy_validator import (
-    TaxonomyValidator,
-    IndustryTaxonomyManager,
-    HEALTHCARE_DIMENSIONS,
-    HEALTHCARE_MAPPINGS,
-    FINANCE_DIMENSIONS,
-    FINANCE_MAPPINGS,
     EDUCATION_DIMENSIONS,
     EDUCATION_MAPPINGS,
+    FINANCE_DIMENSIONS,
+    FINANCE_MAPPINGS,
+    HEALTHCARE_DIMENSIONS,
+    HEALTHCARE_MAPPINGS,
+    IndustryTaxonomyManager,
+    TaxonomyValidator,
 )
-from ..core.ethical_taxonomy import EthicalTaxonomy
 
 
 @dataclass
@@ -28,11 +28,11 @@ class APIResponse:
     """Standard API response format."""
 
     success: bool
-    data: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
-    message: Optional[str] = None
+    data: dict[str, Any] | None = None
+    error: str | None = None
+    message: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         result = {"success": self.success}
         if self.data is not None:
@@ -59,8 +59,8 @@ class TaxonomyAPI:
         self.taxonomy = EthicalTaxonomy(taxonomy_path)
 
     def validate_taxonomy_endpoint(
-        self, taxonomy_data: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        self, taxonomy_data: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """API endpoint: Validate taxonomy configuration.
 
         Args:
@@ -84,7 +84,7 @@ class TaxonomyAPI:
         except Exception as e:
             return APIResponse(success=False, error=str(e), message="Validation failed").to_dict()
 
-    def get_schema_endpoint(self) -> Dict[str, Any]:
+    def get_schema_endpoint(self) -> dict[str, Any]:
         """API endpoint: Get taxonomy JSON schema.
 
         Returns:
@@ -101,7 +101,7 @@ class TaxonomyAPI:
                 success=False, error=str(e), message="Failed to retrieve schema"
             ).to_dict()
 
-    def export_schema_endpoint(self, output_path: Optional[str] = None) -> Dict[str, Any]:
+    def export_schema_endpoint(self, output_path: str | None = None) -> dict[str, Any]:
         """API endpoint: Export taxonomy schema to file.
 
         Args:
@@ -123,7 +123,7 @@ class TaxonomyAPI:
                 success=False, error=str(e), message="Failed to export schema"
             ).to_dict()
 
-    def list_industries_endpoint(self) -> Dict[str, Any]:
+    def list_industries_endpoint(self) -> dict[str, Any]:
         """API endpoint: List available industry taxonomies.
 
         Returns:
@@ -142,7 +142,7 @@ class TaxonomyAPI:
                 success=False, error=str(e), message="Failed to retrieve industries"
             ).to_dict()
 
-    def get_industry_taxonomy_endpoint(self, industry: str) -> Dict[str, Any]:
+    def get_industry_taxonomy_endpoint(self, industry: str) -> dict[str, Any]:
         """API endpoint: Get taxonomy for specific industry.
 
         Args:
@@ -166,7 +166,7 @@ class TaxonomyAPI:
 
     def create_industry_taxonomy_endpoint(
         self, industry: str, base_version: str = "1.0"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """API endpoint: Create industry-specific taxonomy.
 
         Args:
@@ -213,7 +213,7 @@ class TaxonomyAPI:
                 success=False, error=str(e), message="Failed to create industry taxonomy"
             ).to_dict()
 
-    def get_coverage_stats_endpoint(self) -> Dict[str, Any]:
+    def get_coverage_stats_endpoint(self) -> dict[str, Any]:
         """API endpoint: Get taxonomy coverage statistics.
 
         Returns:
@@ -230,7 +230,7 @@ class TaxonomyAPI:
                 success=False, error=str(e), message="Failed to retrieve coverage statistics"
             ).to_dict()
 
-    def get_coverage_report_endpoint(self) -> Dict[str, Any]:
+    def get_coverage_report_endpoint(self) -> dict[str, Any]:
         """API endpoint: Get detailed coverage report.
 
         Returns:
@@ -248,8 +248,8 @@ class TaxonomyAPI:
             ).to_dict()
 
     def tag_violation_endpoint(
-        self, violation_type: str, context: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        self, violation_type: str, context: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """API endpoint: Tag a violation with ethical dimensions.
 
         Args:
@@ -288,8 +288,8 @@ class TaxonomyAPI:
             ).to_dict()
 
     def add_mapping_endpoint(
-        self, violation_type: str, dimension_scores: Dict[str, float], description: str = ""
-    ) -> Dict[str, Any]:
+        self, violation_type: str, dimension_scores: dict[str, float], description: str = ""
+    ) -> dict[str, Any]:
         """API endpoint: Add new violation type mapping.
 
         Args:
@@ -314,7 +314,7 @@ class TaxonomyAPI:
                 success=False, error=str(e), message="Failed to add mapping"
             ).to_dict()
 
-    def get_dimension_report_endpoint(self, dimension: str) -> Dict[str, Any]:
+    def get_dimension_report_endpoint(self, dimension: str) -> dict[str, Any]:
         """API endpoint: Get report for specific dimension.
 
         Args:

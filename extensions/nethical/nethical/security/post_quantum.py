@@ -33,7 +33,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 __all__ = [
     "PQCAlgorithm",
@@ -102,13 +102,13 @@ class KeyPair:
         metadata: Additional key information
     """
 
-    algorithm: Union[PQCAlgorithm, str]
+    algorithm: PQCAlgorithm | str
     public_key: bytes
-    private_key: Optional[bytes] = None
+    private_key: bytes | None = None
     key_id: str = field(default_factory=lambda: secrets.token_hex(16))
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    expires_at: Optional[datetime] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    expires_at: datetime | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     @property
     def is_pqc(self) -> bool:
@@ -120,7 +120,7 @@ class KeyPair:
         """Get fingerprint of public key."""
         return hashlib.sha256(self.public_key).hexdigest()[:32]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary (excludes private key)."""
         alg = self.algorithm.value if isinstance(self.algorithm, PQCAlgorithm) else self.algorithm
         return {
@@ -143,7 +143,7 @@ class PQCKeyExchange(ABC):
         pass
 
     @abstractmethod
-    def encapsulate(self, public_key: bytes) -> Tuple[bytes, bytes]:
+    def encapsulate(self, public_key: bytes) -> tuple[bytes, bytes]:
         """Encapsulate a shared secret.
 
         Args:
@@ -234,7 +234,7 @@ class SimulatedMLKEM(PQCKeyExchange):
             metadata={"simulated": True},
         )
 
-    def encapsulate(self, public_key: bytes) -> Tuple[bytes, bytes]:
+    def encapsulate(self, public_key: bytes) -> tuple[bytes, bytes]:
         """Simulate encapsulation."""
         _, _, ct_size = self._sizes.get(
             self.algorithm, (1184, 2400, 1088)
@@ -309,7 +309,7 @@ class HybridKeyExchange:
 
     def __init__(
         self,
-        pqc_kem: Optional[PQCKeyExchange] = None,
+        pqc_kem: PQCKeyExchange | None = None,
         classical_curve: str = "X25519",
     ):
         """Initialize hybrid key exchange.
@@ -323,7 +323,7 @@ class HybridKeyExchange:
 
         log.info(f"HybridKeyExchange initialized with {classical_curve} + ML-KEM")
 
-    def generate_keypair(self) -> Tuple[KeyPair, KeyPair]:
+    def generate_keypair(self) -> tuple[KeyPair, KeyPair]:
         """Generate both classical and PQC key pairs.
 
         Returns:
@@ -377,13 +377,13 @@ class PQCReadinessAssessment:
     """
 
     overall_score: float
-    crypto_inventory: List[Dict[str, Any]]
-    migration_priority: List[str]
-    recommendations: List[str]
+    crypto_inventory: list[dict[str, Any]]
+    migration_priority: list[str]
+    recommendations: list[str]
     estimated_effort: str
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "overall_score": round(self.overall_score, 2),
@@ -404,9 +404,9 @@ class CryptoAgility:
 
     def __init__(self):
         """Initialize crypto-agility framework."""
-        self._algorithms: Dict[str, Any] = {}
-        self._default_kem: Optional[str] = None
-        self._default_sig: Optional[str] = None
+        self._algorithms: dict[str, Any] = {}
+        self._default_kem: str | None = None
+        self._default_sig: str | None = None
 
         # Register default algorithms
         self._register_defaults()
@@ -445,7 +445,7 @@ class CryptoAgility:
 
         log.info(f"Registered algorithm: {name}")
 
-    def get_kem(self, name: Optional[str] = None) -> PQCKeyExchange:
+    def get_kem(self, name: str | None = None) -> PQCKeyExchange:
         """Get KEM implementation.
 
         Args:
@@ -461,7 +461,7 @@ class CryptoAgility:
                 return alg
         raise ValueError(f"KEM not found: {name}")
 
-    def get_signature(self, name: Optional[str] = None) -> PQCSignature:
+    def get_signature(self, name: str | None = None) -> PQCSignature:
         """Get signature implementation.
 
         Args:
@@ -477,7 +477,7 @@ class CryptoAgility:
                 return alg
         raise ValueError(f"Signature algorithm not found: {name}")
 
-    def list_algorithms(self) -> Dict[str, List[str]]:
+    def list_algorithms(self) -> dict[str, list[str]]:
         """List all registered algorithms.
 
         Returns:
@@ -501,7 +501,7 @@ class CryptoAgility:
 
 
 def assess_pqc_readiness(
-    crypto_uses: Optional[List[Dict[str, Any]]] = None,
+    crypto_uses: list[dict[str, Any]] | None = None,
 ) -> PQCReadinessAssessment:
     """Assess organization's PQC migration readiness.
 
@@ -533,7 +533,7 @@ def assess_pqc_readiness(
 
     # Calculate readiness score
     total = classical_count + pqc_ready_count
-    if total > 0:
+    if total > 0:  # noqa: SIM108
         score = pqc_ready_count / total
     else:
         score = 0.5  # No crypto = medium readiness

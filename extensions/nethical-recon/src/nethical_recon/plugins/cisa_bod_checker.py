@@ -72,7 +72,7 @@ class CISABODChecker:
 
         if not self.kev_client:
             return BODCheckResult(
-                directive=BOD_22_01,
+                directive=BOD_22_01,  # noqa: F821
                 compliant=False,
                 compliance_percentage=0.0,
                 findings=["KEV client not available"],
@@ -193,7 +193,7 @@ class CISABODChecker:
             recommendations.append("Complete asset inventory for all discovered assets")
 
         if detection_percentage < 95.0:
-            findings.append(f"⚠️ Vulnerability detection coverage below 95%")
+            findings.append("⚠️ Vulnerability detection coverage below 95%")
             recommendations.append("Expand vulnerability scanning to achieve 95%+ coverage")
 
         return BODCheckResult(

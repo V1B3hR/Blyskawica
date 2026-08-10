@@ -4,13 +4,13 @@ Policy Subscriber - Policy Update Listener
 Listens for policy updates from event stream.
 """
 
-import asyncio
 import logging
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ class PolicyUpdate:
     policy_id: str
     event_type: PolicyEventType
     version: str = "1.0"
-    content: Optional[Dict[str, Any]] = None
+    content: dict[str, Any] | None = None
     timestamp: float = field(default_factory=time.time)
     source: str = "unknown"
 
@@ -72,7 +72,7 @@ class PolicySubscriber:
     def __init__(
         self,
         nats_client: Optional["NATSClient"] = None,
-        cache_hierarchy: Optional[Any] = None,
+        cache_hierarchy: Any | None = None,
     ):
         """
         Initialize PolicySubscriber.
@@ -85,11 +85,11 @@ class PolicySubscriber:
         self.cache_hierarchy = cache_hierarchy
 
         # Update handlers
-        self._handlers: List[Callable[[PolicyUpdate], None]] = []
+        self._handlers: list[Callable[[PolicyUpdate], None]] = []
         self._lock = threading.RLock()
 
         # Update history
-        self._update_history: List[PolicyUpdate] = []
+        self._update_history: list[PolicyUpdate] = []
         self._max_history = 1000
 
         # Metrics
@@ -112,7 +112,7 @@ class PolicySubscriber:
 
         logger.info("PolicySubscriber started")
 
-    def _handle_message(self, message: Dict[str, Any]):
+    def _handle_message(self, message: dict[str, Any]):
         """
         Handle incoming policy message.
 
@@ -164,7 +164,7 @@ class PolicySubscriber:
             for handler in self._handlers:
                 try:
                     handler(update)
-                except Exception as e:
+                except Exception as e:  # noqa: PERF203
                     logger.error(f"Handler error: {e}")
 
     def on_update(self, handler: Callable[[PolicyUpdate], None]):
@@ -190,9 +190,9 @@ class PolicySubscriber:
 
     def get_recent_updates(
         self,
-        policy_id: Optional[str] = None,
+        policy_id: str | None = None,
         limit: int = 100,
-    ) -> List[PolicyUpdate]:
+    ) -> list[PolicyUpdate]:
         """
         Get recent policy updates.
 
@@ -211,7 +211,7 @@ class PolicySubscriber:
 
             return updates[-limit:]
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get subscriber metrics."""
         return {
             "updates_received": self._updates_received,
@@ -221,7 +221,7 @@ class PolicySubscriber:
 
 
 # Type hints
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING  # noqa: E402
 
 if TYPE_CHECKING:
     from .nats_client import NATSClient

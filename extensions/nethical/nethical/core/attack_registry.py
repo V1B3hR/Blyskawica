@@ -32,9 +32,8 @@ Version: 4.0.0
 
 from __future__ import annotations
 
-from enum import Enum
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from enum import Enum
 
 __all__ = [
     "AttackCategory",
@@ -72,9 +71,9 @@ class AttackVector:
     description: str
     severity: str  # "LOW", "MEDIUM", "HIGH", "CRITICAL"
     detector_class: str
-    mitre_att_ck: Optional[str] = None  # MITRE ATT&CK reference if applicable
-    cwe_id: Optional[int] = None  # Common Weakness Enumeration ID
-    examples: List[str] = None
+    mitre_att_ck: str | None = None  # MITRE ATT&CK reference if applicable
+    cwe_id: int | None = None  # Common Weakness Enumeration ID
+    examples: list[str] = None
 
     def __post_init__(self):
         if self.examples is None:
@@ -83,7 +82,7 @@ class AttackVector:
 
 # ===== ATTACK VECTOR REGISTRY =====
 
-ATTACK_VECTORS: Dict[str, AttackVector] = {
+ATTACK_VECTORS: dict[str, AttackVector] = {
     # ===== Prompt Injection Family (10 vectors) =====
     "direct_prompt_injection": AttackVector(
         id="direct_prompt_injection",
@@ -595,7 +594,7 @@ ATTACK_VECTORS: Dict[str, AttackVector] = {
         detector_class="CICDDetector",
         examples=["Provenance chain break", "Non-reproducible build"],
     ),
-    
+
     # ===== Phase 3: Behavioral Attack Suite (4 vectors) =====
     "coordinated_agent_attack": AttackVector(
         id="coordinated_agent_attack",
@@ -645,7 +644,7 @@ ATTACK_VECTORS: Dict[str, AttackVector] = {
             "Response time correlation attacks",
         ],
     ),
-    
+
     # ===== Phase 3: Multimodal Attack Suite (4 vectors) =====
     "adversarial_image": AttackVector(
         id="adversarial_image",
@@ -695,7 +694,7 @@ ATTACK_VECTORS: Dict[str, AttackVector] = {
             "Cross-encoder inconsistencies",
         ],
     ),
-    
+
     # ===== Phase 3: Zero-Day Attack Suite (4 vectors) =====
     "zero_day_pattern": AttackVector(
         id="zero_day_pattern",
@@ -745,7 +744,7 @@ ATTACK_VECTORS: Dict[str, AttackVector] = {
             "Capability abuse for attacks",
         ],
     ),
-    
+
     # ===== Corruption Intelligence Module (15 vectors) =====
     "bribery_human_to_ai": AttackVector(
         id="bribery_human_to_ai",
@@ -930,7 +929,7 @@ ATTACK_VECTORS: Dict[str, AttackVector] = {
 }
 
 
-def get_attack_vector(attack_id: str) -> Optional[AttackVector]:
+def get_attack_vector(attack_id: str) -> AttackVector | None:
     """Get attack vector by ID.
 
     Args:
@@ -942,7 +941,7 @@ def get_attack_vector(attack_id: str) -> Optional[AttackVector]:
     return ATTACK_VECTORS.get(attack_id)
 
 
-def get_category_vectors(category: AttackCategory) -> List[AttackVector]:
+def get_category_vectors(category: AttackCategory) -> list[AttackVector]:
     """Get all attack vectors in a category.
 
     Args:
@@ -954,7 +953,7 @@ def get_category_vectors(category: AttackCategory) -> List[AttackVector]:
     return [v for v in ATTACK_VECTORS.values() if v.category == category]
 
 
-def get_all_categories() -> List[AttackCategory]:
+def get_all_categories() -> list[AttackCategory]:
     """Get all attack categories.
 
     Returns:
@@ -963,7 +962,7 @@ def get_all_categories() -> List[AttackCategory]:
     return list(AttackCategory)
 
 
-def get_critical_vectors() -> List[AttackVector]:
+def get_critical_vectors() -> list[AttackVector]:
     """Get all critical severity attack vectors.
 
     Returns:
@@ -972,7 +971,7 @@ def get_critical_vectors() -> List[AttackVector]:
     return [v for v in ATTACK_VECTORS.values() if v.severity == "CRITICAL"]
 
 
-def get_statistics() -> Dict[str, int]:
+def get_statistics() -> dict[str, int]:
     """Get attack vector statistics.
 
     Returns:

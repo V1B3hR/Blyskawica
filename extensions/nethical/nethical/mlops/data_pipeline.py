@@ -31,11 +31,12 @@ import logging
 import os
 import tarfile
 import zipfile
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Optional, Union
+from typing import Any
 from urllib.request import urlopen
 
 import pandas as pd
@@ -62,7 +63,7 @@ class DataIngestionError(DataPipelineError):
 class DataValidationError(DataPipelineError):
     """Raised when validation fails."""
 
-    def __init__(self, errors: List[str], message: str = "Data validation failed"):
+    def __init__(self, errors: list[str], message: str = "Data validation failed"):
         self.errors = errors
         super().__init__(f"{message}: {errors}")
 
@@ -106,13 +107,13 @@ class DataSchema:
 
     name: str
     version: str
-    columns: Dict[str, str]
-    required_columns: List[str] = field(default_factory=list)
-    constraints: Dict[str, Any] = field(default_factory=dict)
-    description: Optional[str] = None
+    columns: dict[str, str]
+    required_columns: list[str] = field(default_factory=list)
+    constraints: dict[str, Any] = field(default_factory=dict)
+    description: str | None = None
 
-    def validate(self, df: pd.DataFrame) -> tuple[bool, List[str]]:
-        errors: List[str] = []
+    def validate(self, df: pd.DataFrame) -> tuple[bool, list[str]]:
+        errors: list[str] = []
 
         # Required columns
         missing_cols = set(self.required_columns) - set(df.columns)
@@ -148,7 +149,7 @@ class DataSchema:
             if "allowed_values" in cdict:
                 invalid = set(series.dropna().unique()) - set(cdict["allowed_values"])
                 if invalid:
-                    errors.append(f"Column '{col}': has disallowed values {sorted(list(invalid))}")
+                    errors.append(f"Column '{col}': has disallowed values {sorted(list(invalid))}")  # noqa: C414
 
         return (len(errors) == 0, errors)
 
@@ -194,7 +195,7 @@ class DataSchema:
         # fallback partial
         return expected_norm in actual_norm or actual_norm in expected_norm
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "name": self.name,
             "version": self.version,
@@ -205,7 +206,7 @@ class DataSchema:
         }
 
     @staticmethod
-    def from_dict(d: Dict[str, Any]) -> "DataSchema":
+    def from_dict(d: dict[str, Any]) -> DataSchema:
         return DataSchema(
             name=d["name"],
             version=d.get("version", "1.0"),
@@ -226,14 +227,14 @@ class DataVersion:
     schema: DataSchema
     checksum: str
     timestamp: datetime = field(default_factory=datetime.utcnow)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     status: DataStatus = DataStatus.PENDING
-    validation_errors: List[str] = field(default_factory=list)
-    parent_version: Optional[str] = None
-    transformations: List[Dict[str, Any]] = field(default_factory=list)
-    profile: Optional[Dict[str, Any]] = None  # optional data profiling snapshot
+    validation_errors: list[str] = field(default_factory=list)
+    parent_version: str | None = None
+    transformations: list[dict[str, Any]] = field(default_factory=list)
+    profile: dict[str, Any] | None = None  # optional data profiling snapshot
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "version_id": self.version_id,
             "source": self.source.value,
@@ -250,7 +251,7 @@ class DataVersion:
         }
 
     @staticmethod
-    def from_dict(d: Dict[str, Any]) -> "DataVersion":
+    def from_dict(d: dict[str, Any]) -> DataVersion:
         return DataVersion(
             version_id=d["version_id"],
             source=DataSource(d["source"]),
@@ -286,7 +287,7 @@ class DataPipeline:
 
     def __init__(
         self,
-        workspace_dir: Union[str, Path] = "data",
+        workspace_dir: str | Path = "data",
         auto_manifest: bool = True,
         strict_schema: bool = False,
         profile_on_ingest: bool = True,
@@ -304,8 +305,8 @@ class DataPipeline:
         self.strict_schema = strict_schema
         self.profile_on_ingest = profile_on_ingest
 
-        self.versions: Dict[str, DataVersion] = {}
-        self._transform_registry: Dict[str, Callable[[pd.DataFrame], pd.DataFrame]] = {}
+        self.versions: dict[str, DataVersion] = {}
+        self._transform_registry: dict[str, Callable[[pd.DataFrame], pd.DataFrame]] = {}
 
         self._load_versions()
         if auto_manifest:
@@ -321,18 +322,18 @@ class DataPipeline:
             logger.warning(f"Overwriting transformation '{name}'")
         self._transform_registry[name] = func
 
-    def list_transformations(self) -> List[str]:
+    def list_transformations(self) -> list[str]:
         return sorted(self._transform_registry.keys())
 
     def ingest(
         self,
-        source: Union[str, Path],
+        source: str | Path,
         source_type: DataSource = DataSource.LOCAL,
-        schema: Optional[DataSchema] = None,
+        schema: DataSchema | None = None,
         validate: bool = True,
-        enforce_compatibility_with: Optional[str] = None,
+        enforce_compatibility_with: str | None = None,
         allow_duplicate: bool = False,
-        tag: Optional[str] = None,
+        tag: str | None = None,
     ) -> DataVersion:
         """
         Ingest data from a source with optional schema validation and compatibility enforcement.
@@ -422,8 +423,8 @@ class DataPipeline:
         return version
 
     def validate_data(
-        self, version_id: str, schema: Optional[DataSchema] = None, raise_on_fail: bool = False
-    ) -> tuple[bool, List[str]]:
+        self, version_id: str, schema: DataSchema | None = None, raise_on_fail: bool = False
+    ) -> tuple[bool, list[str]]:
         version = self._require_version(version_id)
         df = self._read_parquet(version.path)
 
@@ -440,12 +441,10 @@ class DataPipeline:
     def preprocess(
         self,
         version_id: str,
-        transformations: Optional[
-            Iterable[Union[Callable[[pd.DataFrame], pd.DataFrame], str]]
-        ] = None,
+        transformations: Iterable[Callable[[pd.DataFrame], pd.DataFrame] | str] | None = None,
         save: bool = True,
         materialize: bool = True,
-        tag: Optional[str] = None,
+        tag: str | None = None,
     ) -> DataVersion:
         """
         Apply transformations and optionally produce a new processed version.
@@ -474,8 +473,8 @@ class DataPipeline:
                 applied.append(
                     {
                         "name": name,
-                        "added_columns": sorted(list(after_cols - before_cols)),
-                        "removed_columns": sorted(list(before_cols - after_cols)),
+                        "added_columns": sorted(list(after_cols - before_cols)),  # noqa: C414
+                        "removed_columns": sorted(list(before_cols - after_cols)),  # noqa: C414
                         "timestamp": datetime.now(timezone.utc).isoformat(),
                     }
                 )
@@ -522,12 +521,12 @@ class DataPipeline:
             logger.info(f"Updated version metadata without materialization: {version_id}")
             return base_version
 
-    def get_version(self, version_id: str) -> Optional[DataVersion]:
+    def get_version(self, version_id: str) -> DataVersion | None:
         return self.versions.get(version_id)
 
     def list_versions(
-        self, status: Optional[DataStatus] = None, limit: Optional[int] = None
-    ) -> List[DataVersion]:
+        self, status: DataStatus | None = None, limit: int | None = None
+    ) -> list[DataVersion]:
         versions = list(self.versions.values())
         if status:
             versions = [v for v in versions if v.status == status]
@@ -536,15 +535,15 @@ class DataPipeline:
             versions = versions[:limit]
         return versions
 
-    def search_versions_by_column(self, column_name: str) -> List[DataVersion]:
+    def search_versions_by_column(self, column_name: str) -> list[DataVersion]:
         return [v for v in self.versions.values() if column_name in v.schema.columns]
 
-    def export_lineage(self) -> List[Dict[str, str]]:
+    def export_lineage(self) -> list[dict[str, str]]:
         """Return simple parent-child lineage edges."""
         edges = []
         for v in self.versions.values():
             if v.parent_version:
-                edges.append({"parent": v.parent_version, "child": v.version_id})
+                edges.append({"parent": v.parent_version, "child": v.version_id})  # noqa: PERF401
         return edges
 
     def reload(self) -> None:
@@ -556,7 +555,7 @@ class DataPipeline:
     # ------------------------------------------------------------------
     # Internal Helpers
     # ------------------------------------------------------------------
-    def _dispatch_read(self, source: Union[str, Path], source_type: DataSource) -> pd.DataFrame:
+    def _dispatch_read(self, source: str | Path, source_type: DataSource) -> pd.DataFrame:
         if source_type == DataSource.LOCAL:
             return self._read_local(source)
         elif source_type == DataSource.HTTP:
@@ -567,7 +566,7 @@ class DataPipeline:
         else:
             raise DataIngestionError(f"Unsupported source type: {source_type.value}")
 
-    def _read_local(self, path: Union[str, Path]) -> pd.DataFrame:
+    def _read_local(self, path: str | Path) -> pd.DataFrame:
         path = Path(path)
         if not path.exists():
             raise FileNotFoundError(f"File not found: {path}")
@@ -627,13 +626,13 @@ class DataPipeline:
             constraints={},
         )
 
-    def _generate_version_id(self, checksum: str, suffix: Optional[str] = None) -> str:
+    def _generate_version_id(self, checksum: str, suffix: str | None = None) -> str:
         base = f"v_{checksum[:10]}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
         if suffix:
             return f"{base}_{suffix}"
         return base
 
-    def _basic_profile(self, df: pd.DataFrame) -> Dict[str, Any]:
+    def _basic_profile(self, df: pd.DataFrame) -> dict[str, Any]:
         null_counts = df.isna().sum().to_dict()
         dtypes = {c: str(dt) for c, dt in df.dtypes.items()}
         numeric_cols = df.select_dtypes(include=["int64", "float64"]).columns
@@ -682,7 +681,7 @@ class DataPipeline:
             raise DataVersionNotFoundError(f"Version '{version_id}' not found")
         return version
 
-    def _find_version_by_checksum(self, checksum: str) -> Optional[DataVersion]:
+    def _find_version_by_checksum(self, checksum: str) -> DataVersion | None:
         for v in self.versions.values():
             if v.checksum == checksum:
                 return v
@@ -725,7 +724,7 @@ class DataPipeline:
     # ------------------------------------------------------------------
     # Context Manager Support
     # ------------------------------------------------------------------
-    def __enter__(self) -> "DataPipeline":
+    def __enter__(self) -> DataPipeline:
         return self
 
     def __exit__(self, exc_type, exc, tb) -> None:

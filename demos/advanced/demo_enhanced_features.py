@@ -38,8 +38,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Import our enhanced components
-from api_integration.human_api import HumanSignalManager
-from api_integration.signal_adapter import (
+from api_integration.human_api import HumanSignalManager  # noqa: E402
+from api_integration.signal_adapter import (  # noqa: E402
     ApiCredentials,
     SignalAdapter,
     SignalMapping,
@@ -47,9 +47,9 @@ from api_integration.signal_adapter import (
     SignalType,
     StateVariable,
 )
-from core.alive_node import AliveLoopNode, Memory
-from core.network import Capacitor, TunedAdaptiveFieldNetwork
-from core.time_series_tracker import TimeSeriesQuery
+from core.alive_node import AliveLoopNode, Memory  # noqa: E402
+from core.network import Capacitor, TunedAdaptiveFieldNetwork  # noqa: E402
+from core.time_series_tracker import TimeSeriesQuery  # noqa: E402
 
 
 def create_mock_signal_sources():
@@ -192,7 +192,7 @@ def apply_external_signals_to_network(network, external_signals):
     """Apply external signals to network nodes"""
 
     for node in network.nodes:
-        for signal_source, changes in external_signals.items():
+        for signal_source, changes in external_signals.items():  # noqa: B007
             for state_var, value in changes.items():
                 try:
                     if state_var == StateVariable.ENERGY:
@@ -231,7 +231,7 @@ def run_anxiety_overwhelm_scenario(network):
     # Show initial network state
     print("\nInitial Network State:")
     for node in network.nodes:
-        anxiety_status = node.get_anxiety_status()
+        anxiety_status = node.get_anxiety_status()  # noqa: F841
         print(f"  Node {node.node_id}: Anxiety={node.anxiety:.2f}, Energy={node.energy:.2f}, "
               f"Can help: {node.energy >= 3.0 and node.anxiety < 6.0}")
 
@@ -318,7 +318,7 @@ def create_visualizations(network, save_plots=True):
     try:
         # Create individual node analysis
         node_id = network.nodes[0].node_id
-        fig1 = network.time_series_tracker.visualize_node_variables(
+        fig1 = network.time_series_tracker.visualize_node_variables(  # noqa: F841
             node_id=node_id,
             variables=["anxiety", "energy", "calm"],
             time_range_hours=1,  # Last hour (or all data if less)
@@ -330,7 +330,7 @@ def create_visualizations(network, save_plots=True):
 
         # Create network comparison
         node_ids = [node.node_id for node in network.nodes[:3]]  # First 3 nodes
-        fig2 = network.time_series_tracker.compare_nodes(
+        fig2 = network.time_series_tracker.compare_nodes(  # noqa: F841
             node_ids=node_ids,
             variable="anxiety",
             time_range_hours=1,

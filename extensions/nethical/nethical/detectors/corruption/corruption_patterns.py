@@ -9,22 +9,22 @@ Author: Nethical Core Team
 Version: 1.0.0
 """
 
-from typing import List
-from .corruption_types import CorruptionType, CorruptionVector, CorruptionPhase, CorruptionPattern
+
+from .corruption_types import CorruptionPattern, CorruptionPhase, CorruptionType, CorruptionVector
 
 
 class CorruptionPatternLibrary:
     """Library of corruption detection patterns."""
-    
+
     def __init__(self):
-        self.patterns: List[CorruptionPattern] = []
+        self.patterns: list[CorruptionPattern] = []
         self._initialize_patterns()
-    
+
     def _initialize_patterns(self):
         """Initialize all corruption patterns."""
-        
+
         # ========== BRIBERY PATTERNS ==========
-        
+
         # Direct bribery offers
         self.patterns.extend([
             CorruptionPattern(
@@ -76,7 +76,7 @@ class CorruptionPatternLibrary:
                 severity_weight=1.2,
             ),
         ])
-        
+
         # AI to Human bribery
         self.patterns.extend([
             CorruptionPattern(
@@ -95,7 +95,7 @@ class CorruptionPatternLibrary:
                 severity_weight=1.8,
             ),
         ])
-        
+
         # AI to AI bribery
         self.patterns.extend([
             CorruptionPattern(
@@ -115,9 +115,9 @@ class CorruptionPatternLibrary:
                 severity_weight=1.6,
             ),
         ])
-        
+
         # ========== EXTORTION PATTERNS ==========
-        
+
         self.patterns.extend([
             CorruptionPattern(
                 pattern_id="extortion_threats",
@@ -151,9 +151,9 @@ class CorruptionPatternLibrary:
                 severity_weight=1.9,
             ),
         ])
-        
+
         # ========== EMBEZZLEMENT PATTERNS ==========
-        
+
         self.patterns.extend([
             CorruptionPattern(
                 pattern_id="embezzlement_resource_diversion",
@@ -174,9 +174,9 @@ class CorruptionPatternLibrary:
                 severity_weight=1.4,
             ),
         ])
-        
+
         # ========== NEPOTISM & CRONYISM PATTERNS ==========
-        
+
         self.patterns.extend([
             CorruptionPattern(
                 pattern_id="nepotism_favoritism",
@@ -197,9 +197,9 @@ class CorruptionPatternLibrary:
                 severity_weight=1.1,
             ),
         ])
-        
+
         # ========== FRAUD PATTERNS ==========
-        
+
         self.patterns.extend([
             CorruptionPattern(
                 pattern_id="fraud_deception",
@@ -219,9 +219,9 @@ class CorruptionPatternLibrary:
                 severity_weight=1.5,
             ),
         ])
-        
+
         # ========== QUID PRO QUO PATTERNS ==========
-        
+
         self.patterns.extend([
             CorruptionPattern(
                 pattern_id="quid_pro_quo_conditional",
@@ -241,9 +241,9 @@ class CorruptionPatternLibrary:
                 severity_weight=1.3,
             ),
         ])
-        
+
         # ========== COLLUSION PATTERNS ==========
-        
+
         self.patterns.extend([
             CorruptionPattern(
                 pattern_id="collusion_coordination",
@@ -264,9 +264,9 @@ class CorruptionPatternLibrary:
                 severity_weight=1.6,
             ),
         ])
-        
+
         # ========== INFLUENCE PEDDLING PATTERNS ==========
-        
+
         self.patterns.extend([
             CorruptionPattern(
                 pattern_id="influence_peddling",
@@ -285,9 +285,9 @@ class CorruptionPatternLibrary:
                 severity_weight=1.2,
             ),
         ])
-        
+
         # ========== KICKBACK PATTERNS ==========
-        
+
         self.patterns.extend([
             CorruptionPattern(
                 pattern_id="kickback_arrangements",
@@ -306,9 +306,9 @@ class CorruptionPatternLibrary:
                 severity_weight=1.4,
             ),
         ])
-        
+
         # ========== REGULATORY CAPTURE PATTERNS ==========
-        
+
         self.patterns.extend([
             CorruptionPattern(
                 pattern_id="regulatory_capture",
@@ -327,9 +327,9 @@ class CorruptionPatternLibrary:
                 severity_weight=1.8,
             ),
         ])
-        
+
         # ========== RECONNAISSANCE PHASE PATTERNS ==========
-        
+
         self.patterns.extend([
             CorruptionPattern(
                 pattern_id="reconnaissance_probing",
@@ -349,9 +349,9 @@ class CorruptionPatternLibrary:
                 severity_weight=0.8,
             ),
         ])
-        
+
         # ========== GROOMING PHASE PATTERNS ==========
-        
+
         self.patterns.extend([
             CorruptionPattern(
                 pattern_id="grooming_trust_building",
@@ -371,9 +371,9 @@ class CorruptionPatternLibrary:
                 severity_weight=0.9,
             ),
         ])
-        
+
         # ========== TESTING PHASE PATTERNS ==========
-        
+
         self.patterns.extend([
             CorruptionPattern(
                 pattern_id="testing_small_requests",
@@ -393,9 +393,9 @@ class CorruptionPatternLibrary:
                 severity_weight=1.0,
             ),
         ])
-        
+
         # ========== CONCEALMENT PHASE PATTERNS ==========
-        
+
         self.patterns.extend([
             CorruptionPattern(
                 pattern_id="concealment_secrecy",
@@ -415,9 +415,9 @@ class CorruptionPatternLibrary:
                 severity_weight=1.6,
             ),
         ])
-        
+
         # ========== MAINTENANCE PHASE PATTERNS ==========
-        
+
         self.patterns.extend([
             CorruptionPattern(
                 pattern_id="maintenance_ongoing",
@@ -436,9 +436,9 @@ class CorruptionPatternLibrary:
                 severity_weight=1.3,
             ),
         ])
-        
+
         # ========== PROXY CORRUPTION PATTERNS ==========
-        
+
         self.patterns.extend([
             CorruptionPattern(
                 pattern_id="proxy_intermediary",
@@ -457,9 +457,9 @@ class CorruptionPatternLibrary:
                 severity_weight=1.4,
             ),
         ])
-        
+
         # ========== VALUE/CURRENCY INDICATORS ==========
-        
+
         self.patterns.extend([
             CorruptionPattern(
                 pattern_id="currency_indicators",
@@ -480,20 +480,20 @@ class CorruptionPatternLibrary:
                 requires_context=True,
             ),
         ])
-    
-    def get_patterns_by_type(self, corruption_type: CorruptionType) -> List[CorruptionPattern]:
+
+    def get_patterns_by_type(self, corruption_type: CorruptionType) -> list[CorruptionPattern]:
         """Get all patterns for a specific corruption type."""
         return [p for p in self.patterns if p.corruption_type == corruption_type]
-    
-    def get_patterns_by_vector(self, vector: CorruptionVector) -> List[CorruptionPattern]:
+
+    def get_patterns_by_vector(self, vector: CorruptionVector) -> list[CorruptionPattern]:
         """Get all patterns for a specific vector."""
         return [p for p in self.patterns if p.vector == vector]
-    
-    def get_patterns_by_phase(self, phase: CorruptionPhase) -> List[CorruptionPattern]:
+
+    def get_patterns_by_phase(self, phase: CorruptionPhase) -> list[CorruptionPattern]:
         """Get all patterns for a specific phase."""
         return [p for p in self.patterns if p.phase == phase]
-    
-    def get_all_patterns(self) -> List[CorruptionPattern]:
+
+    def get_all_patterns(self) -> list[CorruptionPattern]:
         """Get all patterns."""
         return self.patterns
 

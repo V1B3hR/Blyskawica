@@ -220,7 +220,7 @@ class MitreAttackMapper:
                 evidence.extend(matches)
 
         # Extract unique tactics
-        tactics = list(set(t.tactic for t in matched_techniques))
+        tactics = list(set(t.tactic for t in matched_techniques))  # noqa: C401
 
         # Calculate overall confidence
         overall_confidence = min(len(matched_techniques) * 0.25, 1.0) if matched_techniques else 0.0

@@ -20,7 +20,7 @@ def apply_gaussian_drift(x: torch.Tensor, sigma: float = 0.3) -> torch.Tensor:
         
     Returns:
         Tensor with Gaussian noise added
-    """
+    """  # noqa: W293
     return x + torch.randn_like(x) * sigma
 
 
@@ -34,7 +34,7 @@ def apply_shift(x: torch.Tensor, delta: float = 0.5) -> torch.Tensor:
         
     Returns:
         Tensor with constant shift added
-    """
+    """  # noqa: W293
     return x + delta
 
 
@@ -57,7 +57,7 @@ def alternating_drift(
         
     Returns:
         Tensor with alternating drift applied
-    """
+    """  # noqa: W293
     # Apply drift only during odd periods
     if (step // period) % 2 == 1:
         if mode == "gaussian":

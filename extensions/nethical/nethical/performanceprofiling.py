@@ -20,8 +20,8 @@ Environment:
 from __future__ import annotations
 
 import asyncio
-import cProfile
 import contextlib
+import cProfile
 import functools
 import io
 import json
@@ -31,11 +31,11 @@ import pstats
 import statistics
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Union
-
+from typing import Any
 
 logger = logging.getLogger("nethical.performanceprofiling")
 
@@ -48,10 +48,10 @@ class ProfileResult:
     execution_time_ms: float
     call_count: int
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    stats: Optional[Dict[str, Any]] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    stats: dict[str, Any] | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
         return {
             "function_name": self.function_name,
@@ -70,7 +70,7 @@ class Benchmark:
     name: str
     baseline_ms: float
     tolerance_pct: float = 10.0  # 10% tolerance by default
-    samples: List[float] = field(default_factory=list)
+    samples: list[float] = field(default_factory=list)
     last_updated: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     def check_regression(self, current_ms: float) -> tuple[bool, float]:
@@ -100,7 +100,7 @@ class Benchmark:
             self.samples = self.samples[-100:]
         self.last_updated = datetime.now(timezone.utc)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
         recent_avg = statistics.mean(self.samples) if self.samples else None
         recent_std = statistics.stdev(self.samples) if len(self.samples) > 1 else None
@@ -119,7 +119,7 @@ class PerformanceProfiler:
     """Profile function and method performance"""
 
     def __init__(
-        self, results_dir: Union[str, Path] = "profiling_results", enabled: Optional[bool] = None
+        self, results_dir: str | Path = "profiling_results", enabled: bool | None = None
     ):
         # Enable/disable can be controlled by env var, default enabled
         if enabled is None:
@@ -131,8 +131,8 @@ class PerformanceProfiler:
         self.results_dir = Path(results_dir)
         self.results_dir.mkdir(parents=True, exist_ok=True)
 
-        self.results: Dict[str, List[ProfileResult]] = {}
-        self.benchmarks: Dict[str, Benchmark] = {}
+        self.results: dict[str, list[ProfileResult]] = {}
+        self.benchmarks: dict[str, Benchmark] = {}
 
         self._lock = threading.RLock()
         self._benchmarks_file = self.results_dir / "benchmarks.json"
@@ -146,11 +146,11 @@ class PerformanceProfiler:
 
     def profile(
         self,
-        func: Optional[Callable] = None,
+        func: Callable | None = None,
         *,
-        name: Optional[str] = None,
+        name: str | None = None,
         detailed: bool = False,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ):
         """
         Decorator to profile function performance (sync and async).
@@ -239,7 +239,7 @@ class PerformanceProfiler:
             return decorator(func)
 
     @contextlib.contextmanager
-    def profile_section(self, name: str, *, metadata: Optional[Dict[str, Any]] = None):
+    def profile_section(self, name: str, *, metadata: dict[str, Any] | None = None):
         """
         Context manager to profile an arbitrary code block as a 'section'.
 
@@ -267,7 +267,7 @@ class PerformanceProfiler:
 
     def benchmark_function(
         self, func: Callable, iterations: int = 100, *args, **kwargs
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Benchmark a function by running it multiple times
 
@@ -280,7 +280,7 @@ class PerformanceProfiler:
             Benchmark statistics
         """
         func_name = func.__name__
-        times_ms: List[float] = []
+        times_ms: list[float] = []
 
         logger.info("Benchmarking %s with %d iterations...", func_name, iterations)
 
@@ -326,7 +326,7 @@ class PerformanceProfiler:
             "Set benchmark '%s': %.2fms (tolerance: ±%.1f%%)", name, baseline_ms, tolerance_pct
         )
 
-    def get_results(self, function_name: Optional[str] = None) -> Dict[str, Any]:
+    def get_results(self, function_name: str | None = None) -> dict[str, Any]:
         """Get profiling results"""
         with self._lock:
             if function_name:
@@ -346,7 +346,7 @@ class PerformanceProfiler:
                 }
             else:
                 # Return summary for all functions
-                summary: Dict[str, Any] = {}
+                summary: dict[str, Any] = {}
                 for func_name, res_list in self.results.items():
                     times = [r.execution_time_ms for r in res_list]
                     summary[func_name] = {
@@ -356,9 +356,9 @@ class PerformanceProfiler:
                     }
                 return summary
 
-    def generate_report(self, output_file: Optional[Path] = None) -> str:
+    def generate_report(self, output_file: Path | None = None) -> str:
         """Generate a performance report (text)"""
-        report: List[str] = []
+        report: list[str] = []
         report.append("=" * 80)
         report.append("PERFORMANCE PROFILING REPORT")
         report.append("=" * 80)
@@ -414,7 +414,7 @@ class PerformanceProfiler:
 
     def _extract_cprofile_stats(
         self, profiler: cProfile.Profile, top_n: int = 20
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Extract a structured cProfile summary.
         Returns a dict with 'top' list and 'text' truncated representation.
@@ -426,7 +426,7 @@ class PerformanceProfiler:
 
         # ps.stats: {(filename, line, funcname): (cc, nc, tt, ct, callers)}
         entries = []
-        for (filename, line, funcname), (cc, nc, tt, ct, callers) in ps.stats.items():
+        for (filename, line, funcname), (cc, nc, tt, ct, callers) in ps.stats.items():  # noqa: B007
             entries.append(
                 {
                     "file": filename,
@@ -505,7 +505,7 @@ class PerformanceProfiler:
                 logger.error("Failed to load benchmarks: %s", e)
 
     @staticmethod
-    def _percentile(values: List[float], p: float) -> float:
+    def _percentile(values: list[float], p: float) -> float:
         if not values:
             return 0.0
         # Use statistics.quantiles for robustness; fallback to max for small samples
@@ -529,18 +529,18 @@ _profiler = PerformanceProfiler()
 
 
 def profile(
-    func: Optional[Callable] = None,
+    func: Callable | None = None,
     *,
-    name: Optional[str] = None,
+    name: str | None = None,
     detailed: bool = False,
-    metadata: Optional[Dict[str, Any]] = None,
+    metadata: dict[str, Any] | None = None,
 ):
     """Convenience decorator using global profiler"""
     return _profiler.profile(func, name=name, detailed=detailed, metadata=metadata)
 
 
 @contextlib.contextmanager
-def profile_section(name: str, *, metadata: Optional[Dict[str, Any]] = None):
+def profile_section(name: str, *, metadata: dict[str, Any] | None = None):
     """Convenience context manager using global profiler"""
     with _profiler.profile_section(name, metadata=metadata):
         yield

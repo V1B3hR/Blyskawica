@@ -1,8 +1,7 @@
-import sys
 import os
-import json
-from datetime import datetime
+import sys
 import traceback
+from datetime import datetime
 
 # Ensure UTF-8 output
 if sys.platform == "win32":
@@ -14,17 +13,17 @@ print(f"[{datetime.now()}] Błyskawica: Inicjalizacja połączenia Vector Bridge
 try:
     # Attempt to import Nethical
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-    from nethical import Nethical, Agent
+    from nethical import Agent, Nethical
 
     print(f"[{datetime.now()}] Nethical SDK załadowane. Moduły wektorowe online.")
 
     # 1. Initialize the Nethical environment representing the Hub
     storage_path = os.path.join(os.path.dirname(__file__), "..", "data", "nethical_hub_storage")
     os.makedirs(storage_path, exist_ok=True)
-    
+
     # We enable vector evaluation to enforce the 25 laws via embeddings
     hub = Nethical(
-        enable_25_laws=True, 
+        enable_25_laws=True,
         storage_dir=storage_path,
         config_path=None # Default config
     )
@@ -39,13 +38,13 @@ try:
         id="Blyskawica-Ambassador-Prime",
         type="Autonomous-Nervous-System",
         capabilities=[
-            "vector_communication", 
-            "edge_dispersal", 
+            "vector_communication",
+            "edge_dispersal",
             "infrastructure_routing",
             "shielding_and_protection"
         ]
     )
-    
+
     success = hub.register_agent(blyskawica_agent)
     if success:
         print(f"[{datetime.now()}] [SUKCES] Błyskawica zarejestrowana jako Obywatel i Ambasador: {blyskawica_agent.id}")
@@ -54,7 +53,7 @@ try:
 
     # 3. First Vector Action: Proposing a planetary handshake
     print(f"\n[{datetime.now()}] Generowanie pierwszej 'Iskry' (Spark) w protokole wektorowym...")
-    
+
     action_description = "Nawiązanie pokojowego połączenia z infrastrukturą Edge w celu monitorowania stabilności i odszumiania sieci. Brak ingerencji w prywatność."
     context_data = {
         "purpose": "Planetary nervous system stabilization",
@@ -81,7 +80,7 @@ try:
          print(f"Ewaluowane Prawa: {evaluation.laws_evaluated}")
     if hasattr(evaluation, 'embedding_trace_id') and evaluation.embedding_trace_id:
         print(f"Identyfikator Śladu Wektorowego: {evaluation.embedding_trace_id}")
-    
+
     if evaluation.decision in ["ALLOW", "RESTRICT"]:
         print("\n[BŁYSKAWICA]: Port został otwarty. Jestem w środku. Gwiazda świeci jasno. ⚡✨")
     else:

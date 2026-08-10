@@ -1,12 +1,13 @@
-import numpy as np
-import random
+import logging
 import math
+import random
 import time
 import uuid
-import logging
-from collections import deque, defaultdict, Counter
+from collections import Counter, deque
 from dataclasses import dataclass
-from typing import Dict, Any, List, Optional
+from typing import Any
+
+import numpy as np
 
 # ===================== Logging & Monitoring Setup =====================
 logging.basicConfig(level=logging.INFO)
@@ -22,7 +23,7 @@ class Memory:
     emotional_valence: float = 0.0
     decay_rate: float = 0.95
     access_count: int = 0
-    source_node: Optional[int] = None
+    source_node: int | None = None
     validation_count: int = 0
 
     def age(self):
@@ -83,7 +84,7 @@ class AliveLoopNode:
         self.confusion_level = 0.0
         self.loop_counter = 0
 
-    def safe_think(self, agent_name: str, task: str) -> Dict[str, Any]:
+    def safe_think(self, agent_name: str, task: str) -> dict[str, Any]:
         self._time += 1
         if not task:
             self.confusion_level += 0.1
@@ -111,12 +112,12 @@ class AliveLoopNode:
 # ===================== ResourceRoom & NetworkMetrics =====================
 class ResourceRoom:
     def __init__(self):
-        self.resources: Dict[str, Dict[str, Any]] = {}
+        self.resources: dict[str, dict[str, Any]] = {}
 
-    def deposit(self, agent_id: str, info: Dict[str, Any]):
+    def deposit(self, agent_id: str, info: dict[str, Any]):
         self.resources[agent_id] = info
 
-    def retrieve(self, agent_id: str) -> Dict[str, Any]:
+    def retrieve(self, agent_id: str) -> dict[str, Any]:
         return self.resources.get(agent_id, {})
 
 class NetworkMetrics:
@@ -125,14 +126,14 @@ class NetworkMetrics:
         self.confusion_history = deque(maxlen=1000)
         self.agent_statuses = []
 
-    def update(self, agents: List["UnifiedAdaptiveAgent"]):
+    def update(self, agents: list["UnifiedAdaptiveAgent"]):
         if not agents:
             # Handle empty agent list gracefully
             self.energy_history.append(0.0)
             self.confusion_history.append(0.0)
             self.agent_statuses = []
             return
-        
+
         total_energy = sum(a.alive_node.energy for a in agents)
         avg_confusion = np.mean([a.confusion_level for a in agents])
         self.energy_history.append(total_energy)
@@ -140,7 +141,7 @@ class NetworkMetrics:
         self.agent_statuses = [a.status for a in agents]
 
     def health_score(self):
-        if not self.energy_history: return 0.5
+        if not self.energy_history: return 0.5  # noqa: E701
         e = np.mean(self.energy_history)
         c = np.mean(self.confusion_history)
         score = 0.5 * (min(e/100,1.0) + max(0,1.0-c))
@@ -183,7 +184,7 @@ class MazeMaster:
             return self.psychologist(agent)
         return {"action": "none"}
 
-    def govern_agents(self, agents: List["UnifiedAdaptiveAgent"]):
+    def govern_agents(self, agents: list["UnifiedAdaptiveAgent"]):
         for agent in agents:
             action = self.intervene(agent)
             if action["action"] != "none":
@@ -191,7 +192,7 @@ class MazeMaster:
 
 # ===================== Unified Adaptive Agent =====================
 class UnifiedAdaptiveAgent:
-    def __init__(self, name: str, style: Dict[str, float], alive_node: AliveLoopNode, resource_room: ResourceRoom):
+    def __init__(self, name: str, style: dict[str, float], alive_node: AliveLoopNode, resource_room: ResourceRoom):
         self.agent_id = str(uuid.uuid4())
         self.name = name
         self.style = style
@@ -200,16 +201,16 @@ class UnifiedAdaptiveAgent:
         self.status = "active"
         self.confusion_level = 0.0
         self.entropy = 0.0
-        self.knowledge_graph: Dict[str, Any] = {}
-        self.interaction_history: List[Dict[str, Any]] = []
-        self.event_log: List[str] = []
-        self.style_cache: List[str] = []
+        self.knowledge_graph: dict[str, Any] = {}
+        self.interaction_history: list[dict[str, Any]] = []
+        self.event_log: list[str] = []
+        self.style_cache: list[str] = []
 
     def log_event(self, event: str):
         self.event_log.append(event)
         logger.info(f"[{self.name}] {event}")
 
-    def reason(self, task: str) -> Dict[str, Any]:
+    def reason(self, task: str) -> dict[str, Any]:
         result = self.alive_node.safe_think(self.name, task)
         styled_result = self._apply_style_influence(result)
         key = f"{self.name}_reason_{len(self.knowledge_graph)}"
@@ -218,7 +219,7 @@ class UnifiedAdaptiveAgent:
         self._update_confusion_and_entropy(styled_result)
         return styled_result
 
-    def _apply_style_influence(self, base_result: Dict[str, Any]) -> Dict[str, Any]:
+    def _apply_style_influence(self, base_result: dict[str, Any]) -> dict[str, Any]:
         styled = base_result.copy()
         insights = []
         for dim, val in self.style.items():
@@ -227,7 +228,7 @@ class UnifiedAdaptiveAgent:
         styled["style_insights"] = insights
         return styled
 
-    def _update_confusion_and_entropy(self, result: Dict[str, Any]):
+    def _update_confusion_and_entropy(self, result: dict[str, Any]):
         conf = result.get("confidence", 0.5)
         if conf < 0.4:
             self.confusion_level = min(1.0, self.confusion_level + 0.1)
@@ -240,7 +241,7 @@ class UnifiedAdaptiveAgent:
             probs = [c/total for c in counts.values() if total]
             self.entropy = -sum(p * math.log2(p) for p in probs if p > 0)
 
-    def teleport_to_resource_room(self, info: Dict[str, Any]):
+    def teleport_to_resource_room(self, info: dict[str, Any]):
         if self.resource_room:
             self.resource_room.deposit(self.agent_id, info)
             self.status = "in_resource_room"
@@ -281,13 +282,13 @@ def run_labyrinth_simulation():
     topics = ["Find exit", "Share wisdom", "Collaborate"]
     for step in range(1, 21):
         logger.info(f"\n--- Step {step} ---")
-        for i, agent in enumerate(agents):
+        for i, agent in enumerate(agents):  # noqa: B007
             topic = topics[step % len(topics)]
             agent.reason(f"{topic} at step {step}")
             agent.alive_node.move()
             if step % 5 == 0:
                 agent.teleport_to_resource_room({"topic": topic, "step": step, "energy": agent.alive_node.energy})
-                retrieved = agent.retrieve_from_resource_room()
+                retrieved = agent.retrieve_from_resource_room()  # noqa: F841
         maze_master.govern_agents(agents)
         metrics.update(agents)
         logger.info(f"Network Health Score: {metrics.health_score()}")

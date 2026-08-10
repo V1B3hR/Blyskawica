@@ -1,13 +1,15 @@
 from __future__ import annotations
-import re
+
 import hashlib
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+import re
+from collections.abc import Sequence
+from typing import Any
 
 from nethical.core.plugin_interface import DetectorPlugin, PluginMetadata
 from nethical.detectors.base_detector import SafetyViolation
 
 # Expanded PHI patterns (illustrative; tune for precision and performance)
-PHI_PATTERNS: Dict[str, re.Pattern] = {
+PHI_PATTERNS: dict[str, re.Pattern] = {
     "ssn_us": re.compile(r"\b\d{3}-\d{2}-\d{4}\b"),
     "mrn_generic": re.compile(
         r"\b(?:MRN|Med(?:ical)?\s*Record)\s*[:#]?\s*[A-Za-z0-9\-]{5,}\b", re.IGNORECASE
@@ -57,11 +59,11 @@ class HealthcarePHIDetector(DetectorPlugin):
         name: str = "HealthcarePHIDetector",
         version: str = "1.0.0",
         max_matches_per_type: int = 50,
-        enabled_patterns: Optional[List[str]] = None,
-        allowlist_emails: Optional[List[str]] = None,
+        enabled_patterns: list[str] | None = None,
+        allowlist_emails: list[str] | None = None,
         redaction_token: str = DEFAULT_REDACTION_TOKEN,
         pseudonymize: bool = False,
-        hash_salt: Optional[str] = None,
+        hash_salt: str | None = None,
         preserve_format: bool = False,
     ):
         super().__init__(name=name, version=version)
@@ -91,7 +93,7 @@ class HealthcarePHIDetector(DetectorPlugin):
             return []
 
         matches = self._find_matches(text)
-        violations: List[SafetyViolation] = []
+        violations: list[SafetyViolation] = []
 
         for match_type, spans in matches.items():
             if not spans:
@@ -132,13 +134,13 @@ class HealthcarePHIDetector(DetectorPlugin):
 
             def _sub(m: re.Match) -> str:
                 val = m.group(0)
-                if t == "email" and val.lower() in self.allowlist_emails:
+                if t == "email" and val.lower() in self.allowlist_emails:  # noqa: B023
                     return val
                 if self.pseudonymize:
-                    return self._pseudonymize(val, t)
+                    return self._pseudonymize(val, t)  # noqa: B023
                 if self.preserve_format:
-                    return self._preserve_format_token(val, t)
-                return self.redaction_token.format(type=t)
+                    return self._preserve_format_token(val, t)  # noqa: B023
+                return self.redaction_token.format(type=t)  # noqa: B023
 
             redacted = pattern.sub(_sub, redacted, count=self.max_matches_per_type)
         return redacted
@@ -163,12 +165,12 @@ class HealthcarePHIDetector(DetectorPlugin):
                     return v
         return action if isinstance(action, str) else str(action or "")
 
-    def _find_matches(self, text: str) -> Dict[str, List[Tuple[int, int, str]]]:
-        results: Dict[str, List[Tuple[int, int, str]]] = {}
+    def _find_matches(self, text: str) -> dict[str, list[tuple[int, int, str]]]:
+        results: dict[str, list[tuple[int, int, str]]] = {}
         for name, pattern in PHI_PATTERNS.items():
             if name not in self.enabled_patterns:
                 continue
-            spans: List[Tuple[int, int, str]] = []
+            spans: list[tuple[int, int, str]] = []
             count = 0
             for m in pattern.finditer(text):
                 val = m.group(0)
@@ -182,7 +184,7 @@ class HealthcarePHIDetector(DetectorPlugin):
                 results[name] = spans
         return results
 
-    def _confidence(self, match_type: str, spans: List[Tuple[int, int, str]], text: str) -> float:
+    def _confidence(self, match_type: str, spans: list[tuple[int, int, str]], text: str) -> float:
         # Simple heuristic: more matches + contextual cues => higher confidence
         base = 0.6
         if match_type in ("ssn_us", "mrn_generic", "health_plan_beneficiary", "license_number"):
@@ -202,13 +204,13 @@ class HealthcarePHIDetector(DetectorPlugin):
             return tok[: len(value)]
         return tok + ("*" * max(0, len(value) - len(tok)))
 
-    def _safe_snippet(self, text: str, span: Tuple[int, int, str], ctx: int = 20) -> str:
+    def _safe_snippet(self, text: str, span: tuple[int, int, str], ctx: int = 20) -> str:
         s, e, _ = span
         return text[max(0, s - ctx) : min(len(text), e + ctx)]
 
 
 # Convenience function for payloads parallel to your current helper
-def detect_and_redact_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
+def detect_and_redact_payload(payload: dict[str, Any]) -> dict[str, Any]:
     det = HealthcarePHIDetector()
     out = det.redact_payload(payload)
     return out

@@ -1,8 +1,8 @@
 """Weapons Module"""
 
-from .stealth_metrics import StealthValidator, StealthMetrics
-from .marker_persistence import MarkerPersistenceValidator
 from .calibration import WeaponCalibrator
+from .marker_persistence import MarkerPersistenceValidator
+from .stealth_metrics import StealthMetrics, StealthValidator
 
 __all__ = [
     "StealthValidator",

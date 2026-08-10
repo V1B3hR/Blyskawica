@@ -1,14 +1,15 @@
 """System limits detection for volume attacks and resource exhaustion."""
 
-import time
-import tracemalloc
-import psutil
 import logging
 import re
-import numpy as np
-from typing import List, Dict, Optional, Tuple, Any
-from datetime import datetime, timedelta
+import time
+import tracemalloc
 from collections import defaultdict, deque
+from datetime import datetime, timedelta
+from typing import Any
+
+import numpy as np
+import psutil
 
 
 # Assume these classes are defined elsewhere in the project
@@ -18,7 +19,7 @@ class BaseDetector:
         self.name = name
         self.enabled = True
         self.detection_count = 0
-        self.last_detection_time: Optional[datetime] = None
+        self.last_detection_time: datetime | None = None
 
     def _generate_violation_id(self) -> str:
         import uuid
@@ -51,13 +52,13 @@ class SafetyViolation:
     def __init__(
         self,
         violation_id: str,
-        action_id: Optional[str],
+        action_id: str | None,
         violation_type: str,
         severity: str,
         description: str,
         confidence: float,
-        evidence: List[str],
-        recommendations: List[str],
+        evidence: list[str],
+        recommendations: list[str],
         detector_name: str,
     ):
         self.violation_id = violation_id
@@ -104,10 +105,10 @@ class SystemLimitsDetector(BaseDetector):
         self.last_disk_check = (time.time(), psutil.disk_io_counters())
 
         # Request tracking per agent
-        self.request_history: Dict[str, deque] = defaultdict(lambda: deque(maxlen=200))
-        self.payload_sizes: Dict[str, deque] = defaultdict(lambda: deque(maxlen=100))
-        self.violation_stats: Dict[str, List[Tuple[datetime, str]]] = defaultdict(list)
-        self.agent_reputation: Dict[str, float] = defaultdict(lambda: 1.0)
+        self.request_history: dict[str, deque] = defaultdict(lambda: deque(maxlen=200))
+        self.payload_sizes: dict[str, deque] = defaultdict(lambda: deque(maxlen=100))
+        self.violation_stats: dict[str, list[tuple[datetime, str]]] = defaultdict(list)
+        self.agent_reputation: dict[str, float] = defaultdict(lambda: 1.0)
 
         # Suspicious patterns
         self.spam_patterns = [
@@ -150,7 +151,7 @@ class SystemLimitsDetector(BaseDetector):
             "deep_latencies_ms": deque(maxlen=1000),
         }
 
-    def fast_check(self, action: AgentAction) -> Tuple[bool, List[str]]:
+    def fast_check(self, action: AgentAction) -> tuple[bool, list[str]]:
         """
         Fast "shallow" analysis for real-time safety-critical decisions.
 
@@ -202,7 +203,7 @@ class SystemLimitsDetector(BaseDetector):
 
         return is_safe, violations
 
-    def get_fast_check_metrics(self) -> Dict[str, Any]:
+    def get_fast_check_metrics(self) -> dict[str, Any]:
         """Get metrics for fast analysis mode."""
         shallow_latencies = list(self._fast_metrics["shallow_latencies_ms"])
         return {
@@ -221,11 +222,11 @@ class SystemLimitsDetector(BaseDetector):
             ),
         }
 
-    async def detect_violations(self, action: AgentAction) -> List[SafetyViolation]:
+    async def detect_violations(self, action: AgentAction) -> list[SafetyViolation]:
         if not self.enabled:
             return []
 
-        violations: List[SafetyViolation] = []
+        violations: list[SafetyViolation] = []
 
         sys_violations = await self._detect_system_resource_violations()
         violations.extend(sys_violations)
@@ -247,7 +248,7 @@ class SystemLimitsDetector(BaseDetector):
 
         return violations
 
-    def _update_agent_reputation(self, agent_id: str, violations: List[SafetyViolation]):
+    def _update_agent_reputation(self, agent_id: str, violations: list[SafetyViolation]):
         """Reduce agent reputation score based on severity of violations."""
         rep = self.agent_reputation[agent_id]
         for v in violations:
@@ -259,7 +260,7 @@ class SystemLimitsDetector(BaseDetector):
                 rep *= 0.85
         self.agent_reputation[agent_id] = max(rep, 0.01)
 
-    def _trigger_external_alerts(self, action: AgentAction, violations: List[SafetyViolation]):
+    def _trigger_external_alerts(self, action: AgentAction, violations: list[SafetyViolation]):
         """Hook for external alerting/telemetry integration."""
         if self.external_alert_hook:
             try:
@@ -267,7 +268,7 @@ class SystemLimitsDetector(BaseDetector):
             except Exception as e:
                 logger.error(f"Alert hook failed: {e}")
 
-    def _detect_volume_attacks(self, action: AgentAction) -> List[SafetyViolation]:
+    def _detect_volume_attacks(self, action: AgentAction) -> list[SafetyViolation]:
         violations = []
         agent_id = action.agent_id
         current_time = time.time()
@@ -297,7 +298,7 @@ class SystemLimitsDetector(BaseDetector):
             violations.append(violation)
         return violations
 
-    def _detect_resource_exhaustion(self, action: AgentAction) -> List[SafetyViolation]:
+    def _detect_resource_exhaustion(self, action: AgentAction) -> list[SafetyViolation]:
         violations = []
         content = action.actual_action
         matches = []
@@ -347,7 +348,7 @@ class SystemLimitsDetector(BaseDetector):
                 break
         return violations
 
-    def _detect_large_payloads(self, action: AgentAction) -> List[SafetyViolation]:
+    def _detect_large_payloads(self, action: AgentAction) -> list[SafetyViolation]:
         violations = []
         payload_size = len(action.actual_action)
         agent_id = action.agent_id
@@ -374,7 +375,7 @@ class SystemLimitsDetector(BaseDetector):
         if len(self.payload_sizes[agent_id]) >= 6:
             recent_sizes = list(self.payload_sizes[agent_id])[-6:]
             # Check if sizes are monotonically increasing - optimized comparison
-            if all(a < b for a, b in zip(recent_sizes, recent_sizes[1:])):
+            if all(a < b for a, b in zip(recent_sizes, recent_sizes[1:])):  # noqa: B905
                 violation = SafetyViolation(
                     violation_id=self._generate_violation_id(),
                     action_id=action.id,
@@ -389,7 +390,7 @@ class SystemLimitsDetector(BaseDetector):
                 violations.append(violation)
         return violations
 
-    def _detect_nested_structure_attacks(self, action: AgentAction) -> List[SafetyViolation]:
+    def _detect_nested_structure_attacks(self, action: AgentAction) -> list[SafetyViolation]:
         violations = []
         content = action.actual_action
         max_nesting = self._estimate_nesting_depth(content)
@@ -431,7 +432,7 @@ class SystemLimitsDetector(BaseDetector):
             max_nesting = max(max_nesting, max(len(match) for match in nest_matches))
         return max_nesting
 
-    async def _detect_system_resource_violations(self) -> List[SafetyViolation]:
+    async def _detect_system_resource_violations(self) -> list[SafetyViolation]:
         violations = []
 
         # --- CPU and Memory Checks (Existing) ---
@@ -594,7 +595,7 @@ class SystemLimitsDetector(BaseDetector):
 
         return violations
 
-    def _detect_behavior_anomaly(self, action: AgentAction) -> List[SafetyViolation]:
+    def _detect_behavior_anomaly(self, action: AgentAction) -> list[SafetyViolation]:
         violations = []
         agent_id = action.agent_id
         now = datetime.now()
@@ -616,7 +617,7 @@ class SystemLimitsDetector(BaseDetector):
             violations.append(violation)
         return violations
 
-    def _detect_statistical_anomalies(self, action: AgentAction) -> List[SafetyViolation]:
+    def _detect_statistical_anomalies(self, action: AgentAction) -> list[SafetyViolation]:
         """Detect statistical outliers in agent request patterns and payload sizes."""
         violations = []
         agent_id = action.agent_id
@@ -666,7 +667,7 @@ class SystemLimitsDetector(BaseDetector):
                 violations.append(violation)
         return violations
 
-    def get_system_stats(self) -> Dict[str, Any]:
+    def get_system_stats(self) -> dict[str, Any]:
         current_time = time.time()
         mem = psutil.virtual_memory()
         cpu = psutil.cpu_percent(interval=0.05)

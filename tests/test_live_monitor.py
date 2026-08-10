@@ -1,13 +1,14 @@
-import unittest
-import sys
 import json
 import os
+import unittest
 from unittest import mock
+
 from fastapi.testclient import TestClient
+
+from blyskawica_app.backend.app_learning_agent import AppLearningAgent
+from blyskawica_app.backend.live_monitor import LiveMonitor
 from blyskawica_app.backend.main import app
 from blyskawica_app.backend.win11_controller import Win11Controller
-from blyskawica_app.backend.live_monitor import LiveMonitor
-from blyskawica_app.backend.app_learning_agent import AppLearningAgent
 
 
 class TestWindows11Integration(unittest.IsolatedAsyncioTestCase):
@@ -64,7 +65,7 @@ class TestWindows11Integration(unittest.IsolatedAsyncioTestCase):
             <a class="result__snippet" href="http://test.com">Użyj skrótu Ctrl+S aby zapisać oraz Ctrl+P aby wydrukować w aplikacji TestApp.</a>
         </div>
         """
-        
+
         # Używamy AsyncMock do emulacji asynchronicznego pobierania przez httpx
         mock_get_async = mock.AsyncMock(return_value=mock_response)
         mock_get.side_effect = mock_get_async

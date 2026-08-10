@@ -102,7 +102,7 @@ class ContextualEmbedding(nn.Module):
             
         Returns:
             Contextual embeddings (B, L, D)
-        """
+        """  # noqa: W293
         B, L = input_ids.shape
         device = input_ids.device
 
@@ -173,7 +173,7 @@ class EnhancedPOSTagger(nn.Module):
             
         Returns:
             Dictionary with POS predictions and loss
-        """
+        """  # noqa: W293
         # Get contextual embeddings
         embeddings = self.contextual_embedding(input_ids, char_ids)
 
@@ -270,7 +270,7 @@ class SemanticRoleLabeler(nn.Module):
             
         Returns:
             Dictionary with SRL predictions
-        """
+        """  # noqa: W293
         # Get contextual embeddings
         embeddings = self.contextual_embedding(input_ids)
 
@@ -356,7 +356,7 @@ class DependencyParser(nn.Module):
             
         Returns:
             Dictionary with dependency parsing results
-        """
+        """  # noqa: W293
         # Get contextual embeddings
         embeddings = self.contextual_embedding(input_ids)
 
@@ -443,7 +443,7 @@ class ConversationalAI(nn.Module):
             
         Returns:
             Dictionary with conversational AI outputs
-        """
+        """  # noqa: W293
         # Encode conversation history
         B, H, L = conversation_history.shape
         history_flat = conversation_history.view(B, H * L)
@@ -510,7 +510,7 @@ class DomainAdaptationModule(nn.Module):
             
         Returns:
             Dictionary with domain-adapted features
-        """
+        """  # noqa: W293
         B, L, D = embeddings.shape
 
         # Domain classification if not provided
@@ -572,7 +572,7 @@ class AdvancedLanguageUnderstanding(nn.Module):
             
         Returns:
             Dictionary with task-specific outputs
-        """
+        """  # noqa: W293
         if task == LanguageTask.POS_TAGGING:
             return self.pos_tagger(input_ids, **kwargs)
         elif task == LanguageTask.SEMANTIC_ROLE_LABELING:

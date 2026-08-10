@@ -1,8 +1,9 @@
-import time
-import sys
-import torch
 import random
+import sys
+import time
 from datetime import datetime
+
+import torch
 
 if sys.platform == "win32":
     import io
@@ -11,9 +12,9 @@ if sys.platform == "win32":
 def deep_space_listening_mode(target_vram_gb=4.0):
     print(f"[{datetime.now()}] Błyskawica: Inicjacja DEEP SPACE LISTENING MODE.")
     print("Cel: Długoterminowa synteza danych z JWST, SETI oraz analizy zasady holograficznej.")
-    
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    
+
     tasks = [
         "Skanowanie zasobów Breakthrough Listen (Pasmo 1-10 GHz)...",
         "Analiza spektroskopowa: Poszukiwanie fosfin na egzoplanetach...",
@@ -27,15 +28,15 @@ def deep_space_listening_mode(target_vram_gb=4.0):
         for cycle in range(1, 21): # 20 cycles
             task = random.choice(tasks)
             print(f"\n[{datetime.now()}] Cykl Obserwacyjny {cycle}/20: {task}")
-            
+
             # Simulate processing load
             size = 4096
             m1 = torch.randn(size, size, device=device)
             m2 = torch.randn(size, size, device=device)
-            res = torch.matmul(m1, m2)
-            
+            res = torch.matmul(m1, m2)  # noqa: F841
+
             time.sleep(30) # Polite background processing delay
-            
+
         print(f"\n[{datetime.now()}] [STATUS] Deep Space Listening Mode: Zakończono standardowy cykl. Oczekiwanie na dyspozycje.")
 
     except Exception as e:

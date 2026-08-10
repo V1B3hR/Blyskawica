@@ -105,7 +105,7 @@ class HttpxAdapter(ToolPlugin):
             title = endpoint.get("title", "")
             web_server = endpoint.get("webserver", "")
             technologies = endpoint.get("technologies", [])
-            content_length = endpoint.get("content_length", 0)
+            content_length = endpoint.get("content_length", 0)  # noqa: F841
 
             # Create base finding for the endpoint
             description_parts = [f"HTTP endpoint discovered at {url}"]

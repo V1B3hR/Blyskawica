@@ -42,7 +42,7 @@ _metrics: dict[str, Any] = {
 
 class MetricsSummary(BaseModel):
     """Human-readable metrics summary."""
-    
+
     requests_total: int = Field(..., description="Total requests processed")
     decisions: dict[str, int] = Field(
         ...,
@@ -59,7 +59,7 @@ class MetricsSummary(BaseModel):
 
 class PrometheusMetrics(BaseModel):
     """Prometheus-compatible metrics format."""
-    
+
     content_type: str = Field(
         default="text/plain; version=0.0.4",
         description="Content type for Prometheus",
@@ -119,17 +119,17 @@ async def prometheus_metrics() -> str:
     
     Returns:
         Prometheus metrics text
-    """
+    """  # noqa: W293
     uptime = int(time.time() - _start_time)
-    
+
     # Calculate derived metrics
     avg_latency = 0.0
     if _metrics["latency_count"] > 0:
         avg_latency = _metrics["latency_sum_ms"] / _metrics["latency_count"]
-    
+
     cache_total = _metrics["cache_hits"] + _metrics["cache_misses"]
     cache_hit_rate = _metrics["cache_hits"] / cache_total if cache_total > 0 else 0.0
-    
+
     # Build Prometheus format
     lines = [
         "# HELP nethical_requests_total Total number of requests processed",
@@ -180,7 +180,7 @@ async def prometheus_metrics() -> str:
         f"nethical_uptime_seconds {uptime}",
         "",
     ]
-    
+
     return "\n".join(lines)
 
 
@@ -193,16 +193,16 @@ async def metrics_summary() -> MetricsSummary:
     
     Returns:
         MetricsSummary with current metrics
-    """
+    """  # noqa: W293
     uptime = int(time.time() - _start_time)
-    
+
     avg_latency = 0.0
     if _metrics["latency_count"] > 0:
         avg_latency = _metrics["latency_sum_ms"] / _metrics["latency_count"]
-    
+
     cache_total = _metrics["cache_hits"] + _metrics["cache_misses"]
     cache_hit_rate = _metrics["cache_hits"] / cache_total if cache_total > 0 else 0.0
-    
+
     return MetricsSummary(
         requests_total=_metrics["requests_total"],
         decisions={

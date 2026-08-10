@@ -10,6 +10,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from nethical_recon.api.auth import get_current_user
 from nethical_recon.security_testing import (
     APISecurityTester,
     ComplianceReporter,
@@ -17,7 +18,6 @@ from nethical_recon.security_testing import (
 )
 from nethical_recon.security_testing.api_security import APIEndpoint
 from nethical_recon.security_testing.compliance import ComplianceFramework
-from nethical_recon.api.auth import get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +82,7 @@ async def test_web_security(
 
     except Exception as e:
         logger.error(f"Web security test failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Security test failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Security test failed: {str(e)}")  # noqa: B904
 
 
 @router.post("/api-security")
@@ -128,7 +128,7 @@ async def test_api_security(
 
     except Exception as e:
         logger.error(f"API security test failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"API security test failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"API security test failed: {str(e)}")  # noqa: B904
 
 
 @router.post("/compliance-report")
@@ -183,7 +183,7 @@ async def generate_compliance_report(
         raise
     except Exception as e:
         logger.error(f"Compliance report generation failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Report generation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Report generation failed: {str(e)}")  # noqa: B904
 
 
 @router.get("/compliance-report/{report_id}/html")

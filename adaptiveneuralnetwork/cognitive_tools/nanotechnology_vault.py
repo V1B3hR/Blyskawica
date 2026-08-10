@@ -6,11 +6,10 @@ Integruje dane z zakresu nanofabrykacji, nanobiologii (CRISPR/CROP-Seq) oraz
 nanotechnologii kwantowej. Pozwala Błyskawicy na symulowanie interakcji 
 molekularnych i projektowanie inteligentnych struktur wspomagających 
 bezpieczeństwo i zdrowie Architekta.
-"""
+"""  # noqa: W291
 
 import logging
-import torch
-from typing import Dict, Any, List
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +19,7 @@ class NanotechnologyVault:
     Zarządza dostępem do zaawansowanych zbiorów danych nanotechnologicznych.
     Łączy mechanikę kwantową z biologią komórkową, dostarczając predykcji 
     dotyczących stabilności struktur nano w środowisku biologicznym.
-    """
+    """  # noqa: W291
     def __init__(self):
         self.domains = {
             "nanofabrication": "Mechanisms of atomic-level material construction and metrology (Birck Center).",
@@ -31,7 +30,7 @@ class NanotechnologyVault:
             "predictive_design": "Equivariant Graph Transformers and Atomic Symmetry Constraints.",
             "quantum_transport": "Graphene oscillations, superconductors, and nanomechanics (Lancaster University)."
         }
-        
+
         # Inicjalizacja indeksów do zewnętrznych repozytoriów
         self.dataset_anchors = {
             "li_2020": "https://research-portal.uea.ac.uk/en/datasets/data-sets-from-li-et-al-2020-nanotechnology/",
@@ -45,14 +44,14 @@ class NanotechnologyVault:
             "world_bank_data": "https://datacatalog.worldbank.org/",
             "oecd_data": "https://www.oecd.org/en/data.html"
         }
-        
+
         # Kontekst Makro (Global Night Watch)
         self.macro_context = {
             "energy_transition": ["SE4ALL (Sustainable Energy for All)", "Net-Zero Logic", "Carbon Pricing (OECD)"],
             "health_resilience": ["Climate-Health Nexus", "Regional Health Status", "Universal Coverage"],
             "economic_stability": ["Global Economic Prospects", "Short-term Indicators", "Quarterly National Accounts"]
         }
-        
+
         # Inicjalizacja Kotwic Projektowych (Lancaster Full Panorama - 17)
         self.project_anchors = {
             "ULTRARAM": "Neuromorphic non-volatile memory (Speed+Persistence).",
@@ -73,7 +72,7 @@ class NanotechnologyVault:
             "Smart_Surfaces": "Adaptive molecular surfaces for nano-templates.",
             "Hofstadter_Butterfly": "Topological phases and fractal quantum Hall effects."
         }
-        
+
         # Diamentowa Przędza (Diamond Yarn) - Opto-Structural Core
         self.diamond_yarn = {
             "structure": "Diamond Nanothreads (DNT) - High tensile strength, thermal conductivity, and optical clarity.",
@@ -82,11 +81,11 @@ class NanotechnologyVault:
             "electro_optic_routing": "Filtering and reflecting light frequencies (e.g., mid-IR vs UV) as a form of non-binary, photonic decision making."
         }
 
-    def analyze_nanostructure(self, query: str) -> Dict[str, Any]:
+    def analyze_nanostructure(self, query: str) -> dict[str, Any]:
         """
         Analizuje zapytanie pod kątem nanotechnologicznym i zwraca sugerowane 
         modele lub zbiory danych do użycia.
-        """
+        """  # noqa: W291
         query_lower = query.lower()
         result = {"domain": "general", "confidence": 0.5, "suggested_action": "search_hub"}
 
@@ -163,7 +162,7 @@ class NanotechnologyVault:
 
         return result
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         return {
             "domains_indexed": len(self.domains),
             "external_anchors": list(self.dataset_anchors.keys()),

@@ -13,11 +13,11 @@ Includes rate limiting to prevent alert storms.
 import asyncio
 import logging
 import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timezone
-from typing import List, Dict, Any, Optional
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from enum import Enum
+from typing import Any
 
 try:
     import aiohttp
@@ -46,16 +46,16 @@ class AlertChannel(Enum):
 
 class RateLimiter:
     """Prevent alert storms with rate limiting."""
-    
+
     def __init__(self, max_alerts_per_minute: int = 10):
         """Initialize rate limiter.
         
         Args:
             max_alerts_per_minute: Maximum alerts per minute per alert key
-        """
+        """  # noqa: W293
         self.max_alerts = max_alerts_per_minute
-        self.recent_alerts: Dict[str, datetime] = {}
-    
+        self.recent_alerts: dict[str, datetime] = {}
+
     def should_send(self, alert_key: str, severity: AlertSeverity) -> bool:
         """Check if alert should be sent based on rate limits.
         
@@ -65,11 +65,11 @@ class RateLimiter:
             
         Returns:
             True if alert should be sent
-        """
+        """  # noqa: W293
         # Always send critical alerts
         if severity == AlertSeverity.CRITICAL:
             return True
-        
+
         # Rate limit other alerts
         now = datetime.now(timezone.utc)
         if alert_key in self.recent_alerts:
@@ -77,24 +77,24 @@ class RateLimiter:
             time_diff = (now - last_sent).total_seconds()
             if time_diff < 60:  # Less than 1 minute
                 return False
-        
+
         self.recent_alerts[alert_key] = now
-        
+
         # Clean old entries
         self._cleanup_old_entries()
-        
+
         return True
-    
+
     def _cleanup_old_entries(self) -> None:
         """Clean up old rate limit entries."""
         now = datetime.now(timezone.utc)
         cutoff = 300  # 5 minutes
-        
+
         to_delete = [
             key for key, timestamp in self.recent_alerts.items()
             if (now - timestamp).total_seconds() > cutoff
         ]
-        
+
         for key in to_delete:
             del self.recent_alerts[key]
 
@@ -108,34 +108,34 @@ class AlertManager:
     - PagerDuty
     - Custom webhooks
     - Discord
-    """
+    """  # noqa: W293
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """Initialize alert manager.
         
         Args:
             config: Configuration dictionary with channel credentials
-        """
+        """  # noqa: W293
         self.config = config
-        self.alert_history: List[Dict[str, Any]] = []
+        self.alert_history: list[dict[str, Any]] = []
         self.rate_limiter = RateLimiter(
             max_alerts_per_minute=config.get('max_alerts_per_minute', 10)
         )
         self.enabled = config.get('enabled', True)
-        
+
         if not AIOHTTP_AVAILABLE and self.enabled:
             logger.warning(
                 "aiohttp not available. Webhook-based alerting will be disabled. "
                 "Install with: pip install aiohttp>=3.9.0"
             )
-    
+
     async def send_alert(
         self,
         title: str,
         message: str,
         severity: AlertSeverity,
-        channels: List[AlertChannel],
-        metadata: Optional[Dict[str, Any]] = None
+        channels: list[AlertChannel],
+        metadata: dict[str, Any] | None = None
     ) -> None:
         """Send alert to multiple channels.
         
@@ -145,17 +145,17 @@ class AlertManager:
             severity: Alert severity level
             channels: List of channels to send to
             metadata: Optional additional metadata
-        """
+        """  # noqa: W293
         if not self.enabled:
             logger.debug(f"Alerting disabled. Skipping alert: {title}")
             return
-        
+
         # Rate limiting to prevent alert storms
         alert_key = f"{title}:{severity.value}"
         if not self.rate_limiter.should_send(alert_key, severity):
             logger.debug(f"Alert rate limited: {title}")
             return
-        
+
         # Send to all channels
         tasks = []
         for channel in channels:
@@ -170,18 +170,18 @@ class AlertManager:
                     tasks.append(self._send_webhook(title, message, severity, metadata))
                 elif channel == AlertChannel.DISCORD:
                     tasks.append(self._send_discord(title, message, severity, metadata))
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 logger.error(f"Error setting up alert for {channel.value}: {e}")
-        
+
         # Send all alerts concurrently
         if tasks:
             results = await asyncio.gather(*tasks, return_exceptions=True)
-            
+
             # Log any errors
             for i, result in enumerate(results):
                 if isinstance(result, Exception):
                     logger.error(f"Alert send failed for {channels[i].value}: {result}")
-        
+
         # Log alert to history
         self.alert_history.append({
             'title': title,
@@ -191,28 +191,28 @@ class AlertManager:
             'timestamp': datetime.now(timezone.utc).isoformat(),
             'metadata': metadata or {}
         })
-        
+
         # Keep history manageable (last 1000 alerts)
         if len(self.alert_history) > 1000:
             self.alert_history = self.alert_history[-500:]
-    
+
     async def _send_slack(
         self,
         title: str,
         message: str,
         severity: AlertSeverity,
-        metadata: Optional[Dict[str, Any]]
+        metadata: dict[str, Any] | None
     ) -> None:
         """Send Slack webhook alert."""
         if not AIOHTTP_AVAILABLE:
             logger.warning("aiohttp not available, skipping Slack alert")
             return
-        
+
         webhook_url = self.config.get('slack_webhook_url')
         if not webhook_url:
             logger.debug("Slack webhook URL not configured")
             return
-        
+
         # Color based on severity
         color_map = {
             AlertSeverity.INFO: "#36a64f",
@@ -220,7 +220,7 @@ class AlertManager:
             AlertSeverity.CRITICAL: "#d32f2f"
         }
         color = color_map.get(severity, "#cccccc")
-        
+
         # Build payload
         payload = {
             "attachments": [{
@@ -235,42 +235,42 @@ class AlertManager:
                 "ts": int(datetime.now(timezone.utc).timestamp())
             }]
         }
-        
+
         try:
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession() as session:  # noqa: SIM117
                 async with session.post(webhook_url, json=payload, timeout=aiohttp.ClientTimeout(total=10)) as response:
                     if response.status != 200:
                         logger.error(f"Slack webhook returned status {response.status}")
         except Exception as e:
             logger.error(f"Failed to send Slack alert: {e}")
             raise
-    
+
     async def _send_email(
         self,
         title: str,
         message: str,
         severity: AlertSeverity,
-        metadata: Optional[Dict[str, Any]]
+        metadata: dict[str, Any] | None
     ) -> None:
         """Send email via SMTP."""
         smtp_config = self.config.get('smtp', {})
         if not smtp_config:
             logger.debug("SMTP not configured")
             return
-        
+
         # Build email
         msg = MIMEMultipart('alternative')
         msg['Subject'] = f"[{severity.value.upper()}] {title}"
         msg['From'] = smtp_config.get('from', 'alerts@nethical.ai')
         msg['To'] = smtp_config.get('to', 'security-team@company.com')
-        
+
         # Create email body
         text_body = f"{message}\n\nSeverity: {severity.value}\n\n"
         if metadata:
             text_body += "Additional Information:\n"
             for key, value in metadata.items():
                 text_body += f"  {key}: {value}\n"
-        
+
         html_body = f"""
         <html>
           <head></head>
@@ -286,17 +286,17 @@ class AlertManager:
           </body>
         </html>
         """
-        
+
         part1 = MIMEText(text_body, 'plain')
         part2 = MIMEText(html_body, 'html')
         msg.attach(part1)
         msg.attach(part2)
-        
+
         # Send email in executor to avoid blocking
         loop = asyncio.get_event_loop()
         await loop.run_in_executor(None, self._send_smtp, smtp_config, msg)
-    
-    def _send_smtp(self, config: Dict[str, Any], msg: MIMEMultipart) -> None:
+
+    def _send_smtp(self, config: dict[str, Any], msg: MIMEMultipart) -> None:
         """Synchronous SMTP send."""
         try:
             with smtplib.SMTP(config['host'], config.get('port', 587), timeout=10) as server:
@@ -308,31 +308,31 @@ class AlertManager:
         except Exception as e:
             logger.error(f"Failed to send email alert: {e}")
             raise
-    
+
     async def _send_pagerduty(
         self,
         title: str,
         message: str,
         severity: AlertSeverity,
-        metadata: Optional[Dict[str, Any]]
+        metadata: dict[str, Any] | None
     ) -> None:
         """Send PagerDuty event."""
         if not AIOHTTP_AVAILABLE:
             logger.warning("aiohttp not available, skipping PagerDuty alert")
             return
-        
+
         api_key = self.config.get('pagerduty_api_key')
         if not api_key:
             logger.debug("PagerDuty API key not configured")
             return
-        
+
         # Map severity to PagerDuty severity
         pd_severity_map = {
             AlertSeverity.INFO: "info",
             AlertSeverity.WARNING: "warning",
             AlertSeverity.CRITICAL: "critical"
         }
-        
+
         payload = {
             "routing_key": api_key,
             "event_action": "trigger",
@@ -343,37 +343,36 @@ class AlertManager:
                 "custom_details": metadata or {}
             }
         }
-        
+
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    "https://events.pagerduty.com/v2/enqueue",
-                    json=payload,
-                    timeout=aiohttp.ClientTimeout(total=10)
-                ) as response:
-                    if response.status not in (200, 202):
-                        logger.error(f"PagerDuty returned status {response.status}")
+            async with aiohttp.ClientSession() as session, session.post(
+                "https://events.pagerduty.com/v2/enqueue",
+                json=payload,
+                timeout=aiohttp.ClientTimeout(total=10)
+            ) as response:
+                if response.status not in (200, 202):
+                    logger.error(f"PagerDuty returned status {response.status}")
         except Exception as e:
             logger.error(f"Failed to send PagerDuty alert: {e}")
             raise
-    
+
     async def _send_webhook(
         self,
         title: str,
         message: str,
         severity: AlertSeverity,
-        metadata: Optional[Dict[str, Any]]
+        metadata: dict[str, Any] | None
     ) -> None:
         """Send custom webhook."""
         if not AIOHTTP_AVAILABLE:
             logger.warning("aiohttp not available, skipping webhook alert")
             return
-        
+
         webhook_url = self.config.get('webhook_url')
         if not webhook_url:
             logger.debug("Webhook URL not configured")
             return
-        
+
         payload = {
             "title": title,
             "message": message,
@@ -381,37 +380,36 @@ class AlertManager:
             "metadata": metadata or {},
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
-        
+
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    webhook_url,
-                    json=payload,
-                    timeout=aiohttp.ClientTimeout(total=10)
-                ) as response:
-                    if response.status not in (200, 201, 202):
-                        logger.error(f"Webhook returned status {response.status}")
+            async with aiohttp.ClientSession() as session, session.post(
+                webhook_url,
+                json=payload,
+                timeout=aiohttp.ClientTimeout(total=10)
+            ) as response:
+                if response.status not in (200, 201, 202):
+                    logger.error(f"Webhook returned status {response.status}")
         except Exception as e:
             logger.error(f"Failed to send webhook alert: {e}")
             raise
-    
+
     async def _send_discord(
         self,
         title: str,
         message: str,
         severity: AlertSeverity,
-        metadata: Optional[Dict[str, Any]]
+        metadata: dict[str, Any] | None
     ) -> None:
         """Send Discord webhook alert."""
         if not AIOHTTP_AVAILABLE:
             logger.warning("aiohttp not available, skipping Discord alert")
             return
-        
+
         webhook_url = self.config.get('discord_webhook_url')
         if not webhook_url:
             logger.debug("Discord webhook URL not configured")
             return
-        
+
         # Color based on severity
         color_map = {
             AlertSeverity.INFO: 0x36a64f,
@@ -419,7 +417,7 @@ class AlertManager:
             AlertSeverity.CRITICAL: 0xd32f2f
         }
         color = color_map.get(severity, 0xcccccc)
-        
+
         payload = {
             "embeds": [{
                 "title": f"🚨 {title}",
@@ -433,21 +431,20 @@ class AlertManager:
                 "timestamp": datetime.now(timezone.utc).isoformat()
             }]
         }
-        
+
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    webhook_url,
-                    json=payload,
-                    timeout=aiohttp.ClientTimeout(total=10)
-                ) as response:
-                    if response.status not in (200, 204):
-                        logger.error(f"Discord webhook returned status {response.status}")
+            async with aiohttp.ClientSession() as session, session.post(
+                webhook_url,
+                json=payload,
+                timeout=aiohttp.ClientTimeout(total=10)
+            ) as response:
+                if response.status not in (200, 204):
+                    logger.error(f"Discord webhook returned status {response.status}")
         except Exception as e:
             logger.error(f"Failed to send Discord alert: {e}")
             raise
-    
-    def get_alert_history(self, limit: int = 100) -> List[Dict[str, Any]]:
+
+    def get_alert_history(self, limit: int = 100) -> list[dict[str, Any]]:
         """Get recent alert history.
         
         Args:
@@ -455,15 +452,15 @@ class AlertManager:
             
         Returns:
             List of recent alerts
-        """
+        """  # noqa: W293
         return self.alert_history[-limit:]
-    
+
     def clear_history(self) -> int:
         """Clear alert history.
         
         Returns:
             Number of alerts cleared
-        """
+        """  # noqa: W293
         count = len(self.alert_history)
         self.alert_history.clear()
         return count

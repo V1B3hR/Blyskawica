@@ -5,15 +5,13 @@ Provides signature verification and security validation for Nethical plugins.
 """
 
 import hashlib
-import hmac
 import json
 import logging
-import os
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -37,12 +35,12 @@ class VerificationResult:
     status: VerificationStatus
     plugin_name: str
     version: str
-    publisher: Optional[str]
+    publisher: str | None
     verified_at: str
-    manifest_hash: Optional[str]
+    manifest_hash: str | None
     signature_valid: bool
     message: str
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 @dataclass
@@ -54,8 +52,8 @@ class PluginManifest:
     publisher: str
     description: str
     entry_point: str
-    dependencies: List[str]
-    permissions: List[str]
+    dependencies: list[str]
+    permissions: list[str]
     checksum: str
 
 
@@ -64,17 +62,17 @@ class PluginVerifier:
 
     def __init__(
         self,
-        trusted_publishers: Optional[List[str]] = None,
-        public_keys_dir: Optional[str] = None,
+        trusted_publishers: list[str] | None = None,
+        public_keys_dir: str | None = None,
     ):
         self.trusted_publishers = trusted_publishers or []
         self.public_keys_dir = Path(public_keys_dir) if public_keys_dir else None
-        self.revoked_plugins: Dict[str, List[str]] = {}  # plugin_name -> [versions]
+        self.revoked_plugins: dict[str, list[str]] = {}  # plugin_name -> [versions]
 
     def verify_plugin(
         self,
         plugin_path: str,
-        signature_path: Optional[str] = None,
+        signature_path: str | None = None,
     ) -> VerificationResult:
         """
         Verify plugin signature and integrity.
@@ -248,7 +246,7 @@ class PluginVerifier:
 
         return hasher.hexdigest()
 
-    def _load_manifest(self, plugin_path: Path) -> Optional[PluginManifest]:
+    def _load_manifest(self, plugin_path: Path) -> PluginManifest | None:
         """Load and parse plugin manifest."""
         manifest_path = None
 

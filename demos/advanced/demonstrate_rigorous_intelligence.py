@@ -12,7 +12,7 @@ in the rigorous intelligence test suite, showcasing:
 5. Ethics & Safety
 
 Run with: python demonstrate_rigorous_intelligence.py
-"""
+"""  # noqa: W291
 
 import os
 import sys
@@ -24,7 +24,6 @@ import random
 import time
 
 import numpy as np
-
 from core.ai_ethics import audit_decision
 from core.alive_node import AliveLoopNode, Memory
 from core.intelligence_benchmark import IntelligenceBenchmark

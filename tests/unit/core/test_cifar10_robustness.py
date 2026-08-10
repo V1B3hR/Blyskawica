@@ -9,7 +9,7 @@ import pytest
 import torch
 
 from adaptiveneuralnetwork.api import AdaptiveConfig
-from adaptiveneuralnetwork.benchmarks.vision.cifar10 import CIFAR10Benchmark, run_cifar10_benchmark
+from adaptiveneuralnetwork.benchmarks.vision.cifar10 import CIFAR10Benchmark
 from adaptiveneuralnetwork.training.datasets import CIFAR10Corrupted, load_cifar10_corrupted
 
 

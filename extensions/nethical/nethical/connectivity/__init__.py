@@ -7,36 +7,36 @@ networks, GPS/GNSS positioning, and automatic failover.
 """
 
 from .satellite import (
-    # Base classes
-    SatelliteProvider,
-    ConnectionState,
     ConnectionConfig,
-    SatelliteConnectionError,
-    SatelliteTimeoutError,
-    # Providers
-    StarlinkProvider,
-    KuiperProvider,
-    OneWebProvider,
-    IridiumProvider,
-    # GPS/GNSS
-    GPSTracker,
-    GNSSConstellation,
-    Position,
-    Geofence,
-    GeofenceType,
+    ConnectionMetrics,
+    ConnectionState,
+    ConnectionType,
+    FailoverConfig,
+    FailoverEvent,
     # Failover
     FailoverManager,
-    FailoverConfig,
-    ConnectionType,
-    FailoverEvent,
+    Geofence,
+    GeofenceType,
+    GNSSConstellation,
+    # GPS/GNSS
+    GPSTracker,
+    IridiumProvider,
+    KuiperProvider,
     # Latency
     LatencyOptimizer,
     LatencyProfile,
+    OneWebProvider,
+    Position,
     RequestPriority,
+    SatelliteConnectionError,
     # Metrics
     SatelliteMetrics,
+    # Base classes
+    SatelliteProvider,
+    SatelliteTimeoutError,
     SignalQuality,
-    ConnectionMetrics,
+    # Providers
+    StarlinkProvider,
 )
 
 __all__ = [

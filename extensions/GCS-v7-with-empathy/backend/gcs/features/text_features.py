@@ -22,8 +22,8 @@ from __future__ import annotations
 import logging
 import math
 import re
+from collections.abc import Sequence
 from functools import lru_cache
-from typing import List, Optional, Sequence
 
 import numpy as np
 
@@ -59,7 +59,7 @@ class TextFeatureExtractor:
         self,
         model_name: str = "all-MiniLM-L6-v2",
         use_sentiment: bool = True,
-        embedding_dim: Optional[int] = None,
+        embedding_dim: int | None = None,
         device: str = "auto",
         normalize_embeddings: bool = True,
         tfidf_vocab_size: int = 384,
@@ -126,7 +126,6 @@ class TextFeatureExtractor:
         """Probe availability of optional backends and initialize what's cheap to initialize."""
         # SentenceTransformer (lazy)
         try:
-            from sentence_transformers import SentenceTransformer  # type: ignore
 
             # do not instantiate here (can be heavy), but note availability
             self._have_sentence_transformers = True
@@ -138,7 +137,6 @@ class TextFeatureExtractor:
         # transformers for sentiment
         if self.use_sentiment:
             try:
-                import transformers  # type: ignore
 
                 self._have_transformers = True
                 logger.debug("transformers available for sentiment")
@@ -148,9 +146,7 @@ class TextFeatureExtractor:
 
         # scikit-learn TF-IDF fallback
         try:
-            import sklearn  # type: ignore
 
-            from sklearn.feature_extraction.text import TfidfVectorizer  # type: ignore
 
             self._have_sklearn = True
             logger.debug("sklearn available for TF-IDF fallback")
@@ -438,7 +434,7 @@ class TextFeatureExtractor:
         Returns:
             ndarray of shape (len(texts), total_dim)
         """
-        texts = list(map(lambda x: x if isinstance(x, str) else str(x), texts))
+        texts = list(map(lambda x: x if isinstance(x, str) else str(x), texts))  # noqa: C417
         n = len(texts)
         if n == 0:
             return np.zeros((0, self.total_dim), dtype=np.float32)

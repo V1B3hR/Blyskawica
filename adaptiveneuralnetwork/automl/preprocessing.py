@@ -18,7 +18,7 @@ try:
     from sklearn.ensemble import IsolationForest
     from sklearn.impute import IterativeImputer, KNNImputer, SimpleImputer
     from sklearn.preprocessing import (
-        LabelEncoder,
+        LabelEncoder,  # noqa: F401
         MinMaxScaler,
         OneHotEncoder,
         OrdinalEncoder,

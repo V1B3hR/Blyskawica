@@ -388,7 +388,7 @@ class TestEndToEndIntegration(unittest.TestCase):
         val_tags = tags[8:]
 
         train_dataset = POSDataset(train_sentences, train_tags, vocab, tag_vocab)
-        val_dataset = POSDataset(val_sentences, val_tags, vocab, tag_vocab)
+        val_dataset = POSDataset(val_sentences, val_tags, vocab, tag_vocab)  # noqa: F841
 
         # Create model
         config = POSTaggerConfig(

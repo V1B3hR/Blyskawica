@@ -50,7 +50,7 @@ class DotEnvBackend(SecretsBackend):
         if not self.env_file.exists():
             return
 
-        with open(self.env_file, "r") as f:
+        with open(self.env_file) as f:
             for line in f:
                 line = line.strip()
                 # Skip comments and empty lines

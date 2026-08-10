@@ -321,7 +321,7 @@ class StainCorrelator:
                 threat_map[tree]["max_severity"] = "MEDIUM"
 
         # Add threat density and recommendations
-        for tree, data in threat_map.items():
+        for tree, data in threat_map.items():  # noqa: B007
             data["threat_density"] = data["threat_count"] / forest_data.get("total_trees", 1)
             data["recommendations"] = self._tree_recommendations(data)
 

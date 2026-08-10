@@ -29,7 +29,7 @@ class VectorizedDataset(Dataset):
     - Vectorized indexing (no loops)
     - Optional pinned memory for GPU transfer
     - Minimal copying overhead
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
@@ -46,7 +46,7 @@ class VectorizedDataset(Dataset):
             targets: Target labels as tensor, array, or list
             pin_memory: If True, allocate tensors in pinned memory for faster GPU transfer
             device: Device to store tensors ('cpu' or 'cuda')
-        """
+        """  # noqa: W293
         # Convert to tensors if needed
         if not isinstance(data, torch.Tensor):
             data = torch.tensor(np.array(data), dtype=torch.float32)
@@ -80,7 +80,7 @@ class VectorizedDataset(Dataset):
             
         Returns:
             Tuple of (batch_data, batch_targets)
-        """
+        """  # noqa: W293
         if not isinstance(indices, torch.Tensor):
             indices = torch.tensor(indices, dtype=torch.long)
 
@@ -96,7 +96,7 @@ class PreallocatedBuffer:
     Pre-allocated tensor buffer for batch collation.
     
     Reduces memory allocations by reusing buffers across batches.
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
@@ -117,7 +117,7 @@ class PreallocatedBuffer:
             dtype: Data type for data tensor
             target_dtype: Data type for target tensor
             pin_memory: If True, allocate in pinned memory
-        """
+        """  # noqa: W293
         self.batch_size = batch_size
         self.data_shape = data_shape
         self.target_shape = target_shape
@@ -147,7 +147,7 @@ class PreallocatedBuffer:
             
         Returns:
             Tuple of (batch_data, batch_targets) views from buffer
-        """
+        """  # noqa: W293
         actual_batch_size = len(data_list)
 
         # Stack directly into buffer using vectorized operations
@@ -184,7 +184,7 @@ def vectorized_collate_fn(
         
     Returns:
         Tuple of (batched_data, batched_targets)
-    """
+    """  # noqa: W293
     if not batch:
         return torch.empty(0), torch.empty(0)
 
@@ -234,7 +234,7 @@ def create_optimized_loader(
         
     Returns:
         Optimized DataLoader instance
-    """
+    """  # noqa: W293
     # Only use prefetch_factor and persistent_workers if num_workers > 0
     loader_kwargs = {
         'batch_size': batch_size,
@@ -261,7 +261,7 @@ class OptimizedDatasetWrapper(Dataset):
     - Vectorized batch access via get_batch()
     - Optional pre-loading into memory
     - Index-based sampling without copying
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
@@ -276,7 +276,7 @@ class OptimizedDatasetWrapper(Dataset):
             base_dataset: Base dataset to wrap
             preload: If True, load entire dataset into memory
             pin_memory: If True and preload is True, use pinned memory
-        """
+        """  # noqa: W293
         self.base_dataset = base_dataset
         self.preload = preload
         self.pin_memory = pin_memory
@@ -333,7 +333,7 @@ class OptimizedDatasetWrapper(Dataset):
             
         Returns:
             Tuple of (batch_data, batch_targets)
-        """
+        """  # noqa: W293
         if self.preload:
             # Vectorized indexing on pre-loaded data
             idx_tensor = torch.tensor(indices, dtype=torch.long)
@@ -360,5 +360,5 @@ def optimize_dataset(
         
     Returns:
         Optimized dataset wrapper
-    """
+    """  # noqa: W293
     return OptimizedDatasetWrapper(dataset, preload=preload, pin_memory=pin_memory)

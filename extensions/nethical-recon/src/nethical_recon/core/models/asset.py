@@ -9,7 +9,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
 
-class AssetType(str, Enum):
+class AssetType(str, Enum):  # noqa: UP042
     """Type of asset."""
 
     HOST = "host"

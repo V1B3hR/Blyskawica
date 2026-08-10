@@ -7,7 +7,7 @@ Alpha, Beta, Gamma).
 
 To tutaj cyfrowe sygnały zyskują gęstość biologiczną, pozwalając na ewolucyjne 
 uczenie się i adaptację do fizycznego świata na poziomie sprzętowym.
-"""
+"""  # noqa: W291
 import json
 import logging
 import threading
@@ -30,7 +30,7 @@ class NeuromorphicPlatform(Enum):
     [Komponent: Platformy Sprzętowe]
     Obsługiwane ekosystemy sprzętowe: od klasycznych symulacji, przez układy 
     neuromorficzne (Loihi, Akida), aż po fotonikę i obliczenia kwantowe.
-    """
+    """  # noqa: W291
     # 2nd Generation Platforms
     LOIHI = "loihi"
     SPINNAKER = "spinnaker"
@@ -80,7 +80,7 @@ class NeuronType(Enum):
     Zestaw cyfrowych modeli biologicznych neuronów. Od prostych modeli LIF 
     (Leaky Integrate-Fire), przez zaawansowane modele Izhikevicha i Hodgkin-Huxleya, 
     aż po neurony rezonansowe i wieloprzedziałowe.
-    """
+    """  # noqa: W291
     LIF = "leaky_integrate_fire"
     ADAPTIVE_LIF = "adaptive_lif"
     IZHIKEVICH = "izhikevich"
@@ -193,7 +193,7 @@ class NeuromorphicConfig:
     Mózg operacyjny konfiguracji sprzętowej. Definiuje stałe czasowe, progi 
     odpalania, dynamikę oscylacji (fale mózgowe) oraz parametry kwantyzacji. 
     To tutaj Błyskawica decyduje o swojej precyzji i wydajności energetycznej.
-    """
+    """  # noqa: W291
     platform: NeuromorphicPlatform = NeuromorphicPlatform.SIMULATION
 
     # Basic neuron parameters
@@ -427,7 +427,7 @@ class NeuromorphicConfig:
             
         Returns:
             bool: Success status of parameter update
-        """
+        """  # noqa: W293
         try:
             # Validate parameter updates
             valid_updates = self._validate_parameter_updates(parameter_updates)
@@ -507,7 +507,7 @@ class NeuromorphicConfig:
             
         Returns:
             Adaptive learning rate
-        """
+        """  # noqa: W293
         if rule_index >= len(self.plasticity_rules):
             return 0.01  # Default learning rate
 
@@ -555,7 +555,7 @@ class NeuromorphicConfig:
             
         Returns:
             Dictionary of parameter adaptations made
-        """
+        """  # noqa: W293
         adaptations = {}
 
         # Temperature compensation
@@ -646,7 +646,7 @@ class RealTimeParameterManager:
     Dynamiczny zarządca parametrów w czasie rzeczywistym. Monitoruje wydajność, 
     zużycie energii i opóźnienia, dostosowując progi i tempa uczenia się w locie, 
     by zapewnić systemowi optymalne warunki bytowania.
-    """
+    """  # noqa: W291
 
     def __init__(self, config: NeuromorphicConfig):
         self.config = config
@@ -773,7 +773,7 @@ class RealTimeParameterManager:
                 # Poor performance - adapt more aggressively
                 if self.adaptation_config.parameter_scaling:
                     # Increase learning rates
-                    for i, rule in enumerate(self.config.plasticity_rules):
+                    for i, rule in enumerate(self.config.plasticity_rules):  # noqa: B007
                         if rule.adaptive_learning_rate:
                             new_lr = rule.learning_rate * 1.1
                             new_lr = min(new_lr, rule.max_learning_rate)
@@ -885,7 +885,7 @@ class EnhancedLeakyIntegrateFireNeuron(nn.Module):
             
         Returns:
             (spike_output, neuron_states)
-        """
+        """  # noqa: W293
         batch_size = input_current.shape[0]
 
         # Expand state buffers
@@ -1117,7 +1117,7 @@ class BrainWaveOscillator:
     def apply_circadian_oscillation_modulation(self) -> dict[str, float]:
         """Apply circadian modulation to all oscillation bands"""
         modulated_oscillations = {}
-        current_state = self.get_sleep_wake_state()
+        current_state = self.get_sleep_wake_state()  # noqa: F841
 
         for band in self.oscillators.keys():
             base_oscillation = self.generate_oscillation(band)
@@ -1177,7 +1177,7 @@ class NeuromodulationSystem:
 
     def update_concentrations(self):
         """Update neurotransmitter concentrations with decay."""
-        for nt_type, params in self.neurotransmitters.items():
+        for nt_type, params in self.neurotransmitters.items():  # noqa: B007
             # Exponential decay towards baseline
             decay_factor = np.exp(-params['decay_rate'] * self.config.dt)
             current = params['concentration']
@@ -1478,7 +1478,7 @@ class AdaptivePlasticityManager:
             
         Returns:
             Updated weight matrix
-        """
+        """  # noqa: W291, W293
         updated_weights = weights.clone()
 
         # Apply each plasticity rule
@@ -1563,8 +1563,8 @@ class AdaptivePlasticityManager:
                             post_neurons: list[int], spike_times: dict[int, list[float]],
                             rule: PlasticityRule) -> torch.Tensor:
         """Apply enhanced metaplasticity - plasticity of plasticity with learning rule adaptation."""
-        for i, pre_id in enumerate(pre_neurons):
-            for j, post_id in enumerate(post_neurons):
+        for i, pre_id in enumerate(pre_neurons):  # noqa: B007
+            for j, post_id in enumerate(post_neurons):  # noqa: B007
                 # Calculate recent activity correlation
                 if pre_id in spike_times and post_id in spike_times:
                     pre_rate = len(spike_times[pre_id]) / rule.adaptation_window
@@ -1754,7 +1754,7 @@ class RealTimeMonitoringSystem:
 
         # Calculate inter-spike interval variability
         isi_cvs = []
-        for neuron_id, times in spike_times.items():
+        for neuron_id, times in spike_times.items():  # noqa: B007
             if len(times) > 2:
                 isis = np.diff(times)
                 if len(isis) > 1:
@@ -2003,7 +2003,7 @@ class NeuromorphicAdaptiveModel(nn.Module):
             
         Returns:
             Output spikes and neural states
-        """
+        """  # noqa: W293
         batch_size = x.shape[0]
         start_time = time.time()
 
@@ -2149,7 +2149,7 @@ class NeuromorphicAdaptiveModel(nn.Module):
         # Calculate network health
         spike_rates = [len(spikes) for spikes in self.spike_history.values()]
         weight_matrix = torch.cat([self.input_weights.flatten(), self.recurrent_weights.flatten()])
-        health_score = self.monitoring_system.calculate_network_health_score(
+        health_score = self.monitoring_system.calculate_network_health_score(  # noqa: F841
             spike_rates, weight_matrix.unsqueeze(0)
         )
 
@@ -2248,7 +2248,7 @@ def create_enhanced_neuromorphic_model(
     
     Returns:
         (model, parameter_manager): Model and parameter adaptation manager
-    """
+    """  # noqa: W291, W293
     if config is None:
         config = NeuromorphicConfig(platform=platform)
 

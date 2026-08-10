@@ -14,12 +14,12 @@ STRIDE Categories:
 - Elevation of Privilege: Authorization and access control threats
 """
 
-from typing import Dict, List, Optional, Set, Any
+import hashlib
+import json
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-import json
-import hashlib
+from typing import Any
 
 
 class ThreatCategory(Enum):
@@ -63,15 +63,15 @@ class Threat:
     description: str
     severity: ThreatSeverity
     status: ThreatStatus
-    affected_components: List[str]
-    attack_vectors: List[str]
-    mitigations: List[str] = field(default_factory=list)
-    residual_risk: Optional[str] = None
+    affected_components: list[str]
+    attack_vectors: list[str]
+    mitigations: list[str] = field(default_factory=list)
+    residual_risk: str | None = None
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
-    references: List[str] = field(default_factory=list)
+    references: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert threat to dictionary."""
         return {
             "id": self.id,
@@ -98,17 +98,17 @@ class AttackTreeNode:
     name: str
     description: str
     is_and_gate: bool = False  # True for AND gate, False for OR gate
-    children: List["AttackTreeNode"] = field(default_factory=list)
+    children: list["AttackTreeNode"] = field(default_factory=list)
     probability: float = 0.0  # Probability of success (0-1)
     impact: float = 0.0  # Impact if successful (0-1)
     cost_to_attacker: float = 0.0  # Estimated cost in arbitrary units
-    mitigations: List[str] = field(default_factory=list)
+    mitigations: list[str] = field(default_factory=list)
 
     def calculate_risk(self) -> float:
         """Calculate risk score based on probability and impact."""
         return self.probability * self.impact
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert attack tree node to dictionary."""
         return {
             "id": self.id,
@@ -133,13 +133,13 @@ class SecurityRequirement:
     description: str
     category: str
     priority: str  # critical, high, medium, low
-    related_threats: List[str] = field(default_factory=list)
-    implemented_in: List[str] = field(default_factory=list)  # List of code components
-    test_cases: List[str] = field(default_factory=list)
-    compliance_frameworks: List[str] = field(default_factory=list)  # NIST, HIPAA, etc.
+    related_threats: list[str] = field(default_factory=list)
+    implemented_in: list[str] = field(default_factory=list)  # List of code components
+    test_cases: list[str] = field(default_factory=list)
+    compliance_frameworks: list[str] = field(default_factory=list)  # NIST, HIPAA, etc.
     status: str = "draft"  # draft, approved, implemented, verified
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert security requirement to dictionary."""
         return {
             "id": self.id,
@@ -160,8 +160,8 @@ class ThreatIntelligenceFeed:
 
     def __init__(self):
         """Initialize threat intelligence feed."""
-        self.indicators: Dict[str, Dict[str, Any]] = {}
-        self.last_update: Optional[datetime] = None
+        self.indicators: dict[str, dict[str, Any]] = {}
+        self.last_update: datetime | None = None
 
     def add_indicator(
         self,
@@ -186,13 +186,13 @@ class ThreatIntelligenceFeed:
         self.last_update = datetime.now()
         return indicator_id
 
-    def get_indicators(self, indicator_type: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_indicators(self, indicator_type: str | None = None) -> list[dict[str, Any]]:
         """Get threat indicators, optionally filtered by type."""
         if indicator_type:
             return [ind for ind in self.indicators.values() if ind["type"] == indicator_type]
         return list(self.indicators.values())
 
-    def check_indicator(self, value: str) -> Optional[Dict[str, Any]]:
+    def check_indicator(self, value: str) -> dict[str, Any] | None:
         """Check if a value matches any known threat indicators."""
         for indicator in self.indicators.values():
             if indicator["value"] == value:
@@ -205,8 +205,8 @@ class STRIDEAnalyzer:
 
     def __init__(self):
         """Initialize STRIDE analyzer."""
-        self.threats: Dict[str, Threat] = {}
-        self.components: Set[str] = set()
+        self.threats: dict[str, Threat] = {}
+        self.components: set[str] = set()
 
     def add_threat(
         self,
@@ -214,9 +214,9 @@ class STRIDEAnalyzer:
         title: str,
         description: str,
         severity: ThreatSeverity,
-        affected_components: List[str],
-        attack_vectors: List[str],
-        mitigations: Optional[List[str]] = None,
+        affected_components: list[str],
+        attack_vectors: list[str],
+        mitigations: list[str] | None = None,
     ) -> str:
         """Add a new threat to the model."""
         threat_id = hashlib.sha256(
@@ -246,21 +246,21 @@ class STRIDEAnalyzer:
             self.threats[threat_id].status = status
             self.threats[threat_id].updated_at = datetime.now()
 
-    def get_threats_by_category(self, category: ThreatCategory) -> List[Threat]:
+    def get_threats_by_category(self, category: ThreatCategory) -> list[Threat]:
         """Get all threats in a specific STRIDE category."""
         return [threat for threat in self.threats.values() if threat.category == category]
 
-    def get_threats_by_severity(self, severity: ThreatSeverity) -> List[Threat]:
+    def get_threats_by_severity(self, severity: ThreatSeverity) -> list[Threat]:
         """Get all threats with a specific severity."""
         return [threat for threat in self.threats.values() if threat.severity == severity]
 
-    def get_threats_by_component(self, component: str) -> List[Threat]:
+    def get_threats_by_component(self, component: str) -> list[Threat]:
         """Get all threats affecting a specific component."""
         return [
             threat for threat in self.threats.values() if component in threat.affected_components
         ]
 
-    def generate_stride_report(self) -> Dict[str, Any]:
+    def generate_stride_report(self) -> dict[str, Any]:
         """Generate a comprehensive STRIDE analysis report."""
         report = {
             "generated_at": datetime.now().isoformat(),
@@ -302,7 +302,7 @@ class AttackTreeAnalyzer:
 
     def __init__(self):
         """Initialize attack tree analyzer."""
-        self.trees: Dict[str, AttackTreeNode] = {}
+        self.trees: dict[str, AttackTreeNode] = {}
 
     def create_attack_tree(
         self, tree_id: str, root_name: str, root_description: str
@@ -355,7 +355,7 @@ class AttackTreeAnalyzer:
             # Take maximum risk for OR gate
             return max(child_risks) if child_risks else 0.0
 
-    def export_attack_tree(self, tree_id: str) -> Optional[Dict[str, Any]]:
+    def export_attack_tree(self, tree_id: str) -> dict[str, Any] | None:
         """Export an attack tree to a dictionary."""
         if tree_id not in self.trees:
             return None
@@ -373,7 +373,7 @@ class SecurityRequirementsTraceability:
 
     def __init__(self):
         """Initialize traceability matrix."""
-        self.requirements: Dict[str, SecurityRequirement] = {}
+        self.requirements: dict[str, SecurityRequirement] = {}
 
     def add_requirement(
         self,
@@ -382,7 +382,7 @@ class SecurityRequirementsTraceability:
         description: str,
         category: str,
         priority: str,
-        compliance_frameworks: Optional[List[str]] = None,
+        compliance_frameworks: list[str] | None = None,
     ) -> SecurityRequirement:
         """Add a new security requirement."""
         requirement = SecurityRequirement(
@@ -398,19 +398,19 @@ class SecurityRequirementsTraceability:
 
     def link_to_threat(self, req_id: str, threat_id: str) -> None:
         """Link a requirement to a threat."""
-        if req_id in self.requirements:
+        if req_id in self.requirements:  # noqa: SIM102
             if threat_id not in self.requirements[req_id].related_threats:
                 self.requirements[req_id].related_threats.append(threat_id)
 
     def link_to_implementation(self, req_id: str, component: str) -> None:
         """Link a requirement to an implementation component."""
-        if req_id in self.requirements:
+        if req_id in self.requirements:  # noqa: SIM102
             if component not in self.requirements[req_id].implemented_in:
                 self.requirements[req_id].implemented_in.append(component)
 
     def link_to_test(self, req_id: str, test_case: str) -> None:
         """Link a requirement to a test case."""
-        if req_id in self.requirements:
+        if req_id in self.requirements:  # noqa: SIM102
             if test_case not in self.requirements[req_id].test_cases:
                 self.requirements[req_id].test_cases.append(test_case)
 
@@ -419,7 +419,7 @@ class SecurityRequirementsTraceability:
         if req_id in self.requirements:
             self.requirements[req_id].status = status
 
-    def get_traceability_matrix(self) -> Dict[str, Any]:
+    def get_traceability_matrix(self) -> dict[str, Any]:
         """Generate traceability matrix report."""
         return {
             "generated_at": datetime.now().isoformat(),
@@ -428,7 +428,7 @@ class SecurityRequirementsTraceability:
             "coverage_stats": self._calculate_coverage_stats(),
         }
 
-    def _calculate_coverage_stats(self) -> Dict[str, Any]:
+    def _calculate_coverage_stats(self) -> dict[str, Any]:
         """Calculate coverage statistics."""
         total = len(self.requirements)
         if total == 0:
@@ -464,7 +464,7 @@ class ThreatModelingFramework:
         """Update the last modified timestamp."""
         self.metadata["last_updated"] = datetime.now().isoformat()
 
-    def generate_comprehensive_report(self) -> Dict[str, Any]:
+    def generate_comprehensive_report(self) -> dict[str, Any]:
         """Generate a comprehensive threat modeling report."""
         self.update_timestamp()
 
@@ -473,7 +473,7 @@ class ThreatModelingFramework:
             "stride_analysis": self.stride_analyzer.generate_stride_report(),
             "attack_trees": {
                 tree_id: self.attack_tree_analyzer.export_attack_tree(tree_id)
-                for tree_id in self.attack_tree_analyzer.trees.keys()
+                for tree_id in self.attack_tree_analyzer.trees.keys()  # noqa: SIM118
             },
             "requirements_traceability": self.requirements_matrix.get_traceability_matrix(),
             "threat_intelligence": {
@@ -495,7 +495,7 @@ class ThreatModelingFramework:
 
     def import_from_json(self, filepath: str) -> None:
         """Import threat model from JSON file."""
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
 
         # Import metadata

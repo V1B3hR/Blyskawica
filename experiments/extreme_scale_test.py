@@ -3,7 +3,6 @@ import random
 from api_integrations.ai_api import fetch_ai_signal
 from api_integrations.human_api import fetch_human_signal
 from api_integrations.world_api import fetch_world_signal
-
 from config.network_config import load_network_config
 from core.alive_node import AliveLoopNode
 from core.capacitor import CapacitorInSpace
@@ -38,8 +37,8 @@ def run_extreme_scale_test(steps=10000, node_count=9000, capacitor_count=600, sn
     print(f"Initializing {node_count} nodes in {spatial_dims}D space...")
 
     # Create position and velocity bounds based on spatial dimensions
-    position_bounds = [(-10, 10)] * spatial_dims  # Same bounds for all dimensions
-    velocity_bounds = [(-0.15, 0.15)] * spatial_dims
+    position_bounds = [(-10, 10)] * spatial_dims  # Same bounds for all dimensions  # noqa: F841
+    velocity_bounds = [(-0.15, 0.15)] * spatial_dims  # noqa: F841
 
     nodes = [
         AliveLoopNode(

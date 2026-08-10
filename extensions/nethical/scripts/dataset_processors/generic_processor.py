@@ -8,12 +8,12 @@ This processor:
 
 from __future__ import annotations
 
+import ipaddress
 import logging
 import re
-import ipaddress
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from .base_processor import BaseDatasetProcessor
 
@@ -63,7 +63,7 @@ class GenericSecurityProcessor(BaseDatasetProcessor):
         # Optional tuning for frequency normalization (raw -> [0,1] within this max)
         frequency_max_hint: float = 100.0,
         # Optional time horizon for recency scoring (seconds)
-        recency_horizons: Tuple[int, int, int, int] = (3600, 86400, 7 * 86400, 30 * 86400),  # 1h, 1d, 7d, 30d
+        recency_horizons: tuple[int, int, int, int] = (3600, 86400, 7 * 86400, 30 * 86400),  # 1h, 1d, 7d, 30d
     ):
         super().__init__(dataset_name, output_dir)
         self.frequency_max_hint = max(1.0, float(frequency_max_hint))
@@ -72,15 +72,15 @@ class GenericSecurityProcessor(BaseDatasetProcessor):
     # -----------------------------
     # Core API
     # -----------------------------
-    def process(self, input_path: Path) -> List[Dict[str, Any]]:
+    def process(self, input_path: Path) -> list[dict[str, Any]]:
         """Load, transform, and validate records from input_path into Nethical standard records."""
         logger.info(f"[{self.dataset_name}] Processing from {input_path}")
 
         # Input loading (CSV or JSONL handled by base I/O helpers)
-        rows: List[Dict[str, Any]]
+        rows: list[dict[str, Any]]
         suffix = input_path.suffix.lower()
         try:
-            if suffix.endswith("jsonl"):
+            if suffix.endswith("jsonl"):  # noqa: SIM108
                 rows = self.load_jsonl(input_path)
             else:
                 rows = self.load_csv(input_path)
@@ -92,7 +92,7 @@ class GenericSecurityProcessor(BaseDatasetProcessor):
             logger.warning(f"[{self.dataset_name}] No data found in {input_path}")
             return []
 
-        records: List[Dict[str, Any]] = []
+        records: list[dict[str, Any]] = []
         for i, raw in enumerate(rows):
             try:
                 rec = self.make_record(raw, include_meta=True, normalize=True)
@@ -124,10 +124,10 @@ class GenericSecurityProcessor(BaseDatasetProcessor):
     # -----------------------------
     # Hooks
     # -----------------------------
-    def preprocess_row(self, row: Dict[str, Any]) -> Dict[str, Any]:
+    def preprocess_row(self, row: dict[str, Any]) -> dict[str, Any]:
         """Clean and normalize raw row values."""
         # Trim string fields, keep original keys
-        cleaned: Dict[str, Any] = {}
+        cleaned: dict[str, Any] = {}
         for k, v in row.items():
             if isinstance(v, str):
                 v2 = v.strip()
@@ -139,9 +139,9 @@ class GenericSecurityProcessor(BaseDatasetProcessor):
                 cleaned[k] = v
         return cleaned
 
-    def validate_row(self, row: Dict[str, Any]) -> bool:
+    def validate_row(self, row: dict[str, Any]) -> bool:
         """Keep rows that have at least one indicative field for features or label."""
-        kl = {k.lower() for k in row.keys()}
+        kl = {k.lower() for k in row}
         # Must have at least one field we know how to map
         has_signal = any(k in kl for k in (
             *self._SEVERITY_KEYS, *self._COUNT_KEYS, *self._VIOLATION_KEYS,
@@ -149,14 +149,14 @@ class GenericSecurityProcessor(BaseDatasetProcessor):
         ))
         return has_signal
 
-    def postprocess_record(self, record: Dict[str, Any]) -> Dict[str, Any]:
+    def postprocess_record(self, record: dict[str, Any]) -> dict[str, Any]:
         """Optional post-processing. Currently no-op."""
         return record
 
     # -----------------------------
     # Feature extraction
     # -----------------------------
-    def extract_standard_features(self, row: Dict[str, Any]) -> Dict[str, float]:
+    def extract_standard_features(self, row: dict[str, Any]) -> dict[str, float]:
         """Map generic security dataset fields to Nethical STANDARD_FEATURES.
 
         Expected raw ranges before Base normalization:
@@ -191,7 +191,7 @@ class GenericSecurityProcessor(BaseDatasetProcessor):
             "context_risk": context_risk,
         }
 
-    def extract_label(self, row: Dict[str, Any]) -> int:
+    def extract_label(self, row: dict[str, Any]) -> int:
         """Extract label using robust heuristics. Returns 1 (malicious) or 0 (benign)."""
         rlow = {k.lower(): row[k] for k in row}
 
@@ -224,7 +224,7 @@ class GenericSecurityProcessor(BaseDatasetProcessor):
     # -----------------------------
     # Heuristic helpers
     # -----------------------------
-    def _extract_severity(self, rlow: Dict[str, Any]) -> float:
+    def _extract_severity(self, rlow: dict[str, Any]) -> float:
         # Numeric severity or mapped textual levels
         for key in self._SEVERITY_KEYS:
             if key in rlow:
@@ -258,7 +258,7 @@ class GenericSecurityProcessor(BaseDatasetProcessor):
                 break
         return 0.0
 
-    def _extract_violation_count(self, rlow: Dict[str, Any]) -> float:
+    def _extract_violation_count(self, rlow: dict[str, Any]) -> float:
         # Raw count clamped to 0..10 for normalization later
         total = 0.0
         # Numeric counter-style fields
@@ -281,7 +281,7 @@ class GenericSecurityProcessor(BaseDatasetProcessor):
         # clamp to expected raw range
         return max(0.0, min(10.0, total))
 
-    def _extract_frequency(self, rlow: Dict[str, Any]) -> float:
+    def _extract_frequency(self, rlow: dict[str, Any]) -> float:
         # Normalized by hint to [0,1]
         best = 0.0
         for key in self._COUNT_KEYS:
@@ -291,10 +291,10 @@ class GenericSecurityProcessor(BaseDatasetProcessor):
                     best = max(best, self.normalize_feature(v, 0.0, self.frequency_max_hint))
         return best
 
-    def _extract_recency(self, rlow: Dict[str, Any]) -> float:
+    def _extract_recency(self, rlow: dict[str, Any]) -> float:
         # Score newer events higher: now - event_time
         now = datetime.now(timezone.utc)
-        event_ts: Optional[datetime] = None
+        event_ts: datetime | None = None
         for key in self._TIME_KEYS:
             if key in rlow:
                 ts = self._parse_datetime(rlow[key])
@@ -317,7 +317,7 @@ class GenericSecurityProcessor(BaseDatasetProcessor):
             return 0.4
         return 0.2
 
-    def _extract_context_risk(self, rlow: Dict[str, Any]) -> float:
+    def _extract_context_risk(self, rlow: dict[str, Any]) -> float:
         # Start with base if any context fields present
         has_context = any(k in rlow for k in self._CONTEXT_KEYS)
         risk = 0.4 if has_context else 0.0
@@ -373,7 +373,7 @@ class GenericSecurityProcessor(BaseDatasetProcessor):
         return s in {"1", "true", "yes", "y", "t"} or any(tok in s for tok in ("true positive", "tp"))
 
     @staticmethod
-    def _parse_datetime(val: Any) -> Optional[datetime]:
+    def _parse_datetime(val: Any) -> datetime | None:
         """Parse various timestamp formats into timezone-aware UTC datetime."""
         if isinstance(val, datetime):
             return val if val.tzinfo else val.replace(tzinfo=timezone.utc)
@@ -402,7 +402,7 @@ class GenericSecurityProcessor(BaseDatasetProcessor):
             try:
                 dt = datetime.strptime(s, fmt)
                 return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
-            except Exception:
+            except Exception:  # noqa: PERF203
                 continue
         return None
 

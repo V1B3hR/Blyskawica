@@ -1,15 +1,16 @@
 """Tests for satellite base classes."""
 
-import pytest
 from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
+
+import pytest
 
 from nethical.connectivity.satellite.base import (
-    SatelliteProvider,
-    ConnectionState,
     ConnectionConfig,
     ConnectionMetrics,
+    ConnectionState,
     SatelliteConnectionError,
+    SatelliteProvider,
     SatelliteTimeoutError,
 )
 

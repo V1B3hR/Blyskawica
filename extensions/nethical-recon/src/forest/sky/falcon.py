@@ -70,7 +70,7 @@ class Falcon(BaseBird):
             self.take_flight(FlightMode.HUNTING)
 
         trees = forest_data.get("trees", [])
-        recent_events = forest_data.get("recent_events", [])
+        recent_events = forest_data.get("recent_events", [])  # noqa: F841
         network_activity = forest_data.get("network_activity", {})
 
         # Real-time: New threats just appeared
@@ -314,7 +314,7 @@ class Falcon(BaseBird):
     def clear_targets(self, max_age_minutes: int = 60):
         """Clear old hunting targets"""
         # Keep targets from last hour by default
-        cutoff = datetime.now() - timedelta(minutes=max_age_minutes)
+        cutoff = datetime.now() - timedelta(minutes=max_age_minutes)  # noqa: F841
         self.targets = [t for t in self.targets if self._is_recent(t.get("first_seen"), max_age_minutes)]
 
     def __str__(self) -> str:

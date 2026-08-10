@@ -104,7 +104,7 @@ def demonstrate_problem_and_solution():
     tm.reset()
 
     print("Running 10 network ticks...")
-    for i in range(10):
+    for i in range(10):  # noqa: B007
         stimuli = [1.0, 2.0, 3.0]
         network.network_tick(stimuli)
 
@@ -133,7 +133,7 @@ def demonstrate_problem_and_solution():
         scaled_tm = TimeManager(config)
         set_time_manager(scaled_tm)
 
-        start_time = time.time()
+        start_time = time.time()  # noqa: F841
         time.sleep(0.01)  # Small real delay
         scaled_tm.network_tick()
 

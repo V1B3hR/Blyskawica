@@ -10,8 +10,9 @@ from typing import Any
 import torch
 import torch.nn as nn
 
-from ..core import AdaptiveDynamics, NodeState, PhaseScheduler
 from adaptiveneuralnetwork.central_nervous_system.micro_phases import MicroPhaseScheduler
+
+from ..core import AdaptiveDynamics, NodeState, PhaseScheduler
 from .config import AdaptiveConfig
 
 

@@ -9,16 +9,16 @@ from typing import Any
 
 # Optional database dependencies
 try:
-    import sqlalchemy as sa
+    import sqlalchemy as sa  # noqa: F401
     from sqlalchemy import (
         JSON,
         Column,
         DateTime,
         Float,
         Integer,
-        MetaData,
+        MetaData,  # noqa: F401
         String,
-        Table,
+        Table,  # noqa: F401
         Text,
         create_engine,
     )
@@ -35,7 +35,7 @@ except ImportError:
     Integer = String = Float = DateTime = Text = JSON = None
 
 try:
-    import pymongo
+    import pymongo  # noqa: F401
     from pymongo import MongoClient
     PYMONGO_AVAILABLE = True
 except ImportError:

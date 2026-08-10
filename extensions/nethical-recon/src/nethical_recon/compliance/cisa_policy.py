@@ -8,7 +8,7 @@ organization types and compliance requirements.
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -237,7 +237,7 @@ class CISAPolicyManager:
         """
         return self._current_mode
 
-    def get_compliance_requirements(self, mode: Optional[CISAPolicyMode] = None) -> list[str]:
+    def get_compliance_requirements(self, mode: CISAPolicyMode | None = None) -> list[str]:
         """
         Get compliance requirements for policy mode.
 
@@ -251,7 +251,7 @@ class CISAPolicyManager:
         profile = self.get_profile(mode)
         return profile.compliance_requirements
 
-    def check_scan_frequency(self, mode: Optional[CISAPolicyMode] = None) -> int:
+    def check_scan_frequency(self, mode: CISAPolicyMode | None = None) -> int:
         """
         Get required scan frequency in days.
 

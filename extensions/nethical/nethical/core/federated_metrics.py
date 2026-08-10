@@ -6,11 +6,11 @@ regions without requiring raw data sharing.
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+import statistics
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from collections import defaultdict
-import statistics
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -21,9 +21,9 @@ class RegionalMetrics:
 
     region_id: str
     timestamp: datetime
-    metrics: Dict[str, float]
+    metrics: dict[str, float]
     count: int
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 class FederatedMetricsAggregator:
@@ -40,7 +40,7 @@ class FederatedMetricsAggregator:
 
     def __init__(
         self,
-        regions: Optional[List[str]] = None,
+        regions: list[str] | None = None,
         aggregation_interval: int = 60,  # seconds
         retention_period: int = 86400,  # 24 hours
     ):
@@ -57,13 +57,13 @@ class FederatedMetricsAggregator:
         self.retention_period = retention_period
 
         # Store regional metrics
-        self.regional_metrics: Dict[str, List[RegionalMetrics]] = defaultdict(list)
+        self.regional_metrics: dict[str, list[RegionalMetrics]] = defaultdict(list)
 
         # Store aggregated metrics
-        self.aggregated_metrics: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+        self.aggregated_metrics: dict[str, list[dict[str, Any]]] = defaultdict(list)
 
         # Region weights (for weighted aggregation)
-        self.region_weights: Dict[str, float] = {region: 1.0 for region in self.regions}
+        self.region_weights: dict[str, float] = dict.fromkeys(self.regions, 1.0)
 
         logger.info(f"Federated metrics aggregator initialized for regions: {regions}")
 
@@ -96,10 +96,10 @@ class FederatedMetricsAggregator:
     def submit_regional_metrics(
         self,
         region_id: str,
-        metrics: Dict[str, float],
+        metrics: dict[str, float],
         count: int = 1,
-        timestamp: Optional[datetime] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        timestamp: datetime | None = None,
+        metadata: dict[str, Any] | None = None,
     ):
         """
         Submit metrics from a region.
@@ -132,12 +132,12 @@ class FederatedMetricsAggregator:
 
     def aggregate_metrics(
         self,
-        metric_names: Optional[List[str]] = None,
+        metric_names: list[str] | None = None,
         aggregation_type: str = "mean",
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
-        regions: Optional[List[str]] = None,
-    ) -> Dict[str, float]:
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
+        regions: list[str] | None = None,
+    ) -> dict[str, float]:
         """
         Aggregate metrics across regions.
 
@@ -156,7 +156,7 @@ class FederatedMetricsAggregator:
         start_time = start_time or (end_time - timedelta(seconds=self.aggregation_interval))
 
         # Collect metrics from regions
-        regional_data: Dict[str, List[Tuple[float, float]]] = defaultdict(list)
+        regional_data: dict[str, list[tuple[float, float]]] = defaultdict(list)
 
         for region_id in regions:
             if region_id not in self.regional_metrics:
@@ -214,9 +214,9 @@ class FederatedMetricsAggregator:
         self,
         metric_name: str,
         aggregation_type: str = "mean",
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
-    ) -> Dict[str, float]:
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
+    ) -> dict[str, float]:
         """
         Aggregate a metric with per-region breakdown.
 
@@ -248,11 +248,11 @@ class FederatedMetricsAggregator:
     def compute_percentiles(
         self,
         metric_name: str,
-        percentiles: List[float] = None,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
-        regions: Optional[List[str]] = None,
-    ) -> Dict[float, float]:
+        percentiles: list[float] = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
+        regions: list[str] | None = None,
+    ) -> dict[float, float]:
         """
         Compute percentiles for a metric across regions.
 
@@ -278,7 +278,7 @@ class FederatedMetricsAggregator:
                 continue
 
             for rm in self.regional_metrics[region_id]:
-                if start_time <= rm.timestamp <= end_time:
+                if start_time <= rm.timestamp <= end_time:  # noqa: SIM102
                     if metric_name in rm.metrics:
                         # Repeat value by count for proper distribution
                         values.extend([rm.metrics[metric_name]] * rm.count)
@@ -299,8 +299,8 @@ class FederatedMetricsAggregator:
         return result
 
     def get_regional_statistics(
-        self, start_time: Optional[datetime] = None, end_time: Optional[datetime] = None
-    ) -> Dict[str, Dict[str, Any]]:
+        self, start_time: datetime | None = None, end_time: datetime | None = None
+    ) -> dict[str, dict[str, Any]]:
         """
         Get statistics for each region.
 
@@ -329,7 +329,7 @@ class FederatedMetricsAggregator:
             ]
 
             # Aggregate metrics
-            metrics_sum: Dict[str, List[float]] = defaultdict(list)
+            metrics_sum: dict[str, list[float]] = defaultdict(list)
             total_count = 0
 
             for rm in filtered_metrics:
@@ -375,7 +375,7 @@ class FederatedMetricsAggregator:
         for region_id in self.regions:
             self._cleanup_old_metrics(region_id)
 
-    def get_global_statistics(self) -> Dict[str, Any]:
+    def get_global_statistics(self) -> dict[str, Any]:
         """
         Get global statistics across all regions.
 

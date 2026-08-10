@@ -1,7 +1,7 @@
-from typing import Any, Callable, Optional, TypeVar, Type, Tuple, Dict, List
-from enum import Enum
 import threading
 import time
+from enum import Enum
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar
 
 T = TypeVar("T")
 
@@ -48,7 +48,7 @@ class CircuitBreaker:
                     raise CircuitBreakerError(f"Circuit breaker '{self.name}' is OPEN.")
         try:
             result = func(*args, **kwargs)
-        except self.expected_exceptions as e:
+        except self.expected_exceptions:
             with self.lock:
                 self.failure_count += 1
                 self.success_count = 0

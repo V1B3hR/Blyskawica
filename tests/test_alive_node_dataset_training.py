@@ -1,4 +1,5 @@
 import os
+
 """
 Tests for AliveNode training with datasets.
 
@@ -6,15 +7,14 @@ This module tests the training script that trains AliveLoopNode
 with experiences derived from multiple datasets.
 """
 
-import sys
-import unittest
-from pathlib import Path
+import sys  # noqa: E402
+import unittest  # noqa: E402
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from adaptiveneuralnetwork.central_nervous_system.alive_node import AliveLoopNode
-from adaptiveneuralnetwork.training.scripts.train_alive_node_with_datasets import (
+from adaptiveneuralnetwork.central_nervous_system.alive_node import AliveLoopNode  # noqa: E402
+from adaptiveneuralnetwork.training.scripts.train_alive_node_with_datasets import (  # noqa: E402
     DatasetToExperienceConverter,
     load_synthetic_dataset,
     train_alive_node_on_dataset,
@@ -90,7 +90,7 @@ class TestAliveNodeDatasetTraining(unittest.TestCase):
 
         # Record initial state
         initial_memory_count = len(self.node.memory)
-        initial_energy = self.node.energy
+        initial_energy = self.node.energy  # noqa: F841
 
         # Train on dataset
         results = train_alive_node_on_dataset(

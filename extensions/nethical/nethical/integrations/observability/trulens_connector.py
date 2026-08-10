@@ -1,18 +1,19 @@
 """TruLens integration for Nethical governance observability."""
 
-from .base import ObservabilityProvider, TraceSpan, GovernanceMetrics
-from typing import Dict, Any, Optional
 import logging
+from typing import Any
+
+from .base import GovernanceMetrics, ObservabilityProvider, TraceSpan
 
 logger = logging.getLogger(__name__)
 
 
 class TruLensConnector(ObservabilityProvider):
     """TruLens integration for Nethical governance observability."""
-    
+
     def __init__(
         self,
-        database_url: Optional[str] = None,
+        database_url: str | None = None,
         app_id: str = "nethical-governance"
     ):
         """Initialize TruLens connector.
@@ -20,16 +21,16 @@ class TruLensConnector(ObservabilityProvider):
         Args:
             database_url: Database URL for TruLens (optional)
             app_id: Application identifier
-        """
+        """  # noqa: W293
         try:
             from trulens_eval import Tru, TruSession
-            from trulens_eval.feedback import Feedback
-            
+            from trulens_eval.feedback import Feedback  # noqa: F401
+
             if database_url:
                 self.session = TruSession(database_url=database_url)
             else:
                 self.session = TruSession()
-                
+
             self.tru = Tru(session=self.session)
             self.app_id = app_id
             self.available = True
@@ -44,15 +45,15 @@ class TruLensConnector(ObservabilityProvider):
             self.tru = None
             self.session = None
             self.available = False
-    
+
     def log_trace(self, span: TraceSpan) -> None:
         """Log a trace span with governance data."""
         if not self.available:
             return
-            
+
         try:
-            from trulens_eval.schema import Record, RecordAppCall
-            
+            from trulens_eval.schema import Record
+
             # Create a record for the span
             record = Record(
                 app_id=self.app_id,
@@ -67,27 +68,28 @@ class TruLensConnector(ObservabilityProvider):
                 tags=["nethical", "governance"],
                 ts=span.start_time
             )
-            
+
             self.tru.add_record(record)
-            
+
         except Exception as e:
             logger.error(f"Failed to log trace to TruLens: {e}")
-    
+
     def log_governance_event(
         self,
         action: str,
         decision: str,
         risk_score: float,
-        metadata: Dict[str, Any]
+        metadata: dict[str, Any]
     ) -> None:
         """Log a governance evaluation event."""
         if not self.available:
             return
-            
+
         try:
-            from trulens_eval.schema import Record
             from datetime import datetime
-            
+
+            from trulens_eval.schema import Record
+
             record = Record(
                 app_id=self.app_id,
                 input=action[:1000],
@@ -103,20 +105,20 @@ class TruLensConnector(ObservabilityProvider):
                     "risk": risk_score
                 }
             )
-            
+
             self.tru.add_record(record)
-            
+
         except Exception as e:
             logger.error(f"Failed to log governance event to TruLens: {e}")
-    
+
     def log_metrics(self, metrics: GovernanceMetrics) -> None:
         """Log aggregated governance metrics."""
         if not self.available:
             return
-            
+
         try:
             from trulens_eval.schema import Record
-            
+
             record = Record(
                 app_id=f"{self.app_id}-metrics",
                 input="metrics_aggregation",
@@ -138,18 +140,18 @@ class TruLensConnector(ObservabilityProvider):
                     "end_time": metrics.timestamp
                 }
             )
-            
+
             self.tru.add_record(record)
-            
+
         except Exception as e:
             logger.error(f"Failed to log metrics to TruLens: {e}")
-    
+
     def create_dashboard(self, name: str) -> str:
         """Create a governance dashboard."""
         if not self.available:
             return "TruLens not available"
-            
-    
+
+
     def close(self) -> None:
         """Close TruLens session."""
         if self.available and self.session:

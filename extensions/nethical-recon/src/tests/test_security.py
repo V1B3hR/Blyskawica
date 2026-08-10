@@ -1,7 +1,6 @@
 """Tests for input validation and OWASP compliance modules."""
 
 import pytest
-
 from nethical_recon.security import (
     InputType,
     InputValidator,

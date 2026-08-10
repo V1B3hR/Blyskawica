@@ -12,6 +12,7 @@ import logging
 import sys
 import time
 from pathlib import Path
+
 import torch
 
 # Configure logging
@@ -20,21 +21,22 @@ logger = logging.getLogger("safetensors_exporter")
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import NeuromodulationState
-from adaptiveneuralnetwork.immune_system.wolf_teeth import WolfTeethDefenseEngine
-from adaptiveneuralnetwork.applications.sensory_processing import SensoryPreprocessor
+from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import (  # noqa: E402
+    NeuromodulationState,  # noqa: E402
+)
+from adaptiveneuralnetwork.immune_system.wolf_teeth import WolfTeethDefenseEngine  # noqa: E402
 
 
 def export_standalone_bundle():
     logger.info("Initializing Iteration 3: Sparkle App Standalone Safetensors Exporter...")
 
     neuro_state = NeuromodulationState()
-    wolf_teeth = WolfTeethDefenseEngine()
+    wolf_teeth = WolfTeethDefenseEngine()  # noqa: F841
 
     # Target directory setup (Tauri Rust model folder & local outputs)
     output_dir = Path("outputs/standalone_bundle")
     tauri_model_dir = Path("sparkle_app/src-tauri/models")
-    
+
     output_dir.mkdir(parents=True, exist_ok=True)
     tauri_model_dir.mkdir(parents=True, exist_ok=True)
 

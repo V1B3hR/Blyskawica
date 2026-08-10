@@ -5,14 +5,16 @@ Tests centralized configuration with validation and environment variable loading
 """
 
 import os
+
 import pytest
+
 from src.core.config import (
     BioartConfig,
-    LogLevel,
     LogFormat,
+    LogLevel,
     get_config,
-    set_config,
     reset_config,
+    set_config,
 )
 
 

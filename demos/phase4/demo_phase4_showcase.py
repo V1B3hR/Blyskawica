@@ -23,9 +23,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # Import Phase 4 modules
-from core.advanced_analytics import AdvancedAnalyticsDashboard
-from core.decision_transparency import DecisionTransparencySystem
-from core.neural_architecture_search import (
+from core.advanced_analytics import AdvancedAnalyticsDashboard  # noqa: E402
+from core.decision_transparency import DecisionTransparencySystem  # noqa: E402
+from core.neural_architecture_search import (  # noqa: E402
     MultiObjective,
     NetworkArchitecture,
     NeuralArchitectureSearchSystem,
@@ -480,7 +480,7 @@ def demo_neural_architecture_search():
         complexity_score = min(1.0, num_params / 100000.0)
 
         # Simulate accuracy based on architecture properties
-        layer_diversity = len(set(layer["type"] for layer in architecture.layers))
+        layer_diversity = len(set(layer["type"] for layer in architecture.layers))  # noqa: C401
         base_accuracy = 0.6 + (layer_diversity * 0.08) + np.random.uniform(0, 0.2)
         base_accuracy = min(0.95, base_accuracy)
 
@@ -741,7 +741,7 @@ def main():
         nas_system, optimization_result = demo_neural_architecture_search()
 
         # Run integration showcase
-        integration_results = demo_integration_showcase()
+        integration_results = demo_integration_showcase()  # noqa: F841
 
         # Final summary
         print_section_header("PHASE 4 DEMONSTRATION COMPLETE")

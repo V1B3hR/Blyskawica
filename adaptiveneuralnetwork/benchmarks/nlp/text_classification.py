@@ -29,7 +29,7 @@ class EssayDataset(Dataset):
     Dataset for Human vs AI Generated Essays classification.
     
     Supports both real data loading and synthetic data generation for testing.
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
@@ -48,7 +48,7 @@ class EssayDataset(Dataset):
             vocab_size: Maximum vocabulary size
             max_length: Maximum sequence length
             vocab: Pre-built vocabulary dictionary
-        """
+        """  # noqa: W293
         self.texts = texts
         self.labels = labels
         self.vocab_size = vocab_size
@@ -131,7 +131,7 @@ class SyntheticEssayDataset(EssayDataset):
             vocab_size: Size of vocabulary
             max_length: Maximum sequence length
             human_vs_ai_ratio: Ratio of human vs AI essays
-        """
+        """  # noqa: W293
         self.vocab_size = vocab_size
         self.max_length = max_length
 
@@ -194,7 +194,7 @@ class TextClassificationBenchmark:
         Args:
             config: Adaptive neural network configuration
             device: Torch device for computation
-        """
+        """  # noqa: W293
         self.config = self._update_config_for_text(config)
         self.device = device or torch.device(config.device)
         # Initialize model placeholder - will be created when needed with proper input dimensions
@@ -241,7 +241,7 @@ class TextClassificationBenchmark:
             
         Returns:
             Dictionary containing benchmark results
-        """
+        """  # noqa: W293
         logger.info("Starting Human vs AI Essay Classification Benchmark")
 
         # Create synthetic dataset if none provided
@@ -354,7 +354,7 @@ class TextClassificationBenchmark:
         correct = 0
         total = 0
 
-        for batch_idx, (data, target) in enumerate(train_loader):
+        for batch_idx, (data, target) in enumerate(train_loader):  # noqa: B007
             data, target = data.to(device), target.to(device)
 
             optimizer.zero_grad()
@@ -426,7 +426,7 @@ def run_essay_classification_benchmark(
         
     Returns:
         Benchmark results dictionary
-    """
+    """  # noqa: W293
     if config is None:
         config = AdaptiveConfig(
             num_epochs=epochs,

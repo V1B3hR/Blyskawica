@@ -16,7 +16,7 @@ try:
     from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
     from sklearn.feature_selection import (
         RFE,
-        RFECV,
+        RFECV,  # noqa: F401
         SelectKBest,
         chi2,
         f_classif,
@@ -24,7 +24,7 @@ try:
         mutual_info_classif,
         mutual_info_regression,
     )
-    from sklearn.metrics import mutual_info_score
+    from sklearn.metrics import mutual_info_score  # noqa: F401
     HAS_SKLEARN = True
 except ImportError:
     warnings.warn("scikit-learn not available. Some feature selection will be limited.", stacklevel=2)
@@ -127,7 +127,7 @@ class EnergyGuidedFeatureImportance:
             convergence_score = correlation * feature_energy
 
             return min(convergence_score, 1.0)
-        except:
+        except:  # noqa: E722
             return 0.0
 
     def _calculate_importance_score(self, column: str) -> float:
@@ -235,7 +235,7 @@ class NeuromorphicMutualInformation:
             mi_score = self._spike_pattern_mutual_info(feature_discrete, target_discrete)
 
             return mi_score
-        except:
+        except:  # noqa: E722
             # Fallback to correlation-based approximation
             correlation = abs(np.corrcoef(feature.fillna(0), target.fillna(0))[0, 1])
             return correlation ** 2 if not np.isnan(correlation) else 0.0
@@ -520,7 +520,7 @@ class AdaptiveFeatureSelector:
         sorted_features = sorted(final_rankings.items(), key=lambda x: x[1])
         selected_features = []
 
-        for feature, rank in sorted_features:
+        for feature, rank in sorted_features:  # noqa: B007
             # Check correlation with already selected features
             if self._is_feature_acceptable(feature, selected_features):
                 selected_features.append(feature)

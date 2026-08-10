@@ -35,7 +35,6 @@ import re
 import subprocess
 import sys
 from pathlib import Path
-from typing import List, Optional, Tuple
 
 # Constants/paths
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -55,15 +54,15 @@ DEFAULT_KAGGLE_KEY = "406272cc0df9e65d6d7fa69ff136bf5c"
 # Regex helpers
 KAGGLE_DATASETS_URL_RE = re.compile(r"^https://www\.kaggle\.com/datasets/([^/\s]+)/([^/\s]+)")
 
-def parse_slugs_from_datasets_txt(path: Path) -> List[str]:
+def parse_slugs_from_datasets_txt(path: Path) -> list[str]:
     """
     Parse slugs from datasets/datasets (expects Kaggle dataset URLs or plain 'owner/dataset' lines).
     """
     if not path.exists():
         return []
-    slugs: List[str] = []
+    slugs: list[str] = []
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             for line in f:
                 s = line.strip()
                 if not s:
@@ -82,15 +81,15 @@ def parse_slugs_from_datasets_txt(path: Path) -> List[str]:
         print(f"[WARN] Failed to parse {path}: {e}", file=sys.stderr)
     return slugs
 
-def parse_slugs_from_markdown(path: Path) -> List[str]:
+def parse_slugs_from_markdown(path: Path) -> list[str]:
     """
     Parse slugs from datasets/datasets.md (bullet list with Kaggle dataset URLs).
     """
     if not path.exists():
         return []
-    slugs: List[str] = []
+    slugs: list[str] = []
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             for line in f:
                 s = line.strip()
                 m = KAGGLE_DATASETS_URL_RE.match(s)
@@ -102,7 +101,7 @@ def parse_slugs_from_markdown(path: Path) -> List[str]:
         print(f"[WARN] Failed to parse {path}: {e}", file=sys.stderr)
     return slugs
 
-def merge_and_filter_slugs(a: List[str], b: List[str], exclude: set) -> List[str]:
+def merge_and_filter_slugs(a: list[str], b: list[str], exclude: set) -> list[str]:
     merged = []
     seen = set()
     for src in (a, b):
@@ -114,7 +113,7 @@ def merge_and_filter_slugs(a: List[str], b: List[str], exclude: set) -> List[str
                 merged.append(slug)
     return merged
 
-def resolve_kaggle_credentials(explicit_user: Optional[str], explicit_key: Optional[str]) -> Tuple[Optional[str], Optional[str]]:
+def resolve_kaggle_credentials(explicit_user: str | None, explicit_key: str | None) -> tuple[str | None, str | None]:
     """
     Resolution order:
     1) CLI flags
@@ -131,7 +130,7 @@ def resolve_kaggle_credentials(explicit_user: Optional[str], explicit_key: Optio
     kaggle_json_path = Path.home() / ".kaggle" / "kaggle.json"
     try:
         if kaggle_json_path.exists():
-            with open(kaggle_json_path, "r") as f:
+            with open(kaggle_json_path) as f:
                 data = json.load(f)
             user = data.get("username")
             key = data.get("key")
@@ -154,7 +153,7 @@ def ensure_kaggle_json(username: str, key: str, overwrite: bool = False) -> None
         json.dump({"username": username, "key": key}, f)
     os.chmod(kaggle_json_path, 0o600)
 
-def kaggle_download(slugs: List[str]) -> None:
+def kaggle_download(slugs: list[str]) -> None:
     try:
         import kaggle  # type: ignore
     except Exception:

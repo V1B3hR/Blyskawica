@@ -1,4 +1,5 @@
 import os
+
 #!/usr/bin/env python3
 """
 Comprehensive test script to verify all Quick Start features.
@@ -11,11 +12,12 @@ This script validates that all features listed in the problem statement work cor
 5. Access trained models and detailed metrics
 """
 
-import json
-import sys
+import json  # noqa: E402
+import sys  # noqa: E402
+
 sys.stdout.reconfigure(encoding='utf-8')
-import tempfile
-from pathlib import Path
+import tempfile  # noqa: E402
+from pathlib import Path  # noqa: E402
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

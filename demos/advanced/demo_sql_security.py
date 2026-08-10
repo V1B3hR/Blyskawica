@@ -81,7 +81,7 @@ def demonstrate_input_validation():
     # Cleanup
     try:
         os.unlink(db_file.name)
-    except:
+    except:  # noqa: E722
         pass
 
 
@@ -139,7 +139,7 @@ def demonstrate_performance_analysis():
     # Cleanup
     try:
         os.unlink(db_file.name)
-    except:
+    except:  # noqa: E722
         pass
 
 
@@ -194,7 +194,7 @@ def demonstrate_secure_integration():
     # Cleanup
     try:
         os.unlink(db_file.name)
-    except:
+    except:  # noqa: E722
         pass
 
 

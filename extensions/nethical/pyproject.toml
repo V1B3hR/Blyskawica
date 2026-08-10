@@ -129,7 +129,6 @@ ignore = [
 ]
 
 fixable = ["ALL"]
-show-fixes = true
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]

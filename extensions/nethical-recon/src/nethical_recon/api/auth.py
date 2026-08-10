@@ -1,8 +1,7 @@
 """Authentication and authorization."""
 
-import os
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
@@ -61,7 +60,7 @@ fake_api_keys = {
     "nethical_test_key_12345": {
         "name": "Test API Key",
         "scopes": ["read", "write"],
-        "created_at": datetime.now(timezone.utc),
+        "created_at": datetime.now(UTC),
         "expires_at": None,
         "last_used_at": None,
     }
@@ -101,9 +100,9 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     config = APIConfig.from_env()
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = datetime.now(UTC) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=config.access_token_expire_minutes)
+        expire = datetime.now(UTC) + timedelta(minutes=config.access_token_expire_minutes)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, config.secret_key, algorithm=config.algorithm)
     return encoded_jwt
@@ -128,10 +127,10 @@ def verify_api_key(api_key: str) -> dict | None:
     if api_key in fake_api_keys:
         key_data = fake_api_keys[api_key]
         # Check if expired
-        if key_data["expires_at"] and key_data["expires_at"] < datetime.now(timezone.utc):
+        if key_data["expires_at"] and key_data["expires_at"] < datetime.now(UTC):
             return None
         # Update last used
-        key_data["last_used_at"] = datetime.now(timezone.utc)
+        key_data["last_used_at"] = datetime.now(UTC)
         return key_data
     return None
 

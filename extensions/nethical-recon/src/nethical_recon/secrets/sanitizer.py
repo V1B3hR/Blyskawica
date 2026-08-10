@@ -73,7 +73,7 @@ class SecretsSanitizer:
 
         sanitized = text
         for pattern, secret_type in self._compiled_patterns:
-            sanitized = pattern.sub(lambda m: self._mask_secret(m.group(0), secret_type), sanitized)
+            sanitized = pattern.sub(lambda m: self._mask_secret(m.group(0), secret_type), sanitized)  # noqa: B023
 
         return sanitized
 

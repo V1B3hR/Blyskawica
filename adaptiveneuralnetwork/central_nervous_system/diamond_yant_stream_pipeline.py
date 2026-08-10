@@ -7,11 +7,10 @@ Symmetrical 16x16 patterns signify coherent knowledge and elevate Serotonin cohe
 while asymmetric patterns flag chaos and disinformation.
 """
 
-import math
 import logging
-import time
 from dataclasses import dataclass
-from typing import Dict, Any, List, Tuple
+from typing import Any
+
 import torch
 import torch.nn as nn
 
@@ -63,9 +62,9 @@ class DiamondYantCymaticEngine(nn.Module):
         return max(0.0, min(1.0, symmetry_score))
 
     def process_graph_stream(
-        self, 
-        samples: List[GraphNetworkSample]
-    ) -> Tuple[List[torch.Tensor], Dict[str, Any]]:
+        self,
+        samples: list[GraphNetworkSample]
+    ) -> tuple[list[torch.Tensor], dict[str, Any]]:
         """
         Projects graph network topology samples onto 16x16 Diamond Yant matrices,
         evaluates cymatic symmetry, and updates Serotonin coherence.
@@ -84,7 +83,7 @@ class DiamondYantCymaticEngine(nn.Module):
                 vec = vec[:256]
 
             yant_grid = vec.view(16, 16)
-            
+
             # Enforce physical normalization
             yant_grid = (yant_grid - yant_grid.mean()) / (yant_grid.std() + 1e-6)
 

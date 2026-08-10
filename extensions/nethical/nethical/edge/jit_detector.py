@@ -6,14 +6,13 @@ Target: 10-100x speedup over pure Python.
 """
 
 import logging
-from typing import Tuple
 
 import numpy as np
 
 logger = logging.getLogger(__name__)
 
 try:
-    from numba import jit, njit, prange
+    from numba import jit, njit, prange  # noqa: F401
 
     NUMBA_AVAILABLE = True
 except ImportError:
@@ -23,13 +22,13 @@ except ImportError:
     def njit(*args, **kwargs):
         """Fallback decorator when Numba is not available."""
         import functools
-        
+
         def decorator(func):
             @functools.wraps(func)
             def wrapper(*fargs, **fkwargs):
                 return func(*fargs, **fkwargs)
             return wrapper
-        
+
         # Handle both @njit and @njit() syntax
         if len(args) == 1 and callable(args[0]) and not kwargs:
             return decorator(args[0])
@@ -42,7 +41,7 @@ except ImportError:
 def fast_keyword_match(
     action_tokens: np.ndarray,
     keyword_hashes: np.ndarray,
-) -> Tuple[bool, int]:
+) -> tuple[bool, int]:
     """
     JIT-compiled keyword matching.
 
@@ -95,7 +94,7 @@ def fast_pattern_match(
     action_vector: np.ndarray,
     pattern_vectors: np.ndarray,
     threshold: float = 0.8,
-) -> Tuple[bool, np.ndarray]:
+) -> tuple[bool, np.ndarray]:
     """
     JIT-compiled pattern matching using cosine similarity.
 
@@ -175,7 +174,7 @@ def fast_risk_aggregation(
     detection_scores: np.ndarray,
     weights: np.ndarray,
     critical_threshold: float = 0.9,
-) -> Tuple[float, bool]:
+) -> tuple[float, bool]:
     """
     JIT-compiled risk score aggregation.
 
@@ -213,7 +212,7 @@ def warmup_jit_detectors():
     
     Call this at startup to ensure JIT compilation is complete
     before processing real requests.
-    """
+    """  # noqa: W293
     if not NUMBA_AVAILABLE:
         return
 

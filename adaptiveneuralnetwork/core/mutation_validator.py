@@ -1,7 +1,8 @@
 import copy
-from enum import Enum
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, Optional
+from enum import Enum
+
 
 class MutationVerdict(Enum):
     ACCEPTED = "accepted"
@@ -21,7 +22,7 @@ class MutationValidator:
         self.current_rate: float = initial_rate
         self.acceptance_threshold: float = acceptance_threshold
         self.max_consecutive_rejects: int = max_consecutive_rejects
-        
+
         self.mutation_counter: int = 0
         self.consecutive_rejects: int = 0
         self.accepted_mutations: int = 0
@@ -37,19 +38,19 @@ class MutationValidator:
     def validate_mutation(self, model, pre_snapshot: dict, fitness_fn: Callable[[], float], mutation_type: str) -> MutationRecord:
         self.mutation_counter += 1
         self.total_mutations += 1
-        
+
         # Take a snapshot of the mutated state so we can restore it if accepted
         mutated_snapshot = self.create_snapshot(model)
-        
+
         # 1. Evaluate fitness post-mutation
         post_fitness = fitness_fn()
-        
+
         # 2. Restore pre-mutation state and evaluate pre-mutation fitness
         model.load_state_dict(pre_snapshot)
         pre_fitness = fitness_fn()
-        
+
         delta = post_fitness - pre_fitness
-        
+
         if delta >= self.acceptance_threshold:
             # Accept the mutation: restore mutated weights
             model.load_state_dict(mutated_snapshot)
@@ -68,7 +69,7 @@ class MutationValidator:
             self.current_rate = max(0.01, self.current_rate - 0.02)
             if self.consecutive_rejects >= self.max_consecutive_rejects:
                 self.mutations_paused = True
-                
+
         return MutationRecord(
             verdict=verdict,
             rollback_performed=rollback_performed,

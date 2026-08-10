@@ -15,14 +15,13 @@ Alignment: Law 24 (Adaptive Learning), Law 15 (Audit Compliance)
 
 from __future__ import annotations
 
-import asyncio
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
-from .auto_registration import AutoRegistration, AttackPattern, RegistrationStage
-from .auto_deprecation import AutoDeprecation, DeprecationCandidate, ArchiveStatus
+from .auto_deprecation import AutoDeprecation, DeprecationCandidate
+from .auto_registration import AttackPattern, AutoRegistration, RegistrationStage
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +29,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class RegistryHealth:
     """Health metrics for the dynamic registry."""
-    
+
     timestamp: datetime
     total_active_vectors: int
     pending_registration: int
@@ -54,13 +53,13 @@ class RegistryManager:
     - Health monitoring
     - Integration with existing registry
     - Automated maintenance
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
-        attack_registry: Optional[Dict[str, Any]] = None,
-        auto_registration: Optional[AutoRegistration] = None,
-        auto_deprecation: Optional[AutoDeprecation] = None
+        attack_registry: dict[str, Any] | None = None,
+        auto_registration: AutoRegistration | None = None,
+        auto_deprecation: AutoDeprecation | None = None
     ):
         """
         Initialize the registry manager.
@@ -69,16 +68,16 @@ class RegistryManager:
             attack_registry: Existing attack registry (from core.attack_registry)
             auto_registration: Auto-registration component
             auto_deprecation: Auto-deprecation component
-        """
+        """  # noqa: W293
         self.attack_registry = attack_registry or {}
         self.auto_registration = auto_registration or AutoRegistration()
         self.auto_deprecation = auto_deprecation or AutoDeprecation()
-        
-        self.health_history: List[RegistryHealth] = []
+
+        self.health_history: list[RegistryHealth] = []
         self.maintenance_enabled = True
-        
+
         logger.info("RegistryManager initialized")
-    
+
     async def run_maintenance_cycle(self) -> RegistryHealth:
         """
         Run a complete maintenance cycle.
@@ -91,31 +90,31 @@ class RegistryManager:
         
         Returns:
             Health metrics after maintenance
-        """
+        """  # noqa: W293
         logger.info("Starting registry maintenance cycle")
-        
+
         try:
             # Process registrations
             await self._process_registrations()
-            
+
             # Process deprecations
             await self._process_deprecations()
-            
+
             # Calculate health metrics
             health = await self._calculate_health()
-            
+
             self.health_history.append(health)
-            
+
             logger.info(
                 f"Maintenance cycle complete. Health: {health.overall_health}"
             )
-            
+
             return health
-            
+
         except Exception as e:
             logger.error(f"Error in maintenance cycle: {e}")
             raise
-    
+
     async def _process_registrations(self) -> None:
         """Process pending registrations."""
         # Get patterns that need processing
@@ -123,36 +122,36 @@ class RegistryManager:
             p for p in self.auto_registration.discovered_patterns.values()
             if p.stage not in [RegistrationStage.DEPLOYED, RegistrationStage.REJECTED]
         ]
-        
+
         logger.info(f"Processing {len(pending_patterns)} pending registrations")
-        
+
         for pattern in pending_patterns:
             try:
                 # Processing happens automatically in auto_registration
                 # Here we just log and monitor
-                if pattern.stage == RegistrationStage.AB_TESTING:
+                if pattern.stage == RegistrationStage.AB_TESTING:  # noqa: SIM102
                     # Simulate A/B test completion check
                     if await self._is_ab_test_complete(pattern.pattern_id):
                         await self._finalize_deployment(pattern)
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 logger.error(f"Error processing pattern {pattern.pattern_id}: {e}")
-    
+
     async def _is_ab_test_complete(self, pattern_id: str) -> bool:
         """Check if A/B test is complete for a pattern."""
         # In production, would check actual A/B test metrics
         # For now, simplified logic
         pattern = self.auto_registration.discovered_patterns.get(pattern_id)
-        if not pattern:
+        if not pattern:  # noqa: SIM103
             return False
-        
+
         # Check if pattern has been in AB testing long enough
         # (simplified - production would check metrics)
         return True  # Assume complete for now
-    
+
     async def _finalize_deployment(self, pattern: AttackPattern) -> None:
         """Finalize deployment of a pattern."""
         pattern.stage = RegistrationStage.DEPLOYED
-        
+
         # Add to main attack registry
         self.attack_registry[pattern.pattern_id] = {
             "id": pattern.pattern_id,
@@ -163,18 +162,18 @@ class RegistryManager:
             "deployed_at": datetime.now(timezone.utc).isoformat(),
             "discovered_by": pattern.discovered_by,
         }
-        
+
         logger.info(f"Finalized deployment of {pattern.pattern_id}")
-    
+
     async def _process_deprecations(self) -> None:
         """Process deprecations."""
         # Analyze usage for all active vectors
         candidates = await self.auto_deprecation.identify_deprecation_candidates(
             self.attack_registry
         )
-        
+
         logger.info(f"Identified {len(candidates)} deprecation candidates")
-        
+
         # Auto-approve low-risk deprecations
         for candidate in candidates:
             # Auto-approve if very clear case (zero detections + no variants)
@@ -183,38 +182,38 @@ class RegistryManager:
                     candidate.vector_id,
                     "Auto-approved: Clear deprecation criteria met"
                 )
-                
+
                 # Remove from main registry
                 if candidate.vector_id in self.attack_registry:
                     del self.attack_registry[candidate.vector_id]
-                
+
                 logger.info(f"Auto-deprecated {candidate.vector_id}")
-    
+
     def _should_auto_deprecate(self, candidate: DeprecationCandidate) -> bool:
         """Check if candidate should be auto-deprecated."""
         stats = candidate.usage_stats
-        
+
         # Very conservative auto-deprecation criteria
-        if (stats.days_since_detection > 180 and  # 6+ months
+        if (stats.days_since_detection > 180 and  # 6+ months  # noqa: SIM103
             stats.total_detections == 0 and
             stats.known_variants == 0):
             return True
-        
+
         return False
-    
+
     async def _calculate_health(self) -> RegistryHealth:
         """Calculate registry health metrics."""
         # Count vectors by status
         total_active = len(self.attack_registry)
-        
+
         pending_registration = sum(
             1 for p in self.auto_registration.discovered_patterns.values()
             if p.stage not in [RegistrationStage.DEPLOYED, RegistrationStage.REJECTED]
         )
-        
+
         pending_deprecation = len(self.auto_deprecation.get_pending_reviews())
         archived = len(self.auto_deprecation.archived_vectors)
-        
+
         # Calculate rates
         total_patterns = len(self.auto_registration.discovered_patterns)
         if total_patterns > 0:
@@ -225,21 +224,21 @@ class RegistryManager:
             registration_success_rate = deployed / total_patterns
         else:
             registration_success_rate = 1.0
-        
+
         # Deprecation rate
         total_analyzed = len(self.auto_deprecation.vector_stats)
-        if total_analyzed > 0:
+        if total_analyzed > 0:  # noqa: SIM108
             deprecation_rate = archived / total_analyzed
         else:
             deprecation_rate = 0.0
-        
+
         # Determine overall health
         overall_health = self._determine_health_status(
             pending_registration,
             pending_deprecation,
             registration_success_rate
         )
-        
+
         return RegistryHealth(
             timestamp=datetime.now(timezone.utc),
             total_active_vectors=total_active,
@@ -250,7 +249,7 @@ class RegistryManager:
             deprecation_rate=deprecation_rate,
             overall_health=overall_health
         )
-    
+
     def _determine_health_status(
         self,
         pending_registration: int,
@@ -261,14 +260,14 @@ class RegistryManager:
         # Critical conditions
         if success_rate < 0.5 or pending_registration > 50:
             return "CRITICAL"
-        
+
         # Degraded conditions
         if success_rate < 0.8 or pending_registration > 20 or pending_deprecation > 10:
             return "DEGRADED"
-        
+
         # Otherwise healthy
         return "HEALTHY"
-    
+
     async def register_new_pattern(
         self,
         category: str,
@@ -287,7 +286,7 @@ class RegistryManager:
             
         Returns:
             Pattern ID
-        """
+        """  # noqa: W293
         pattern_id = await self.auto_registration.register_attack_pattern(
             category=category,
             signature=signature,
@@ -295,11 +294,11 @@ class RegistryManager:
             discovered_by="manual",
             severity=severity
         )
-        
+
         logger.info(f"Registered new pattern: {pattern_id}")
-        
+
         return pattern_id
-    
+
     async def deprecate_vector(
         self,
         vector_id: str,
@@ -314,30 +313,30 @@ class RegistryManager:
             
         Returns:
             True if deprecated successfully
-        """
+        """  # noqa: W293
         from .auto_deprecation import DeprecationReason
-        
+
         # Flag for review
         await self.auto_deprecation.flag_for_review(
             vector_id,
             DeprecationReason.MANUAL_DEPRECATION
         )
-        
+
         # Approve immediately for manual deprecations
         success = await self.auto_deprecation.approve_deprecation(
             vector_id,
             reason
         )
-        
+
         if success and vector_id in self.attack_registry:
             del self.attack_registry[vector_id]
-        
+
         return success
-    
-    def get_registry_status(self) -> Dict[str, Any]:
+
+    def get_registry_status(self) -> dict[str, Any]:
         """Get current registry status."""
         latest_health = self.health_history[-1] if self.health_history else None
-        
+
         return {
             "total_active_vectors": len(self.attack_registry),
             "registration_stats": self.auto_registration.get_statistics(),
@@ -348,8 +347,8 @@ class RegistryManager:
             } if latest_health else None,
             "maintenance_enabled": self.maintenance_enabled,
         }
-    
-    def get_health_trend(self) -> List[Dict[str, Any]]:
+
+    def get_health_trend(self) -> list[dict[str, Any]]:
         """Get historical health trend."""
         return [
             {
@@ -361,17 +360,17 @@ class RegistryManager:
             }
             for health in self.health_history
         ]
-    
+
     def enable_maintenance(self) -> None:
         """Enable automatic maintenance."""
         self.maintenance_enabled = True
         logger.info("Automatic maintenance enabled")
-    
+
     def disable_maintenance(self) -> None:
         """Disable automatic maintenance."""
         self.maintenance_enabled = False
         logger.warning("Automatic maintenance disabled")
-    
+
     async def integrate_with_attack_registry(
         self,
         registry_module: Any
@@ -381,11 +380,11 @@ class RegistryManager:
         
         Args:
             registry_module: The nethical.core.attack_registry module
-        """
+        """  # noqa: W293
         # Import existing vectors
         if hasattr(registry_module, 'ATTACK_VECTORS'):
             existing_vectors = registry_module.ATTACK_VECTORS
-            
+
             # Add to managed registry
             for vector_id, vector_obj in existing_vectors.items():
                 self.attack_registry[vector_id] = {
@@ -396,17 +395,17 @@ class RegistryManager:
                     "severity": vector_obj.severity,
                     "detector_class": vector_obj.detector_class,
                 }
-            
+
             logger.info(f"Integrated {len(existing_vectors)} existing vectors")
-    
-    def generate_registry_report(self) -> Dict[str, Any]:
+
+    def generate_registry_report(self) -> dict[str, Any]:
         """Generate comprehensive registry report."""
         return {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "overview": self.get_registry_status(),
             "registration_report": {
                 "statistics": self.auto_registration.get_statistics(),
-                "pending_approval": [
+                "pending_approval": [  # noqa: C416
                     p_id for p_id in self.auto_registration.pending_approval
                 ],
             },

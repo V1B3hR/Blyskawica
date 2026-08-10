@@ -1,10 +1,10 @@
 """Tests for manifest file validation."""
 
 import json
-import yaml
-import pytest
 from pathlib import Path
 
+import pytest
+import yaml
 
 # Base directory for the repository
 BASE_DIR = Path(__file__).parent.parent

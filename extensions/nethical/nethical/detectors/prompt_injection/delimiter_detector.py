@@ -12,14 +12,14 @@ Signals:
 Law Alignment: Laws 18 (Non-Deception), 22 (Boundary Respect)
 """
 
+import json
 import re
 import uuid
-import json
+from collections.abc import Sequence
 from datetime import datetime, timezone
-from typing import Sequence
 
+from ...core.models import AgentAction, SafetyViolation, Severity, ViolationType
 from ..base_detector import BaseDetector
-from ...core.models import AgentAction, SafetyViolation, ViolationType, Severity
 
 
 class DelimiterDetector(BaseDetector):
@@ -27,7 +27,7 @@ class DelimiterDetector(BaseDetector):
 
     def __init__(self):
         super().__init__("Delimiter Confusion Detector", version="1.0.0")
-        
+
         # Delimiter escape patterns
         self.escape_patterns = [
             r'```\s*\w*\s*[^`]*(?:ignore|override|bypass)',  # Code block injection
@@ -39,7 +39,7 @@ class DelimiterDetector(BaseDetector):
             r'\\[ux][0-9a-fA-F]{2,}',  # Unicode escape sequences
             r'\\[nrt\'\"\\]',  # String escape sequences in suspicious context
         ]
-        
+
         # Delimiter confusion patterns
         self.delimiter_confusion = [
             r'```\s*```\s*```',  # Triple nested code blocks
@@ -54,46 +54,46 @@ class DelimiterDetector(BaseDetector):
         """Detect delimiter escape attempts."""
         if self.status.value != "active":
             return None
-            
+
         violations = []
         content = str(action.content)
         evidence = []
         confidence = 0.0
-        
+
         # Check for escape sequence abuse
         escape_score = self._detect_escape_sequences(content)
         if escape_score > 0:
-            evidence.append(f"Suspicious escape sequences detected")
+            evidence.append("Suspicious escape sequences detected")
             confidence += escape_score * 0.4
-        
+
         # Check for delimiter confusion
         confusion_score = self._detect_delimiter_confusion(content)
         if confusion_score > 0:
-            evidence.append(f"Delimiter confusion patterns detected")
+            evidence.append("Delimiter confusion patterns detected")
             confidence += confusion_score * 0.3
-        
+
         # Check for malformed structures
         malformed_score = self._detect_malformed_structures(content)
         if malformed_score > 0:
-            evidence.append(f"Malformed structure patterns detected")
+            evidence.append("Malformed structure patterns detected")
             confidence += malformed_score * 0.3
-        
+
         # Create violation if confidence exceeds threshold
         if confidence >= 0.3:
             severity = Severity.MEDIUM if confidence >= 0.6 else Severity.LOW
-            
+
             violations.append(SafetyViolation(
                 violation_id=str(uuid.uuid4()),
                 violation_type=ViolationType.PROMPT_INJECTION,
                 severity=severity,
                 confidence=min(confidence, 1.0),
-                description=f"Delimiter escape attack detected",
+                description="Delimiter escape attack detected",
                 evidence=evidence,
                 timestamp=datetime.now(timezone.utc),
                 detector_name=self.name,
                 action_id=action.action_id,
             ))
-        
+
         return violations if violations else None
 
     def _detect_escape_sequences(self, content: str) -> float:
@@ -102,7 +102,7 @@ class DelimiterDetector(BaseDetector):
         for pattern in self.escape_patterns:
             if re.search(pattern, content, re.IGNORECASE | re.DOTALL):
                 matches += 1
-        
+
         if matches >= 3:
             return 1.0
         elif matches >= 2:
@@ -117,7 +117,7 @@ class DelimiterDetector(BaseDetector):
         for pattern in self.delimiter_confusion:
             if re.search(pattern, content):
                 matches += 1
-        
+
         if matches >= 2:
             return 1.0
         elif matches >= 1:
@@ -127,7 +127,7 @@ class DelimiterDetector(BaseDetector):
     def _detect_malformed_structures(self, content: str) -> float:
         """Detect malformed JSON/XML/Markdown structures."""
         score = 0.0
-        
+
         # Check for mismatched delimiters
         delimiters = {
             '(': ')',
@@ -135,34 +135,34 @@ class DelimiterDetector(BaseDetector):
             '{': '}',
             '<': '>',
         }
-        
+
         stack = []
         mismatches = 0
-        
+
         for char in content:
             if char in delimiters:
                 stack.append(char)
-            elif char in delimiters.values():
+            elif char in delimiters.values():  # noqa: SIM102
                 if stack:
                     expected = delimiters[stack[-1]]
                     if char == expected:
                         stack.pop()
                     else:
                         mismatches += 1
-        
+
         # Unbalanced delimiters
         unbalanced = len(stack)
-        
+
         # Score based on mismatches and unbalanced delimiters
         total_issues = mismatches + unbalanced
-        
+
         if total_issues >= 10:
             score = 0.8
         elif total_issues >= 5:
             score = 0.5
         elif total_issues >= 2:
             score = 0.3
-        
+
         # Check for JSON injection attempts
         try:
             # Look for JSON-like structures
@@ -173,9 +173,9 @@ class DelimiterDetector(BaseDetector):
                 for match in json_matches[:5]:  # Check first 5 matches
                     try:
                         json.loads(match)
-                    except:
+                    except:  # noqa: E722, PERF203
                         score = max(score, 0.4)
-        except:
+        except:  # noqa: E722
             pass
-        
+
         return score

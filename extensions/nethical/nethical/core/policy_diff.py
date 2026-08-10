@@ -8,11 +8,11 @@ This module implements:
 """
 
 import json
-from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from pathlib import Path
 from enum import Enum
+from pathlib import Path
+from typing import Any
 
 
 class ChangeType(str, Enum):
@@ -39,8 +39,8 @@ class PolicyChange:
 
     path: str  # JSON path to changed field
     change_type: ChangeType
-    old_value: Optional[Any] = None
-    new_value: Optional[Any] = None
+    old_value: Any | None = None
+    new_value: Any | None = None
     risk_level: RiskLevel = RiskLevel.LOW
     description: str = ""
     impact_score: float = 0.0
@@ -53,18 +53,18 @@ class PolicyDiffResult:
     old_version: str
     new_version: str
     timestamp: datetime = field(default_factory=datetime.utcnow)
-    changes: List[PolicyChange] = field(default_factory=list)
+    changes: list[PolicyChange] = field(default_factory=list)
     risk_score: float = 0.0
     risk_level: RiskLevel = RiskLevel.LOW
-    summary: Dict[str, int] = field(default_factory=dict)
-    recommendations: List[str] = field(default_factory=list)
+    summary: dict[str, int] = field(default_factory=dict)
+    recommendations: list[str] = field(default_factory=list)
 
 
 class PolicyDiffAuditor:
     """Policy diff auditing and risk assessment."""
 
     def __init__(
-        self, storage_path: str = "policy_history", high_risk_fields: Optional[List[str]] = None
+        self, storage_path: str = "policy_history", high_risk_fields: list[str] | None = None
     ):
         """Initialize policy diff auditor.
 
@@ -97,11 +97,11 @@ class PolicyDiffAuditor:
         }
 
         # Policy version history
-        self.version_history: List[Dict[str, Any]] = []
+        self.version_history: list[dict[str, Any]] = []
 
     def _flatten_dict(
-        self, d: Dict[str, Any], parent_key: str = "", sep: str = "."
-    ) -> Dict[str, Any]:
+        self, d: dict[str, Any], parent_key: str = "", sep: str = "."
+    ) -> dict[str, Any]:
         """Flatten nested dictionary with dot notation.
 
         Args:
@@ -130,7 +130,7 @@ class PolicyDiffAuditor:
         Returns:
             True if high-risk
         """
-        for risk_field in self.high_risk_fields:
+        for risk_field in self.high_risk_fields:  # noqa: SIM110
             if risk_field in field_path.lower():
                 return True
         return False
@@ -155,7 +155,7 @@ class PolicyDiffAuditor:
         if change.change_type == ChangeType.REMOVED:
             # Removing fields is risky
             base_risk *= 1.2
-        elif change.change_type == ChangeType.MODIFIED:
+        elif change.change_type == ChangeType.MODIFIED:  # noqa: SIM102
             # Check magnitude of change
             if isinstance(change.old_value, (int, float)) and isinstance(
                 change.new_value, (int, float)
@@ -170,7 +170,7 @@ class PolicyDiffAuditor:
                             base_risk *= 1.3
                         elif percent_change > 1.0:
                             base_risk *= 1.5
-                except:
+                except:  # noqa: E722
                     pass
 
         return min(base_risk, 1.0)
@@ -195,8 +195,8 @@ class PolicyDiffAuditor:
 
     def compare_policies(
         self,
-        old_policy: Dict[str, Any],
-        new_policy: Dict[str, Any],
+        old_policy: dict[str, Any],
+        new_policy: dict[str, Any],
         old_version: str = "previous",
         new_version: str = "current",
     ) -> PolicyDiffResult:
@@ -293,8 +293,8 @@ class PolicyDiffAuditor:
         )
 
     def _generate_recommendations(
-        self, changes: List[PolicyChange], risk_level: RiskLevel
-    ) -> List[str]:
+        self, changes: list[PolicyChange], risk_level: RiskLevel
+    ) -> list[str]:
         """Generate recommendations based on changes.
 
         Args:
@@ -331,7 +331,7 @@ class PolicyDiffAuditor:
 
         return recommendations
 
-    def save_policy_version(self, policy: Dict[str, Any], version: str, description: str = ""):
+    def save_policy_version(self, policy: dict[str, Any], version: str, description: str = ""):
         """Save policy version to history.
 
         Args:
@@ -353,7 +353,7 @@ class PolicyDiffAuditor:
 
         self.version_history.append(version_data)
 
-    def load_policy_version(self, version: str) -> Optional[Dict[str, Any]]:
+    def load_policy_version(self, version: str) -> dict[str, Any] | None:
         """Load policy version from history.
 
         Args:
@@ -367,7 +367,7 @@ class PolicyDiffAuditor:
         if not version_file.exists():
             return None
 
-        with open(version_file, "r") as f:
+        with open(version_file) as f:
             version_data = json.load(f)
 
         return version_data.get("policy")
@@ -418,7 +418,7 @@ class PolicyDiffAuditor:
         if diff_result.recommendations:
             lines.append("Recommendations:")
             for rec in diff_result.recommendations:
-                lines.append(f"  • {rec}")
+                lines.append(f"  • {rec}")  # noqa: PERF401
 
         lines.append("=" * 60)
 
@@ -474,7 +474,7 @@ if __name__ == "__main__":
             old_policy=old_policy, new_policy=new_policy, old_version="v1.0", new_version="v2.0"
         )
 
-        print(f"   ✓ Comparison complete")
+        print("   ✓ Comparison complete")
         print(f"   ✓ Risk Level: {diff_result.risk_level.value.upper()}")
         print(f"   ✓ Risk Score: {diff_result.risk_score:.3f}")
 

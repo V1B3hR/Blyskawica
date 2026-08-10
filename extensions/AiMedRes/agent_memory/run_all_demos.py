@@ -20,8 +20,6 @@ import logging
 import sys
 import time
 from datetime import datetime
-from pathlib import Path
-from typing import List, Dict, Any, Optional
 
 # Setup logging
 logging.basicConfig(
@@ -37,11 +35,11 @@ class DemoResult:
     def __init__(self, name: str):
         self.name = name
         self.status = "PENDING"
-        self.start_time: Optional[str] = None
-        self.end_time: Optional[str] = None
-        self.duration_sec: Optional[float] = None
-        self.error: Optional[str] = None
-        
+        self.start_time: str | None = None
+        self.end_time: str | None = None
+        self.duration_sec: float | None = None
+        self.error: str | None = None
+
     def __repr__(self):
         return f"DemoResult(name={self.name}, status={self.status}, duration={self.duration_sec})"
 
@@ -51,12 +49,12 @@ def run_live_reasoning_demo() -> DemoResult:
     result = DemoResult("live_reasoning")
     result.start_time = datetime.utcnow().isoformat()
     start = time.time()
-    
+
     try:
         logger.info("=" * 80)
         logger.info("Running live_reasoning demo...")
         logger.info("=" * 80)
-        
+
         # Import and run demo - try multiple import paths
         demo = None
         try:
@@ -72,10 +70,10 @@ def run_live_reasoning_demo() -> DemoResult:
                 import live_reasoning
                 demo = live_reasoning.demo
             except ImportError as e:
-                raise ImportError(f"Could not import live_reasoning from any location: {e}")
-        
+                raise ImportError(f"Could not import live_reasoning from any location: {e}")  # noqa: B904
+
         demo()
-        
+
         result.status = "SUCCESS"
         logger.info("✅ live_reasoning demo completed successfully")
     except Exception as e:
@@ -86,7 +84,7 @@ def run_live_reasoning_demo() -> DemoResult:
     finally:
         result.end_time = datetime.utcnow().isoformat()
         result.duration_sec = round(time.time() - start, 2)
-    
+
     return result
 
 
@@ -95,29 +93,29 @@ def run_embed_memory_demo() -> DemoResult:
     result = DemoResult("embed_memory")
     result.start_time = datetime.utcnow().isoformat()
     start = time.time()
-    
+
     try:
         logger.info("=" * 80)
         logger.info("Running embed_memory demo...")
         logger.info("=" * 80)
-        
+
         # Check for dependencies
         try:
-            import numpy as np
-            from sqlalchemy import create_engine
+            import numpy as np  # noqa: F401
+            from sqlalchemy import create_engine  # noqa: F401
         except ImportError as e:
             logger.warning(f"⚠️  Skipping embed_memory: missing dependencies - {e}")
             result.status = "SKIPPED"
             result.error = f"Missing dependencies: {e}"
             return result
-        
+
         # Check for PostgreSQL
         # Note: This demo requires PostgreSQL which may not be available
         logger.info("⚠️  embed_memory requires PostgreSQL database")
         logger.info("⚠️  Skipping embed_memory demo (requires external database)")
         result.status = "SKIPPED"
         result.error = "Requires PostgreSQL database"
-        
+
     except Exception as e:
         result.status = "FAILED"
         result.error = str(e)
@@ -126,7 +124,7 @@ def run_embed_memory_demo() -> DemoResult:
     finally:
         result.end_time = datetime.utcnow().isoformat()
         result.duration_sec = round(time.time() - start, 2)
-    
+
     return result
 
 
@@ -135,22 +133,22 @@ def run_imaging_insights_demo() -> DemoResult:
     result = DemoResult("imaging_insights")
     result.start_time = datetime.utcnow().isoformat()
     start = time.time()
-    
+
     try:
         logger.info("=" * 80)
         logger.info("Running imaging_insights demo...")
         logger.info("=" * 80)
-        
+
         # Check for dependencies
         try:
-            import numpy as np
-            import pandas as pd
+            import numpy as np  # noqa: F401
+            import pandas as pd  # noqa: F401
         except ImportError as e:
             logger.warning(f"⚠️  Skipping imaging_insights: missing dependencies - {e}")
             result.status = "SKIPPED"
             result.error = f"Missing dependencies: {e}"
             return result
-        
+
         # Import and run example - try multiple import paths
         _example_usage = None
         try:
@@ -166,10 +164,10 @@ def run_imaging_insights_demo() -> DemoResult:
                 import imaging_insights
                 _example_usage = imaging_insights._example_usage
             except ImportError as e:
-                raise ImportError(f"Could not import imaging_insights from any location: {e}")
-        
+                raise ImportError(f"Could not import imaging_insights from any location: {e}")  # noqa: B904
+
         _example_usage()
-        
+
         result.status = "SUCCESS"
         logger.info("✅ imaging_insights demo completed successfully")
     except Exception as e:
@@ -180,39 +178,39 @@ def run_imaging_insights_demo() -> DemoResult:
     finally:
         result.end_time = datetime.utcnow().isoformat()
         result.duration_sec = round(time.time() - start, 2)
-    
+
     return result
 
 
-def print_summary(results: List[DemoResult]):
+def print_summary(results: list[DemoResult]):
     """Print summary of all demo runs"""
     logger.info("")
     logger.info("=" * 80)
     logger.info("📊 Agent Memory Demo Summary")
     logger.info("=" * 80)
-    
+
     success = [r for r in results if r.status == "SUCCESS"]
     failed = [r for r in results if r.status == "FAILED"]
     skipped = [r for r in results if r.status == "SKIPPED"]
-    
+
     logger.info(f"Total demos: {len(results)}")
     logger.info(f"✅ Successful: {len(success)}")
     if success:
         for r in success:
             logger.info(f"   - {r.name} ({r.duration_sec}s)")
-    
+
     if skipped:
         logger.info(f"⏭  Skipped: {len(skipped)}")
         for r in skipped:
             logger.info(f"   - {r.name}: {r.error}")
-    
+
     if failed:
         logger.info(f"❌ Failed: {len(failed)}")
         for r in failed:
             logger.info(f"   - {r.name}: {r.error}")
-    
+
     logger.info("=" * 80)
-    
+
     if failed:
         logger.warning("⚠️  Some demos failed. Check logs for details.")
         return 1
@@ -239,7 +237,7 @@ Examples:
     
   Skip specific demo:
     python agent_memory/run_all_demos.py --skip embed_memory
-        """
+        """  # noqa: W293
     )
     parser.add_argument(
         '--only',
@@ -264,45 +262,45 @@ Examples:
 def main():
     """Main entry point"""
     args = parse_args()
-    
+
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
-    
+
     logger.info("=" * 80)
     logger.info("🚀 Agent Memory Demo Runner")
     logger.info("=" * 80)
     logger.info(f"⏰ Started at (UTC): {datetime.utcnow().isoformat()}")
-    
+
     # Determine which demos to run
     all_demos = ['live_reasoning', 'embed_memory', 'imaging_insights']
-    
+
     if args.only:
         demos_to_run = args.only
     else:
         demos_to_run = all_demos
-    
+
     if args.skip:
         demos_to_run = [d for d in demos_to_run if d not in args.skip]
-    
+
     logger.info(f"Demos to run: {', '.join(demos_to_run)}")
-    
+
     # Run demos
     results = []
-    
+
     if 'live_reasoning' in demos_to_run:
         results.append(run_live_reasoning_demo())
-    
+
     if 'embed_memory' in demos_to_run:
         results.append(run_embed_memory_demo())
-    
+
     if 'imaging_insights' in demos_to_run:
         results.append(run_imaging_insights_demo())
-    
+
     # Print summary
     exit_code = print_summary(results)
-    
+
     logger.info(f"⏰ Finished at (UTC): {datetime.utcnow().isoformat()}")
-    
+
     return exit_code
 
 

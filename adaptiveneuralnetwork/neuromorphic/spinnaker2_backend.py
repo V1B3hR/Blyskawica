@@ -3,7 +3,7 @@ SpiNNaker2 backend implementation for 3rd generation neuromorphic computing.
 
 This module provides hardware-specific optimizations for the SpiNNaker2 
 massively parallel neuromorphic platform optimized for large-scale simulations.
-"""
+"""  # noqa: W291
 
 import logging
 from dataclasses import dataclass
@@ -14,6 +14,7 @@ import torch
 import torch.nn as nn
 
 from adaptiveneuralnetwork.central_nervous_system.neuromorphic import NeuromorphicPlatform
+
 from .hardware_backends import (
     BaseHardwareBackend,
     HardwareConstraints,
@@ -282,7 +283,7 @@ class SpiNNaker2Backend(BaseHardwareBackend):
         pop_by_layer = {pop['label']: pop for pop in populations}
 
         # Analyze model for connections
-        for name, module in model.named_modules():
+        for name, module in model.named_modules():  # noqa: B007
             if hasattr(module, 'synaptic_weights') or hasattr(module, 'weight'):
                 # Find source and target populations
                 source_pop = self._find_source_population(module, pop_by_layer)
@@ -569,7 +570,7 @@ class SpiNNaker2Backend(BaseHardwareBackend):
         if deployment_id not in self.deployments:
             raise ValueError(f"Deployment {deployment_id} not found")
 
-        deployment = self.deployments[deployment_id]
+        deployment = self.deployments[deployment_id]  # noqa: F841
 
         # SpiNNaker2 power optimizations
         # 1. Reduce unused board power

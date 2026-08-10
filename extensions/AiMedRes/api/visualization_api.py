@@ -10,13 +10,13 @@ Provides REST endpoints for:
 - Memory introspection and decision traceability
 """
 
-from flask import Flask, jsonify, request, render_template_string
-from flask_cors import CORS
-from datetime import datetime, timedelta
-from typing import Dict, Any, List, Optional
-import logging
 import json
-import os
+import logging
+from datetime import datetime, timedelta
+from typing import Any
+
+from flask import Flask, jsonify, render_template_string, request
+from flask_cors import CORS
 
 # ---- Logging Setup ----
 logging.basicConfig(
@@ -26,12 +26,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 try:
-    from security.safety_monitor import SafetyMonitor, SafetyDomain
-    from security.monitoring import SecurityMonitor
-    from mlops.monitoring.production_monitor import ProductionMonitor
-    from aimedres.agent_memory.memory_consolidation import MemoryConsolidator
-    from aimedres.agent_memory.embed_memory import AgentMemoryStore
     from aimedres.agent_memory.agent_extensions import CapabilityRegistry
+    from aimedres.agent_memory.embed_memory import AgentMemoryStore
+    from aimedres.agent_memory.memory_consolidation import MemoryConsolidator
+    from mlops.monitoring.production_monitor import ProductionMonitor
+    from security.monitoring import SecurityMonitor
+    from security.safety_monitor import SafetyDomain, SafetyMonitor
 except ImportError as e:
     SafetyMonitor = None
     SafetyDomain = None
@@ -47,12 +47,12 @@ except ImportError as e:
 
 class VisualizationAPI:
     """Enhanced API service for monitoring and visualization data."""
-    
-    def __init__(self, config: Dict[str, Any]):
+
+    def __init__(self, config: dict[str, Any]):
         self.config = config
         self.app = Flask(__name__)
         CORS(self.app)
-        
+
         # Initialize monitoring systems
         self.safety_monitor = None
         self.security_monitor = None
@@ -60,12 +60,12 @@ class VisualizationAPI:
         self.memory_consolidator = None
         self.memory_store = None
         self.capability_registry = None
-        
+
         # Setup routes
         self._setup_routes()
-        
+
         logger.info("Enhanced Visualization API initialized")
-    
+
     def initialize_monitors(self, safety_monitor: SafetyMonitor = None,
                           security_monitor: SecurityMonitor = None,
                           production_monitor: ProductionMonitor = None,
@@ -79,17 +79,17 @@ class VisualizationAPI:
         self.memory_store = memory_store
         self.memory_consolidator = memory_consolidator
         self.capability_registry = capability_registry
-        
+
         logger.info("Enhanced monitoring systems initialized for API")
-    
+
     def _setup_routes(self):
         """Setup API routes."""
-        
+
         @self.app.route('/')
         def dashboard():
             """Main dashboard view."""
             return render_template_string(DASHBOARD_HTML)
-        
+
         @self.app.route('/api/health')
         def health_check():
             """Health check endpoint."""
@@ -98,13 +98,13 @@ class VisualizationAPI:
                 'timestamp': datetime.now().isoformat(),
                 'version': '1.0.0'
             })
-        
+
         @self.app.route('/api/safety/summary')
         def safety_summary():
             """Get safety monitoring summary."""
             try:
                 hours = request.args.get('hours', 24, type=int)
-                
+
                 if self.safety_monitor:
                     summary = self.safety_monitor.get_safety_summary(hours=hours)
                     return jsonify(summary)
@@ -113,11 +113,11 @@ class VisualizationAPI:
                         'error': 'Safety monitor not initialized',
                         'monitoring_enabled': False
                     }), 503
-                    
+
             except Exception as e:
                 logger.error(f"Error getting safety summary: {e}")
                 return jsonify({'error': str(e)}), 500
-        
+
         @self.app.route('/api/safety/findings')
         def safety_findings():
             """Get recent safety findings."""
@@ -125,7 +125,7 @@ class VisualizationAPI:
                 hours = request.args.get('hours', 24, type=int)
                 domain = request.args.get('domain')
                 correlation_id = request.args.get('correlation_id')
-                
+
                 if self.safety_monitor:
                     # Convert domain string to enum if provided
                     domain_enum = None
@@ -134,7 +134,7 @@ class VisualizationAPI:
                             domain_enum = SafetyDomain(domain.lower())
                         except ValueError:
                             return jsonify({'error': f'Invalid domain: {domain}'}), 400
-                    
+
                     findings = self.safety_monitor.get_safety_findings(
                         hours=hours,
                         domain=domain_enum,
@@ -150,11 +150,11 @@ class VisualizationAPI:
                         'error': 'Safety monitor not initialized',
                         'findings': []
                     }), 503
-                    
+
             except Exception as e:
                 logger.error(f"Error getting safety findings: {e}")
                 return jsonify({'error': str(e)}), 500
-        
+
         @self.app.route('/api/safety/run-checks', methods=['POST'])
         def run_safety_checks():
             """Trigger safety checks manually."""
@@ -162,7 +162,7 @@ class VisualizationAPI:
                 data = request.get_json() or {}
                 domain_str = data.get('domain')
                 context = data.get('context', {})
-                
+
                 if self.safety_monitor:
                     domain_enum = None
                     if domain_str:
@@ -170,14 +170,14 @@ class VisualizationAPI:
                             domain_enum = SafetyDomain(domain_str.lower())
                         except ValueError:
                             return jsonify({'error': f'Invalid domain: {domain_str}'}), 400
-                    
+
                     correlation_id = self.safety_monitor.create_correlation_id()
                     findings = self.safety_monitor.run_safety_checks(
                         domain=domain_enum,
                         context=context,
                         correlation_id=correlation_id
                     )
-                    
+
                     return jsonify({
                         'correlation_id': correlation_id,
                         'findings': [
@@ -195,11 +195,11 @@ class VisualizationAPI:
                     })
                 else:
                     return jsonify({'error': 'Safety monitor not initialized'}), 503
-                    
+
             except Exception as e:
                 logger.error(f"Error running safety checks: {e}")
                 return jsonify({'error': str(e)}), 500
-        
+
         @self.app.route('/api/security/summary')
         def security_summary():
             """Get security monitoring summary."""
@@ -212,17 +212,17 @@ class VisualizationAPI:
                         'error': 'Security monitor not initialized',
                         'monitoring_status': 'inactive'
                     }), 503
-                    
+
             except Exception as e:
                 logger.error(f"Error getting security summary: {e}")
                 return jsonify({'error': str(e)}), 500
-        
+
         @self.app.route('/api/production/summary')
         def production_summary():
             """Get production monitoring summary."""
             try:
                 hours = request.args.get('hours', 24, type=int)
-                
+
                 if self.production_monitor:
                     summary = self.production_monitor.get_monitoring_summary(hours=hours)
                     return jsonify(summary)
@@ -231,17 +231,17 @@ class VisualizationAPI:
                         'error': 'Production monitor not initialized',
                         'status': 'unavailable'
                     }), 503
-                    
+
             except Exception as e:
                 logger.error(f"Error getting production summary: {e}")
                 return jsonify({'error': str(e)}), 500
-        
+
         @self.app.route('/api/memory/consolidation-summary')
         def memory_consolidation_summary():
             """Get memory consolidation summary."""
             try:
                 hours = request.args.get('hours', 24, type=int)
-                
+
                 if self.memory_consolidator:
                     summary = self.memory_consolidator.get_consolidation_summary(hours=hours)
                     return jsonify(summary)
@@ -250,11 +250,11 @@ class VisualizationAPI:
                         'error': 'Memory consolidator not initialized',
                         'consolidation_status': 'unavailable'
                     }), 503
-                    
+
             except Exception as e:
                 logger.error(f"Error getting memory consolidation summary: {e}")
                 return jsonify({'error': str(e)}), 500
-        
+
         @self.app.route('/api/memory/introspection', methods=['POST'])
         def memory_introspection():
             """Get memory introspection for decision traceability."""
@@ -262,10 +262,10 @@ class VisualizationAPI:
                 data = request.get_json() or {}
                 decision_context = data.get('decision_context', '')
                 session_id = data.get('session_id', '')
-                
+
                 if not decision_context or not session_id:
                     return jsonify({'error': 'decision_context and session_id required'}), 400
-                
+
                 if self.memory_consolidator:
                     introspection = self.memory_consolidator.get_memory_introspection(
                         decision_context, session_id
@@ -273,23 +273,23 @@ class VisualizationAPI:
                     return jsonify(introspection)
                 else:
                     return jsonify({'error': 'Memory consolidator not initialized'}), 503
-                    
+
             except Exception as e:
                 logger.error(f"Error getting memory introspection: {e}")
                 return jsonify({'error': str(e)}), 500
-        
+
         @self.app.route('/api/memory/conflicts')
         def memory_conflicts():
             """Get semantic conflicts in memory."""
             try:
-                session_id = request.args.get('session_id')
+                session_id = request.args.get('session_id')  # noqa: F841
                 status = request.args.get('status', 'pending')
-                
+
                 if self.memory_consolidator:
                     # Get conflicts from database
                     import sqlite3
                     conflicts = []
-                    
+
                     try:
                         with sqlite3.connect(self.memory_consolidator.consolidation_db) as conn:
                             cursor = conn.execute("""
@@ -300,7 +300,7 @@ class VisualizationAPI:
                                 ORDER BY created_at DESC
                                 LIMIT 50
                             """, (status,))
-                            
+
                             for row in cursor.fetchall():
                                 conflicts.append({
                                     'conflict_id': row[0],
@@ -312,11 +312,11 @@ class VisualizationAPI:
                                     'created_at': row[6],
                                     'metadata': json.loads(row[7] or '{}')
                                 })
-                    
+
                     except Exception as db_error:
                         logger.error(f"Database error getting conflicts: {db_error}")
                         conflicts = []
-                    
+
                     return jsonify({
                         'conflicts': conflicts,
                         'count': len(conflicts),
@@ -324,11 +324,11 @@ class VisualizationAPI:
                     })
                 else:
                     return jsonify({'error': 'Memory consolidator not initialized'}), 503
-                    
+
             except Exception as e:
                 logger.error(f"Error getting memory conflicts: {e}")
                 return jsonify({'error': str(e)}), 500
-        
+
         @self.app.route('/api/memory/conflicts/<conflict_id>/resolve', methods=['POST'])
         def resolve_conflict(conflict_id: str):
             """Resolve a semantic conflict."""
@@ -336,12 +336,12 @@ class VisualizationAPI:
                 data = request.get_json() or {}
                 resolution_method = data.get('resolution_method', 'manual')
                 winning_memory_id = data.get('winning_memory_id')
-                
+
                 if self.memory_consolidator:
                     success = self.memory_consolidator.resolve_semantic_conflict(
                         conflict_id, resolution_method, winning_memory_id
                     )
-                    
+
                     return jsonify({
                         'success': success,
                         'conflict_id': conflict_id,
@@ -350,11 +350,11 @@ class VisualizationAPI:
                     })
                 else:
                     return jsonify({'error': 'Memory consolidator not initialized'}), 503
-                    
+
             except Exception as e:
                 logger.error(f"Error resolving conflict: {e}")
                 return jsonify({'error': str(e)}), 500
-        
+
         @self.app.route('/api/plugins/summary')
         def plugins_summary():
             """Get plugin system summary."""
@@ -367,21 +367,21 @@ class VisualizationAPI:
                         'error': 'Capability registry not initialized',
                         'plugin_system_status': 'unavailable'
                     }), 503
-                    
+
             except Exception as e:
                 logger.error(f"Error getting plugins summary: {e}")
                 return jsonify({'error': str(e)}), 500
-        
+
         @self.app.route('/api/plugins/list')
         def plugins_list():
             """List all registered plugins."""
             try:
                 if self.capability_registry:
                     plugins_data = []
-                    
+
                     for name, plugin in self.capability_registry.plugins.items():
                         status = self.capability_registry.plugin_status.get(name, 'unknown')
-                        
+
                         plugins_data.append({
                             'name': plugin.name,
                             'version': plugin.version,
@@ -394,18 +394,18 @@ class VisualizationAPI:
                                 'sandbox_required': plugin.manifest.sandbox_required
                             }
                         })
-                    
+
                     return jsonify({
                         'plugins': plugins_data,
                         'total_count': len(plugins_data)
                     })
                 else:
                     return jsonify({'error': 'Capability registry not initialized'}), 503
-                    
+
             except Exception as e:
                 logger.error(f"Error listing plugins: {e}")
                 return jsonify({'error': str(e)}), 500
-        
+
         @self.app.route('/api/plugins/<plugin_name>/activate', methods=['POST'])
         def activate_plugin(plugin_name: str):
             """Activate a plugin."""
@@ -420,11 +420,11 @@ class VisualizationAPI:
                     })
                 else:
                     return jsonify({'error': 'Capability registry not initialized'}), 503
-                    
+
             except Exception as e:
                 logger.error(f"Error activating plugin: {e}")
                 return jsonify({'error': str(e)}), 500
-        
+
         @self.app.route('/api/plugins/<plugin_name>/deactivate', methods=['POST'])
         def deactivate_plugin(plugin_name: str):
             """Deactivate a plugin."""
@@ -439,28 +439,28 @@ class VisualizationAPI:
                     })
                 else:
                     return jsonify({'error': 'Capability registry not initialized'}), 503
-                    
+
             except Exception as e:
                 logger.error(f"Error deactivating plugin: {e}")
                 return jsonify({'error': str(e)}), 500
-        
+
         @self.app.route('/api/memory/session/<session_id>')
         def memory_session_info(session_id: str):
             """Get memory information for a specific session."""
             try:
                 if not self.memory_store:
                     return jsonify({'error': 'Memory store not initialized'}), 503
-                
+
                 memories = self.memory_store.get_session_memories(session_id)
-                
+
                 # Calculate basic statistics
                 memory_types = {}
                 importance_levels = {'high': 0, 'medium': 0, 'low': 0}
-                
+
                 for memory in memories:
                     mem_type = memory.get('memory_type', 'unknown')
                     memory_types[mem_type] = memory_types.get(mem_type, 0) + 1
-                    
+
                     importance = memory.get('importance_score', 0.5)
                     if importance >= 0.7:
                         importance_levels['high'] += 1
@@ -468,7 +468,7 @@ class VisualizationAPI:
                         importance_levels['medium'] += 1
                     else:
                         importance_levels['low'] += 1
-                
+
                 return jsonify({
                     'session_id': session_id,
                     'total_memories': len(memories),
@@ -476,11 +476,11 @@ class VisualizationAPI:
                     'importance_distribution': importance_levels,
                     'memories': memories[:20]  # Limit to first 20 for performance
                 })
-                
+
             except Exception as e:
                 logger.error(f"Error getting memory session info: {e}")
                 return jsonify({'error': str(e)}), 500
-        
+
         @self.app.route('/api/agent/interaction-graph')
         def agent_interaction_graph():
             """Get enhanced agent interaction graph data."""
@@ -504,7 +504,7 @@ class VisualizationAPI:
                             }
                         },
                         {
-                            'id': 'production_monitor', 
+                            'id': 'production_monitor',
                             'type': 'monitoring',
                             'state': 'active',
                             'cpu_percent': 3.1,
@@ -553,14 +553,14 @@ class VisualizationAPI:
                         }
                     ]
                 }
-                
+
                 # Add plugin agents if capability registry is available
                 if self.capability_registry:
-                    plugin_metrics = self.capability_registry.get_plugin_metrics()
-                    
+                    plugin_metrics = self.capability_registry.get_plugin_metrics()  # noqa: F841
+
                     for name, plugin in self.capability_registry.plugins.items():
                         status = self.capability_registry.plugin_status.get(name, 'unknown')
-                        
+
                         graph_data['agents'].append({
                             'id': f'plugin_{name}',
                             'type': 'plugin',
@@ -575,13 +575,13 @@ class VisualizationAPI:
                                 'sandbox_required': plugin.manifest.sandbox_required
                             }
                         })
-                
+
                 return jsonify(graph_data)
-                
+
             except Exception as e:
                 logger.error(f"Error getting agent interaction graph: {e}")
                 return jsonify({'error': str(e)}), 500
-        
+
         @self.app.route('/api/dashboard/overview')
         def dashboard_overview():
             """Get overview data for main dashboard."""
@@ -591,7 +591,7 @@ class VisualizationAPI:
                     'system_status': 'healthy',
                     'components': {}
                 }
-                
+
                 # Safety monitoring status
                 if self.safety_monitor:
                     safety_summary = self.safety_monitor.get_safety_summary(hours=1)
@@ -600,7 +600,7 @@ class VisualizationAPI:
                         'events_count': safety_summary.get('total_events', 0),
                         'active_domains': safety_summary.get('active_domains', 0)
                     }
-                
+
                 # Security monitoring status
                 if self.security_monitor:
                     security_summary = self.security_monitor.get_security_summary()
@@ -609,7 +609,7 @@ class VisualizationAPI:
                         'events_count': security_summary.get('total_security_events', 0),
                         'api_requests': security_summary.get('api_usage', {}).get('total_requests', 0)
                     }
-                
+
                 # Production monitoring status
                 if self.production_monitor:
                     prod_summary = self.production_monitor.get_monitoring_summary(hours=1)
@@ -618,7 +618,7 @@ class VisualizationAPI:
                         'predictions': prod_summary.get('total_predictions', 0),
                         'avg_accuracy': prod_summary.get('avg_accuracy', 0.0)
                     }
-                
+
                 # Memory consolidation status
                 if self.memory_consolidator:
                     memory_summary = self.memory_consolidator.get_consolidation_summary(hours=1)
@@ -629,7 +629,7 @@ class VisualizationAPI:
                         'synaptic_tagged': memory_summary.get('synaptic_tagged_memories', 0),
                         'pending_conflicts': memory_summary.get('pending_conflicts', 0)
                     }
-                
+
                 # Plugin system status
                 if self.capability_registry:
                     plugin_metrics = self.capability_registry.get_plugin_metrics()
@@ -640,10 +640,10 @@ class VisualizationAPI:
                         'total_capabilities': plugin_metrics.get('total_capabilities', 0),
                         'plugin_failures': plugin_metrics.get('plugin_failures', 0)
                     }
-                
+
                 # Determine overall system status
                 component_statuses = []
-                for component, data in overview['components'].items():
+                for component, data in overview['components'].items():  # noqa: B007
                     status = data.get('status', 'unknown')
                     if status in ['critical', 'emergency', 'error']:
                         component_statuses.append('critical')
@@ -653,7 +653,7 @@ class VisualizationAPI:
                         component_statuses.append('healthy')
                     else:
                         component_statuses.append('unknown')
-                
+
                 if 'critical' in component_statuses:
                     overview['system_status'] = 'critical'
                 elif 'warning' in component_statuses:
@@ -662,13 +662,13 @@ class VisualizationAPI:
                     overview['system_status'] = 'unknown'
                 else:
                     overview['system_status'] = 'healthy'
-                
+
                 return jsonify(overview)
-                
+
             except Exception as e:
                 logger.error(f"Error getting dashboard overview: {e}")
                 return jsonify({'error': str(e)}), 500
-    
+
     def run(self, host: str = '0.0.0.0', port: int = 5001, debug: bool = False):
         """Run the visualization API server."""
         self.app.run(host=host, port=port, debug=debug)
@@ -996,9 +996,9 @@ DASHBOARD_HTML = """
     </script>
 </body>
 </html>
-"""
+"""  # noqa: W291, W293
 
 
-def create_visualization_api(config: Dict[str, Any]) -> VisualizationAPI:
+def create_visualization_api(config: dict[str, Any]) -> VisualizationAPI:
     """Factory function to create visualization API."""
     return VisualizationAPI(config)

@@ -63,7 +63,7 @@ class DatasetToExperienceConverter:
             
         Returns:
             Experience dictionary with keys: state, action, reward, next_state, done
-        """
+        """  # noqa: W293
         # Generate state based on sample characteristics
         energy = self.base_energy + np.random.randn() * 2.0
         position = self.base_position + np.array([self.position_counter % 10, self.position_counter // 10], dtype=float)
@@ -263,7 +263,7 @@ def train_alive_node_on_dataset(
         
     Returns:
         Training metrics dictionary
-    """
+    """  # noqa: W293
     converter = DatasetToExperienceConverter()
 
     # Convert all samples to experiences

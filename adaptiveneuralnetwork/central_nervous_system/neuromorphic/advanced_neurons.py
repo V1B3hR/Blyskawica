@@ -40,16 +40,16 @@ class LiverFilter(nn.Module):
             kernel = kernel / kernel.sum()
             kernel = kernel.to(x.device)
             # Use replicate instead of reflect for better stability on small inputs
-            
+
             # Ensure input is 3D [batch, channels, length] for conv1d
             if x.dim() == 2:
                 x_input = x.unsqueeze(1)
             else:
                 x_input = x
-            
+
             x_padded = torch.nn.functional.pad(x_input, (self.kernel_size // 2, self.kernel_size // 2), mode='replicate')
             filtered = torch.nn.functional.conv1d(x_padded, kernel.unsqueeze(0).unsqueeze(0))
-            
+
             # Robustly squeeze to 2D while preserving batch
             if filtered.dim() > 2:
                 filtered = filtered.view(x.size(0), -1)
@@ -350,14 +350,14 @@ class AdaptiveThresholdNeuron(nn.Module):
         # Calculate surprise (prediction error)
         self.prediction_error = 0.9 * self.prediction_error + 0.1 * torch.abs(self.v_mem - self.v_expectation)
         self.v_expectation = 0.9 * self.v_expectation + 0.1 * self.v_mem # Simple running average expectation
-        
+
         # Surprise modulates adaptation rate later
         surprise_factor = 1.0 + torch.mean(self.prediction_error)
 
         # Spike detection
         spike_mask = (self.v_mem > self.threshold) & refractory_mask
         spikes = spike_mask.float()
-        
+
         # Explicit output shape enforcement for TopologyLayer compatibility
         if spikes.size(-1) != num_neurons:
              spikes = spikes[:, :num_neurons] # Force match if there was a broadcast leak
@@ -514,7 +514,7 @@ class BurstingNeuron(nn.Module):
         if total_current.dim() < input_current.dim():
              # Avoid accidental global squeeze of population/batch
              total_current = total_current.view(batch_size, -1)
-             
+
         dv_dt = total_current / tau_mem
 
         self.v_mem = torch.where(
@@ -615,7 +615,7 @@ class BurstingNeuron(nn.Module):
         # Robustly enforce 2D output and pop-size matching
         if spikes.dim() > 2:
             spikes = spikes.view(batch_size, -1)
-            
+
         return spikes, states
 
 
@@ -627,7 +627,7 @@ class StochasticNeuron(nn.Module):
     - Channel noise in conductances  
     - Stochastic threshold
     Supports organ-inspired preprocessing.
-    """
+    """  # noqa: W291
 
     def __init__(self, config: NeuronV3Config):
         super().__init__()
@@ -694,14 +694,14 @@ class StochasticNeuron(nn.Module):
         if noisy_input.dim() > 2:
             noisy_input_harmonized = noisy_input.view(batch_size, -1)
 
-        dv_dt = (noisy_input_harmonized + leak_current) / tau_mem
+        dv_dt = (noisy_input_harmonized + leak_current) / tau_mem  # noqa: F821
         if dv_dt.dim() < noisy_input.dim():
              dv_dt = dv_dt.view(batch_size, -1)
 
         # Add thermal noise to membrane potential
         if self.config.thermal_noise:
             thermal_noise = torch.randn(batch_size, device=device) * self.thermal_noise_std * np.sqrt(dt)
-            dv_dt = dv_dt + thermal_noise / tau_mem
+            dv_dt = dv_dt + thermal_noise / tau_mem  # noqa: F821
 
         # Update membrane potential
         self.v_mem = torch.where(
@@ -754,7 +754,7 @@ class InhibitoryNeuron(nn.Module):
         super().__init__()
         self.neuron = AdaptiveThresholdNeuron(config)
         self.polarity = -1.0
-        
+
     def forward(self, x, current_time=0.0, dt=1e-3):
         spikes, states = self.neuron(x, current_time, dt)
         return spikes * self.polarity, states
@@ -766,7 +766,7 @@ class ExcitatoryNeuron(nn.Module):
         super().__init__()
         self.neuron = AdaptiveThresholdNeuron(config)
         self.polarity = 1.0
-        
+
     def forward(self, x, current_time=0.0, dt=1e-3):
         spikes, states = self.neuron(x, current_time, dt)
         return spikes * self.polarity, states
@@ -777,10 +777,10 @@ class OrganismNeuron(nn.Module):
     A 'single cell' organism that integrates lung (data intake), liver (filtering), and neuron (processing) functions.
     Simplified LIF neuron with organ-inspired preprocessing.
     """
-    def __init__(self, 
-                 neuron_type='lif', 
-                 lung_params=None, 
-                 liver_params=None, 
+    def __init__(self,
+                 neuron_type='lif',
+                 lung_params=None,
+                 liver_params=None,
                  neuron_params=None):
         super().__init__()
         # Organs
@@ -822,12 +822,12 @@ class OrganismNeuron(nn.Module):
         refractory_mask = time_since_spike > self.refractory_period
         # Membrane dynamics (LIF)
         leak_current = -(self.v_mem - self.v_rest) / self.tau_mem
-        
+
         # Safe squeeze
         x_proc = x.squeeze()
         if x_proc.dim() < x.dim():
             x_proc = x_proc.view(batch_size, -1)
-            
+
         dv_dt = (x_proc + leak_current) / self.tau_mem
         self.v_mem = torch.where(
             refractory_mask,

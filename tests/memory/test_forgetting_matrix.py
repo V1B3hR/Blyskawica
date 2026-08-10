@@ -151,7 +151,7 @@ def test_continual_learning_forgetting_simulation(make_loader):
     
     This test simulates learning multiple tasks sequentially and tracks
     the resulting forgetting pattern.
-    """
+    """  # noqa: W293
     class SimpleModel(nn.Module):
         def __init__(self, input_dim: int = 32, num_classes: int = 5):
             super().__init__()
@@ -197,7 +197,7 @@ def test_continual_learning_forgetting_simulation(make_loader):
         train_loader = task_loaders[current_task]
 
         model.train()
-        for epoch in range(10):  # Limited training to induce some forgetting
+        for epoch in range(10):  # Limited training to induce some forgetting  # noqa: B007
             for batch_x, batch_y in train_loader:
                 optimizer.zero_grad()
                 output = model(batch_x)

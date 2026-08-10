@@ -15,12 +15,12 @@ Capabilities:
 - Compliance reporting (FedRAMP, NIST, HIPAA)
 """
 
-from typing import Dict, List, Optional, Any
+import hashlib
+import json
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-import json
-import hashlib
+from typing import Any
 
 
 class VulnerabilitySeverity(Enum):
@@ -79,20 +79,20 @@ class Vulnerability:
     severity: VulnerabilitySeverity
     status: VulnerabilityStatus
     cvss_score: float  # Common Vulnerability Scoring System score
-    cwe_id: Optional[str] = None  # Common Weakness Enumeration ID
-    affected_components: List[str] = field(default_factory=list)
+    cwe_id: str | None = None  # Common Weakness Enumeration ID
+    affected_components: list[str] = field(default_factory=list)
     attack_vector: str = ""
     proof_of_concept: str = ""
-    remediation_steps: List[str] = field(default_factory=list)
+    remediation_steps: list[str] = field(default_factory=list)
     discovered_by: str = ""
     discovered_at: datetime = field(default_factory=datetime.now)
-    assigned_to: Optional[str] = None
-    target_fix_date: Optional[datetime] = None
-    fixed_at: Optional[datetime] = None
-    verified_at: Optional[datetime] = None
-    references: List[str] = field(default_factory=list)
+    assigned_to: str | None = None
+    target_fix_date: datetime | None = None
+    fixed_at: datetime | None = None
+    verified_at: datetime | None = None
+    references: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert vulnerability to dictionary."""
         return {
             "id": self.id,
@@ -120,7 +120,7 @@ class Vulnerability:
         if not self.target_fix_date:
             return True  # No SLA set
 
-        if self.status in [
+        if self.status in [  # noqa: SIM102
             VulnerabilityStatus.FIXED,
             VulnerabilityStatus.VERIFIED,
             VulnerabilityStatus.CLOSED,
@@ -141,17 +141,17 @@ class PenetrationTest:
     description: str
     test_type: TestType
     status: TestStatus
-    scope: List[str]  # Systems/components in scope
-    out_of_scope: List[str] = field(default_factory=list)
-    tester_team: List[str] = field(default_factory=list)
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
-    findings: List[str] = field(default_factory=list)  # Vulnerability IDs
-    report_path: Optional[str] = None
+    scope: list[str]  # Systems/components in scope
+    out_of_scope: list[str] = field(default_factory=list)
+    tester_team: list[str] = field(default_factory=list)
+    start_date: datetime | None = None
+    end_date: datetime | None = None
+    findings: list[str] = field(default_factory=list)  # Vulnerability IDs
+    report_path: str | None = None
     executive_summary: str = ""
     created_at: datetime = field(default_factory=datetime.now)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert penetration test to dictionary."""
         return {
             "id": self.id,
@@ -177,19 +177,19 @@ class RedTeamEngagement:
 
     id: str
     name: str
-    objectives: List[str]
-    tactics: List[str]  # MITRE ATT&CK tactics
-    techniques: List[str]  # MITRE ATT&CK techniques
+    objectives: list[str]
+    tactics: list[str]  # MITRE ATT&CK tactics
+    techniques: list[str]  # MITRE ATT&CK techniques
     start_date: datetime
     end_date: datetime
-    team_members: List[str]
-    target_systems: List[str]
-    rules_of_engagement: List[str]
-    findings: List[str] = field(default_factory=list)
+    team_members: list[str]
+    target_systems: list[str]
+    rules_of_engagement: list[str]
+    findings: list[str] = field(default_factory=list)
     success_rate: float = 0.0
     detection_rate: float = 0.0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert red team engagement to dictionary."""
         return {
             "id": self.id,
@@ -215,16 +215,16 @@ class PurpleTeamExercise:
     id: str
     name: str
     description: str
-    red_team: List[str]
-    blue_team: List[str]
-    scenarios: List[str]
+    red_team: list[str]
+    blue_team: list[str]
+    scenarios: list[str]
     start_date: datetime
     end_date: datetime
-    objectives: List[str]
-    lessons_learned: List[str] = field(default_factory=list)
-    improvements_identified: List[str] = field(default_factory=list)
+    objectives: list[str]
+    lessons_learned: list[str] = field(default_factory=list)
+    improvements_identified: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert purple team exercise to dictionary."""
         return {
             "id": self.id,
@@ -246,8 +246,8 @@ class VulnerabilityScanner:
 
     def __init__(self):
         """Initialize vulnerability scanner."""
-        self.vulnerabilities: Dict[str, Vulnerability] = {}
-        self.scan_history: List[Dict[str, Any]] = []
+        self.vulnerabilities: dict[str, Vulnerability] = {}
+        self.scan_history: list[dict[str, Any]] = []
 
     def register_vulnerability(
         self,
@@ -255,12 +255,12 @@ class VulnerabilityScanner:
         description: str,
         severity: VulnerabilitySeverity,
         cvss_score: float,
-        affected_components: List[str],
+        affected_components: list[str],
         attack_vector: str,
         discovered_by: str,
-        cwe_id: Optional[str] = None,
+        cwe_id: str | None = None,
         proof_of_concept: str = "",
-        remediation_steps: Optional[List[str]] = None,
+        remediation_steps: list[str] | None = None,
     ) -> str:
         """Register a new vulnerability."""
         vuln_id = hashlib.sha256(
@@ -286,7 +286,7 @@ class VulnerabilityScanner:
         return vuln_id
 
     def update_vulnerability_status(
-        self, vuln_id: str, status: VulnerabilityStatus, assigned_to: Optional[str] = None
+        self, vuln_id: str, status: VulnerabilityStatus, assigned_to: str | None = None
     ) -> None:
         """Update vulnerability status."""
         if vuln_id in self.vulnerabilities:
@@ -308,19 +308,19 @@ class VulnerabilityScanner:
 
     def get_vulnerabilities_by_severity(
         self, severity: VulnerabilitySeverity
-    ) -> List[Vulnerability]:
+    ) -> list[Vulnerability]:
         """Get vulnerabilities by severity."""
         return [vuln for vuln in self.vulnerabilities.values() if vuln.severity == severity]
 
-    def get_vulnerabilities_by_status(self, status: VulnerabilityStatus) -> List[Vulnerability]:
+    def get_vulnerabilities_by_status(self, status: VulnerabilityStatus) -> list[Vulnerability]:
         """Get vulnerabilities by status."""
         return [vuln for vuln in self.vulnerabilities.values() if vuln.status == status]
 
-    def get_overdue_vulnerabilities(self) -> List[Vulnerability]:
+    def get_overdue_vulnerabilities(self) -> list[Vulnerability]:
         """Get vulnerabilities past their fix deadline."""
         overdue = []
         for vuln in self.vulnerabilities.values():
-            if vuln.target_fix_date and not vuln.calculate_sla_compliance():
+            if vuln.target_fix_date and not vuln.calculate_sla_compliance():  # noqa: SIM102
                 if vuln.status not in [
                     VulnerabilityStatus.FIXED,
                     VulnerabilityStatus.VERIFIED,
@@ -335,7 +335,7 @@ class PenetrationTestManager:
 
     def __init__(self):
         """Initialize penetration test manager."""
-        self.tests: Dict[str, PenetrationTest] = {}
+        self.tests: dict[str, PenetrationTest] = {}
         self.vulnerability_scanner = VulnerabilityScanner()
 
     def create_test(
@@ -343,9 +343,9 @@ class PenetrationTestManager:
         title: str,
         description: str,
         test_type: TestType,
-        scope: List[str],
-        tester_team: List[str],
-        out_of_scope: Optional[List[str]] = None,
+        scope: list[str],
+        tester_team: list[str],
+        out_of_scope: list[str] | None = None,
     ) -> str:
         """Create a new penetration test."""
         test_id = hashlib.sha256(
@@ -381,11 +381,11 @@ class PenetrationTestManager:
 
     def add_finding_to_test(self, test_id: str, vuln_id: str) -> None:
         """Link a vulnerability to a penetration test."""
-        if test_id in self.tests:
+        if test_id in self.tests:  # noqa: SIM102
             if vuln_id not in self.tests[test_id].findings:
                 self.tests[test_id].findings.append(vuln_id)
 
-    def generate_test_report(self, test_id: str) -> Dict[str, Any]:
+    def generate_test_report(self, test_id: str) -> dict[str, Any]:
         """Generate a penetration test report."""
         if test_id not in self.tests:
             return {}
@@ -418,19 +418,19 @@ class RedTeamManager:
 
     def __init__(self):
         """Initialize red team manager."""
-        self.engagements: Dict[str, RedTeamEngagement] = {}
+        self.engagements: dict[str, RedTeamEngagement] = {}
 
     def create_engagement(
         self,
         name: str,
-        objectives: List[str],
-        tactics: List[str],
-        techniques: List[str],
+        objectives: list[str],
+        tactics: list[str],
+        techniques: list[str],
         start_date: datetime,
         end_date: datetime,
-        team_members: List[str],
-        target_systems: List[str],
-        rules_of_engagement: List[str],
+        team_members: list[str],
+        target_systems: list[str],
+        rules_of_engagement: list[str],
     ) -> str:
         """Create a new red team engagement."""
         engagement_id = hashlib.sha256(f"{name}:{start_date.isoformat()}".encode()).hexdigest()[:16]
@@ -453,7 +453,7 @@ class RedTeamManager:
 
     def add_finding(self, engagement_id: str, finding_id: str) -> None:
         """Add a finding to a red team engagement."""
-        if engagement_id in self.engagements:
+        if engagement_id in self.engagements:  # noqa: SIM102
             if finding_id not in self.engagements[engagement_id].findings:
                 self.engagements[engagement_id].findings.append(finding_id)
 
@@ -471,18 +471,18 @@ class PurpleTeamManager:
 
     def __init__(self):
         """Initialize purple team manager."""
-        self.exercises: Dict[str, PurpleTeamExercise] = {}
+        self.exercises: dict[str, PurpleTeamExercise] = {}
 
     def create_exercise(
         self,
         name: str,
         description: str,
-        red_team: List[str],
-        blue_team: List[str],
-        scenarios: List[str],
+        red_team: list[str],
+        blue_team: list[str],
+        scenarios: list[str],
         start_date: datetime,
         end_date: datetime,
-        objectives: List[str],
+        objectives: list[str],
     ) -> str:
         """Create a new purple team exercise."""
         exercise_id = hashlib.sha256(f"{name}:{start_date.isoformat()}".encode()).hexdigest()[:16]
@@ -504,13 +504,13 @@ class PurpleTeamManager:
 
     def add_lesson_learned(self, exercise_id: str, lesson: str) -> None:
         """Add a lesson learned from the exercise."""
-        if exercise_id in self.exercises:
+        if exercise_id in self.exercises:  # noqa: SIM102
             if lesson not in self.exercises[exercise_id].lessons_learned:
                 self.exercises[exercise_id].lessons_learned.append(lesson)
 
     def add_improvement(self, exercise_id: str, improvement: str) -> None:
         """Add an identified improvement."""
-        if exercise_id in self.exercises:
+        if exercise_id in self.exercises:  # noqa: SIM102
             if improvement not in self.exercises[exercise_id].improvements_identified:
                 self.exercises[exercise_id].improvements_identified.append(improvement)
 
@@ -521,8 +521,8 @@ class BugBountyProgram:
     def __init__(self, program_name: str):
         """Initialize bug bounty program."""
         self.program_name = program_name
-        self.submissions: Dict[str, Dict[str, Any]] = {}
-        self.rewards: Dict[str, float] = {
+        self.submissions: dict[str, dict[str, Any]] = {}
+        self.rewards: dict[str, float] = {
             VulnerabilitySeverity.CRITICAL.value: 10000.0,
             VulnerabilitySeverity.HIGH.value: 5000.0,
             VulnerabilitySeverity.MEDIUM.value: 2000.0,
@@ -566,7 +566,7 @@ class BugBountyProgram:
             else:
                 self.submissions[submission_id]["status"] = "rejected"
 
-    def get_program_stats(self) -> Dict[str, Any]:
+    def get_program_stats(self) -> dict[str, Any]:
         """Get bug bounty program statistics."""
         total_submissions = len(self.submissions)
         validated = sum(1 for s in self.submissions.values() if s["status"] == "validated")
@@ -597,7 +597,7 @@ class PenetrationTestingFramework:
             "version": "1.0.0",
         }
 
-    def generate_comprehensive_report(self) -> Dict[str, Any]:
+    def generate_comprehensive_report(self) -> dict[str, Any]:
         """Generate comprehensive penetration testing report."""
         return {
             "metadata": self.metadata,

@@ -15,39 +15,39 @@ Key Features:
 """
 
 from .base import (
-    SatelliteProvider,
-    ConnectionState,
     ConnectionConfig,
+    ConnectionState,
     SatelliteConnectionError,
+    SatelliteProvider,
     SatelliteTimeoutError,
 )
-from .starlink import StarlinkProvider
-from .kuiper import KuiperProvider
-from .oneweb import OneWebProvider
-from .iridium import IridiumProvider
+from .failover import (
+    ConnectionType,
+    FailoverConfig,
+    FailoverEvent,
+    FailoverManager,
+)
 from .gps_tracker import (
-    GPSTracker,
-    GNSSConstellation,
-    Position,
     Geofence,
     GeofenceType,
+    GNSSConstellation,
+    GPSTracker,
+    Position,
 )
-from .failover import (
-    FailoverManager,
-    FailoverConfig,
-    ConnectionType,
-    FailoverEvent,
-)
+from .iridium import IridiumProvider
+from .kuiper import KuiperProvider
 from .latency_optimizer import (
     LatencyOptimizer,
     LatencyProfile,
     RequestPriority,
 )
 from .metrics import (
+    ConnectionMetrics,
     SatelliteMetrics,
     SignalQuality,
-    ConnectionMetrics,
 )
+from .oneweb import OneWebProvider
+from .starlink import StarlinkProvider
 
 __all__ = [
     # Base classes

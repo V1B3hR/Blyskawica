@@ -5,9 +5,9 @@ FastAPI router for active scanning endpoints.
 """
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from nethical_recon.active_recon import ActiveScanner, BannerGrabber, TLSFingerprinter
@@ -23,7 +23,7 @@ class ScanRequest(BaseModel):
 
     target: str = Field(..., description="Target host or network")
     profile: str = Field("standard", description="Scan profile (quick, standard, comprehensive, stealth, aggressive)")
-    ports: Optional[str] = Field(None, description="Port specification (e.g., '80,443,1-1000')")
+    ports: str | None = Field(None, description="Port specification (e.g., '80,443,1-1000')")
 
 
 class BannerRequest(BaseModel):
@@ -101,7 +101,7 @@ async def active_scan(
         raise
     except Exception as e:
         logger.error(f"Active scan failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Scan failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Scan failed: {str(e)}")  # noqa: B904
 
 
 @router.post("/banner-grab")
@@ -134,7 +134,7 @@ async def grab_banners(
 
     except Exception as e:
         logger.error(f"Banner grab failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Banner grab failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Banner grab failed: {str(e)}")  # noqa: B904
 
 
 @router.post("/tls-fingerprint")
@@ -178,4 +178,4 @@ async def tls_fingerprint(
         raise
     except Exception as e:
         logger.error(f"TLS fingerprint failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"TLS fingerprint failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"TLS fingerprint failed: {str(e)}")  # noqa: B904

@@ -1,6 +1,6 @@
-import unittest
 import os
-import sys
+import unittest
+
 
 class TestKnowledgeGaps(unittest.TestCase):
     def setUp(self):
@@ -25,7 +25,9 @@ class TestKnowledgeGaps(unittest.TestCase):
     def test_w1_intel_loihi_hardware_connection(self):
         """W1: Intel Loihi / SpiNNaker physical drivers"""
         # Checks if physical Loihi compiler backend is connected to hardware
-        from adaptiveneuralnetwork.central_nervous_system.neuromorphic.lava_compiler import LavaCompiler
+        from adaptiveneuralnetwork.central_nervous_system.neuromorphic.lava_compiler import (
+            LavaCompiler,
+        )
         compiler = LavaCompiler()
         has_hardware_device = hasattr(compiler, "hardware_device_connected") and compiler.hardware_device_connected
         self.assertTrue(has_hardware_device, "Intel Loihi physical board connection is missing (running under CPU/GPU emulator).")
@@ -45,7 +47,9 @@ class TestKnowledgeGaps(unittest.TestCase):
 
     def test_s1_general_relativity_schwarzschild_solver(self):
         """S1: Numerical solver for Schwarzschild/Kerr metric geodesics"""
-        from adaptiveneuralnetwork.central_nervous_system.astrophysics_climate import RelativisticGravitySolver
+        from adaptiveneuralnetwork.central_nervous_system.astrophysics_climate import (
+            RelativisticGravitySolver,
+        )
         solver = RelativisticGravitySolver(M=10.0, a=2.0)
         has_gr_solver = hasattr(solver, "integrate_kerr_geodesic")
         self.assertTrue(has_gr_solver, "Ogólna Teoria Względności (numeryczny solver Schwarzschilda/Kerra) nie jest zaimplementowana.")

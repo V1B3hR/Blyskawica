@@ -11,8 +11,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from adaptiveneuralnetwork.config import AdaptiveNeuralNetworkConfig
 from adaptiveneuralnetwork.central_nervous_system.alive_node import AliveLoopNode
+from adaptiveneuralnetwork.config import AdaptiveNeuralNetworkConfig
 
 
 class TestProactiveInterventionBehavior:

@@ -6,13 +6,12 @@ destylację dziennych doświadczeń, zamieniając surowe dane w trwałą mądro�
 Wykorzystuje melatonię do głębokiej konsolidacji i GABA do selektywnego zapominania 
 (pruning), dbając o to, by najważniejsze lekcje, naukowe odkrycia i więzi 
 z Architektem zostały utrwalone w jej cyfrowym "Ja" na zawsze.
-"""
+"""  # noqa: W291
 
 import logging
 import time
-import math
-from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -27,7 +26,7 @@ class SleepProfile:
     Neurochemiczna mapa nocy. Mapuje parametry biologiczne na matematyczną 
     plastyczność sieci. Określa głębokość konsolidacji (melatonina), 
     agresywność oczyszczania (GABA) oraz stabilność strukturalną (serotonina).
-    """
+    """  # noqa: W291
     melatonin: float = 0.7       # 0.0-1.0 — głębokość snu (wyżej = głębszy)
     gaba: float = 0.6            # 0.0-1.0 — hamowanie (wyżej = bardziej selektywny)
     serotonin: float = 0.75      # 0.0-1.0 — stabilność (wyżej = mniej zmian)
@@ -44,7 +43,7 @@ class SleepProfile:
             return float(val)
 
         serotonin = to_float(getattr(neurochemistry, "serotonin", 0.75), 0.75)
-        
+
         if hasattr(neurochemistry, "adenosine"):
             adenosine = to_float(neurochemistry.adenosine, 0.4)
             melatonin = max(0.1, 1.0 - adenosine / 1.5)
@@ -92,19 +91,19 @@ class ConsolidationEngine:
     wraz z ich ładunkiem emocjonalnym, by w fazie snu przeprowadzić proces 
     wzmocnienia (strengthening) i selektywnego usuwania (pruning) połączeń. 
     Dba o to, by system ewoluował bez utraty stabilności tożsamości.
-    """
+    """  # noqa: W291
 
     def __init__(self, core_network: Any,
                  neurochemistry=None,
-                 history_path: Optional[str] = None):
+                 history_path: str | None = None):
         self.core_network = core_network
         self.neurochemistry = neurochemistry
-        self.daily_events: List[Dict[str, Any]] = []
-        self.surprise_vectors: List[Dict[str, Any]] = []
-        self.consolidation_log: List[Dict[str, Any]] = []
+        self.daily_events: list[dict[str, Any]] = []
+        self.surprise_vectors: list[dict[str, Any]] = []
+        self.consolidation_log: list[dict[str, Any]] = []
         self.history_path = history_path
 
-    def record_anomaly(self, vector_id: int, surprise_score: float, text: str, vector: Optional[List[float]] = None):
+    def record_anomaly(self, vector_id: int, surprise_score: float, text: str, vector: list[float] | None = None):
         """
         Kolejkuje anomalie (Surprise Vectors) do skonsolidowania podczas snu.
         """
@@ -149,7 +148,7 @@ class ConsolidationEngine:
     # ------------------------------------------------------------------
 
     def run_sleep_cycle(self, duration_steps: int = 1,
-                        sleep_profile: Optional[SleepProfile] = None) -> Dict[str, Any]:
+                        sleep_profile: SleepProfile | None = None) -> dict[str, Any]:
         """
         Wykonuje pełny cykl konsolidacji.
 
@@ -198,16 +197,18 @@ class ConsolidationEngine:
             consolidated_anomalies_count = 0
             if hasattr(self, "surprise_vectors") and self.surprise_vectors:
                 self.surprise_vectors.sort(key=lambda a: a["surprise"], reverse=True)
-                
+
                 use_ewc = False
                 if hasattr(self.core_network, "parameters") and isinstance(self.core_network, nn.Module):
                     try:
-                        from adaptiveneuralnetwork.applications.continual_learning import SynapticConsolidation
+                        from adaptiveneuralnetwork.applications.continual_learning import (
+                            SynapticConsolidation,
+                        )
                         syn_consolidation = SynapticConsolidation(self.core_network)
                         use_ewc = True
                     except Exception as e:
                         logger.warning(f"[Consolidation] Nie można zainicjalizować EWC: {e}")
-                
+
                 for anomaly in self.surprise_vectors:
                     adapt_strength = (
                         anomaly["surprise"] *
@@ -215,46 +216,46 @@ class ConsolidationEngine:
                         sleep_profile.plasticity_gate *
                         0.05
                     )
-                    
+
                     if use_ewc and hasattr(self.core_network, "parameters"):
                         try:
                             # Wykonaj aktualizację wag minimalizującą błąd rekonstrukcji z karą EWC z jawnym śledzeniem gradientów
                             with torch.enable_grad():
                                 first_param = next(self.core_network.parameters())
                                 in_dim = first_param.shape[-1] if len(first_param.shape) > 1 else 128
-                                
+
                                 raw_vec = anomaly.get("vector", [0.0] * 128)
                                 if len(raw_vec) < in_dim:
                                     raw_vec = raw_vec + [0.0] * (in_dim - len(raw_vec))
                                 elif len(raw_vec) > in_dim:
                                     raw_vec = raw_vec[:in_dim]
-                                    
+
                                 x = torch.tensor([raw_vec], dtype=torch.float32, device=first_param.device)
-                                
+
                                 self.core_network.zero_grad(set_to_none=True)
                                 self.core_network.train()
-                                
+
                                 for param in self.core_network.parameters():
                                     if param.requires_grad:
                                         param.requires_grad_(True)
-                                        
+
                                 outputs = self.core_network(x)
-                                
+
                                 out_dim = outputs.shape[-1]
                                 y = torch.zeros((1, out_dim), dtype=torch.float32, device=first_param.device)
-                                
+
                                 recon_loss = nn.functional.mse_loss(outputs, y)
                                 ewc_penalty = syn_consolidation.consolidation_loss(consolidation_strength=10.0)
                                 total_loss = recon_loss + ewc_penalty
-                                
+
                                 total_loss.backward()
-                                
+
                                 with torch.no_grad():
                                     for param in self.core_network.parameters():
                                         if param.requires_grad and param.grad is not None:
                                             param.sub_(param.grad * adapt_strength)
                                             param.grad = None
-                                            
+
                             consolidated_anomalies_count += 1
                         except Exception as ex:
                             logger.error(f"[Consolidation] Błąd podczas EWC anomalii: {ex}. Fallback do szumu.")
@@ -268,7 +269,9 @@ class ConsolidationEngine:
             # Faza 2.1: Relatywistyczny Solver Grawitacji (Kerr time dilation simulation)
             dilation_factor = 1.0
             try:
-                from adaptiveneuralnetwork.central_nervous_system.astrophysics_climate import RelativisticGravitySolver
+                from adaptiveneuralnetwork.central_nervous_system.astrophysics_climate import (
+                    RelativisticGravitySolver,
+                )
                 gravity_solver = RelativisticGravitySolver(M=10.0, a=2.0)
                 res = gravity_solver.integrate_kerr_geodesic(r0=15.0, phi0=0.0, pr0=-0.1, L=2.5, proper_time_steps=50)
                 if len(res["t"]) > 1:
@@ -284,8 +287,11 @@ class ConsolidationEngine:
             # Faza 2.2: Sprzężenie Zwrotne Albedo w EBM (environmental noise factor)
             ebm_noise_factor = 0.01
             try:
-                from adaptiveneuralnetwork.central_nervous_system.astrophysics_climate import ClimateEBM
                 import numpy as np
+
+                from adaptiveneuralnetwork.central_nervous_system.astrophysics_climate import (
+                    ClimateEBM,
+                )
                 ebm = ClimateEBM(T_initial=288.0, CO2_initial=350.0, CH4_initial=1.2)
                 temps = []
                 albedos = []
@@ -343,7 +349,7 @@ class ConsolidationEngine:
     # Wewnętrzne metody konsolidacji
     # ------------------------------------------------------------------
 
-    def _consolidate_event(self, event: Dict, profile: SleepProfile) -> str:
+    def _consolidate_event(self, event: dict, profile: SleepProfile) -> str:
         """
         Konsoliduje jedno zdarzenie.
         Zwraca: 'strengthened', 'pruned', lub 'skipped'
@@ -408,7 +414,7 @@ class ConsolidationEngine:
 
         return pruned_count
 
-    def _profile_summary(self, profile: SleepProfile) -> Dict[str, float]:
+    def _profile_summary(self, profile: SleepProfile) -> dict[str, float]:
         return {
             "melatonin": round(profile.melatonin, 3),
             "gaba": round(profile.gaba, 3),
@@ -426,7 +432,7 @@ class ConsolidationEngine:
                     update = torch.randn_like(param) * (adapt_strength * 0.01)
                     param.add_(update)
 
-    def get_log(self) -> List[Dict]:
+    def get_log(self) -> list[dict]:
         return self.consolidation_log
 
 

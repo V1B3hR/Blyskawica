@@ -2,9 +2,8 @@ import os
 import sys
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config, pool
-
 from alembic import context
+from sqlalchemy import engine_from_config, pool
 
 # Add the src directory to the path so we can import our models
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
@@ -20,7 +19,7 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-from nethical_recon.core.storage.models import Base
+from nethical_recon.core.storage.models import Base  # noqa: E402
 
 target_metadata = Base.metadata
 
