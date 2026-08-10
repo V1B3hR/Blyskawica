@@ -34,7 +34,7 @@ class LayerRegistry:
             @layer_registry.register("my_layer")
             class MyLayer(nn.Module):
                 pass
-        """
+        """  # noqa: W293
         def decorator(cls: type[nn.Module]) -> type[nn.Module]:
             if name in self._registry:
                 raise ValueError(f"Layer '{name}' already registered")
@@ -57,7 +57,7 @@ class LayerRegistry:
         Args:
             name: String identifier for the layer
             factory_fn: Function that creates and returns a layer instance
-        """
+        """  # noqa: W293
         if name in self._factory_functions:
             raise ValueError(f"Factory '{name}' already registered")
         self._factory_functions[name] = factory_fn
@@ -75,7 +75,7 @@ class LayerRegistry:
             
         Raises:
             ValueError: If layer name is not registered
-        """
+        """  # noqa: W293
         # Check factory functions first
         if name in self._factory_functions:
             return self._factory_functions[name](**kwargs)
@@ -93,7 +93,7 @@ class LayerRegistry:
     def list_layers(self) -> list[str]:
         """Get list of all registered layer names."""
         all_layers = set(self._registry.keys()) | set(self._factory_functions.keys())
-        return sorted(list(all_layers))
+        return sorted(list(all_layers))  # noqa: C414
 
     def has_layer(self, name: str) -> bool:
         """Check if a layer is registered."""

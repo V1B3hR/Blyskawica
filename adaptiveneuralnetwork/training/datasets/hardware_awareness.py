@@ -7,9 +7,8 @@ internal state vectors (ENERGY, ANXIETY, CALM), teaching her to
 perceive her host machine as an extension of herself.
 """
 
-import time
-import torch
 import numpy as np
+import torch
 from torch.utils.data import Dataset
 
 try:
@@ -149,7 +148,7 @@ class HardwareAwarenessDataset(Dataset):
                      np.random.uniform(0.2, 0.4)),
         ]
 
-        for i in range(self.num_samples):
+        for i in range(self.num_samples):  # noqa: B007
             # Select profile based on weights
             profile_idx = np.random.choice(len(profiles), p=profile_weights)
             cpu, ram, gpu, temp, disk_io = profiles[profile_idx]()
@@ -174,7 +173,7 @@ class HardwareAwarenessDataset(Dataset):
         logger.info(f"[HW_AWARENESS] Collecting {self.num_samples} live hardware samples...")
 
         collected = 0
-        prev_cpu = [0.0]
+        prev_cpu = [0.0]  # noqa: F841
 
         while collected < self.num_samples:
             cpu = psutil.cpu_percent(interval=0.1)

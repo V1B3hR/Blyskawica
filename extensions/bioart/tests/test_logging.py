@@ -4,20 +4,21 @@ Tests for structured logging module.
 Tests JSON logging, correlation IDs, timing, and error counters.
 """
 
-import json
-import pytest
 import time
+
+import pytest
+
 from src.core.logging import (
-    get_logger,
-    correlation_context,
-    timed_operation,
-    timed,
-    set_correlation_context,
-    get_correlation_context,
     clear_correlation_context,
-    increment_error_counter,
+    correlation_context,
+    get_correlation_context,
     get_error_counters,
+    get_logger,
+    increment_error_counter,
     reset_error_counters,
+    set_correlation_context,
+    timed,
+    timed_operation,
 )
 
 

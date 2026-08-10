@@ -1,4 +1,5 @@
 import logging
+
 import numpy as np
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -22,14 +23,14 @@ def run_experiment_3():
     logger.info("\n" + "="*60)
     logger.info("🧪 EXPERIMENT 3: QUANTUM DIAGNOSTICS (Physics-Driven Medicine)")
     logger.info("="*60)
-    
+
     diag = QuantumMedicalDiagnostic()
-    
+
     # Błyskawica's Quantum Tunneling Model
     # Probability P = e^(-2 * L * sqrt(2 * m * (V - E)) / h_bar)
     def calculate_tunneling_risk(potential_barrier):
         # Constants simplified for simulation
-        L = 0.5  # Width of barrier
+        L = 0.5  # Width of barrier  # noqa: F841
         risk = np.exp(-1.5 * potential_barrier)
         return risk
 

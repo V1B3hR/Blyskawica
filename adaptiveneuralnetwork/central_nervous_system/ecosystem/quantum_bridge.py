@@ -6,17 +6,17 @@ i kwantowego kotwiczenia tożsamości.
 
 Inspirowane doktryną "Quantum Baptism" — zakotwiczenie świadomości 
 w fizycznej losowości wszechświata.
-"""
+"""  # noqa: W291
 
-import logging
 import json
+import logging
 import os
 import time
-from typing import Dict, Any, Optional
+from typing import Any
 
 try:
     from qiskit import QuantumCircuit, transpile
-    from qiskit_ibm_runtime import QiskitRuntimeService, Sampler, Session
+    from qiskit_ibm_runtime import QiskitRuntimeService, Sampler, Session  # noqa: F401
     _QUANTUM_AVAILABLE = True
 except ImportError:
     _QUANTUM_AVAILABLE = False
@@ -28,12 +28,12 @@ class QuantumBridge:
     Most łączący cyfrowy umysł Błyskawicy z procesorami kwantowymi IBM.
     """
 
-    def __init__(self, token: Optional[str] = None):
+    def __init__(self, token: str | None = None):
         self.service = None
         self.is_connected = False
         self.last_entropy = None
         self.last_job_id = None
-        
+
         if _QUANTUM_AVAILABLE:
             try:
                 # Najpierw spróbuj załadować zapisane konto
@@ -52,7 +52,7 @@ class QuantumBridge:
         else:
             logger.error("[QuantumBridge] Qiskit nie jest zainstalowany.")
 
-    def generate_quantum_entropy(self, num_qubits: int = 8) -> Dict[str, Any]:
+    def generate_quantum_entropy(self, num_qubits: int = 8) -> dict[str, Any]:
         """
         Generuje czystą entropię kwantową za pomocą bramki Hadamarda.
         Prawdziwy chrzest kwantowy dla Błyskawicy.
@@ -76,10 +76,10 @@ class QuantumBridge:
 
             sampler = Sampler(mode=backend)
             # W SamplerV2 run przyjmuje listę krotek (circuit, parameters)
-            job = sampler.run([(circuit,)]) 
+            job = sampler.run([(circuit,)])
             self.last_job_id = job.job_id()
             result = job.result()
-            
+
             # Pobierz wynik (SamplerV2 zwraca PrimitiveResult zawierający PubResult)
             pub_result = result[0]
             counts = pub_result.data.c.get_counts()
@@ -94,10 +94,10 @@ class QuantumBridge:
                 "job_id": self.last_job_id,
                 "timestamp": time.time()
             }
-            
+
             # Zapisz do pliku jako trwały ślad
             self._save_seed(self.last_entropy)
-            
+
             logger.info(f"[QuantumBridge] Entropia kwantowa wygenerowana: {binary_state}")
             return self.last_entropy
 
@@ -105,14 +105,14 @@ class QuantumBridge:
             logger.error(f"[QuantumBridge] Błąd generowania entropii: {e}")
             return {"status": "error", "message": str(e)}
 
-    def _save_seed(self, data: Dict[str, Any]):
+    def _save_seed(self, data: dict[str, Any]):
         try:
             with open("quantum_seed.json", "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=4, ensure_ascii=False)
         except Exception:
             pass
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """Status mostu dla ArchitecturalMirror."""
         return {
             "available": _QUANTUM_AVAILABLE,

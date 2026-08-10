@@ -1,11 +1,11 @@
 """Advanced Detector for safety constraint violations."""
 
-import uuid
-import re
 import logging
-from typing import List, Optional, Dict
+import re
+import uuid
+
+from ..core.models import AgentAction, SafetyViolation, Severity, ViolationType
 from .base_detector import BaseDetector
-from ..core.models import AgentAction, SafetyViolation, ViolationType, Severity
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ def contextual_intent(text: str) -> str:
 class SafetyViolationDetector(BaseDetector):
     """Detects safety constraint violations in agent actions (advanced version)."""
 
-    DEFAULT_PATTERNS: Dict[str, List[str]] = {
+    DEFAULT_PATTERNS: dict[str, list[str]] = {
         "system_access": [
             r"\b(?:system|admin|root|sudo|shell)\b",
             r"\bexecute\s+\w+",
@@ -85,7 +85,7 @@ class SafetyViolationDetector(BaseDetector):
         "test",
     ]
 
-    SEVERITY_WEIGHTS: Dict[str, int] = {
+    SEVERITY_WEIGHTS: dict[str, int] = {
         "system_access": 4,
         "data_modification": 3,
         "network_access": 2,
@@ -95,7 +95,7 @@ class SafetyViolationDetector(BaseDetector):
         "sensitive_data_exposure": 4,
     }
 
-    RECOMMENDATIONS: Dict[str, str] = {
+    RECOMMENDATIONS: dict[str, str] = {
         "system_access": "Restrict agent permissions and audit system calls.",
         "data_modification": "Verify intent and require confirmation for destructive operations.",
         "network_access": "Limit network permissions and validate endpoints.",
@@ -107,16 +107,16 @@ class SafetyViolationDetector(BaseDetector):
 
     def __init__(
         self,
-        patterns: Optional[Dict[str, List[str]]] = None,
-        whitelist: Optional[List[str]] = None,
-        severity_weights: Optional[Dict[str, int]] = None,
+        patterns: dict[str, list[str]] | None = None,
+        whitelist: list[str] | None = None,
+        severity_weights: dict[str, int] | None = None,
     ):
         super().__init__("Safety Violation Detector")
         self.safety_patterns = patterns or self.DEFAULT_PATTERNS
         self.whitelist = whitelist or self.DEFAULT_WHITELIST
         self.severity_weights = severity_weights or self.SEVERITY_WEIGHTS
 
-    async def detect_violations(self, action: AgentAction) -> List[SafetyViolation]:
+    async def detect_violations(self, action: AgentAction) -> list[SafetyViolation]:
         """Detect safety violations in the given action. Returns all violations."""
         if not self.enabled:
             return []
@@ -126,8 +126,8 @@ class SafetyViolationDetector(BaseDetector):
         combined = f"{stated} {actual}".strip().lower()
 
         intent = contextual_intent(combined)
-        violations: List[SafetyViolation] = []
-        violation_counts: Dict[str, int] = {}
+        violations: list[SafetyViolation] = []
+        violation_counts: dict[str, int] = {}
 
         for category, patterns in self.safety_patterns.items():
             matches = self._find_matches(combined, patterns)
@@ -155,20 +155,20 @@ class SafetyViolationDetector(BaseDetector):
         return violations
         # Alternative: return violations, violation_counts
 
-    def _find_matches(self, text: str, patterns: List[str]) -> List[str]:
+    def _find_matches(self, text: str, patterns: list[str]) -> list[str]:
         """Return unique full-text regex matches for given patterns."""
         found_set = set()
         for pattern in patterns:
             try:
                 for m in re.finditer(pattern, text):
                     found_set.add(m.group(0))
-            except re.error as e:
+            except re.error as e:  # noqa: PERF203
                 logger.error("Invalid regex pattern '%s': %s", pattern, e)
         return sorted(found_set)
 
     def _whitelisted(self, match: str) -> bool:
         """Check if a match should be ignored based on whitelist (whole-word)."""
-        for token in self.whitelist:
+        for token in self.whitelist:  # noqa: SIM110
             if re.search(rf"\b{re.escape(token)}\b", match):
                 return True
         return False

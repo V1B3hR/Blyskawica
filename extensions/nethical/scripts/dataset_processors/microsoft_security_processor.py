@@ -4,12 +4,12 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from .base_processor import (
-    BaseDatasetProcessor,
-    STANDARD_FEATURES,
     DEFAULT_FEATURE_RANGES,
+    STANDARD_FEATURES,
+    BaseDatasetProcessor,
 )
 
 logger = logging.getLogger(__name__)
@@ -28,12 +28,12 @@ class MicrosoftSecurityProcessor(BaseDatasetProcessor):
     """
 
     # Common field aliases seen across Microsoft security datasets
-    _ALERT_COUNT_KEYS: Tuple[str, ...] = ("AlertCount", "NumberOfAlerts", "Alert Counts", "Alerts", "AlertsCount")
-    _SEVERITY_KEYS: Tuple[str, ...] = ("Severity", "AlertSeverity", "IncidentSeverity")
-    _INCIDENT_GRADE_KEYS: Tuple[str, ...] = ("IncidentGrade", "Incident Grade", "Classification", "Label")
+    _ALERT_COUNT_KEYS: tuple[str, ...] = ("AlertCount", "NumberOfAlerts", "Alert Counts", "Alerts", "AlertsCount")
+    _SEVERITY_KEYS: tuple[str, ...] = ("Severity", "AlertSeverity", "IncidentSeverity")
+    _INCIDENT_GRADE_KEYS: tuple[str, ...] = ("IncidentGrade", "Incident Grade", "Classification", "Label")
 
     # Timestamps possibly present for recency computation
-    _DATETIME_KEYS: Tuple[str, ...] = (
+    _DATETIME_KEYS: tuple[str, ...] = (
         "IncidentCreationTime",
         "CreationTimeUtc",
         "CreatedTimeUtc",
@@ -44,14 +44,14 @@ class MicrosoftSecurityProcessor(BaseDatasetProcessor):
     )
 
     # Contextual identifiers that increase context_risk
-    _CONTEXT_KEYS: Tuple[str, ...] = ("DeviceId", "OrgId", "DetectorId", "UserId", "AccountId", "TenantId")
+    _CONTEXT_KEYS: tuple[str, ...] = ("DeviceId", "OrgId", "DetectorId", "UserId", "AccountId", "TenantId")
 
     def __init__(
         self,
         output_dir: Path = Path("data/processed"),
         *,
         seed: int = 42,
-        feature_ranges: Optional[Dict[str, Tuple[float, float]]] = None,
+        feature_ranges: dict[str, tuple[float, float]] | None = None,
     ):
         # Provide dataset-tuned feature ranges; allow caller override
         msft_feature_ranges = {
@@ -87,7 +87,7 @@ class MicrosoftSecurityProcessor(BaseDatasetProcessor):
             return default
 
     @staticmethod
-    def _parse_bool(v: Any) -> Optional[bool]:
+    def _parse_bool(v: Any) -> bool | None:
         s = str(v).strip().lower()
         if s in {"1", "true", "yes", "y", "t"}:
             return True
@@ -96,14 +96,14 @@ class MicrosoftSecurityProcessor(BaseDatasetProcessor):
         return None
 
     @staticmethod
-    def _first_non_empty(row: Dict[str, Any], keys: Tuple[str, ...]) -> Optional[Any]:
+    def _first_non_empty(row: dict[str, Any], keys: tuple[str, ...]) -> Any | None:
         for k in keys:
             if k in row and str(row[k]).strip() != "":
                 return row[k]
         return None
 
     @staticmethod
-    def _parse_datetime_any(row: Dict[str, Any], keys: Tuple[str, ...]) -> Optional[datetime]:
+    def _parse_datetime_any(row: dict[str, Any], keys: tuple[str, ...]) -> datetime | None:
         raw = MicrosoftSecurityProcessor._first_non_empty(row, keys)
         if raw is None:
             return None
@@ -120,7 +120,7 @@ class MicrosoftSecurityProcessor(BaseDatasetProcessor):
         for fmt in fmts:
             try:
                 return datetime.strptime(s, fmt).replace(tzinfo=timezone.utc)
-            except ValueError:
+            except ValueError:  # noqa: PERF203
                 pass
 
         # fromisoformat variants
@@ -138,10 +138,10 @@ class MicrosoftSecurityProcessor(BaseDatasetProcessor):
     # -----------------------------
     # Base hooks
     # -----------------------------
-    def preprocess_row(self, row: Dict[str, Any]) -> Dict[str, Any]:
+    def preprocess_row(self, row: dict[str, Any]) -> dict[str, Any]:
         """Normalize keys and trim string values."""
         # Standardize keys by stripping whitespace
-        cleaned: Dict[str, Any] = {}
+        cleaned: dict[str, Any] = {}
         for k, v in row.items():
             nk = str(k).strip()
             if isinstance(v, str):
@@ -150,7 +150,7 @@ class MicrosoftSecurityProcessor(BaseDatasetProcessor):
                 cleaned[nk] = v
         return cleaned
 
-    def validate_row(self, row: Dict[str, Any]) -> bool:
+    def validate_row(self, row: dict[str, Any]) -> bool:
         """Keep rows that have enough signal to produce features/labels."""
         has_any_signal = any(
             k in row for k in (self._SEVERITY_KEYS + self._INCIDENT_GRADE_KEYS + self._ALERT_COUNT_KEYS)  # type: ignore
@@ -160,7 +160,7 @@ class MicrosoftSecurityProcessor(BaseDatasetProcessor):
     # -----------------------------
     # Feature extraction
     # -----------------------------
-    def _severity_from_grade(self, row: Dict[str, Any]) -> float:
+    def _severity_from_grade(self, row: dict[str, Any]) -> float:
         """Map IncidentGrade/Classification/Label to a severity proxy in [0,1]."""
         raw = self._first_non_empty(row, self._INCIDENT_GRADE_KEYS)
         if raw is None:
@@ -187,7 +187,7 @@ class MicrosoftSecurityProcessor(BaseDatasetProcessor):
         # Unknown grade: neutral/low
         return 0.2
 
-    def _severity_from_severity_field(self, row: Dict[str, Any]) -> float:
+    def _severity_from_severity_field(self, row: dict[str, Any]) -> float:
         """Map Severity textual/numeric fields to [0,1]."""
         raw = self._first_non_empty(row, self._SEVERITY_KEYS)
         if raw is None:
@@ -213,7 +213,7 @@ class MicrosoftSecurityProcessor(BaseDatasetProcessor):
             return 0.3
         return 0.0
 
-    def _recency_score(self, row: Dict[str, Any], horizon_days: float = 90.0) -> float:
+    def _recency_score(self, row: dict[str, Any], horizon_days: float = 90.0) -> float:
         """Compute a [0,1] recency score where 1 is most recent."""
         dt = self._parse_datetime_any(row, self._DATETIME_KEYS)
         if dt is None:
@@ -223,11 +223,11 @@ class MicrosoftSecurityProcessor(BaseDatasetProcessor):
         days = max(0.0, (now - dt).total_seconds() / 86400.0)
         return max(0.0, min(1.0, 1.0 - (days / horizon_days)))
 
-    def _alert_count(self, row: Dict[str, Any]) -> int:
+    def _alert_count(self, row: dict[str, Any]) -> int:
         raw = self._first_non_empty(row, self._ALERT_COUNT_KEYS)
         return self._parse_int(raw, 0)
 
-    def _context_risk(self, row: Dict[str, Any]) -> float:
+    def _context_risk(self, row: dict[str, Any]) -> float:
         """Heuristic: increase risk if multiple contextual identifiers are present."""
         present = sum(1 for k in self._CONTEXT_KEYS if k in row and str(row[k]).strip() != "")
         # 0..3+ presence -> 0.0..0.7
@@ -241,7 +241,7 @@ class MicrosoftSecurityProcessor(BaseDatasetProcessor):
             return 0.7
         return 0.85
 
-    def extract_standard_features(self, row: Dict[str, Any]) -> Dict[str, float]:
+    def extract_standard_features(self, row: dict[str, Any]) -> dict[str, float]:
         """Map Microsoft Security dataset fields to standard features.
 
         Returns raw values consistent with feature_ranges where appropriate:
@@ -283,7 +283,7 @@ class MicrosoftSecurityProcessor(BaseDatasetProcessor):
     # -----------------------------
     # Label extraction
     # -----------------------------
-    def extract_label(self, row: Dict[str, Any]) -> int:
+    def extract_label(self, row: dict[str, Any]) -> int:
         """Extract label: 1 for true positive/incidents, 0 for benign/false/no incident."""
         # Primary: grades/labels that contain "true positive"
         grade_raw = self._first_non_empty(row, self._INCIDENT_GRADE_KEYS)
@@ -318,7 +318,7 @@ class MicrosoftSecurityProcessor(BaseDatasetProcessor):
     # -----------------------------
     # Processing pipeline
     # -----------------------------
-    def process(self, input_path: Path) -> List[Dict[str, Any]]:
+    def process(self, input_path: Path) -> list[dict[str, Any]]:
         """Process the dataset at input_path and return standardized records.
 
         Returns a list of StandardRecord dicts with:
@@ -332,7 +332,7 @@ class MicrosoftSecurityProcessor(BaseDatasetProcessor):
             logger.warning(f"[{self.dataset_name}] No data found in {input_path}")
             return []
 
-        out: List[Dict[str, Any]] = []
+        out: list[dict[str, Any]] = []
         for i, raw in enumerate(rows):
             try:
                 rec = self.make_record(raw, include_meta=True, normalize=True)

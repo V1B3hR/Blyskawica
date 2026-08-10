@@ -8,7 +8,11 @@ from unittest.mock import Mock, patch
 import numpy as np
 import torch
 
-from adaptiveneuralnetwork.central_nervous_system.video_inference import AdaptiveProcessor, InferenceConfig, PerformanceMonitor
+from adaptiveneuralnetwork.central_nervous_system.video_inference import (
+    AdaptiveProcessor,
+    InferenceConfig,
+    PerformanceMonitor,
+)
 from adaptiveneuralnetwork.data.video_streaming import FrameInfo, VideoConfig, VideoFrameProcessor
 from adaptiveneuralnetwork.models.video_models import (
     Conv3D,
@@ -237,7 +241,7 @@ class TestInferenceComponents(unittest.TestCase):
 
         # Simulate poor performance
         for _ in range(5):
-            new_resolution = processor.adapt_resolution(0.5, 150.0)  # Low confidence, high latency
+            new_resolution = processor.adapt_resolution(0.5, 150.0)  # Low confidence, high latency  # noqa: F841
 
         # Should decrease resolution
         self.assertLessEqual(processor.current_resolution, initial_resolution)

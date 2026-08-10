@@ -10,11 +10,11 @@ This script demonstrates the key features of the simulation dashboard:
 5. Real-time updates and safety monitoring
 """
 
-import asyncio
-import requests
 import json
 import time
 from datetime import datetime
+
+import requests
 
 BASE_URL = "http://localhost:8000"
 HEADERS = {"Authorization": "Bearer demo-token", "Content-Type": "application/json"}
@@ -23,7 +23,7 @@ def demo_scenario_creation():
     """Demonstrate scenario creation"""
     print("🔧 Demo: Scenario Creation")
     print("=" * 40)
-    
+
     # Create a complex Alzheimer's patient scenario
     scenario_data = {
         "name": "Advanced Alzheimer's Risk Assessment",
@@ -87,10 +87,10 @@ def demo_scenario_creation():
             "safety_monitoring": True
         }
     }
-    
+
     # Create the scenario
     response = requests.post(f"{BASE_URL}/api/scenarios", headers=HEADERS, json=scenario_data)
-    
+
     if response.status_code == 200:
         result = response.json()
         scenario_id = result["scenario_id"]
@@ -107,29 +107,29 @@ def demo_scenario_creation():
 
 def demo_simulation_execution(scenario_id):
     """Demonstrate simulation execution"""
-    print(f"\n🚀 Demo: Simulation Execution")
+    print("\n🚀 Demo: Simulation Execution")
     print("=" * 40)
-    
+
     # Start the simulation
     response = requests.post(
         f"{BASE_URL}/api/simulations/start",
         headers=HEADERS,
         json={"scenario_id": scenario_id}
     )
-    
+
     if response.status_code == 200:
         result = response.json()
         simulation_id = result["simulation_id"]
         print(f"✅ Started simulation: {simulation_id}")
-        
+
         # Monitor simulation progress
-        for i in range(5):
+        for i in range(5):  # noqa: B007
             time.sleep(1)
             status_response = requests.get(
                 f"{BASE_URL}/api/simulations/{simulation_id}/status",
                 headers=HEADERS
             )
-            
+
             if status_response.status_code == 200:
                 status = status_response.json()
                 print(f"   Status: {status.get('status', 'unknown')}")
@@ -138,7 +138,7 @@ def demo_simulation_execution(scenario_id):
                     break
             else:
                 print(f"   Failed to get status: {status_response.status_code}")
-        
+
         return simulation_id
     else:
         print(f"❌ Failed to start simulation: {response.status_code}")
@@ -147,19 +147,19 @@ def demo_simulation_execution(scenario_id):
 
 def demo_intervention_panel(simulation_id):
     """Demonstrate intervention capabilities"""
-    print(f"\n⚡ Demo: Intervention Panel")
+    print("\n⚡ Demo: Intervention Panel")
     print("=" * 40)
-    
+
     interventions = [
         {"type": "pause", "description": "Pause simulation for analysis"},
         {"type": "force_fallback", "description": "Force fallback to deterministic model"},
         {"type": "inject_memory", "description": "Inject synthetic memory event"}
     ]
-    
+
     for intervention in interventions:
         print(f"\n   Applying intervention: {intervention['type']}")
         print(f"   Description: {intervention['description']}")
-        
+
         response = requests.post(
             f"{BASE_URL}/api/simulations/{simulation_id}/intervention",
             headers=HEADERS,
@@ -169,23 +169,23 @@ def demo_intervention_panel(simulation_id):
                 "parameters": {}
             }
         )
-        
+
         if response.status_code == 200:
             result = response.json()
             print(f"   ✅ Intervention applied: {result.get('intervention_id')}")
             print(f"   Status: {result.get('status')}")
         else:
             print(f"   ❌ Intervention failed: {response.status_code}")
-        
+
         time.sleep(0.5)
 
 def demo_metrics_monitoring():
     """Demonstrate metrics collection and monitoring"""
-    print(f"\n📊 Demo: Metrics Monitoring")
+    print("\n📊 Demo: Metrics Monitoring")
     print("=" * 40)
-    
+
     response = requests.get(f"{BASE_URL}/api/metrics", headers=HEADERS)
-    
+
     if response.status_code == 200:
         metrics = response.json()
         print("   Current Metrics:")
@@ -196,7 +196,7 @@ def demo_metrics_monitoring():
         print(f"   • Average Latency: {metrics.get('avg_latency_ms', 0):.1f} ms")
         print(f"   • Reproducibility Rate: {metrics.get('reproducibility_rate', 0):.2%}")
         print(f"   • Intervention Frequency: {metrics.get('intervention_frequency', 0)}")
-        
+
         return metrics
     else:
         print(f"❌ Failed to get metrics: {response.status_code}")
@@ -204,16 +204,16 @@ def demo_metrics_monitoring():
 
 def demo_scenario_management():
     """Demonstrate scenario management"""
-    print(f"\n📋 Demo: Scenario Management")
+    print("\n📋 Demo: Scenario Management")
     print("=" * 40)
-    
+
     response = requests.get(f"{BASE_URL}/api/scenarios", headers=HEADERS)
-    
+
     if response.status_code == 200:
         data = response.json()
         scenarios = data.get("scenarios", [])
         print(f"   Found {len(scenarios)} scenarios:")
-        
+
         for i, scenario in enumerate(scenarios, 1):
             print(f"   {i}. {scenario['name']}")
             print(f"      ID: {scenario['scenario_id']}")
@@ -221,7 +221,7 @@ def demo_scenario_management():
             print(f"      Created at: {scenario['created_at']}")
             print(f"      Description: {scenario.get('description', 'No description')}")
             print()
-        
+
         return scenarios
     else:
         print(f"❌ Failed to list scenarios: {response.status_code}")
@@ -229,9 +229,9 @@ def demo_scenario_management():
 
 def demo_data_contract():
     """Demonstrate the simulation tick data contract"""
-    print(f"\n📋 Demo: Simulation Data Contract")
+    print("\n📋 Demo: Simulation Data Contract")
     print("=" * 40)
-    
+
     example_tick = {
         "scenario_id": "scn-123",
         "tick": 42,
@@ -272,7 +272,7 @@ def demo_data_contract():
             "success_rate": 1.0
         }
     }
-    
+
     print("   Example Simulation Tick Data Contract:")
     print(json.dumps(example_tick, indent=2, default=str))
 
@@ -281,7 +281,7 @@ def main():
     print("🎯 AiMedRes Simulation Dashboard Demo")
     print("=" * 50)
     print()
-    
+
     try:
         # Test server connectivity
         response = requests.get(f"{BASE_URL}/api/metrics", headers=HEADERS)
@@ -289,53 +289,53 @@ def main():
             print("❌ Dashboard server is not running or not accessible")
             print("   Please start the server with: python simulation_dashboard.py")
             return
-        
+
         print("✅ Dashboard server is running and accessible")
         print()
-        
+
         # Demo 1: Scenario Creation
         scenario_id = demo_scenario_creation()
         if not scenario_id:
             return
-        
+
         # Demo 2: Scenario Management
         demo_scenario_management()
-        
+
         # Demo 3: Simulation Execution
         simulation_id = demo_simulation_execution(scenario_id)
         if not simulation_id:
             return
-        
+
         # Demo 4: Intervention Panel
         demo_intervention_panel(simulation_id)
-        
+
         # Demo 5: Metrics Monitoring
         demo_metrics_monitoring()
-        
+
         # Demo 6: Data Contract
         demo_data_contract()
-        
-        print(f"\n🎉 Dashboard Demo Completed Successfully!")
+
+        print("\n🎉 Dashboard Demo Completed Successfully!")
         print("=" * 50)
-        print(f"\n📱 Key Features Demonstrated:")
+        print("\n📱 Key Features Demonstrated:")
         print("   ✅ Scenario Builder - Compose patient profiles & timeline events")
         print("   ✅ Execution Orchestrator - Launch simulation workers with isolation")
         print("   ✅ Real-Time Metrics Layer - Monitor agent states & performance")
         print("   ✅ Intervention Panel - Manual override capabilities")
         print("   ✅ Metrics Collection - Track throughput, latency, intervention frequency")
         print("   ✅ Data Contract - Standardized simulation tick format")
-        
-        print(f"\n🌐 Dashboard Access:")
+
+        print("\n🌐 Dashboard Access:")
         print(f"   • Web Interface: {BASE_URL}/")
         print(f"   • API Documentation: {BASE_URL}/docs")
         print(f"   • Metrics Endpoint: {BASE_URL}/api/metrics")
-        
-        print(f"\n🏗️ Architecture Components:")
+
+        print("\n🏗️ Architecture Components:")
         print("   • Frontend SPA ↔ API Gateway (FastAPI) ↔ Orchestrator Service ↔ Worker Pool")
         print("   • Metrics & Events: Redis Streams (configurable)")
         print("   • Persistence: SQLite (demo) / Postgres (production)")
         print("   • Authentication & RBAC: HTTP Bearer (extensible)")
-        
+
     except Exception as e:
         print(f"❌ Demo failed with error: {e}")
         import traceback

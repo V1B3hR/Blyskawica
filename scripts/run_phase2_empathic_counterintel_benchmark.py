@@ -20,10 +20,15 @@ logger = logging.getLogger("phase2_benchmark")
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import NeuromodulationState
-from adaptiveneuralnetwork.immune_system.wolf_teeth import WolfTeethDefenseEngine
-from adaptiveneuralnetwork.central_nervous_system.diamond_yant_stream_pipeline import DiamondYantCymaticEngine, GraphNetworkSample
-import torch
+import torch  # noqa: E402
+
+from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import (  # noqa: E402
+    NeuromodulationState,  # noqa: E402
+)
+from adaptiveneuralnetwork.central_nervous_system.diamond_yant_stream_pipeline import (  # noqa: E402
+    DiamondYantCymaticEngine,
+)
+from adaptiveneuralnetwork.immune_system.wolf_teeth import WolfTeethDefenseEngine  # noqa: E402
 
 
 def run_benchmark():

@@ -1,6 +1,6 @@
-import time
-import threading
 import logging
+import threading
+import time
 from collections import OrderedDict
 from functools import wraps
 from typing import Any, Callable, Dict, Optional, Tuple
@@ -24,7 +24,7 @@ class BoundedTTLCache:
         self.default_ttl = float(ttl_seconds)
 
         # OrderedDict maps key -> (value, expiry_ts)
-        self._store: "OrderedDict[Any, Tuple[Any, float]]" = OrderedDict()
+        self._store: OrderedDict[Any, Tuple[Any, float]] = OrderedDict()
         self._lock = threading.RLock()
 
         # Stats

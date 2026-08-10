@@ -5,7 +5,6 @@ Tests the new self-supervised learning, curriculum learning, enhanced memory sys
 and dynamic benchmarking functionality.
 """
 
-from typing import Any, Dict
 
 import numpy as np
 import pytest
@@ -255,7 +254,7 @@ class TestEnhancedMemorySystems:
             analyzer.add_sample(0.5 + 0.1 * np.sin(i * 0.1))  # Sinusoidal pattern
 
         # Test event detection
-        events = analyzer.detect_significant_events()
+        events = analyzer.detect_significant_events()  # noqa: F841
         # Should detect some events due to the sinusoidal pattern
 
         # Test temporal importance (can be > 1 due to event proximity)
@@ -360,7 +359,7 @@ class TestDynamicBenchmarking:
         analyzer = LearningCurveAnalyzer(config)
 
         # Add performance data
-        for i in range(15):
+        for i in range(15):  # noqa: B007
             score = 85.0 + np.random.normal(0, 1)  # Stable performance around 85
             analyzer.add_performance(score, difficulty=1.0)
 
@@ -448,7 +447,6 @@ class TestPhase1Integration:
         """Test continual learning with enhanced memory systems."""
         from adaptiveneuralnetwork.applications.continual_learning import (
             ContinualLearningConfig,
-            ContinualLearningSystem,
         )
 
         # This test would require more complex setup

@@ -6,11 +6,11 @@ This module implements:
 - Performance metrics and monitoring
 """
 
-from typing import Dict, List, Optional, Any
+from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from collections import deque
 from enum import Enum
+from typing import Any
 
 
 class DetectorTier(str, Enum):
@@ -57,7 +57,7 @@ class DetectorMetrics:
             return 0.0
         return self.skip_count / total
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "name": self.name,
@@ -102,7 +102,7 @@ class ActionMetrics:
             return 0.0
         return sum(self.recent_cpu_times) / len(self.recent_cpu_times)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "total_actions": self.total_actions,
@@ -120,7 +120,7 @@ class PerformanceOptimizer:
     def __init__(
         self,
         target_cpu_reduction_pct: float = 30.0,
-        risk_gate_thresholds: Optional[Dict[DetectorTier, float]] = None,
+        risk_gate_thresholds: dict[DetectorTier, float] | None = None,
     ):
         """Initialize performance optimizer.
 
@@ -139,14 +139,14 @@ class PerformanceOptimizer:
         }
 
         # Metrics tracking
-        self.detector_metrics: Dict[str, DetectorMetrics] = {}
+        self.detector_metrics: dict[str, DetectorMetrics] = {}
         self.action_metrics = ActionMetrics()
 
         # Registered detectors
-        self.detector_registry: Dict[str, DetectorTier] = {}
+        self.detector_registry: dict[str, DetectorTier] = {}
 
         # Baseline tracking
-        self.baseline_cpu_ms: Optional[float] = None
+        self.baseline_cpu_ms: float | None = None
         self.baseline_established = False
 
     def register_detector(self, name: str, tier: DetectorTier):
@@ -186,7 +186,7 @@ class PerformanceOptimizer:
         should_invoke = risk_score >= threshold
 
         # Record skip if gated
-        if not should_invoke:
+        if not should_invoke:  # noqa: SIM102
             if detector_name in self.detector_metrics:
                 self.detector_metrics[detector_name].record_skip()
 
@@ -246,7 +246,7 @@ class PerformanceOptimizer:
         """
         return self.get_cpu_reduction_pct() >= self.target_cpu_reduction_pct
 
-    def get_detector_stats(self) -> Dict[str, Any]:
+    def get_detector_stats(self) -> dict[str, Any]:
         """Get detector performance statistics.
 
         Returns:
@@ -276,7 +276,7 @@ class PerformanceOptimizer:
 
         return stats
 
-    def get_performance_report(self) -> Dict[str, Any]:
+    def get_performance_report(self) -> dict[str, Any]:
         """Get comprehensive performance report.
 
         Returns:
@@ -297,7 +297,7 @@ class PerformanceOptimizer:
 
         return report
 
-    def suggest_optimizations(self) -> List[str]:
+    def suggest_optimizations(self) -> list[str]:
         """Suggest optimizations based on current metrics.
 
         Returns:

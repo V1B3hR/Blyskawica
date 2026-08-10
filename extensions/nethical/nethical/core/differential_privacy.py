@@ -4,10 +4,12 @@ This module provides differential privacy mechanisms for model training and
 metric aggregation with privacy budget management.
 """
 
-from typing import Dict, List, Any, Callable, Tuple
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
+from typing import Any
+
 import numpy as np
 
 
@@ -35,7 +37,7 @@ class PrivacyBudget:
     delta: float  # Failure probability
     consumed: float = 0.0
     remaining: float = field(init=False)
-    operations: List[Dict[str, Any]] = field(default_factory=list)
+    operations: list[dict[str, Any]] = field(default_factory=list)
 
     def __post_init__(self):
         self.remaining = self.epsilon - self.consumed
@@ -111,10 +113,10 @@ class DifferentialPrivacy:
         self.accounting_method = accounting_method
 
         # Track operations for analysis
-        self.operation_history: List[Dict[str, Any]] = []
+        self.operation_history: list[dict[str, Any]] = []
 
         # Privacy-utility tradeoff tracking
-        self.tradeoff_history: List[PrivacyMetrics] = []
+        self.tradeoff_history: list[PrivacyMetrics] = []
 
     def add_noise(self, value: float, sensitivity: float, operation: str = "metric_query") -> float:
         """Add noise to a value for differential privacy.
@@ -225,8 +227,8 @@ class DifferentialPrivacy:
         return vector + noise
 
     def add_noise_to_aggregated_metrics(
-        self, metrics: Dict[str, float], sensitivity: float = 1.0, noise_level: float = 0.1
-    ) -> Dict[str, float]:
+        self, metrics: dict[str, float], sensitivity: float = 1.0, noise_level: float = 0.1
+    ) -> dict[str, float]:
         """Add noise to aggregated metrics for privacy.
 
         Args:
@@ -293,7 +295,7 @@ class DifferentialPrivacy:
 
         for grad in gradients:
             norm = np.linalg.norm(grad)
-            if norm > max_norm:
+            if norm > max_norm:  # noqa: SIM108
                 clipped_grad = grad * (max_norm / norm)
             else:
                 clipped_grad = grad
@@ -328,7 +330,7 @@ class DifferentialPrivacy:
         utility_fn: Callable[[float], float],
         epsilon_range: tuple = (0.1, 10.0),
         num_samples: int = 20,
-    ) -> Tuple[float, float]:
+    ) -> tuple[float, float]:
         """Optimize privacy-utility tradeoff.
 
         Args:
@@ -371,7 +373,7 @@ class DifferentialPrivacy:
 
         return best_epsilon, best_utility
 
-    def get_privacy_budget_status(self) -> Dict[str, Any]:
+    def get_privacy_budget_status(self) -> dict[str, Any]:
         """Get current privacy budget status.
 
         Returns:
@@ -388,7 +390,7 @@ class DifferentialPrivacy:
             "accounting_method": self.accounting_method.value,
         }
 
-    def get_privacy_guarantees(self) -> Dict[str, Any]:
+    def get_privacy_guarantees(self) -> dict[str, Any]:
         """Get privacy guarantees provided by the system.
 
         Returns:
@@ -420,7 +422,7 @@ class DifferentialPrivacy:
             f"stronger privacy guarantees."
         )
 
-    def generate_privacy_report(self) -> Dict[str, Any]:
+    def generate_privacy_report(self) -> dict[str, Any]:
         """Generate comprehensive privacy report.
 
         Returns:
@@ -442,7 +444,7 @@ class DifferentialPrivacy:
             "recommendations": self._generate_recommendations(),
         }
 
-    def _generate_recommendations(self) -> List[str]:
+    def _generate_recommendations(self) -> list[str]:
         """Generate privacy recommendations based on current state."""
         recommendations = []
 
@@ -484,7 +486,7 @@ class PrivacyAudit:
         """
         self.dp_manager = dp_manager
 
-    def validate_compliance(self, regulations: List[str] = None) -> Dict[str, Any]:
+    def validate_compliance(self, regulations: list[str] = None) -> dict[str, Any]:
         """Validate privacy compliance with regulations.
 
         Args:
@@ -520,7 +522,7 @@ class PrivacyAudit:
 
         return results
 
-    def _check_gdpr_compliance(self) -> Dict[str, Any]:
+    def _check_gdpr_compliance(self) -> dict[str, Any]:
         """Check GDPR compliance requirements."""
         violations = []
 
@@ -540,7 +542,7 @@ class PrivacyAudit:
             "articles_checked": ["Article 25", "Article 30"],
         }
 
-    def _check_ccpa_compliance(self) -> Dict[str, Any]:
+    def _check_ccpa_compliance(self) -> dict[str, Any]:
         """Check CCPA compliance requirements."""
         violations = []
 
@@ -557,7 +559,7 @@ class PrivacyAudit:
             "sections_checked": ["Section 1798.150"],
         }
 
-    def generate_privacy_impact_assessment(self) -> Dict[str, Any]:
+    def generate_privacy_impact_assessment(self) -> dict[str, Any]:
         """Generate Privacy Impact Assessment (PIA) documentation.
 
         Returns:

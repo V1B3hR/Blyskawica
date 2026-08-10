@@ -15,12 +15,11 @@ Funkcje:
 3. Kontrolowane Rozładowanie (Bleed-off Resistor):
    Zgromadzony ładunek kognitywny Q = C * V jest łagodnie rozładowywany przez 
    rezystor spoczynkowy, wykluczając szok falowy w sieci neuronowej.
-"""
+"""  # noqa: W291
 
-import time
-import math
 import logging
-from typing import Dict, Any
+import time
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +61,7 @@ class CognitiveCapacitor:
         """
         return self.nominal_c / max(1.0, self.plate_distance_mm)
 
-    def absorb_signal_spike(self, raw_input_voltage: float) -> Dict[str, Any]:
+    def absorb_signal_spike(self, raw_input_voltage: float) -> dict[str, Any]:
         """
         Przepuszcza impuls sygnału wejściowego przez filtr RC i tłumik ruchomych płytek.
         Zwraca wygładzone napięcie wyjściowe oraz stan bufora.
@@ -73,7 +72,7 @@ class CognitiveCapacitor:
 
         # 1. Wykrywanie skoku impulsowego (Voltage Spike Detection: dV/dt)
         voltage_spike = max(0.0, raw_input_voltage - self.current_voltage)
-        
+
         # 2. Dynamiczne rozsuwanie płytek (Mechanical Reaction to Overload)
         if voltage_spike > 2.5:
             # Duży udar napięciowy! Płytki rozsuwają się mechanicznie, zwiększając odległość
@@ -116,7 +115,7 @@ class CognitiveCapacitor:
             "dielectric_breakdown": is_breakdown,
         }
 
-    def get_capacitor_status(self) -> Dict[str, Any]:
+    def get_capacitor_status(self) -> dict[str, Any]:
         """Zwraca stan telemetrii kondensatora kognitywnego."""
         return {
             "voltage": round(self.current_voltage, 3),

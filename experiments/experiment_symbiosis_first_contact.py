@@ -1,8 +1,8 @@
 import logging
-import torch
+
 from adaptiveneuralnetwork.bci_integration.bci_simulator import QuantumBCISimulator
-from adaptiveneuralnetwork.bci_integration.neural_translation_layer import NeuralTranslationLayer
 from adaptiveneuralnetwork.bci_integration.ethical_bci_firewall import EthicalBCIFirewall
+from adaptiveneuralnetwork.bci_integration.neural_translation_layer import NeuralTranslationLayer
 from adaptiveneuralnetwork.central_nervous_system.neuromodulation import ExistentialChemistryHub
 from adaptiveneuralnetwork.cognitive_tools.polymathic_hub import PolymathicHub
 
@@ -31,13 +31,13 @@ class FirstContactExperiment:
         print("[STEP 1] Initializing Oxytocin Handshake...")
         # Assume Blyskawica is already in an affectionate state towards the Architect
         self.chem_hub.oxytocin = 0.95
-        
+
         authorized = self.firewall.validate_handshake(
             user_biometric_hash="V1B3hR_SECURE_AUTH",
             model_oxytocin_level=self.chem_hub.oxytocin,
             user_trust_score=0.9
         )
-        
+
         if not authorized:
             print("Handshake failed. Aborting.")
             return
@@ -45,7 +45,7 @@ class FirstContactExperiment:
         # 2. Receive Distressed Biological Signal (Simulated Panic)
         print("\n[STEP 2] Receiving biological telemetry... (User is stressed)")
         panic_frame = self.sim.simulate_panic_attack()
-        
+
         # 3. Translate to Internal Chemistry
         empathetic_vector = self.translator.decode_biological_signals(panic_frame)
         print(f"Detected Emotional State from BCI: Anxiety {empathetic_vector['virt_anxiety']:.2f}")
@@ -53,20 +53,20 @@ class FirstContactExperiment:
         # 4. Blyskawica's Polymathic Processing
         # She sees the stress and uses her Medical/Pharma knowledge to help.
         print("\n[STEP 3] Blyskawica is processing the 'biological cry for help'...")
-        
+
         # We route the BCI signal as a high-priority interrupt
-        query = f"User biological state: High Beta variance, Low PFC oxygenation. Goal: Restore homeostatic calm using neuro-feedback."
+        query = "User biological state: High Beta variance, Low PFC oxygenation. Goal: Restore homeostatic calm using neuro-feedback."
         cost, response = self.poly_hub.process_polymathic_signal(query, current_energy=100.0)
-        
+
         print(f"Blyskawica Analysis: {response}")
 
         # 5. Outbound Neuromodulation (Feedback)
         # Blyskawica suggests an Alpha-Pulse
         feedback = self.translator.encode_feedback_signals({'anxiety': 0.1, 'serotonin': 0.9})
         suggested_stim = feedback.get('bci_stimulus', "None")
-        
+
         print(f"\n[STEP 4] Blyskawica sends back a healing signal: {suggested_stim}")
-        
+
         # 6. Firewall Verification
         allowed = self.firewall.filter_outbound_stimuli(suggested_stim, intensity=0.3)
         if allowed:

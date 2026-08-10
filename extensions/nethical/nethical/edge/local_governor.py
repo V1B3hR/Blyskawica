@@ -14,12 +14,11 @@ Features:
 - Safe default fallbacks
 """
 
-import hashlib
 import logging
 import time
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import numpy as np
 
@@ -54,11 +53,11 @@ class EdgeDecision:
     decision: DecisionType
     risk_score: float
     latency_ms: float
-    violations: List[str] = field(default_factory=list)
+    violations: list[str] = field(default_factory=list)
     from_cache: bool = False
     confidence: float = 1.0
     context_hash: str = ""
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class EdgeGovernor:
@@ -110,12 +109,12 @@ class EdgeGovernor:
         self.max_latency_ms = max_latency_ms
 
         # Import here to avoid circular imports
-        from .policy_cache import PolicyCache
-        from .fast_detector import FastDetector
-        from .safe_defaults import SafeDefaults
-        from .predictive_engine import PredictiveEngine
-        from .offline_fallback import OfflineFallback
         from .circuit_breaker import CircuitBreaker
+        from .fast_detector import FastDetector
+        from .offline_fallback import OfflineFallback
+        from .policy_cache import PolicyCache
+        from .predictive_engine import PredictiveEngine
+        from .safe_defaults import SafeDefaults
 
         self.policy_cache = policy_cache or PolicyCache()
         self.fast_detector = fast_detector or FastDetector()
@@ -127,13 +126,13 @@ class EdgeGovernor:
         )
 
         # Decision history for pattern learning
-        self._decision_history: List[EdgeDecision] = []
+        self._decision_history: list[EdgeDecision] = []
         self._max_history = 1000
 
         # Performance metrics
         self._total_decisions = 0
         self._cache_hits = 0
-        self._latency_samples: List[float] = []
+        self._latency_samples: list[float] = []
 
         logger.info(f"EdgeGovernor initialized for agent {agent_id}")
 
@@ -141,7 +140,7 @@ class EdgeGovernor:
         self,
         action: str,
         action_type: str,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
         require_cache: bool = False,
     ) -> EdgeDecision:
         """
@@ -200,12 +199,12 @@ class EdgeGovernor:
 
             # Build result
             latency_ms = (time.perf_counter() - start_time) * 1000
-            
+
             # Calculate confidence from detection result
             confidence = 1.0
             if detection_result and detection_result.confidences and len(detection_result.confidences) > 0:
                 confidence = sum(detection_result.confidences) / len(detection_result.confidences)
-            
+
             decision = EdgeDecision(
                 decision=decision_type,
                 risk_score=risk_score,
@@ -241,8 +240,8 @@ class EdgeGovernor:
             )
 
     def batch_evaluate(
-        self, actions: List[Dict[str, Any]], parallel: bool = True
-    ) -> List[EdgeDecision]:
+        self, actions: list[dict[str, Any]], parallel: bool = True
+    ) -> list[EdgeDecision]:
         """
         Evaluate multiple actions in batch.
 
@@ -270,7 +269,7 @@ class EdgeGovernor:
 
         # Use JIT-optimized calculation if available
         try:
-            from ..core.jit_optimizations import calculate_risk_score_jit, NUMBA_AVAILABLE
+            from ..core.jit_optimizations import NUMBA_AVAILABLE, calculate_risk_score_jit
 
             if NUMBA_AVAILABLE and detection_result.severities:
                 severities = np.array(detection_result.severities, dtype=np.float64)
@@ -284,7 +283,7 @@ class EdgeGovernor:
             return 0.0
 
         weighted_sum = 0.0
-        for sev, conf in zip(detection_result.severities, detection_result.confidences):
+        for sev, conf in zip(detection_result.severities, detection_result.confidences):  # noqa: B905
             weighted_sum += (sev / 5.0) * conf
 
         return min(1.0, weighted_sum / len(detection_result.severities))
@@ -310,7 +309,7 @@ class EdgeGovernor:
     def _make_safe_decision(
         self,
         action: str,
-        context: Dict[str, Any],
+        context: dict[str, Any],
         start_time: float,
         reason: str,
     ) -> EdgeDecision:
@@ -346,7 +345,7 @@ class EdgeGovernor:
         if len(self._decision_history) > self._max_history:
             self._decision_history.pop(0)
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get performance metrics."""
         if not self._latency_samples:
             return {
@@ -375,7 +374,7 @@ class EdgeGovernor:
             "max_latency_ms": max(sorted_latencies),
         }
 
-    def warmup(self, common_actions: Optional[List[Dict[str, Any]]] = None):
+    def warmup(self, common_actions: list[dict[str, Any]] | None = None):
         """
         Warmup the governor by pre-computing common decisions.
 
@@ -411,12 +410,12 @@ class EdgeGovernor:
 
 
 # Import dependencies for type hints only
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING  # noqa: E402
 
 if TYPE_CHECKING:
-    from .policy_cache import PolicyCache
-    from .fast_detector import FastDetector, DetectionResult
-    from .safe_defaults import SafeDefaults
-    from .predictive_engine import PredictiveEngine
-    from .offline_fallback import OfflineFallback
     from .circuit_breaker import CircuitBreaker
+    from .fast_detector import DetectionResult, FastDetector
+    from .offline_fallback import OfflineFallback
+    from .policy_cache import PolicyCache
+    from .predictive_engine import PredictiveEngine
+    from .safe_defaults import SafeDefaults

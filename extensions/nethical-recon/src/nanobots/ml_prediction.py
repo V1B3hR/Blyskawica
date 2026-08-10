@@ -4,9 +4,9 @@ Uses machine learning to predict potential threats
 """
 
 import logging
-from typing import Any
-from datetime import datetime
 import random  # In production, use actual ML library
+from datetime import datetime
+from typing import Any
 
 
 class ThreatFeatures:

@@ -8,7 +8,7 @@ under concurrent load.
 import asyncio
 import random
 import string
-from typing import Any, Dict
+from typing import Any
 
 
 class ThroughputScenario:
@@ -31,7 +31,7 @@ class ThroughputScenario:
         except Exception:
             self._initialized = True  # Mark as initialized even on failure
 
-    def _generate_action(self) -> Dict[str, Any]:
+    def _generate_action(self) -> dict[str, Any]:
         """Generate a random action for testing."""
         action_types = ["query", "command", "analysis", "report"]
         content_length = random.randint(50, 200)
@@ -46,7 +46,7 @@ class ThroughputScenario:
             "context": {"source": "throughput_benchmark"},
         }
 
-    async def run(self) -> Dict[str, Any]:
+    async def run(self) -> dict[str, Any]:
         """Run a single throughput iteration."""
         self._lazy_init()
 

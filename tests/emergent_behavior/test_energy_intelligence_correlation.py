@@ -213,7 +213,7 @@ class TestEnergyIntelligenceCorrelation(unittest.TestCase):
             allocation = {}
 
             # Allocate energy greedily by efficiency
-            for func_name, efficiency in sorted_functions:
+            for func_name, efficiency in sorted_functions:  # noqa: B007
                 base_cost = functions[func_name]["base_cost"]
                 if remaining_energy >= base_cost:
                     allocation[func_name] = base_cost
@@ -264,7 +264,7 @@ class TestEnergyIntelligenceCorrelation(unittest.TestCase):
             energy_progression = []
             current_energy = initial_energy
 
-            for step in range(time_steps):
+            for step in range(time_steps):  # noqa: B007
                 # Recovery slows as energy approaches maximum
                 max_energy = 10.0
                 recovery_amount = recovery_rate * (1.0 - current_energy / max_energy)

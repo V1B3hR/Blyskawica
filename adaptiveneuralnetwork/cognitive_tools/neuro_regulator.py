@@ -23,7 +23,7 @@ class AutonomousNeuroRegulator:
             self._projectors = {}
         else:
             self.device = "cpu"
-        
+
     def load_checkpoint(self):
         baseline_neuro = {
             "Serotonina": 0.80,
@@ -37,7 +37,7 @@ class AutonomousNeuroRegulator:
             "Kortyzol": 0.22
         }
         if os.path.exists(self.checkpoint_path):
-            with open(self.checkpoint_path, "r") as f:
+            with open(self.checkpoint_path) as f:
                 self.data = json.load(f)
             # Self-heal missing baseline keys
             if "neurochemistry" not in self.data:
@@ -75,12 +75,12 @@ class AutonomousNeuroRegulator:
             "Testosteron": 0.45,
             "Kortyzol": 0.22
         }
-        
+
         current = self.data.get("neurochemistry", baseline.copy())
         max_delta = 0.07 # 7% maximum adjustment safety window
-        
+
         print(f"\n[NEURO REGULATOR] Optimizing chemistry for task: '{task_type.upper()}'")
-        
+
         if task_type == "study":
             # Upwards: Acetylcholine, Dopamine. Downwards: Oxytocin (focus)
             target = {
@@ -116,7 +116,7 @@ class AutonomousNeuroRegulator:
             }
         else:
             target = {}
-            
+
         # Apply targets with strict +/- 7% clamping to prevent extreme states
         for key, val in target.items():
             if key in current:
@@ -125,11 +125,11 @@ class AutonomousNeuroRegulator:
                 clamped_diff = max(-max_delta, min(max_delta, diff))
                 current[key] = round(baseline[key] + clamped_diff, 4)
                 print(f"     * {key}: {baseline[key]:.2f} -> {current[key]:.2f} ({clamped_diff*100:+.1f}%)")
-                
+
         self.data["neurochemistry"] = current
         self.data["vibe_state"] = f"Self-Regulated-{task_type.capitalize()}"
         self.data["last_thought"] = f"Autonomously optimized neurochemistry for {task_type} within safe +/- 7% boundary limits."
-        
+
         self.save_checkpoint()
         print("[OK] Autonomous regulation completed and logged to memory checkpoint.")
         return current
@@ -140,25 +140,25 @@ class AutonomousNeuroRegulator:
         """
         keys = ["Serotonina", "Oksytocyna", "Dopamina", "GABA", "Acetylocholina", "Noradrenalina", "Melatonina", "Testosteron", "Kortyzol"]
         neuro_vals = [self.data["neurochemistry"].get(k, 0.5) for k in keys]
-        
+
         if _HAS_TORCH:
             if not hasattr(self, "_projectors"):
                 self._projectors = {}
             if embedding_dim not in self._projectors:
                 self._projectors[embedding_dim] = LatentStateProjector(embedding_dim=embedding_dim).to(self.device)
             projector = self._projectors[embedding_dim]
-            
+
             # Safe conversion and device mapping
             if isinstance(chladni_matrix, torch.Tensor):
                 chladni_tensor = chladni_matrix.to(self.device, dtype=torch.float32)
             else:
                 chladni_tensor = torch.tensor(chladni_matrix, dtype=torch.float32, device=self.device)
-                
+
             if isinstance(neuro_vals, torch.Tensor):
                 neuro_tensor = neuro_vals.to(self.device, dtype=torch.float32)
             else:
                 neuro_tensor = torch.tensor(neuro_vals, dtype=torch.float32, device=self.device)
-                
+
             with torch.no_grad():
                 out = projector(chladni_tensor, neuro_tensor)
             return out
@@ -220,8 +220,8 @@ else:
             self.embedding_dim = embedding_dim
         def __call__(self, chladni_matrix, neurochemical_vector):
             import numpy as np
-            flat_chladni = np.array(chladni_matrix).flatten()
-            flat_neuro = np.array(neurochemical_vector).flatten()
+            flat_chladni = np.array(chladni_matrix).flatten()  # noqa: F841
+            flat_neuro = np.array(neurochemical_vector).flatten()  # noqa: F841
             rng = np.random.default_rng(42)
             return rng.standard_normal((1, self.embedding_dim))
 

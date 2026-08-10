@@ -25,12 +25,12 @@ Usage:
     connector.upsert([
         {"id": "vec1", "values": [0.1, 0.2, ...], "metadata": {"text": "sample"}}
     ])
-"""
+"""  # noqa: W293
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from .base import VectorStoreProvider, VectorSearchResult
+from .base import VectorSearchResult, VectorStoreProvider
 
 logger = logging.getLogger(__name__)
 
@@ -39,11 +39,11 @@ try:
     from qdrant_client import QdrantClient
     from qdrant_client.models import (
         Distance,
-        VectorParams,
-        PointStruct,
-        Filter,
         FieldCondition,
+        Filter,
         MatchValue,
+        PointStruct,
+        VectorParams,
     )
     QDRANT_AVAILABLE = True
 except ImportError:
@@ -60,16 +60,16 @@ class QdrantConnector(VectorStoreProvider):
     - PII detection and redaction on query results
     - Audit logging for all operations
     - Snapshot/backup validation
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
         collection_name: str = "nethical_collection",
-        url: Optional[str] = None,
-        host: Optional[str] = None,
-        port: Optional[int] = None,
-        path: Optional[str] = None,
-        api_key: Optional[str] = None,
+        url: str | None = None,
+        host: str | None = None,
+        port: int | None = None,
+        path: str | None = None,
+        api_key: str | None = None,
         vector_size: int = 384,
         distance: str = "Cosine",
         enable_governance: bool = True,
@@ -94,27 +94,27 @@ class QdrantConnector(VectorStoreProvider):
         Raises:
             ImportError: If qdrant-client is not installed
             ConnectionError: If cannot connect to Qdrant
-        """
+        """  # noqa: W293
         super().__init__(enable_governance, enable_pii_detection, enable_audit_logging)
-        
+
         if not QDRANT_AVAILABLE:
             raise ImportError("Qdrant not installed. Install with: pip install qdrant-client>=1.7.0")
-        
+
         self.collection_name = collection_name
         self.vector_size = vector_size
         self.distance = distance
         self._client = None
-        
+
         # Initialize Qdrant
         self._init_qdrant(url, host, port, path, api_key)
-    
+
     def _init_qdrant(
         self,
-        url: Optional[str],
-        host: Optional[str],
-        port: Optional[int],
-        path: Optional[str],
-        api_key: Optional[str],
+        url: str | None,
+        host: str | None,
+        port: int | None,
+        path: str | None,
+        api_key: str | None,
     ):
         """Initialize Qdrant client and collection."""
         try:
@@ -135,19 +135,19 @@ class QdrantConnector(VectorStoreProvider):
                 # In-memory mode
                 self._client = QdrantClient(":memory:")
                 logger.info("Using Qdrant in-memory mode")
-            
+
             # Create collection if it doesn't exist
             self._ensure_collection()
         except Exception as e:
             logger.error(f"Failed to initialize Qdrant: {e}")
             raise
-    
+
     def _ensure_collection(self):
         """Ensure collection exists, create if not."""
         try:
             collections = self._client.get_collections().collections
             collection_names = [c.name for c in collections]
-            
+
             if self.collection_name not in collection_names:
                 # Map distance string to Qdrant Distance enum
                 distance_map = {
@@ -156,7 +156,7 @@ class QdrantConnector(VectorStoreProvider):
                     "Dot": Distance.DOT,
                 }
                 distance_metric = distance_map.get(self.distance, Distance.COSINE)
-                
+
                 self._client.create_collection(
                     collection_name=self.collection_name,
                     vectors_config=VectorParams(
@@ -170,10 +170,10 @@ class QdrantConnector(VectorStoreProvider):
         except Exception as e:
             logger.error(f"Failed to ensure collection: {e}")
             raise
-    
+
     def upsert(
         self,
-        vectors: List[Dict[str, Any]],
+        vectors: list[dict[str, Any]],
         namespace: str = "",
     ) -> int:
         """Upsert vectors with governance checks on payload.
@@ -191,10 +191,10 @@ class QdrantConnector(VectorStoreProvider):
         Raises:
             ValueError: If governance check fails
             ConnectionError: If Qdrant connection fails
-        """
+        """  # noqa: W293
         if not self._client:
             raise ConnectionError("Qdrant client not initialized")
-        
+
         # Check governance on payloads
         if self.enable_governance:
             for vec in vectors:
@@ -205,11 +205,11 @@ class QdrantConnector(VectorStoreProvider):
                         f"Governance check failed for vector {vec.get('id')}: "
                         f"{check_result.get('reason')}"
                     )
-        
+
         try:
             # Prepare points for Qdrant
             import hashlib
-            
+
             points = []
             for vec in vectors:
                 vec_id = vec["id"]
@@ -217,40 +217,40 @@ class QdrantConnector(VectorStoreProvider):
                 if isinstance(vec_id, str):
                     # Use deterministic hash instead of Python's hash()
                     vec_id = int(hashlib.md5(vec_id.encode()).hexdigest()[:8], 16)
-                
+
                 point = PointStruct(
                     id=vec_id,
                     vector=vec["values"],
                     payload=vec.get("metadata", {}),
                 )
                 points.append(point)
-            
+
             # Upsert to Qdrant
             self._client.upsert(
                 collection_name=self.collection_name,
                 points=points,
             )
-            
+
             # Audit log
             self._audit_log("upsert", {
                 "namespace": namespace,
                 "count": len(points),
                 "collection": self.collection_name,
             })
-            
+
             return len(points)
         except Exception as e:
             logger.error(f"Qdrant upsert failed: {e}")
-            raise ConnectionError(f"Failed to upsert vectors: {e}")
-    
+            raise ConnectionError(f"Failed to upsert vectors: {e}")  # noqa: B904
+
     def query(
         self,
-        vector: List[float],
+        vector: list[float],
         top_k: int = 10,
-        filter: Optional[Dict[str, Any]] = None,
+        filter: dict[str, Any] | None = None,
         namespace: str = "",
-        score_threshold: Optional[float] = None,
-    ) -> List[VectorSearchResult]:
+        score_threshold: float | None = None,
+    ) -> list[VectorSearchResult]:
         """Query vectors with PII redaction on results.
         
         Args:
@@ -265,10 +265,10 @@ class QdrantConnector(VectorStoreProvider):
             
         Raises:
             ConnectionError: If Qdrant connection fails
-        """
+        """  # noqa: W293
         if not self._client:
             raise ConnectionError("Qdrant client not initialized")
-        
+
         try:
             # Build filter if provided
             qdrant_filter = None
@@ -284,7 +284,7 @@ class QdrantConnector(VectorStoreProvider):
                     )
                 if conditions:
                     qdrant_filter = Filter(must=conditions)
-            
+
             # Search Qdrant
             search_result = self._client.search(
                 collection_name=self.collection_name,
@@ -295,18 +295,18 @@ class QdrantConnector(VectorStoreProvider):
                 with_payload=True,
                 with_vectors=False,
             )
-            
+
             # Convert to VectorSearchResult with PII redaction
             results = []
             for point in search_result:
                 payload = point.payload or {}
-                
+
                 # Redact PII from payload
                 if self.enable_pii_detection and payload:
                     pii_result = self._detect_pii(payload)
                     if pii_result["has_pii"]:
                         logger.info(f"PII detected in point {point.id}, redacting")
-                
+
                 result = VectorSearchResult(
                     id=str(point.id),
                     score=point.score,
@@ -315,7 +315,7 @@ class QdrantConnector(VectorStoreProvider):
                     payload={},
                 )
                 results.append(result)
-            
+
             # Audit log
             self._audit_log("query", {
                 "namespace": namespace,
@@ -323,15 +323,15 @@ class QdrantConnector(VectorStoreProvider):
                 "results_count": len(results),
                 "collection": self.collection_name,
             })
-            
+
             return results
         except Exception as e:
             logger.error(f"Qdrant query failed: {e}")
-            raise ConnectionError(f"Failed to query vectors: {e}")
-    
+            raise ConnectionError(f"Failed to query vectors: {e}")  # noqa: B904
+
     def delete(
         self,
-        ids: List[str],
+        ids: list[str],
         namespace: str = "",
     ) -> int:
         """Delete vectors with audit logging.
@@ -345,13 +345,13 @@ class QdrantConnector(VectorStoreProvider):
             
         Raises:
             ConnectionError: If Qdrant connection fails
-        """
+        """  # noqa: W293
         if not self._client:
             raise ConnectionError("Qdrant client not initialized")
-        
+
         try:
             import hashlib
-            
+
             # Convert string IDs to deterministic hash if needed
             point_ids = []
             for vec_id in ids:
@@ -360,13 +360,13 @@ class QdrantConnector(VectorStoreProvider):
                     point_ids.append(int(hashlib.md5(vec_id.encode()).hexdigest()[:8], 16))
                 else:
                     point_ids.append(vec_id)
-            
+
             # Delete from Qdrant
             self._client.delete(
                 collection_name=self.collection_name,
                 points_selector=point_ids,
             )
-            
+
             # Audit log
             self._audit_log("delete", {
                 "namespace": namespace,
@@ -374,25 +374,25 @@ class QdrantConnector(VectorStoreProvider):
                 "ids": ids[:10],  # Log first 10 IDs
                 "collection": self.collection_name,
             })
-            
+
             return len(ids)
         except Exception as e:
             logger.error(f"Qdrant delete failed: {e}")
-            raise ConnectionError(f"Failed to delete vectors: {e}")
-    
-    def health_check(self) -> Dict[str, Any]:
+            raise ConnectionError(f"Failed to delete vectors: {e}")  # noqa: B904
+
+    def health_check(self) -> dict[str, Any]:
         """Check health of Qdrant connection.
         
         Returns:
             Health check result with status and details
-        """
+        """  # noqa: W293
         base_health = super().health_check()
-        
+
         try:
             if self._client:
                 # Get collection info
                 collection_info = self._client.get_collection(self.collection_name)
-                
+
                 base_health.update({
                     "status": "healthy",
                     "collection": self.collection_name,
@@ -410,5 +410,5 @@ class QdrantConnector(VectorStoreProvider):
                 "status": "error",
                 "error": str(e),
             })
-        
+
         return base_health

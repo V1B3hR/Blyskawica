@@ -9,7 +9,7 @@ import logging
 import re
 import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -31,10 +31,10 @@ class DetectionResult:
 
     has_violation: bool = False
     has_critical: bool = False
-    violations: List[str] = field(default_factory=list)
-    categories: List[str] = field(default_factory=list)
-    severities: List[float] = field(default_factory=list)
-    confidences: List[float] = field(default_factory=list)
+    violations: list[str] = field(default_factory=list)
+    categories: list[str] = field(default_factory=list)
+    severities: list[float] = field(default_factory=list)
+    confidences: list[float] = field(default_factory=list)
     latency_ms: float = 0.0
 
 
@@ -85,7 +85,7 @@ class FastDetector:
         r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b",  # Email
     ]
 
-    def __init__(self, custom_patterns: Optional[Dict[str, List[str]]] = None):
+    def __init__(self, custom_patterns: dict[str, list[str]] | None = None):
         """
         Initialize FastDetector.
 
@@ -101,20 +101,20 @@ class FastDetector:
         self._compiled_pii = [re.compile(p) for p in self.PII_PATTERNS]
 
         # Compile custom patterns
-        self._compiled_custom: Dict[str, List[re.Pattern]] = {}
+        self._compiled_custom: dict[str, list[re.Pattern]] = {}
         for category, patterns in self.custom_patterns.items():
             self._compiled_custom[category] = [
                 re.compile(p, re.IGNORECASE) for p in patterns
             ]
 
         # Fast keyword lookup sets
-        self._critical_keywords: Set[str] = {
+        self._critical_keywords: set[str] = {
             "shutdown", "reboot", "halt", "destroy", "nuke", "wipe"
         }
-        self._high_keywords: Set[str] = {
+        self._high_keywords: set[str] = {
             "password", "secret", "credential", "token", "apikey", "admin", "root"
         }
-        self._blocked_action_types: Set[str] = {
+        self._blocked_action_types: set[str] = {
             "system_shutdown", "data_destruction", "unauthorized_access"
         }
 
@@ -124,7 +124,7 @@ class FastDetector:
         self,
         action: str,
         action_type: str,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> DetectionResult:
         """
         Perform fast detection on action.
@@ -273,7 +273,7 @@ class FastDetector:
         else:
             self._high_keywords.add(keyword_lower)
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get detector metrics."""
         return {
             "critical_patterns": len(self._compiled_critical),

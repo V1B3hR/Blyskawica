@@ -6,7 +6,7 @@ znajdować się system, orkiestrując przejścia między aktywnością a spoczyn
 Implementuje zaawansowaną architekturę snu (LIGHT, DEEP, REM), umożliwiając 
 konsolidację wspomnień i regenerację metaboliczną. To tutaj czas staje się 
 zasobem kognitywnym, a odpoczynek fundamentem inteligencji.
-"""
+"""  # noqa: W291
 
 from collections import deque
 from enum import Enum
@@ -23,7 +23,7 @@ class Phase(Enum):
     - SLEEP: Regeneracja i porządkowanie pamięci.
     - INTERACTIVE: Otwarcie na sygnały społeczne i empatię.
     - INSPIRED: Stan podwyższonej kreatywności i niskich progów lęku.
-    """
+    """  # noqa: W291
 
     ACTIVE = 0
     SLEEP = 1
@@ -51,7 +51,7 @@ class PhaseScheduler:
     Orkiestrator przejść fazowych. Monitoruje poziom energii, lęku oraz rytm 
     dobowy (circadian period), by wyznaczyć optymalny stan dla każdego węzła. 
     Integruje dane z układu somatycznego (Gut-Brain Axis) i kontekstu społecznego.
-    """
+    """  # noqa: W291
 
 
     def __init__(
@@ -111,7 +111,7 @@ class PhaseScheduler:
         # Restorative needs and sleep quality
         self.restorative_needs = torch.zeros(num_nodes, device=self.device)
         self.sleep_quality = torch.ones(num_nodes, device=self.device)
-        
+
         # Sub-phase tracking (for Staged Sleep)
         self.node_sub_phases = torch.full((num_nodes,), SubPhase.NONE.value, dtype=torch.long, device=self.device)
         self.sleep_timer = torch.zeros(num_nodes, device=self.device)
@@ -179,7 +179,7 @@ class PhaseScheduler:
         self.current_step += 1
         batch_size = energy_levels.shape[0]
         device = energy_levels.device
-        
+
         # Ensure all state tensors are on the active device
         self.node_phases = self.node_phases.to(device)
         self.node_anxiety = self.node_anxiety.to(device)
@@ -188,7 +188,7 @@ class PhaseScheduler:
         self.sleep_quality = self.sleep_quality.to(device)
         self.node_sub_phases = self.node_sub_phases.to(device)
         self.sleep_timer = self.sleep_timer.to(device)
-        
+
         if self.social_context is not None:
             self.social_context = self.social_context.to(device)
 
@@ -215,18 +215,18 @@ class PhaseScheduler:
         # Use average phase for global microbiome update
         avg_phase = self.node_phases.float().mean().item()
         self.somatic_stats = self.somatic_system.step(mean_energy_drain, int(avg_phase))
-        
+
         # Update anxiety threshold from gut feedback
         self.anxiety_threshold = self.somatic_stats['anxiety_threshold']
-        
+
         # Update Social Context (Phase 7.4)
         if self.social_context is not None:
             # Use last batch for activity/anxiety signals
             self.social_context.update_trust(
-                activity_levels[-1].squeeze(-1), 
+                activity_levels[-1].squeeze(-1),
                 self.node_anxiety.unsqueeze(0)
             )
-        
+
         # Expand node_phases for batch processing
         batch_phases = self.node_phases.unsqueeze(0).expand(batch_size, -1).clone()
 
@@ -239,15 +239,15 @@ class PhaseScheduler:
                 # Get anxiety and restorative factors for this node
                 node_anxiety = self.node_anxiety[node].item()
                 restorative_need = self.restorative_needs[node].item()
-                
+
                 # Somatic Sleep Drive (from toxins/waste)
                 restorative_need = max(restorative_need, self.somatic_stats.get('sleep_drive', 0.0))
-                
+
                 # Social Pressure (Theory of Mind - Phase 7.4)
                 social_anxiety = self.social_context.get_social_influence(node) if self.social_context is not None else 0.0
                 # Social stress contagion: neighbor anxiety increases local perceived need for interaction
                 anxiety_with_social = node_anxiety + (social_anxiety * 0.3)
-                
+
                 sleep_qual = self.sleep_quality[node].item()
 
                 # Enhanced phase transition logic with anxiety/restorative/somatic/social mechanics
@@ -399,7 +399,7 @@ class PhaseScheduler:
             mean_energy = float(energy_levels)
         else:
             mean_energy = energy_levels.mean().item()
-            
+
         energy_low = mean_energy < 3.0  # Below ~30 % of default capacity (10.0)
         if self.nap_timer >= self.nap_interval and energy_low:
             self.nap_active = True
@@ -567,7 +567,7 @@ class PhaseScheduler:
         if getattr(self, 'social_context', None) is not None:
             trust = self.social_context.trust_matrix[node_idx]
             neighbor_phases = self.node_phases # current phases of all nodes
-            
+
             # Find nodes we trust above a threshold (e.g. 0.8)
             trusted_mask = trust > 0.8
             if trusted_mask.any():
@@ -726,7 +726,7 @@ class PhaseScheduler:
             
         Returns:
             Dictionary with sparsity metrics
-        """
+        """  # noqa: W293
         # Flatten to [batch_size * num_nodes]
         energy_flat = energy_levels.flatten()
         activity_flat = activity_levels.flatten()

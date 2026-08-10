@@ -7,9 +7,10 @@ Manages synchronization when connectivity is restored.
 import logging
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +41,7 @@ class SyncResult:
     synced_count: int = 0
     failed_count: int = 0
     duration_seconds: float = 0.0
-    error: Optional[str] = None
+    error: str | None = None
 
 
 class SyncManager:
@@ -59,7 +60,7 @@ class SyncManager:
         network_monitor: Optional["NetworkMonitor"] = None,
         batch_size: int = 100,
         max_retries: int = 3,
-        sync_callback: Optional[Callable[[List[Any]], bool]] = None,
+        sync_callback: Callable[[list[Any]], bool] | None = None,
     ):
         """
         Initialize SyncManager.
@@ -83,7 +84,7 @@ class SyncManager:
         # State
         self._status = SyncStatus.IDLE
         self._lock = threading.RLock()
-        self._last_sync: Optional[float] = None
+        self._last_sync: float | None = None
 
         # Metrics
         self._total_syncs = 0
@@ -177,7 +178,7 @@ class SyncManager:
                 error=str(e),
             )
 
-    def _sync_batch(self, batch: List[Any]) -> bool:
+    def _sync_batch(self, batch: list[Any]) -> bool:
         """
         Sync a batch of decisions.
 
@@ -224,7 +225,7 @@ class SyncManager:
         """Get count of pending sync items."""
         return len(self.decision_queue.get_unsynced())
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get sync metrics."""
         return {
             "status": self._status.value,
@@ -237,7 +238,7 @@ class SyncManager:
 
 
 # Import dependencies for type hints only
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING  # noqa: E402
 
 if TYPE_CHECKING:
     from .decision_queue import DecisionQueue

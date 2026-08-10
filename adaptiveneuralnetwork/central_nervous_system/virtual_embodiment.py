@@ -3,11 +3,12 @@ Virtual Embodiment Module (Phase 20).
 Intellectual Expansion based on Robert Sternberg's Practical Intelligence 
 and Howard Gardner's Bodily-Kinesthetic Intelligence.
 Implements bounded physical energy and logistical problem solving.
-"""
+"""  # noqa: W291
 
-import torch
 import torch.nn as nn
+
 from adaptiveneuralnetwork.central_nervous_system.geospatial_mapper import GeospatialMapper
+
 
 class VirtualEmbodiment(nn.Module):
     """
@@ -49,28 +50,28 @@ class VirtualEmbodiment(nn.Module):
         """
         distance_torque = self.geo.calculate_distance_torque(lat1, lon1, lat2, lon2)
         required_energy = distance_torque * 5.0
-        
+
         steps_taken = []
-        
+
         # Practical adaptation: If we don't have enough energy, we MUST rest before trying.
         if self.current_energy < required_energy:
             # But what if required energy is strictly greater than max_energy? It's impossible.
             if required_energy > self.max_energy:
-                 steps_taken.append(f"Practical Logic: Goal is beyond physical limits even fully rested. Task Aborted.")
+                 steps_taken.append("Practical Logic: Goal is beyond physical limits even fully rested. Task Aborted.")
                  return False, steps_taken
-                 
+
             needed_rest = ((required_energy - self.current_energy) / 5.0) + 1
             steps_taken.append(f"Practical Logic: Insufficient energy. Resting for {int(needed_rest)} units.")
             self.rest(int(needed_rest))
-            
+
         # Execute the task
         success = self.exert_effort(distance_torque)
-        
+
         if success:
             steps_taken.append(f"Task Execution: Successfully traversed spatial gap (Cost: {required_energy:.2f}).")
         else:
             steps_taken.append("Task Execution: FAILED. System exhausted.")
-            
+
         return success, steps_taken
 
 if __name__ == "__main__":
@@ -78,16 +79,16 @@ if __name__ == "__main__":
     body = VirtualEmbodiment(max_energy=50.0)
     # Drain energy manually to simulate prior work
     body.current_energy = 10.0
-    
+
     print("[EMBODIMENT] Initialized Virtual Body. Energy depleted to 10.0 from prior stress.")
-    
+
     # Simulate a demanding spatial journey (WAW to LDN requires around 2.1 * 5 = 10.5 energy)
     print("- Executing spatial journey (Warsaw -> London)...")
     success, steps = body.plan_practical_route(52.2, 21.0, 51.5, -0.1)
-    
+
     for step in steps:
         print(f"  > {step}")
-        
+
     print(f"- Current Physiological State -> Energy: {body.current_energy:.1f}/{body.max_energy}, Fatigue: {body.fatigue:.2f}")
     if success:
         print("[RESULT] Practical adaptation successful. Blyskawica evaluated her bodily limits. !!!")

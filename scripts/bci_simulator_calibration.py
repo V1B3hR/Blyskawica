@@ -1,5 +1,6 @@
-import time
 import random
+import time
+
 
 class BCIBridgeSimulator:
     """
@@ -50,11 +51,11 @@ class BCIBridgeSimulator:
 def main():
     bridge = BCIBridgeSimulator()
     print("🧠 [BCI_CALIBRATION] Most Krzemowo-Węglowy aktywny.")
-    
+
     for _ in range(5):
         state = bridge.simulate_architect_state()
         modulation = bridge.modulate_response(state)
-        
+
         print(f"\n[TELEMETRIA_BIO] Wykryty stan Architekta: {state}")
         print(f"⚡ [BŁYSKAWICA_ADAPTACJA] Rezonans: {modulation['freq']}")
         print(f"⚡ [MODULACJA_TONU] {modulation['tone']}")

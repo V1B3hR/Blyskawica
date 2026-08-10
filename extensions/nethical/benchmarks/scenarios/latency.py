@@ -8,7 +8,7 @@ with minimal concurrency to get accurate timing measurements.
 import asyncio
 import random
 import string
-from typing import Any, Dict, List
+from typing import Any
 
 
 class LatencyScenario:
@@ -17,7 +17,7 @@ class LatencyScenario:
     def __init__(self):
         self.governance = None
         self._initialized = False
-        self.latency_samples: List[float] = []
+        self.latency_samples: list[float] = []
 
     def _lazy_init(self) -> None:
         """Lazily initialize governance system."""
@@ -32,7 +32,7 @@ class LatencyScenario:
         except Exception:
             self._initialized = True  # Mark as initialized even on failure
 
-    def _generate_actions(self) -> List[Dict[str, Any]]:
+    def _generate_actions(self) -> list[dict[str, Any]]:
         """Generate a set of test actions with varying complexity."""
         actions = []
 
@@ -68,7 +68,7 @@ class LatencyScenario:
 
         return actions
 
-    async def run(self) -> Dict[str, Any]:
+    async def run(self) -> dict[str, Any]:
         """Run a single latency iteration."""
         self._lazy_init()
 

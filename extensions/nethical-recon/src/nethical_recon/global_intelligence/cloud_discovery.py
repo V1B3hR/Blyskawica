@@ -322,7 +322,7 @@ class CloudAssetDiscovery:
     def _discover_aws_storage(self, account: str, region: str) -> list[CloudAsset]:
         """Discover AWS S3 buckets"""
         # Mock implementation
-        self.logger.debug(f"Discovering AWS S3 buckets")
+        self.logger.debug("Discovering AWS S3 buckets")
 
         assets = [
             CloudAsset(

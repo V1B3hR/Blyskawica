@@ -1,16 +1,15 @@
 """Tests for Starlink satellite provider."""
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-from datetime import datetime
 
-from nethical.connectivity.satellite.starlink import (
-    StarlinkProvider,
-    StarlinkDishStatus,
-)
+import pytest
+
 from nethical.connectivity.satellite.base import (
-    ConnectionState,
     ConnectionConfig,
+    ConnectionState,
+)
+from nethical.connectivity.satellite.starlink import (
+    StarlinkDishStatus,
+    StarlinkProvider,
 )
 
 

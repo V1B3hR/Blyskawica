@@ -64,7 +64,7 @@ class StoreFactory:
         try:
             backend_enum = StoreBackend(backend.lower())
         except ValueError:
-            raise ValueError(
+            raise ValueError(  # noqa: B904
                 f"Unsupported backend: {backend}. " f"Supported backends: {', '.join([b.value for b in StoreBackend])}"
             )
 

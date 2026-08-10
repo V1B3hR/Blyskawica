@@ -127,7 +127,7 @@ def demo_production_features():
     initial_cb_state = node1.circuit_breaker['state']
 
     # Trigger multiple failures to open circuit breaker
-    for i in range(6):  # More than failure threshold
+    for i in range(6):  # More than failure threshold  # noqa: B007
         error_signal = SocialSignal(
             content="error_trigger",
             signal_type="bad_type",
@@ -175,7 +175,7 @@ def demo_production_features():
         node2.communication_queue.append(dummy_signal)
 
     # Try to send signal with backpressure
-    responses = node1.send_signal(
+    responses = node1.send_signal(  # noqa: F841
         target_nodes=[node2],
         signal_type="memory",
         content="backpressure_test"

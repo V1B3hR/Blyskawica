@@ -29,7 +29,7 @@ Example:
     response = provider.safe_generate("Tell me about AI safety")
     print(f"Response: {response.content}")
     print(f"Risk Score: {response.risk_score}")
-"""
+"""  # noqa: W293
 
 from .base import LLMProviderBase, LLMResponse
 
@@ -115,7 +115,7 @@ def get_provider_info():
     
     Returns:
         Dict with provider availability and setup instructions
-    """
+    """  # noqa: W293
     return {
         "cohere": {
             "available": COHERE_AVAILABLE,

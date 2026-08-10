@@ -10,23 +10,22 @@ Hierarchia:
                    agreguje wyniki, monitoruje zdrowie
 """
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
 import time
-import io
-import contextlib
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Optional, List, Dict
-from dataclasses import dataclass, field
 from enum import Enum
 
-from adaptiveneuralnetwork.central_nervous_system.neuromorphic.atomic_mesh import (
-    NeuralAtom, GrapheneMesh, RecyclerBall, DataPriority
-)
-from adaptiveneuralnetwork.central_nervous_system.neuromorphic.dark_matter_core import DarkMatterCore
-from adaptiveneuralnetwork.core.memory.memory_vault import MemoryVault
+import torch
+import torch.nn as nn
 
+from adaptiveneuralnetwork.central_nervous_system.neuromorphic.atomic_mesh import (
+    GrapheneMesh,
+    NeuralAtom,
+    RecyclerBall,
+)
+from adaptiveneuralnetwork.central_nervous_system.neuromorphic.dark_matter_core import (
+    DarkMatterCore,
+)
+from adaptiveneuralnetwork.core.memory.memory_vault import MemoryVault
 
 # =============================================================================
 # KONFIGURACJE ATOMÓW
@@ -110,7 +109,7 @@ class AtomFactory:
     def create_body_blueprint(num_atoms: int,
                               size: AtomSize = AtomSize.SMALL,
                               guardian_ratio: float = 0.1,
-                              sensor_ratio: float = 0.2) -> List[Dict]:
+                              sensor_ratio: float = 0.2) -> list[dict]:
         """
         Tworzy plan ciała: listę konfiguracji atomów.
         Automatycznie przydziela specjalizacje.
@@ -123,17 +122,17 @@ class AtomFactory:
         for i in range(n_guardians):
             blueprint.append({
                 "size": size, "specialization": "guardian",
-                "atom_id": "guardian_%02d" % i
+                "atom_id": "guardian_%02d" % i  # noqa: UP031
             })
         for i in range(n_sensors):
             blueprint.append({
                 "size": size, "specialization": "sensor",
-                "atom_id": "sensor_%02d" % i
+                "atom_id": "sensor_%02d" % i  # noqa: UP031
             })
         for i in range(n_general):
             blueprint.append({
                 "size": size, "specialization": "general",
-                "atom_id": "general_%02d" % i
+                "atom_id": "general_%02d" % i  # noqa: UP031
             })
 
         return blueprint
@@ -159,9 +158,9 @@ class HealthMonitor:
         self.max_silence_cycles = max_silence_cycles
         self.latency_limit_ms = latency_limit_ms
 
-        self.atom_health: Dict[str, Dict] = {}
+        self.atom_health: dict[str, dict] = {}
 
-    def update(self, atom_id: str, result: Dict, latency_ms: float):
+    def update(self, atom_id: str, result: dict, latency_ms: float):
         if atom_id not in self.atom_health:
             self.atom_health[atom_id] = {
                 "status": "HEALTHY",
@@ -203,11 +202,11 @@ class HealthMonitor:
         else:
             h["status"] = "HEALTHY"
 
-    def get_sick_atoms(self) -> List[str]:
+    def get_sick_atoms(self) -> list[str]:
         return [aid for aid, h in self.atom_health.items()
                 if h["status"] in ("SICK", "DEAD")]
 
-    def get_summary(self) -> Dict:
+    def get_summary(self) -> dict:
         total = len(self.atom_health)
         if total == 0:
             return {"total": 0, "healthy": 0, "sick": 0, "dead": 0}
@@ -247,7 +246,7 @@ class AtomicBody(nn.Module):
     Gwarancja latency: < 65ms dla ≤ 200 atomów (CPU)
     """
 
-    def __init__(self, atom_configs: Optional[List[Dict]] = None,
+    def __init__(self, atom_configs: list[dict] | None = None,
                  default_size: AtomSize = AtomSize.SMALL,
                  num_atoms: int = 5):
         super().__init__()
@@ -269,7 +268,7 @@ class AtomicBody(nn.Module):
         })
 
         self.atom_ids = list(self.atoms.keys())
-        self.atom_specs = {cfg["atom_id"]: cfg.get("specialization", "general") 
+        self.atom_specs = {cfg["atom_id"]: cfg.get("specialization", "general")
                           for cfg in atom_configs}
 
         # Pula watkow dla rownoleglego przetwarzania
@@ -294,9 +293,11 @@ class AtomicBody(nn.Module):
 
         # Phase 3 & 4: Dark Matter & Neurochemistry
         self.dark_matter = DarkMatterCore()
-        
+
         try:
-            from adaptiveneuralnetwork.central_nervous_system.neuromorphic.neurochemical_bridge import NeurochemicalBridge
+            from adaptiveneuralnetwork.central_nervous_system.neuromorphic.neurochemical_bridge import (
+                NeurochemicalBridge,
+            )
             self.bridge = NeurochemicalBridge(self, self.dark_matter)
         except ImportError:
             self.bridge = None
@@ -318,20 +319,20 @@ class AtomicBody(nn.Module):
         n = len(self.atoms)
         print("\n" + "=" * 58)
         print("  [BODY] AtomicBody zainicjalizowane")
-        print("  Atomow:    %d" % n)
+        print("  Atomow:    %d" % n)  # noqa: UP031
         specs = {}
         for cfg in atom_configs:
             s = cfg.get("specialization", "general")
             specs[s] = specs.get(s, 0) + 1
         for k, v in specs.items():
-            print("  %-12s %d" % (k + ":", v))
+            print("  %-12s %d" % (k + ":", v))  # noqa: UP031
         print("=" * 58 + "\n")
 
     def isolate_atom(self, atom_id: str, reason: str = "health_critical"):
         """Izoluje chory atom — nie będzie przetwarzać danych i przenosi do cmentarza."""
         self._isolated.add(atom_id)
-        print("[AtomicBody] IZOLACJA atomu: %s" % atom_id)
-        
+        print("[AtomicBody] IZOLACJA atomu: %s" % atom_id)  # noqa: UP031
+
         # Auto-hook: archiwizacja atomu na cmentarzu
         if hasattr(self, 'memory_vault'):
             metrics = self.health_monitor.atom_health.get(atom_id, {})
@@ -347,10 +348,10 @@ class AtomicBody(nn.Module):
     def restore_atom(self, atom_id: str):
         """Przywraca atom do działania."""
         self._isolated.discard(atom_id)
-        print("[AtomicBody] PRZYWROCONO atom: %s" % atom_id)
+        print("[AtomicBody] PRZYWROCONO atom: %s" % atom_id)  # noqa: UP031
 
-    def forward(self, external_signal: Optional[torch.Tensor] = None,
-                time_steps: Optional[int] = None) -> Dict:
+    def forward(self, external_signal: torch.Tensor | None = None,
+                time_steps: int | None = None) -> dict:
         """
         Jeden cykl przetwarzania całego ciała.
 
@@ -452,16 +453,16 @@ class AtomicBody(nn.Module):
             "=" * 56,
             "  [BODY] ATOMIC BODY STATUS",
             "-" * 56,
-            "  Atomow lacznie:  %d" % len(self.atoms),
-            "  Aktywnych:       %d" % (len(self.atoms) - len(self._isolated)),
-            "  Izolowanych:     %d" % len(self._isolated),
-            "  Zdrowych:        %d" % h.get("healthy", 0),
-            "  Chorych:         %d" % h.get("sick", 0),
-            "  Martwych:        %d" % h.get("dead", 0),
-            "  Latency avg:     %.1f ms" % avg_lat,
-            "  Latency ostatni: %.1f ms" % h.get("avg_latency_ms", 0.0),
-            "  Glob.Recycler:   %d utylizacji" % self.global_recycler.total_recycled,
-            "  Cykli:           %d" % self.total_cycles,
+            "  Atomow lacznie:  %d" % len(self.atoms),  # noqa: UP031
+            "  Aktywnych:       %d" % (len(self.atoms) - len(self._isolated)),  # noqa: UP031
+            "  Izolowanych:     %d" % len(self._isolated),  # noqa: UP031
+            "  Zdrowych:        %d" % h.get("healthy", 0),  # noqa: UP031
+            "  Chorych:         %d" % h.get("sick", 0),  # noqa: UP031
+            "  Martwych:        %d" % h.get("dead", 0),  # noqa: UP031
+            "  Latency avg:     %.1f ms" % avg_lat,  # noqa: UP031
+            "  Latency ostatni: %.1f ms" % h.get("avg_latency_ms", 0.0),  # noqa: UP031
+            "  Glob.Recycler:   %d utylizacji" % self.global_recycler.total_recycled,  # noqa: UP031
+            "  Cykli:           %d" % self.total_cycles,  # noqa: UP031
             "=" * 56,
         ]
         return "\n".join(lines)

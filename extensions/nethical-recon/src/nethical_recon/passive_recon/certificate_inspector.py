@@ -1,10 +1,9 @@
 """SSL/TLS certificate inspection module."""
 
-import ssl
 import socket
+import ssl
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
 
 
 @dataclass
@@ -28,7 +27,7 @@ class CertificateInspector:
     def __init__(self, timeout: int = 5):
         self.timeout = timeout
 
-    def get_certificate(self, hostname: str, port: int = 443) -> Optional[CertificateInfo]:
+    def get_certificate(self, hostname: str, port: int = 443) -> CertificateInfo | None:
         """Retrieve and parse SSL certificate.
 
         Args:

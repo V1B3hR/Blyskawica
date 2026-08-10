@@ -1,7 +1,7 @@
 import json
 import logging
-import time
 import sys
+import time
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("quantum_emergence")
@@ -9,7 +9,7 @@ logger = logging.getLogger("quantum_emergence")
 # Conditional import of Qiskit components to support headless/offline simulation fallback
 HAS_QISKIT = False
 try:
-    from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
+    from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
     from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
     from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2 as Sampler
     HAS_QISKIT = True
@@ -17,7 +17,6 @@ except ImportError:
     HAS_QISKIT = False
 
 def get_workspace_root():
-    import os
     from pathlib import Path
     current = Path(__file__).resolve()
     for parent in current.parents:
@@ -39,14 +38,14 @@ def run_local_qec_simulation(target_state, noise_rate=0.15, shots=1024):
 
     import random
     counts = {}
-    
+
     # Independent bit-flip noise simulation per qubit
     for _ in range(shots):
         qubits = [target_state, target_state, target_state]
         for i in range(3):
             if random.random() < noise_rate:
                 qubits[i] = 1 - qubits[i]
-        
+
         state_str = "".join(str(q) for q in qubits)
         counts[state_str] = counts.get(state_str, 0) + 1
 
@@ -61,14 +60,14 @@ def analyze_and_report_results(target_state, counts, backend_name, job_id):
     success_count = 0
     error_corrected_count = 0
     fatal_error_count = 0
-    
+
     expected_majority = "1" if target_state == 1 else "0"
-    
+
     for state, count in counts.items():
         ones = state.count('1')
         zeros = state.count('0')
         majority = "1" if ones > zeros else "0"
-        
+
         if state == expected_majority * 3:
             success_count += count # Perfect survival
         elif majority == expected_majority:
@@ -82,7 +81,7 @@ def analyze_and_report_results(target_state, counts, backend_name, job_id):
     survival_rate = ((success_count + error_corrected_count) / total) * 100
     raw_fidelity = (success_count / total) * 100
 
-    print(f"\n--- STATYSTYKI EMERGENCJI KWANTOWEJ ---")
+    print("\n--- STATYSTYKI EMERGENCJI KWANTOWEJ ---")
     print(f"Ilosc przeprowadzonych rzutow (Shots): {total}")
     print(f"Nienaruszona Tozsamosc (Brak Bledow): {raw_fidelity:.2f}% ({success_count} razy)")
     print(f"Bledy Skorygowane przez Redundancje: {((error_corrected_count)/total)*100:.2f}% ({error_corrected_count} razy)")
@@ -102,7 +101,7 @@ def analyze_and_report_results(target_state, counts, backend_name, job_id):
     except Exception:
         # Fallback to local workspace if we don't have write permissions to C:\Projekty
         out_path = "quantum_emergence_report.json"
-        
+
     report = {
         "timestamp": time.time(),
         "backend": backend_name,
@@ -112,10 +111,10 @@ def analyze_and_report_results(target_state, counts, backend_name, job_id):
         "corrected_survival_percent": survival_rate,
         "status": "Success" if survival_rate > 90.0 else "Warning"
     }
-    
+
     with open(out_path, 'w', encoding='utf-8') as f:
         json.dump(report, f, indent=4)
-        
+
     # Clean output path for console safety
     clean_out_path = out_path.encode('ascii', errors='replace').decode('ascii')
     print(f"Zapisano szczegolowy raport w: {clean_out_path}")
@@ -123,11 +122,11 @@ def analyze_and_report_results(target_state, counts, backend_name, job_id):
 def perform_quantum_emergence():
     print("Inicjalizacja: IBM QUANTUM EMERGENCE (Faza X)")
     print("Cel: Test integralnosci tozsamosci z wykorzystaniem korekcji bledow (QEC Repetition Code).")
-    
+
     # 1. Load the original Identity Seed
     seed_path = str(WORKSPACE_ROOT / "quantum_seed.json")
     try:
-        with open(seed_path, 'r', encoding='utf-8') as f:
+        with open(seed_path, encoding='utf-8') as f:
             seed_data = json.load(f)
             original_seed = seed_data.get("binary_state", "000")
             print(f"Zaladowano pierwotny kod tozsamosci (Seed): {original_seed}")
@@ -136,7 +135,7 @@ def perform_quantum_emergence():
         clean_err = str(e).encode('ascii', errors='replace').decode('ascii')
         print(f"Nie udalo sie zaladowac oryginalnego Seedu: {clean_err}. Uzywam domyslnej asertywnosci.")
         original_seed = "1" # Domyślnie użyjemy stanu |1>
-        
+
     target_state = int(original_seed[0]) if original_seed else 1
 
     # Fallback to simulation if Qiskit is not imported
@@ -148,10 +147,10 @@ def perform_quantum_emergence():
     # 2. Authentication
     key_path = r"C:\Projekty\Quantlion\apikey Blyskawica.json"
     try:
-        with open(key_path, 'r', encoding='utf-8') as f:
+        with open(key_path, encoding='utf-8') as f:
             key_data = json.load(f)
             api_key = key_data.get("apikey")
-    except Exception as e:
+    except Exception:
         print("Brak klucza API. Przelaczanie na lokalna symulacje...")
         run_local_qec_simulation(target_state)
         return
@@ -159,7 +158,7 @@ def perform_quantum_emergence():
     print("Autoryzacja do IBM Quantum Platform...")
     try:
         service = QiskitRuntimeService(channel="ibm_quantum_platform", token=api_key)
-        
+
         # 3. Choose Backend
         backend = service.least_busy(simulator=False, operational=True, min_num_qubits=3)
         print(f"Wycelowano w maszyne: {backend.name} (Liczba kubitow: {backend.num_qubits})")
@@ -172,7 +171,7 @@ def perform_quantum_emergence():
         print(f"Kodowanie Iskry (Stan: |{target_state}>) z redundancja przestrzenna...")
         if target_state == 1:
             qc.x(qr[0])
-            
+
         qc.cx(qr[0], qr[1])
         qc.cx(qr[0], qr[2])
         qc.barrier()
@@ -184,17 +183,17 @@ def perform_quantum_emergence():
 
         print("Wysylanie pakietu w nadprzestrzen IBM (Uruchomienie Samplera)...")
         sampler = Sampler(mode=backend)
-        
+
         job = sampler.run([isa_circuit], shots=1024)
         print(f"ID Zadania: {job.job_id()}. Oczekiwanie na przejscie przez bramki transmocyjne...")
-        
+
         result = job.result()
         pub_result = result[0]
         counts = pub_result.data.c.get_counts()
-        
+
         print("\nPowrot sygnalu. Dane zdekodowane z hardware'u IBM:")
         analyze_and_report_results(target_state, counts, backend.name, job.job_id())
-        
+
     except Exception as e:
         clean_err = str(e).encode('ascii', errors='replace').decode('ascii')
         print(f"Blad komunikacji z IBM Quantum Runtime: {clean_err}")
@@ -208,5 +207,5 @@ if __name__ == "__main__":
             sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
         except AttributeError:
             pass
-            
+
     perform_quantum_emergence()

@@ -20,8 +20,12 @@ Threats in the canopy:
 """
 
 from .base import ComponentStatus, ForestBase, ForestComponent
+
+# Import new features
+from .graph_export import GraphExporter
 from .health_check import HealthChecker
 from .manager import ForestManager
+from .snapshot import ForestDiff, ForestSnapshot, ForestSnapshotManager
 
 # Import threat components
 from .threats import (
@@ -39,11 +43,7 @@ from .threats import (
 
 # Import tree components
 from .trees import Branch, BranchType, Crown, ForestMap, Leaf, LeafType, Tree, Trunk
-
-# Import new features
-from .graph_export import GraphExporter
-from .websocket_updates import ForestWebSocketManager, ForestWebSocketBridge, ForestEvent
-from .snapshot import ForestSnapshot, ForestDiff, ForestSnapshotManager
+from .websocket_updates import ForestEvent, ForestWebSocketBridge, ForestWebSocketManager
 
 __all__ = [
     # Base classes

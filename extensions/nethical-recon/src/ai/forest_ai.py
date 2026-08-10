@@ -219,10 +219,10 @@ class ForestAI:
         patterns = []
 
         # Analyze leaf lifetimes
-        lifetimes = [l.get("lifetime", 0) for l in leaf_data]
+        lifetimes = [l.get("lifetime", 0) for l in leaf_data]  # noqa: E741
         avg_lifetime = sum(lifetimes) / len(lifetimes) if lifetimes else 0
 
-        short_lived = sum(1 for l in lifetimes if l < avg_lifetime * 0.5)
+        short_lived = sum(1 for l in lifetimes if l < avg_lifetime * 0.5)  # noqa: E741
         if short_lived > len(lifetimes) * 0.3:
             patterns.append(
                 {
@@ -234,7 +234,7 @@ class ForestAI:
             )
 
         # Analyze leaf resource usage
-        high_resource_leaves = sum(1 for l in leaf_data if l.get("resource_usage", 0) > 0.7)
+        high_resource_leaves = sum(1 for l in leaf_data if l.get("resource_usage", 0) > 0.7)  # noqa: E741
         if high_resource_leaves > 0:
             patterns.append(
                 {

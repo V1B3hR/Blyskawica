@@ -5,7 +5,7 @@ Integrates with NIST NVD for vulnerability data.
 """
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
 import requests
 
@@ -27,7 +27,7 @@ class NVDConnector:
 
     NVD_API_BASE = "https://services.nvd.nist.gov/rest/json/cves/2.0"
 
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(self, api_key: str | None = None):
         """
         Initialize NVD connector.
 
@@ -39,7 +39,7 @@ class NVDConnector:
         if api_key:
             self.session.headers.update({"apiKey": api_key})
 
-    def get_cve(self, cve_id: str) -> Optional[dict[str, Any]]:
+    def get_cve(self, cve_id: str) -> dict[str, Any] | None:
         """
         Get CVE details from NVD.
 
@@ -100,8 +100,8 @@ class NVDConnector:
 
     def search_cves(
         self,
-        keyword: Optional[str] = None,
-        severity: Optional[str] = None,
+        keyword: str | None = None,
+        severity: str | None = None,
         limit: int = 10,
     ) -> list[dict[str, Any]]:
         """

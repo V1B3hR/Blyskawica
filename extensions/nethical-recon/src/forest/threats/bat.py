@@ -131,7 +131,7 @@ class Bat(BaseThreat):
 
     def get_activity_pattern(self) -> dict[int, int]:
         """Get activity pattern by hour"""
-        pattern = {hour: 0 for hour in range(24)}
+        pattern = dict.fromkeys(range(24), 0)
         for hour in self.active_hours:
             pattern[hour] += 1
         return pattern

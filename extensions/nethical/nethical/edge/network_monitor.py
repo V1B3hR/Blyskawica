@@ -9,7 +9,6 @@ import socket
 import threading
 import time
 from dataclasses import dataclass
-from typing import List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +27,7 @@ class ConnectionStatus:
     """
 
     is_connected: bool
-    latency_ms: Optional[float] = None
+    latency_ms: float | None = None
     last_check: float = 0.0
     consecutive_failures: int = 0
     quality: str = "unknown"
@@ -52,7 +51,7 @@ class NetworkMonitor:
 
     def __init__(
         self,
-        endpoints: Optional[List[tuple]] = None,
+        endpoints: list[tuple] | None = None,
         check_interval_seconds: int = 10,
         timeout_seconds: float = 2.0,
         failure_threshold: int = 3,
@@ -77,7 +76,7 @@ class NetworkMonitor:
 
         # Background monitoring
         self._running = False
-        self._monitor_thread: Optional[threading.Thread] = None
+        self._monitor_thread: threading.Thread | None = None
 
         logger.info("NetworkMonitor initialized")
 
@@ -115,7 +114,7 @@ class NetworkMonitor:
         Returns:
             ConnectionStatus with result
         """
-        start_time = time.perf_counter()
+        start_time = time.perf_counter()  # noqa: F841
         is_connected = False
         latency_ms = None
 
@@ -134,7 +133,7 @@ class NetworkMonitor:
                 latency_ms = connect_time * 1000
                 break  # Success on first endpoint
 
-            except (socket.timeout, socket.error):
+            except (TimeoutError, OSError):
                 continue
 
         with self._lock:
@@ -159,7 +158,7 @@ class NetworkMonitor:
                 quality=self._status.quality,
             )
 
-    def _assess_quality(self, latency_ms: Optional[float]) -> str:
+    def _assess_quality(self, latency_ms: float | None) -> str:
         """Assess connection quality based on latency."""
         if latency_ms is None:
             return "unknown"
@@ -201,7 +200,7 @@ class NetworkMonitor:
         with self._lock:
             return self._status.is_connected
 
-    def get_latency(self) -> Optional[float]:
+    def get_latency(self) -> float | None:
         """Get last measured latency in milliseconds."""
         with self._lock:
             return self._status.latency_ms

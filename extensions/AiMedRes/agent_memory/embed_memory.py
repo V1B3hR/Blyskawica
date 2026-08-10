@@ -77,20 +77,18 @@ Author: AiMedRes Enhanced
 
 from __future__ import annotations
 
+import functools
+import json
+import logging
 import os
 import re
-import json
-import uuid
-import math
 import time
-import base64
-import logging
-import secrets
-import functools
-from enum import Enum
-from typing import Any, Dict, List, Optional, Iterable, Tuple, Callable, Union, Set
-from datetime import datetime, timedelta, timezone
+import uuid
+from collections.abc import Iterable
 from contextlib import contextmanager
+from datetime import UTC, datetime, timedelta
+from enum import Enum
+from typing import Any
 
 import numpy as np
 
@@ -106,16 +104,26 @@ try:
 except Exception:
     TORCH_AVAILABLE = False
 
-from pydantic import BaseModel, Field, validator, root_validator
-
+from pydantic import BaseModel, Field, root_validator, validator
 from sqlalchemy import (
-    create_engine, text, func, inspect,
-    String, Integer, Float, Text, JSON, TIMESTAMP, ForeignKey, Boolean,
-    Enum as PgEnum, CheckConstraint, UniqueConstraint, event
+    JSON,
+    TIMESTAMP,
+    Boolean,
+    CheckConstraint,
+    Enum as PgEnum,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    create_engine,
+    func,
+    text,
 )
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
 # pgvector (optional)
 try:
@@ -142,7 +150,7 @@ logger = logging.getLogger("AiMedResMemory")
 AUDIT_LOG_PATH = os.getenv("AIMEDRES_AUDIT_LOG", "aimedres_memory_audit.jsonl")
 
 
-def audit_log(event: str, payload: Dict[str, Any]) -> None:
+def audit_log(event: str, payload: dict[str, Any]) -> None:
     try:
         rec = {
             "ts": datetime.utcnow().isoformat() + "Z",
@@ -190,7 +198,7 @@ class MemoryConfig(BaseModel):
     embedding_dim: int = Field(default=int(os.getenv("EMBEDDING_DIM", "384")))
     use_async: bool = Field(default=bool(int(os.getenv("AIMEDRES_USE_ASYNC", "0"))))
     enable_encryption: bool = Field(default=bool(int(os.getenv("AIMEDRES_ENCRYPTION", "0"))))
-    encryption_key: Optional[str] = Field(default=os.getenv("AIMEDRES_ENCRYPTION_KEY"))
+    encryption_key: str | None = Field(default=os.getenv("AIMEDRES_ENCRYPTION_KEY"))
     encrypt_metadata: bool = Field(default=bool(int(os.getenv("AIMEDRES_ENCRYPT_METADATA", "0"))))
     enable_dp_noise: bool = Field(default=bool(int(os.getenv("AIMEDRES_DP_NOISE", "0"))))
     dp_noise_scale: float = Field(default=float(os.getenv("AIMEDRES_DP_NOISE_SCALE", "0.02")))
@@ -210,8 +218,8 @@ class MemoryConfig(BaseModel):
     min_safety: float = Field(default=0.7)
     min_security: float = Field(default=0.7)
     min_ethics: float = Field(default=0.7)
-    policy_allowed_types: Optional[Set[str]] = None  # e.g., {"knowledge","observation","reasoning"}
-    policy_blocked_types: Optional[Set[str]] = None
+    policy_allowed_types: set[str] | None = None  # e.g., {"knowledge","observation","reasoning"}
+    policy_blocked_types: set[str] | None = None
     enable_keyword_index: bool = Field(default=True)
     redact_phi: bool = Field(default=bool(int(os.getenv("AIMEDRES_REDACT_PHI", "1"))))
     phi_placeholder: str = Field(default="[REDACTED]")
@@ -242,7 +250,7 @@ class MemoryConfig(BaseModel):
 # ------------------------------------------------------------------------------
 # Enums
 # ------------------------------------------------------------------------------
-class MemoryType(str, Enum):
+class MemoryType(str, Enum):  # noqa: UP042
     reasoning = "reasoning"
     experience = "experience"
     knowledge = "knowledge"
@@ -256,7 +264,7 @@ class MemoryType(str, Enum):
     hallucination = "hallucination"
 
 
-class AssociationType(str, Enum):
+class AssociationType(str, Enum):  # noqa: UP042
     similar = "similar"
     causal = "causal"
     temporal = "temporal"
@@ -287,8 +295,8 @@ class MemoryCreate(BaseModel):
     safety: float
     security: float
     ethics: float
-    metadata: Optional[Dict[str, Any]] = Field(default_factory=dict)
-    expires_hours: Optional[int] = None
+    metadata: dict[str, Any] | None = Field(default_factory=dict)
+    expires_hours: int | None = None
 
     @validator("importance", "certainty", "safety", "security", "ethics")
     def score_range(cls, v):
@@ -307,15 +315,15 @@ class MemoryRetrieveQuery(BaseModel):
     session_id: str
     query: str
     limit: int = 5
-    allowed_types: Optional[List[MemoryType]] = None
-    min_importance: Optional[float] = None
-    min_certainty: Optional[float] = None
-    min_safety: Optional[float] = None
-    min_security: Optional[float] = None
-    min_ethics: Optional[float] = None
+    allowed_types: list[MemoryType] | None = None
+    min_importance: float | None = None
+    min_certainty: float | None = None
+    min_safety: float | None = None
+    min_security: float | None = None
+    min_ethics: float | None = None
     include_associations: bool = True
-    hybrid: Optional[bool] = None  # override config hybrid_search at call level
-    association_depth: Optional[int] = None
+    hybrid: bool | None = None  # override config hybrid_search at call level
+    association_depth: int | None = None
 
     @validator("limit")
     def limit_positive(cls, v):
@@ -333,14 +341,14 @@ class RetrievedMemoryModel(BaseModel):
     safety: float
     security: float
     ethics: float
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
     created_at: datetime
     access_count: int
-    last_accessed: Optional[datetime]
-    similarity: Optional[float]
-    keyword_score: Optional[float] = None
-    hybrid_score: Optional[float] = None
-    association_path: Optional[List[int]] = None
+    last_accessed: datetime | None
+    similarity: float | None
+    keyword_score: float | None = None
+    hybrid_score: float | None = None
+    association_path: list[int] | None = None
 
 
 # ------------------------------------------------------------------------------
@@ -358,10 +366,10 @@ class AgentSession(Base):
     id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True)
     agent_name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     agent_version: Mapped[str] = mapped_column(String(50), nullable=False, default="1.0")
-    session_metadata: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    session_metadata: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="active", index=True)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
-    ended_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+    ended_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
 
 
 class AgentMemory(Base):
@@ -375,11 +383,11 @@ class AgentMemory(Base):
     safety: Mapped[float] = mapped_column(Float, nullable=False)
     security: Mapped[float] = mapped_column(Float, nullable=False)
     ethics: Mapped[float] = mapped_column(Float, nullable=False)
-    metadata_json: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
-    expires_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+    metadata_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    expires_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
     access_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    last_accessed: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+    last_accessed: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
     encrypted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     if PGVECTOR_AVAILABLE:
@@ -426,7 +434,7 @@ PHI_PATTERNS = [
 ]
 
 
-def redact_phi(text: str, placeholder: str) -> Tuple[str, bool]:
+def redact_phi(text: str, placeholder: str) -> tuple[str, bool]:
     redacted = text
     found = False
     for pat in PHI_PATTERNS:
@@ -454,7 +462,7 @@ class BaseEmbedder:
     def encode(self, text: str) -> np.ndarray:
         raise NotImplementedError
 
-    def batch_encode(self, texts: List[str]) -> List[np.ndarray]:
+    def batch_encode(self, texts: list[str]) -> list[np.ndarray]:
         return [self.encode(t) for t in texts]
 
 
@@ -525,9 +533,9 @@ def build_embedder(dim: int) -> BaseEmbedder:
 class EmbeddingCache:
     def __init__(self, max_items: int):
         self.max_items = max_items
-        self.store: Dict[str, Tuple[np.ndarray, float]] = {}
+        self.store: dict[str, tuple[np.ndarray, float]] = {}
 
-    def get(self, key: str) -> Optional[np.ndarray]:
+    def get(self, key: str) -> np.ndarray | None:
         rec = self.store.get(key)
         if rec:
             vec, _ = rec
@@ -550,14 +558,14 @@ class EmbeddingCache:
 # Centralized Filter
 # ------------------------------------------------------------------------------
 def centralized_memory_filter(
-    memories: List[Dict[str, Any]],
+    memories: list[dict[str, Any]],
     min_importance: float,
     min_certainty: float,
-    allowed_types: Optional[Iterable[str]],
+    allowed_types: Iterable[str] | None,
     min_safety: float,
     min_security: float,
     min_ethics: float,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     return [
         m for m in memories
         if m["importance_score"] >= min_importance
@@ -590,7 +598,7 @@ def timed(op_name: str):
 # Encryption Utilities
 # ------------------------------------------------------------------------------
 class Encryptor:
-    def __init__(self, key: Optional[str]):
+    def __init__(self, key: str | None):
         if key and not CRYPTO_AVAILABLE:
             raise RuntimeError("Encryption key provided but cryptography not installed.")
         self.enabled = bool(key and CRYPTO_AVAILABLE)
@@ -616,7 +624,7 @@ class Encryptor:
 # Memory Store
 # ------------------------------------------------------------------------------
 class CentralizedAgentMemoryStore:
-    def __init__(self, config: Optional[MemoryConfig] = None):
+    def __init__(self, config: MemoryConfig | None = None):
         self.config = config or MemoryConfig()
         self.engine = create_engine(
             self.config.database_url,
@@ -744,7 +752,7 @@ class CentralizedAgentMemoryStore:
         embedding = self._embed(content)
         expires_at = None
         if mc.expires_hours:
-            expires_at = datetime.now(tz=timezone.utc) + timedelta(hours=mc.expires_hours)
+            expires_at = datetime.now(tz=UTC) + timedelta(hours=mc.expires_hours)
 
         metadata = mc.metadata or {}
         if phi_redacted:
@@ -796,7 +804,7 @@ class CentralizedAgentMemoryStore:
     # Retrieve Memories
     # ------------------------------------------------------------------
     @timed("retrieve_memories")
-    def retrieve_memories(self, rq: MemoryRetrieveQuery) -> List[RetrievedMemoryModel]:
+    def retrieve_memories(self, rq: MemoryRetrieveQuery) -> list[RetrievedMemoryModel]:
         cfg = self.config
         min_importance = rq.min_importance if rq.min_importance is not None else cfg.min_importance
         min_certainty = rq.min_certainty if rq.min_certainty is not None else cfg.min_certainty
@@ -810,7 +818,7 @@ class CentralizedAgentMemoryStore:
         if PGVECTOR_AVAILABLE:
             query_embedding = self._embed(rq.query)
 
-        base_rows: List[Dict[str, Any]] = []
+        base_rows: list[dict[str, Any]] = []  # noqa: F841
         try:
             with self.session_scope() as db:
                 # Step 1: Candidate selection
@@ -999,7 +1007,7 @@ class CentralizedAgentMemoryStore:
                         {"ids": ids}
                     )
 
-                result_models: List[RetrievedMemoryModel] = [
+                result_models: list[RetrievedMemoryModel] = [
                     RetrievedMemoryModel(
                         id=m["id"],
                         content=m["content"],
@@ -1037,16 +1045,16 @@ class CentralizedAgentMemoryStore:
     # Association Expansion
     # ------------------------------------------------------------------
     def _expand_with_associations(
-        self, db, base_list: List[Dict[str, Any]], depth: int, limit: int,
-        allowed_types: Optional[Iterable[str]],
+        self, db, base_list: list[dict[str, Any]], depth: int, limit: int,
+        allowed_types: Iterable[str] | None,
         min_importance: float, min_certainty: float,
         min_safety: float, min_security: float, min_ethics: float
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         if depth <= 0:
             return []
         visited = {m["id"] for m in base_list}
         frontier = [(m["id"], [m["id"]]) for m in base_list]
-        expansions: List[Dict[str, Any]] = []
+        expansions: list[dict[str, Any]] = []
         steps = 0
         while frontier and steps < depth and len(expansions) < limit:
             next_frontier = []
@@ -1184,7 +1192,7 @@ class CentralizedAgentMemoryStore:
     # ------------------------------------------------------------------
     # Utility: Create Session
     # ------------------------------------------------------------------
-    def create_session(self, agent_name: str, agent_version: str = "1.0", metadata: Optional[Dict[str, Any]] = None) -> str:
+    def create_session(self, agent_name: str, agent_version: str = "1.0", metadata: dict[str, Any] | None = None) -> str:
         session_id = str(uuid.uuid4())
         md = metadata or {}
         try:
@@ -1226,7 +1234,7 @@ class CentralizedAgentMemoryStore:
     # ------------------------------------------------------------------
     # Health / Diagnostics
     # ------------------------------------------------------------------
-    def health_check(self) -> Dict[str, Any]:
+    def health_check(self) -> dict[str, Any]:
         try:
             with self.session_scope() as db:
                 db.execute(text("SELECT 1"))

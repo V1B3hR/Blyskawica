@@ -184,7 +184,7 @@ def nmap_scan(target_ip: str, full_scan: bool = True) -> bool:
         command.insert(1, "-p-")
 
     try:
-        result = subprocess.run(command, check=True, capture_output=True, text=True, timeout=3600)  # 1 hour timeout
+        result = subprocess.run(command, check=True, capture_output=True, text=True, timeout=3600)  # 1 hour timeout  # noqa: F841
         print_colored(Fore.GREEN, f"[+] Nmap {scan_type} Scan complete. Results saved to nmap_results.txt")
         log_scan(target_ip, f"nmap_{scan_type.lower()}", "success", os.getcwd())
         return True
@@ -209,7 +209,7 @@ def nikto_scan(target_ip: str) -> bool:
     command = ["nikto", "-h", target_ip, "-output", "nikto_results.txt"]
 
     try:
-        result = subprocess.run(command, check=True, capture_output=True, text=True, timeout=1800)  # 30 minute timeout
+        result = subprocess.run(command, check=True, capture_output=True, text=True, timeout=1800)  # 30 minute timeout  # noqa: F841
         print_colored(Fore.GREEN, "[+] Nikto Scan complete. Results saved to nikto_results.txt")
         log_scan(target_ip, "nikto", "success", os.getcwd())
         return True
@@ -243,7 +243,7 @@ def dirb_scan(target_ip: str, wordlist_path: str | None = None) -> bool:
     command = ["dirb", f"http://{target_ip}", wordlist_path, "-o", "dirb_results.txt"]
 
     try:
-        result = subprocess.run(command, check=True, capture_output=True, text=True, timeout=1800)  # 30 minute timeout
+        result = subprocess.run(command, check=True, capture_output=True, text=True, timeout=1800)  # 30 minute timeout  # noqa: F841
         print_colored(Fore.GREEN, "[+] Dirb Scan complete. Results saved to dirb_results.txt")
         log_scan(target_ip, "dirb", "success", os.getcwd())
         return True
@@ -268,7 +268,7 @@ def sublist3r_scan(target: str) -> bool:
     command = ["sublist3r", "-d", target, "-o", "sublist3r_results.txt"]
 
     try:
-        result = subprocess.run(command, check=True, capture_output=True, text=True, timeout=1800)  # 30 minute timeout
+        result = subprocess.run(command, check=True, capture_output=True, text=True, timeout=1800)  # 30 minute timeout  # noqa: F841
         print_colored(Fore.GREEN, "[+] Sublist3r Scan complete. Results saved to sublist3r_results.txt")
         log_scan(target, "sublist3r", "success", os.getcwd())
         return True
@@ -293,7 +293,7 @@ def generate_ai_report(scan_data: str, api_key: str, target: str) -> str:
     try:
         client = OpenAI(api_key=api_key)
     except Exception as e:
-        raise Exception(f"Failed to initialize OpenAI client: {e}")
+        raise Exception(f"Failed to initialize OpenAI client: {e}")  # noqa: B904
 
     prompt = f"""You are an expert penetration tester analyzing security scan results.
 
@@ -362,7 +362,7 @@ Important: Base your analysis ONLY on the actual data provided. Do not make assu
         report = response.choices[0].message.content
         return report.strip()
     except Exception as e:
-        raise Exception(f"OpenAI API call failed: {e}")
+        raise Exception(f"OpenAI API call failed: {e}")  # noqa: B904
 
 
 def export_to_html(markdown_file: str):

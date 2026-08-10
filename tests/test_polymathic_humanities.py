@@ -1,6 +1,8 @@
-import unittest
-import numpy as np
 import math
+import unittest
+
+import numpy as np
+
 
 class TestPolymathicHumanities(unittest.TestCase):
     # =================================================================
@@ -12,7 +14,7 @@ class TestPolymathicHumanities(unittest.TestCase):
         # POS Tagging representation: Noun, Verb, Adjective, Noun, Adjective
         expected_pos = ["Noun", "Verb", "Adjective", "Noun", "Adjective"]
         words = sentence.replace(".", "").split()
-        
+
         # Simple rule-based POS tagger check
         pos_tags = []
         for word in words:
@@ -25,7 +27,7 @@ class TestPolymathicHumanities(unittest.TestCase):
                 pos_tags.append("Adjective")
             else:
                 pos_tags.append("Unknown")
-                
+
         self.assertEqual(pos_tags, expected_pos)
         self.assertIn("kognitywnym", sentence)
 
@@ -40,7 +42,7 @@ class TestPolymathicHumanities(unittest.TestCase):
             "treaty_of_versailles": 1919,
             "fall_of_berlin_wall": 1989
         }
-        
+
         # Verify chronological sequence
         events_sorted = sorted(historical_events.keys(), key=lambda k: historical_events[k])
         self.assertEqual(events_sorted[0], "mieszko_i_baptism")
@@ -55,7 +57,7 @@ class TestPolymathicHumanities(unittest.TestCase):
         # Gdynia (Poland) coordinates and EEZ distance limit (200 nautical miles)
         gdynia_lat_lon = (54.5189, 18.5305)
         eez_limit_nautical_miles = 200.0
-        
+
         self.assertGreater(gdynia_lat_lon[0], 50.0)  # Northern Hemisphere
         self.assertLess(gdynia_lat_lon[1], 25.0)     # Central Europe
         self.assertEqual(eez_limit_nautical_miles, 200.0)
@@ -74,12 +76,12 @@ class TestPolymathicHumanities(unittest.TestCase):
             ("D", "C"): (5, 0),
             ("D", "D"): (1, 1)
         }
-        
+
         # Nash equilibrium: Both defect (D, D) is the dominant strategy equilibrium
         p1_defect_cooperate = payoff_matrix[("D", "C")][0] > payoff_matrix[("C", "C")][0]  # 5 > 3
         p1_defect_defect = payoff_matrix[("D", "D")][0] > payoff_matrix[("C", "D")][0]        # 1 > 0
         self.assertTrue(p1_defect_cooperate and p1_defect_defect)
-        
+
         # Black-Scholes formula helper verification (d1, d2 variables)
         S, K, r, t, sigma = 100.0, 100.0, 0.05, 1.0, 0.2
         d1 = (math.log(S / K) + (r + 0.5 * sigma**2) * t) / (sigma * math.sqrt(t))
@@ -97,7 +99,7 @@ class TestPolymathicHumanities(unittest.TestCase):
         signified = "stop_action"
         sign = signifier + "_" + signified
         self.assertIn("red_light", sign)
-        
+
         # Yin-Yang balance ratio (should converge to 1.0 under equilibrium)
         yin = 0.5
         yang = 0.5
@@ -115,10 +117,10 @@ class TestPolymathicHumanities(unittest.TestCase):
             "bubble_sort": "O(n^2)",
             "merge_sort": "O(n log n)"
         }
-        
+
         self.assertEqual(complexities["binary_search"], "O(log n)")
         self.assertEqual(complexities["merge_sort"], "O(n log n)")
-        
+
         # Vibe coding: check if dynamic string compiler evaluates successfully
         code_to_eval = "x = [i**2 for i in range(5)]; result = sum(x)"
         local_vars = {}
@@ -140,22 +142,22 @@ class TestPolymathicHumanities(unittest.TestCase):
             [0.0,             0.0,              1.0, d],
             [0.0,             0.0,              0.0, 1.0]
         ])
-        
+
         self.assertAlmostEqual(T_z[0, 0], 0.70710678, places=5)
         self.assertAlmostEqual(T_z[2, 3], 0.5, places=5)
-        
+
         # PID Controller stability check: error reduction over time
         kp, ki, kd = 2.0, 0.5, 0.1
         error = 1.0
         integral = 0.0
         last_error = 0.0
         dt = 0.1
-        
+
         # Compute control output
         integral += error * dt
         derivative = (error - last_error) / dt
         output = kp * error + ki * integral + kd * derivative
-        
+
         self.assertEqual(output, 2.0 * 1.0 + 0.5 * 0.1 + 0.1 * 10.0)
 
 if __name__ == "__main__":

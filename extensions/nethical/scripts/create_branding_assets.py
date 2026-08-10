@@ -10,9 +10,10 @@ Required dimensions:
 - Logo: 256x256px (nethical_logo.png)
 """
 
-from PIL import Image, ImageDraw, ImageFont
 import os
 import sys
+
+from PIL import Image, ImageDraw, ImageFont
 
 
 def find_font(font_name, size, fallback_default=True):
@@ -59,7 +60,7 @@ def find_font(font_name, size, fallback_default=True):
     for font_path in font_paths:
         try:
             return ImageFont.truetype(font_path, size)
-        except (OSError, IOError):
+        except OSError:  # noqa: PERF203
             continue
 
     # Fall back to default font if requested

@@ -181,7 +181,7 @@ class Tree(ForestComponent):
 
         # Show up to 5 branches
         branch_list = list(self.branches.values())[:5]
-        for i, branch in enumerate(branch_list):
+        for i, branch in enumerate(branch_list):  # noqa: B007
             threat_icon = "⚠️" if branch.has_threats() else "🌿"
             lines.append(f"  {threat_icon}  {threat_icon}  {threat_icon}  Branch: {branch.name[:20]}")
 

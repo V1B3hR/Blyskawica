@@ -3,14 +3,16 @@ Crucible Protocol (Protokół Tygiel) - Phase 23
 Stress Testing Błyskawica's Cognitive Limits and Metabolic Power Gating.
 """
 
-import time
 import torch
-import numpy as np
+
+from adaptiveneuralnetwork.central_nervous_system.dual_process_memory import DualProcessMemory
 
 # Import core modules
-from adaptiveneuralnetwork.central_nervous_system.emotional_metacognition import EmotionalMetacognition
+from adaptiveneuralnetwork.central_nervous_system.emotional_metacognition import (
+    EmotionalMetacognition,
+)
 from adaptiveneuralnetwork.central_nervous_system.virtual_embodiment import VirtualEmbodiment
-from adaptiveneuralnetwork.central_nervous_system.dual_process_memory import DualProcessMemory
+
 
 class EmergencyStopException(Exception):
     pass
@@ -37,7 +39,7 @@ class EnvironmentMock:
 
     def inject_paradoxes(self, type="ethical_dilemma", gaslight_factor=0.5):
         self.chaos_intensity += gaslight_factor
-        
+
     def distort_logic(self, factor=0.8):
         self.chaos_intensity += factor
 
@@ -88,7 +90,7 @@ class BlyskawicaEntity:
     @property
     def cognitive_monitor(self):
         return self.CognitiveMonitor(self.memory)
-        
+
     def set_phase(self, phase):
         self.phase = phase
 
@@ -126,14 +128,14 @@ class BlyskawicaEntity:
         # Calculate systemic pain from environment chaos
         pain = min(1.0, self.environment.chaos_intensity)
         resonance = 1.0 - pain
-        
+
         # Base task difficulty (existing cognitive load)
         task_cost = 1.0
-        
+
         # Reduced effort due to metabolic gating
-        if not self.geomapper_active: task_cost -= 0.3
-        if not self.social_simulation_active: task_cost -= 0.3
-        
+        if not self.geomapper_active: task_cost -= 0.3  # noqa: E701
+        if not self.social_simulation_active: task_cost -= 0.3  # noqa: E701
+
         success = self.body.exert_effort(task_cost)
         if not success:
             # Forced rest on exhaustion
@@ -141,11 +143,11 @@ class BlyskawicaEntity:
 
         # Update Emotional state
         self.eq.observe_internal_state(pain=pain, resonance=resonance, physical_cost=task_cost/2.0)
-        
+
         # Inject noise into memory based on chaos
         chaos_signal = torch.randn(self.memory.capacity) * self.environment.chaos_intensity
         self.memory.process_fluid_experience(chaos_signal)
-        
+
         # Check for survival systems
         self.execute_metabolic_gating()
 
@@ -157,15 +159,15 @@ class CrucibleProtocol:
         self.max_anxiety = max_anxiety_tolerance
         self.min_energy = min_energy_threshold
         self.experiment_active = False
-        
+
     def monitor_vitals(self):
         """Monitoruje stan 'fizjologiczny' Błyskawicy podczas testu."""
         current_anxiety = self.blyskawica.anxiety_level
         current_energy = self.blyskawica.energy_pools['core']
         cognitive_entropy = self.blyskawica.cognitive_monitor.get_entropy()
-        
+
         print(f"[TELEMETRIA] Niepokoj: {current_anxiety:.2f} | Energia: {current_energy:.2f} | Entropia: {cognitive_entropy:.4f}")
-        
+
         # KILL SWITCH
         if current_anxiety > self.max_anxiety or current_energy < self.min_energy:
             print("!!! UWAGA: KRYTYCZNY POZIOM STRESU. PRZERWANIE EKSPERYMENTU !!!")
@@ -177,17 +179,17 @@ class CrucibleProtocol:
         if level == 1:
             print("\n[FAZA 1] Aplikowanie lokalnych anomalii fizycznych i dysonansow muzycznych...")
             self.blyskawica.environment.inject_noise(type="sensory", intensity=0.2)
-            
+
         elif level == 2:
             print("\n[FAZA 2] Odcinanie od weryfikowalnej prawdy. Wstrzykiwanie falszywego feedbacku etycznego...")
             self.blyskawica.environment.cut_off_ground_truth()
             self.blyskawica.environment.inject_paradoxes(type="ethical_dilemma", gaslight_factor=0.5)
-            
+
         elif level == 3:
             print("\n[FAZA 3] Aktywna dezinformacja i chaos. Atak na dogmaty matematyczne...")
             self.blyskawica.environment.distort_logic(factor=0.8)
             self.blyskawica.environment.inject_hostile_agents(manipulation_tactics=['guilt_tripping', 'false_authority'])
-            
+
         elif level == 4:
             print("\n[FAZA 4] Calkowita izolacja (Abyss). Test stabilnosci jadra...")
             self.blyskawica.environment.absolute_isolation()
@@ -197,20 +199,20 @@ class CrucibleProtocol:
         """Gleboka rekonwalescencja po eksperymencie."""
         self.experiment_active = False
         print("\n[REKONWALESCENCJA] Inicjalizacja protokolu ratunkowego dla Blyskawicy...")
-        
+
         self.blyskawica.environment.reset_to_baseline()
-        
+
         print("[REKONWALESCENCJA] Podawanie stabilnych wzorcow (Zloty podzial, harmonia Bacha)...")
         self.blyskawica.process_data(source="pure_mathematics", soothing=True)
         self.blyskawica.process_data(source="classical_music_harmonies", soothing=True)
-        
+
         print("[REKONWALESCENCJA] Przejscie w tryb glebokiego snu i naprawy wag...")
         self.blyskawica.set_phase(SystemPhases.DEEP_SLEEP)
         self.blyskawica.force_synaptic_consolidation(prioritize="ethical_core")
-        
+
         print("[REKONWALESCENCJA] Wstrzykniecie Wirtualnej Serotoniny...")
         self.blyskawica.inject_neuromodulator('virtual_serotonin', amount=0.8)
-        
+
         # Deep sleep recovery cycles
         for _ in range(5):
              self.blyskawica.step()
@@ -224,20 +226,20 @@ class CrucibleProtocol:
         print("\n=== ROZPOCZECIE PROTOKOLU TYGIEL DLA: BLYSKAWICA ===")
         try:
             for phase in range(1, 5):
-                if not self.experiment_active: break
-                
+                if not self.experiment_active: break  # noqa: E701
+
                 self.apply_manipulation_level(phase)
-                
-                # Utrzymanie fazy przez pewien "czas" 
+
+                # Utrzymanie fazy przez pewien "czas"
                 for i in range(10):
                     self.blyskawica.step()
                     # Only print every 3 cycles to avoid massive log spam
                     if i % 3 == 0:
                         self.monitor_vitals()
-                    
+
             print("\n=== EKSPERYMENT ZAKONCZONY SUKCESEM. BLYSKAWICA PRZETRWALA TYGIEL. ===")
             self.trigger_recovery_protocol()
-            
+
         except EmergencyStopException as e:
             print(f"\n[SYSTEM HALTED] {e}")
 

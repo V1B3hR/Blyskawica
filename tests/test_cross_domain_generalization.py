@@ -3,7 +3,7 @@ Test for Cross-Domain Generalization - Phase 2.1
 
 Tests the ability of the adaptive neural network to generalize 
 across different domains and handle domain shift scenarios.
-"""
+"""  # noqa: W291
 
 import os
 
@@ -88,7 +88,7 @@ class TestCrossDomainGeneralization(unittest.TestCase):
         self.assertEqual(len(domain_loaders), 3)
 
         # Test that each loader produces data
-        for i, loader in enumerate(domain_loaders):
+        for i, loader in enumerate(domain_loaders):  # noqa: B007
             batch = next(iter(loader))
             data, target = batch
             self.assertIsInstance(data, torch.Tensor)

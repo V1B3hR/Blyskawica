@@ -10,7 +10,6 @@ import re
 import urllib.parse
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Optional
 
 
 class ValidationError(Exception):
@@ -43,7 +42,7 @@ class SanitizationResult:
     was_modified: bool
     removed_chars: list[str]
     validation_passed: bool
-    error_message: Optional[str] = None
+    error_message: str | None = None
 
 
 class InputValidator:
@@ -132,7 +131,7 @@ class InputValidator:
 
         return True
 
-    def validate_url(self, url: str, allowed_schemes: Optional[list[str]] = None) -> bool:
+    def validate_url(self, url: str, allowed_schemes: list[str] | None = None) -> bool:
         """Validate URL and prevent SSRF attacks.
 
         Args:

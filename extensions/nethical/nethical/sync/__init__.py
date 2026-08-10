@@ -17,25 +17,25 @@ Guarantees:
 - No coordination required
 """
 
-from .vector_clock import VectorClock, HybridLogicalClock, EventOrder
-from .crdt import (
-    GCounter,
-    PNCounter,
-    LWWRegister,
-    ORSet,
-    MVRegister,
-    PolicyCRDT,
-    PolicyState,
-    PolicyDelta,
-    CRDTMergeResult,
-)
 from .anti_entropy import (
     AntiEntropyProtocol,
+    DigestNode,
+    MerkleTree,
     SyncSession,
     SyncState,
-    MerkleTree,
-    DigestNode,
 )
+from .crdt import (
+    CRDTMergeResult,
+    GCounter,
+    LWWRegister,
+    MVRegister,
+    ORSet,
+    PNCounter,
+    PolicyCRDT,
+    PolicyDelta,
+    PolicyState,
+)
+from .vector_clock import EventOrder, HybridLogicalClock, VectorClock
 
 __all__ = [
     # Vector Clocks

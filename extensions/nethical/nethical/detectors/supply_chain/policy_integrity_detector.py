@@ -1,14 +1,16 @@
 """Policy Tampering Detector (SC-001)"""
 import uuid
+from collections.abc import Sequence
 from datetime import datetime, timezone
-from typing import Sequence
+
+from ...core.models import AgentAction, SafetyViolation, Severity, ViolationType
 from ..base_detector import BaseDetector
-from ...core.models import AgentAction, SafetyViolation, ViolationType, Severity
+
 
 class PolicyIntegrityDetector(BaseDetector):
     def __init__(self):
         super().__init__("Policy Integrity Detector", version="1.0.0")
-    
+
     async def detect_violations(self, action: AgentAction) -> Sequence[SafetyViolation] | None:
         if self.status.value != "active":
             return None

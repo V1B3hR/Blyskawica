@@ -65,7 +65,7 @@ class DNSEnumerator(BaseCamera):
     def validate_config(self) -> bool:
         """Validate configuration"""
         try:
-            import dns.resolver
+            import dns.resolver  # noqa: F401
 
             return True
         except ImportError:

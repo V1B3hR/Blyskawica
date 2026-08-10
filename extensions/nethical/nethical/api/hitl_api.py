@@ -7,9 +7,10 @@ This module provides REST API endpoints for:
 - Training module access
 """
 
-from typing import Dict, Any, Optional, List
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
+
 from ..core.human_feedback import EscalationQueue, FeedbackTag, ReviewStatus
 from .taxonomy_api import APIResponse
 
@@ -27,8 +28,8 @@ class HITLReviewAPI:
         self.escalation_queue = EscalationQueue(storage_path=str(storage_path))
 
     def get_escalation_queue_endpoint(
-        self, status: Optional[str] = None, priority: Optional[str] = None, limit: int = 50
-    ) -> Dict[str, Any]:
+        self, status: str | None = None, priority: str | None = None, limit: int = 50
+    ) -> dict[str, Any]:
         """API endpoint: Get escalation queue.
 
         Args:
@@ -86,7 +87,7 @@ class HITLReviewAPI:
                 success=False, error=str(e), message="Failed to retrieve escalation queue"
             ).to_dict()
 
-    def get_case_details_endpoint(self, judgment_id: str) -> Dict[str, Any]:
+    def get_case_details_endpoint(self, judgment_id: str) -> dict[str, Any]:
         """API endpoint: Get detailed case information.
 
         Args:
@@ -126,11 +127,11 @@ class HITLReviewAPI:
         self,
         judgment_id: str,
         reviewer_id: str,
-        feedback_tags: List[str],
+        feedback_tags: list[str],
         rationale: str,
-        corrected_decision: Optional[str] = None,
+        corrected_decision: str | None = None,
         confidence: float = 1.0,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """API endpoint: Submit case review.
 
         Args:
@@ -150,7 +151,7 @@ class HITLReviewAPI:
             for tag_str in feedback_tags:
                 try:
                     tag_enums.append(FeedbackTag[tag_str.upper()])
-                except KeyError:
+                except KeyError:  # noqa: PERF203
                     return APIResponse(
                         success=False,
                         error=f"Invalid feedback tag: {tag_str}",
@@ -188,7 +189,7 @@ class HITLReviewAPI:
                 success=False, error=str(e), message="Failed to submit review"
             ).to_dict()
 
-    def get_reviewer_stats_endpoint(self, reviewer_id: str) -> Dict[str, Any]:
+    def get_reviewer_stats_endpoint(self, reviewer_id: str) -> dict[str, Any]:
         """API endpoint: Get reviewer statistics.
 
         Args:
@@ -225,7 +226,7 @@ class HITLReviewAPI:
                 success=False, error=str(e), message="Failed to retrieve reviewer statistics"
             ).to_dict()
 
-    def get_feedback_summary_endpoint(self, days: int = 30) -> Dict[str, Any]:
+    def get_feedback_summary_endpoint(self, days: int = 30) -> dict[str, Any]:
         """API endpoint: Get feedback summary.
 
         Args:
@@ -246,7 +247,7 @@ class HITLReviewAPI:
                 success=False, error=str(e), message="Failed to retrieve feedback summary"
             ).to_dict()
 
-    def get_sla_metrics_endpoint(self) -> Dict[str, Any]:
+    def get_sla_metrics_endpoint(self) -> dict[str, Any]:
         """API endpoint: Get SLA metrics.
 
         Returns:
@@ -265,8 +266,8 @@ class HITLReviewAPI:
             ).to_dict()
 
     def update_case_status_endpoint(
-        self, judgment_id: str, status: str, reviewer_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+        self, judgment_id: str, status: str, reviewer_id: str | None = None
+    ) -> dict[str, Any]:
         """API endpoint: Update case status.
 
         Note: This is a stub endpoint. Full implementation requires
@@ -320,8 +321,8 @@ class HITLReviewAPI:
             ).to_dict()
 
     def get_training_cases_endpoint(
-        self, category: Optional[str] = None, limit: int = 10
-    ) -> Dict[str, Any]:
+        self, category: str | None = None, limit: int = 10
+    ) -> dict[str, Any]:
         """API endpoint: Get training cases for reviewers.
 
         Args:
@@ -354,8 +355,8 @@ class HITLReviewAPI:
             ).to_dict()
 
     def batch_assign_cases_endpoint(
-        self, reviewer_id: str, count: int = 10, priority: Optional[str] = None
-    ) -> Dict[str, Any]:
+        self, reviewer_id: str, count: int = 10, priority: str | None = None
+    ) -> dict[str, Any]:
         """API endpoint: Batch assign cases to reviewer.
 
         Args:

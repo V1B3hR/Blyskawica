@@ -8,12 +8,12 @@ This module implements:
 - No impact on enforcement decisions
 """
 
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any, Tuple
-from datetime import datetime, timezone
-from enum import Enum
 import json
 import math
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from enum import Enum
+from typing import Any
 
 
 class MLModelType(str, Enum):
@@ -47,9 +47,9 @@ class ShadowPrediction:
     classifications_agree: bool
 
     # Features used
-    features: Dict[str, Any] = field(default_factory=dict)
+    features: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for logging."""
         return {
             "prediction_id": self.prediction_id,
@@ -84,7 +84,7 @@ class ShadowMetrics:
     classification_agreement_count: int = 0
 
     # Calibration bins (for reliability diagram)
-    calibration_bins: Dict[str, Dict[str, int]] = field(
+    calibration_bins: dict[str, dict[str, int]] = field(
         default_factory=lambda: {
             "0.0-0.2": {"correct": 0, "total": 0},
             "0.2-0.4": {"correct": 0, "total": 0},
@@ -167,7 +167,7 @@ class ShadowMetrics:
 
         return ece
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for reporting."""
         return {
             "total_predictions": self.total_predictions,
@@ -194,7 +194,7 @@ class MLShadowClassifier:
         self,
         model_type: MLModelType = MLModelType.HEURISTIC,
         score_agreement_threshold: float = 0.1,
-        storage_path: Optional[str] = None,
+        storage_path: str | None = None,
     ):
         """Initialize shadow classifier.
 
@@ -208,7 +208,7 @@ class MLShadowClassifier:
         self.storage_path = storage_path
 
         # Prediction log
-        self.predictions: List[ShadowPrediction] = []
+        self.predictions: list[ShadowPrediction] = []
 
         # Metrics
         self.metrics = ShadowMetrics()
@@ -226,7 +226,7 @@ class MLShadowClassifier:
         self,
         agent_id: str,
         action_id: str,
-        features: Dict[str, Any],
+        features: dict[str, Any],
         rule_risk_score: float,
         rule_classification: str,
     ) -> ShadowPrediction:
@@ -278,7 +278,7 @@ class MLShadowClassifier:
 
         return prediction
 
-    def _compute_ml_score(self, features: Dict[str, Any]) -> Tuple[float, float]:
+    def _compute_ml_score(self, features: dict[str, Any]) -> tuple[float, float]:
         """Compute ML risk score and confidence.
 
         Args:
@@ -296,7 +296,7 @@ class MLShadowClassifier:
             # Default to heuristic
             return self._heuristic_model(features)
 
-    def _heuristic_model(self, features: Dict[str, Any]) -> Tuple[float, float]:
+    def _heuristic_model(self, features: dict[str, Any]) -> tuple[float, float]:
         """Simple heuristic-based model for shadow mode.
 
         This serves as a baseline and placeholder for actual ML models.
@@ -314,7 +314,7 @@ class MLShadowClassifier:
         score = 1.0 - math.exp(-2 * score)  # Sigmoid-like transformation
 
         # Adjust confidence based on feature completeness
-        available_features = sum(1 for k in self.feature_weights.keys() if k in features)
+        available_features = sum(1 for k in self.feature_weights.keys() if k in features)  # noqa: SIM118
         confidence *= available_features / len(self.feature_weights)
 
         return min(score, 1.0), min(confidence, 1.0)
@@ -394,7 +394,7 @@ class MLShadowClassifier:
         except Exception:
             pass  # Silent fail for logging
 
-    def get_metrics_report(self) -> Dict[str, Any]:
+    def get_metrics_report(self) -> dict[str, Any]:
         """Get comprehensive metrics report.
 
         Returns:
@@ -416,7 +416,7 @@ class MLShadowClassifier:
 
         return report
 
-    def export_predictions(self, limit: Optional[int] = None) -> List[Dict[str, Any]]:
+    def export_predictions(self, limit: int | None = None) -> list[dict[str, Any]]:
         """Export predictions for analysis.
 
         Args:

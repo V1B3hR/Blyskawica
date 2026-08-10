@@ -16,13 +16,14 @@ Outputs:
 - Temporal embeddings (batch, timesteps, embed_dim) when return_sequence=True
 """
 
-from typing import Optional, Dict, Any, List, Tuple, Union
+from typing import Any
+
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 
 
-def _maybe_transpose_to_time_major(x: tf.Tensor, data_layout: str) -> Tuple[tf.Tensor, bool]:
+def _maybe_transpose_to_time_major(x: tf.Tensor, data_layout: str) -> tuple[tf.Tensor, bool]:
     """
     Ensures tensor is (batch, timesteps, channels). Returns (tensor, transposed_flag).
     """
@@ -37,7 +38,7 @@ class GraphMixer(layers.Layer):
         X_t' = A @ X_t
     where X is (B, T, C) and A is (C, C).
     """
-    def __init__(self, adjacency: Optional[tf.Tensor] = None, trainable_matrix: bool = False, name: str = "graph_mixer", **kwargs):
+    def __init__(self, adjacency: tf.Tensor | None = None, trainable_matrix: bool = False, name: str = "graph_mixer", **kwargs):
         super().__init__(name=name, **kwargs)
         self._adjacency_init = adjacency
         self.trainable_matrix = trainable_matrix
@@ -71,7 +72,7 @@ class GraphMixer(layers.Layer):
 
     def get_config(self):
         cfg = super().get_config()
-        cfg.update(dict(trainable_matrix=self.trainable_matrix))
+        cfg.update(dict(trainable_matrix=self.trainable_matrix))  # noqa: C408
         # Note: adjacency matrix is typically large; omit from config for compactness.
         return cfg
 
@@ -121,7 +122,7 @@ class TemporalBlock(layers.Layer):
             name=f"{name}_resproj",
         )
 
-    def call(self, x: tf.Tensor, training: Optional[bool] = None) -> tf.Tensor:
+    def call(self, x: tf.Tensor, training: bool | None = None) -> tf.Tensor:
         y = self.conv(x)
         y = self.act(y)
         y = self.norm(y)
@@ -133,7 +134,7 @@ class TemporalBlock(layers.Layer):
     def get_config(self):
         cfg = super().get_config()
         cfg.update(
-            dict(
+            dict(  # noqa: C408
                 filters=self.filters,
                 kernel_size=self.kernel_size,
                 dilation_rate=self.dilation_rate,
@@ -164,7 +165,7 @@ class AttentionPooling1D(layers.Layer):
 
     def get_config(self):
         cfg = super().get_config()
-        cfg.update(dict(hidden_units=self.hidden_units))
+        cfg.update(dict(hidden_units=self.hidden_units))  # noqa: C408
         return cfg
 
 
@@ -191,10 +192,10 @@ class EEGEncoder(keras.Model):
     """
     def __init__(
         self,
-        input_shape: Tuple[int, int],  # (channels, timesteps)
-        temporal_filters: List[int] = (64, 128, 128),
-        kernel_sizes: List[int] = (7, 5, 3),
-        dilations: Optional[List[int]] = None,
+        input_shape: tuple[int, int],  # (channels, timesteps)
+        temporal_filters: list[int] = (64, 128, 128),
+        kernel_sizes: list[int] = (7, 5, 3),
+        dilations: list[int] | None = None,
         embedding_dim: int = 256,
         dropout: float = 0.3,
         use_graph: bool = False,
@@ -202,7 +203,7 @@ class EEGEncoder(keras.Model):
         pooling: str = "attn",
         return_sequence: bool = False,
         data_layout: str = "channels_first",
-        adjacency: Optional[tf.Tensor] = None,
+        adjacency: tf.Tensor | None = None,
         name: str = "EEGEncoder",
         **kwargs,
     ):
@@ -231,8 +232,8 @@ class EEGEncoder(keras.Model):
         # Layers
         self.graph_mixer = GraphMixer(adjacency=adjacency, trainable_matrix=self.trainable_graph, name="graph_mixer") if self.use_graph else None
 
-        self.tcn_blocks: List[TemporalBlock] = []
-        for i, (f, k, d) in enumerate(zip(self.temporal_filters, self.kernel_sizes, self.dilations)):
+        self.tcn_blocks: list[TemporalBlock] = []
+        for i, (f, k, d) in enumerate(zip(self.temporal_filters, self.kernel_sizes, self.dilations)):  # noqa: B905
             self.tcn_blocks.append(
                 TemporalBlock(
                     filters=f,
@@ -259,7 +260,7 @@ class EEGEncoder(keras.Model):
         self.proj_drop = layers.Dropout(self.dropout_rate, name="proj_drop")
         self.embedding_layer = layers.Dense(self.embedding_dim, activation=None, name="eeg_embedding")
 
-    def call(self, inputs: Union[tf.Tensor, Dict[str, tf.Tensor]], training: Optional[bool] = None) -> tf.Tensor:
+    def call(self, inputs: tf.Tensor | dict[str, tf.Tensor], training: bool | None = None) -> tf.Tensor:
         # Unpack inputs
         if isinstance(inputs, dict):
             x = inputs.get("eeg")
@@ -325,7 +326,7 @@ class EEGEncoder(keras.Model):
         return cls(**config)
 
 
-def create_eeg_encoder(config: Dict[str, Any]) -> EEGEncoder:
+def create_eeg_encoder(config: dict[str, Any]) -> EEGEncoder:
     """
     Factory function to create EEG encoder from config.
 

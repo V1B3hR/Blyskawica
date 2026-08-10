@@ -19,7 +19,8 @@ import secrets
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import Dict, List, Optional, Any, Pattern
+from re import Pattern
+from typing import Any
 
 __all__ = [
     "SecretType",
@@ -59,7 +60,7 @@ class SecretRotationPolicy:
     auto_rotate: bool = True
     retain_old_versions: int = 3
     require_approval: bool = False
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -67,12 +68,12 @@ class VaultConfig:
     """HashiCorp Vault configuration"""
 
     vault_address: str
-    vault_token: Optional[str] = None
-    vault_namespace: Optional[str] = None
-    vault_role: Optional[str] = None
+    vault_token: str | None = None
+    vault_namespace: str | None = None
+    vault_role: str | None = None
     mount_point: str = "secret"
     tls_verify: bool = True
-    tls_ca_cert: Optional[str] = None
+    tls_ca_cert: str | None = None
     enabled: bool = True
 
     def validate(self) -> bool:
@@ -90,11 +91,11 @@ class Secret:
     secret_type: SecretType
     value: str
     created_at: datetime
-    expires_at: Optional[datetime] = None
-    last_rotated: Optional[datetime] = None
+    expires_at: datetime | None = None
+    last_rotated: datetime | None = None
     rotation_count: int = 0
-    tags: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    tags: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def is_expired(self) -> bool:
         """Check if secret has expired"""
@@ -111,7 +112,7 @@ class Secret:
         age_days = (datetime.now(timezone.utc) - rotation_date).days
         return age_days >= policy.rotation_interval_days
 
-    def to_dict(self, include_value: bool = False) -> Dict[str, Any]:
+    def to_dict(self, include_value: bool = False) -> dict[str, Any]:
         """Convert to dictionary for serialization"""
         data = {
             "secret_id": self.secret_id,
@@ -141,7 +142,7 @@ class SecretScanner:
     """
 
     # Common secret patterns
-    PATTERNS: Dict[SecretType, List[Pattern]] = {
+    PATTERNS: dict[SecretType, list[Pattern]] = {
         SecretType.API_KEY: [
             re.compile(r'api[_-]?key[\'"\s:=]+([a-zA-Z0-9_\-]{20,})'),
             re.compile(r'apikey[\'"\s:=]+([a-zA-Z0-9_\-]{20,})'),
@@ -163,14 +164,14 @@ class SecretScanner:
 
     def __init__(self):
         """Initialize secret scanner"""
-        self.findings: List[Dict[str, Any]] = []
+        self.findings: list[dict[str, Any]] = []
         log.info("SecretScanner initialized")
 
     def scan_text(
         self,
         text: str,
-        file_path: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        file_path: str | None = None,
+    ) -> list[dict[str, Any]]:
         """
         Scan text for hardcoded secrets
 
@@ -205,7 +206,7 @@ class SecretScanner:
         self.findings.extend(findings)
         return findings
 
-    def scan_file(self, file_path: str) -> List[Dict[str, Any]]:
+    def scan_file(self, file_path: str) -> list[dict[str, Any]]:
         """
         Scan a file for hardcoded secrets
 
@@ -216,7 +217,7 @@ class SecretScanner:
             List of findings
         """
         try:
-            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+            with open(file_path, encoding="utf-8", errors="ignore") as f:
                 content = f.read()
             return self.scan_text(content, file_path)
         except Exception as e:
@@ -226,10 +227,10 @@ class SecretScanner:
     def _check_entropy(
         self,
         text: str,
-        file_path: Optional[str] = None,
+        file_path: str | None = None,
         min_entropy: float = 4.5,
         min_length: int = 20,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Check for high entropy strings that might be secrets"""
         findings = []
 
@@ -274,7 +275,7 @@ class SecretScanner:
 
         return entropy
 
-    def get_findings_summary(self) -> Dict[str, Any]:
+    def get_findings_summary(self) -> dict[str, Any]:
         """Get summary of scan findings"""
         summary = {
             "total_findings": len(self.findings),
@@ -305,14 +306,14 @@ class DynamicSecretGenerator:
 
     def __init__(self):
         """Initialize dynamic secret generator"""
-        self.generated_secrets: Dict[str, Secret] = {}
+        self.generated_secrets: dict[str, Secret] = {}
         log.info("DynamicSecretGenerator initialized")
 
     def generate_api_key(
         self,
         secret_id: str,
         length: int = 32,
-        ttl_hours: Optional[int] = None,
+        ttl_hours: int | None = None,
     ) -> Secret:
         """
         Generate a new API key
@@ -454,8 +455,8 @@ class SecretRotationManager:
 
     def __init__(self):
         """Initialize secret rotation manager"""
-        self.policies: Dict[SecretType, SecretRotationPolicy] = {}
-        self.rotation_history: List[Dict[str, Any]] = []
+        self.policies: dict[SecretType, SecretRotationPolicy] = {}
+        self.rotation_history: list[dict[str, Any]] = []
         log.info("SecretRotationManager initialized")
 
     def add_policy(self, policy: SecretRotationPolicy) -> None:
@@ -530,8 +531,8 @@ class SecretRotationManager:
 
     def get_rotation_schedule(
         self,
-        secrets: List[Secret],
-    ) -> List[Dict[str, Any]]:
+        secrets: list[Secret],
+    ) -> list[dict[str, Any]]:
         """
         Get rotation schedule for secrets
 
@@ -627,7 +628,7 @@ class VaultIntegration:
     def retrieve_secret(
         self,
         path: str,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         Retrieve secret from Vault
 
@@ -677,7 +678,7 @@ class SecretManagementSystem:
 
     def __init__(
         self,
-        vault_config: Optional[VaultConfig] = None,
+        vault_config: VaultConfig | None = None,
     ):
         """
         Initialize secret management system
@@ -689,7 +690,7 @@ class SecretManagementSystem:
         self.generator = DynamicSecretGenerator()
         self.rotation_manager = SecretRotationManager()
         self.vault = VaultIntegration(vault_config) if vault_config else None
-        self.secrets: Dict[str, Secret] = {}
+        self.secrets: dict[str, Secret] = {}
 
         # Initialize default rotation policies
         self._init_default_policies()
@@ -729,7 +730,7 @@ class SecretManagementSystem:
     def scan_for_secrets(
         self,
         file_path: str,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Scan file for hardcoded secrets
 
@@ -777,7 +778,7 @@ class SecretManagementSystem:
 
         return secret
 
-    def rotate_secrets(self) -> List[str]:
+    def rotate_secrets(self) -> list[str]:
         """
         Rotate all secrets that are due
 
@@ -798,7 +799,7 @@ class SecretManagementSystem:
 
         return rotated
 
-    def get_system_status(self) -> Dict[str, Any]:
+    def get_system_status(self) -> dict[str, Any]:
         """Get system status"""
         return {
             "total_secrets": len(self.secrets),

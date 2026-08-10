@@ -11,9 +11,8 @@ Extended for satellite connectivity:
 """
 
 import logging
-import time
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +78,7 @@ class CacheHierarchy:
 
     def __init__(
         self,
-        config: Optional[HierarchyConfig] = None,
+        config: HierarchyConfig | None = None,
         l1_cache: Optional["L1MemoryCache"] = None,
         l2_cache: Optional["L2RedisCache"] = None,
         l3_cache: Optional["L3GlobalCache"] = None,
@@ -131,7 +130,7 @@ class CacheHierarchy:
             f"Satellite={self.config.enable_satellite}"
         )
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         """
         Get value from cache hierarchy.
 
@@ -179,7 +178,7 @@ class CacheHierarchy:
             if value is not None:
                 self._satellite_hits += 1
                 # Promote to lower levels if online
-                if self.config.read_through and self.satellite.is_online:
+                if self.config.read_through and self.satellite.is_online:  # noqa: SIM102
                     if self.l1 is not None:
                         self.l1.set(key, value, self.config.l1_ttl_seconds)
                 return value
@@ -191,8 +190,8 @@ class CacheHierarchy:
         self,
         key: str,
         value: Any,
-        ttl: Optional[int] = None,
-        level: Optional[str] = None,
+        ttl: int | None = None,
+        level: str | None = None,
     ):
         """
         Set value in cache hierarchy.
@@ -203,7 +202,7 @@ class CacheHierarchy:
             ttl: Override TTL (uses level defaults if None)
             level: Specific level to write to (l1, l2, l3, satellite, all)
         """
-        if level == "l1" or level is None or level == "all":
+        if level == "l1" or level is None or level == "all":  # noqa: SIM102
             if self.l1 is not None:
                 l1_ttl = ttl if ttl else self.config.l1_ttl_seconds
                 self.l1.set(key, value, l1_ttl)
@@ -218,7 +217,7 @@ class CacheHierarchy:
                 self.l3.set(key, value, l3_ttl)
 
         # Write to satellite cache if enabled
-        if self.config.write_through or level in ("satellite", "all"):
+        if self.config.write_through or level in ("satellite", "all"):  # noqa: SIM102
             if self.satellite is not None:
                 sat_ttl = ttl if ttl else self.config.satellite_ttl_seconds
                 self.satellite.set(key, value, sat_ttl)
@@ -268,7 +267,7 @@ class CacheHierarchy:
         self,
         key: str,
         factory: callable,
-        ttl: Optional[int] = None,
+        ttl: int | None = None,
     ) -> Any:
         """
         Get from cache or compute and cache.
@@ -289,7 +288,7 @@ class CacheHierarchy:
         self.set(key, value, ttl)
         return value
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get hierarchy metrics."""
         total = self._l1_hits + self._l2_hits + self._l3_hits + self._satellite_hits + self._misses
 
@@ -339,7 +338,7 @@ class CacheHierarchy:
 
 
 # Type hints
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING  # noqa: E402
 
 if TYPE_CHECKING:
     from .l1_memory import L1MemoryCache

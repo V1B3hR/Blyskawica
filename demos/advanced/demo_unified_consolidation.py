@@ -4,7 +4,7 @@ Demonstration of the unified consolidation system.
 This script showcases how the consolidated consolidation mechanisms work 
 together to provide comprehensive memory consolidation across different
 time scales and neural processing phases.
-"""
+"""  # noqa: W291
 
 
 import torch

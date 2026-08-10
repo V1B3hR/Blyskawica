@@ -331,7 +331,7 @@ class MySQLStore(BaseStore):
                    OR color LIKE %s
                    OR hunter_notes LIKE %s
                 ORDER BY timestamp_first_seen DESC
-            """,
+            """,  # noqa: W291
                 (search_query, search_query, search_query, search_query),
             )
 

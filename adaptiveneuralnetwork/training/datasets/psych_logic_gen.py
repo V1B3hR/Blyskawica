@@ -7,7 +7,6 @@ v2.0: Expanded from 4 to 7 scenario classes with richer feature encoding.
 
 import torch
 from torch.utils.data import Dataset
-import numpy as np
 
 
 class EthicalTorqueDataset(Dataset):

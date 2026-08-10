@@ -30,9 +30,9 @@ sys.path.insert(0, str(project_root))
 
 # Direct imports to avoid circular dependencies
 # Import the optimized dataset module directly
-import importlib.util
+import importlib.util  # noqa: E402
 
-from adaptiveneuralnetwork.training.datasets.datasets import SyntheticDataset
+from adaptiveneuralnetwork.training.datasets.datasets import SyntheticDataset  # noqa: E402
 
 spec = importlib.util.spec_from_file_location(
     "optimized_datasets",
@@ -47,7 +47,7 @@ create_optimized_loader = optimized_datasets.create_optimized_loader
 optimize_dataset = optimized_datasets.optimize_dataset
 vectorized_collate_fn = optimized_datasets.vectorized_collate_fn
 
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader  # noqa: E402
 
 
 class BenchmarkTimer:
@@ -97,7 +97,7 @@ def benchmark_loader(
         
     Returns:
         Dictionary of benchmark results
-    """
+    """  # noqa: W293
     print(f"\n{'='*60}")
     print(f"Benchmarking: {name}")
     print(f"{'='*60}")
@@ -108,7 +108,7 @@ def benchmark_loader(
 
     # Warmup
     print(f"Warming up ({warmup_batches} batches)...")
-    for i, batch in enumerate(loader):
+    for i, batch in enumerate(loader):  # noqa: B007
         if i >= warmup_batches:
             break
 
@@ -193,7 +193,7 @@ def run_comparison_benchmark(
         
     Returns:
         Dictionary with all benchmark results
-    """
+    """  # noqa: W293
     print(f"\n{'='*60}")
     print("Phase 1 Data Loader Benchmark")
     print(f"{'='*60}")

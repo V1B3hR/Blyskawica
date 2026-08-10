@@ -1,8 +1,8 @@
 """ASN and IP range lookup module."""
 
-import requests
 from dataclasses import dataclass
-from typing import Optional
+
+import requests
 
 
 @dataclass
@@ -21,7 +21,7 @@ class ASNLookup:
     def __init__(self, timeout: int = 10):
         self.timeout = timeout
 
-    def lookup_ip(self, ip_address: str) -> Optional[ASNInfo]:
+    def lookup_ip(self, ip_address: str) -> ASNInfo | None:
         """Lookup ASN information for an IP address.
 
         Args:

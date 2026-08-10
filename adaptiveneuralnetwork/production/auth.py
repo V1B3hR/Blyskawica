@@ -14,7 +14,7 @@ import jwt
 # Optional auth dependencies
 try:
     from passlib.context import CryptContext
-    from passlib.hash import bcrypt
+    from passlib.hash import bcrypt  # noqa: F401
     PASSLIB_AVAILABLE = True
 except ImportError:
     PASSLIB_AVAILABLE = False

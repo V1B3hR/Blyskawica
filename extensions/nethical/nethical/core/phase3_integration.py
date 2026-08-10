@@ -25,16 +25,16 @@ Migration Guide:
         )
 """
 
-from typing import Dict, List, Optional, Any
-from datetime import datetime, timezone
 import time
 import warnings
+from datetime import datetime, timezone
+from typing import Any
 
-from .risk_engine import RiskEngine
 from .correlation_engine import CorrelationEngine
-from .fairness_sampler import FairnessSampler, SamplingStrategy
 from .ethical_drift_reporter import EthicalDriftReporter
-from .performance_optimizer import PerformanceOptimizer, DetectorTier
+from .fairness_sampler import FairnessSampler, SamplingStrategy
+from .performance_optimizer import DetectorTier, PerformanceOptimizer
+from .risk_engine import RiskEngine
 
 
 class Phase3IntegratedGovernance:
@@ -48,7 +48,7 @@ class Phase3IntegratedGovernance:
     def __init__(
         self,
         redis_client=None,
-        correlation_config_path: Optional[str] = None,
+        correlation_config_path: str | None = None,
         storage_dir: str = "nethical_data",
         enable_performance_optimization: bool = True,
     ):
@@ -101,12 +101,12 @@ class Phase3IntegratedGovernance:
         self,
         agent_id: str,
         action: Any,
-        cohort: Optional[str] = None,
+        cohort: str | None = None,
         violation_detected: bool = False,
-        violation_type: Optional[str] = None,
-        violation_severity: Optional[str] = None,
-        detector_invocations: Optional[Dict[str, float]] = None,
-    ) -> Dict[str, Any]:
+        violation_type: str | None = None,
+        violation_severity: str | None = None,
+        detector_invocations: dict[str, float] | None = None,
+    ) -> dict[str, Any]:
         """Process an action through all Phase 3 components.
 
         Args:
@@ -235,8 +235,8 @@ class Phase3IntegratedGovernance:
         )
 
     def generate_drift_report(
-        self, cohorts: Optional[List[str]] = None, days_back: int = 7
-    ) -> Dict[str, Any]:
+        self, cohorts: list[str] | None = None, days_back: int = 7
+    ) -> dict[str, Any]:
         """Generate ethical drift report.
 
         Args:
@@ -258,7 +258,7 @@ class Phase3IntegratedGovernance:
         return report.to_dict()
 
     def create_fairness_sampling_job(
-        self, cohorts: List[str], target_sample_size: int = 1000
+        self, cohorts: list[str], target_sample_size: int = 1000
     ) -> str:
         """Create a fairness sampling job.
 
@@ -275,7 +275,7 @@ class Phase3IntegratedGovernance:
             strategy=SamplingStrategy.STRATIFIED,
         )
 
-    def get_fairness_dashboard_data(self) -> Dict[str, Any]:
+    def get_fairness_dashboard_data(self) -> dict[str, Any]:
         """Get data for fairness dashboard.
 
         Returns:
@@ -283,7 +283,7 @@ class Phase3IntegratedGovernance:
         """
         return self.ethical_drift_reporter.get_dashboard_data()
 
-    def get_performance_report(self) -> Dict[str, Any]:
+    def get_performance_report(self) -> dict[str, Any]:
         """Get performance optimization report.
 
         Returns:
@@ -294,7 +294,7 @@ class Phase3IntegratedGovernance:
 
         return self.performance_optimizer.get_performance_report()
 
-    def get_optimization_suggestions(self) -> List[str]:
+    def get_optimization_suggestions(self) -> list[str]:
         """Get optimization suggestions.
 
         Returns:
@@ -305,7 +305,7 @@ class Phase3IntegratedGovernance:
 
         return self.performance_optimizer.suggest_optimizations()
 
-    def get_system_status(self) -> Dict[str, Any]:
+    def get_system_status(self) -> dict[str, Any]:
         """Get overall system status.
 
         Returns:

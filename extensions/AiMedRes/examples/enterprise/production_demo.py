@@ -7,20 +7,19 @@ This script demonstrates the completed Production & Impact features:
 2. User Experience - Comprehensive documentation and examples  
 3. Community Contributions - CONTRIBUTING.md guide
 4. Clinical Validation - Clinical validation framework and documentation
-"""
+"""  # noqa: W291
 
-import os
-import tempfile
 from pathlib import Path
+
 
 def demo_deployment_toolkit():
     """Demonstrate the deployment toolkit capabilities"""
     print("🚀 Production Deployment Toolkit Demo")
     print("=" * 50)
-    
+
     try:
         from aimedres.core.production_agent import ProductionDeploymentManager
-        
+
         # Configure deployment
         config = {
             'port': 8080,
@@ -29,27 +28,27 @@ def demo_deployment_toolkit():
             'grafana_password': 'secure_password_123',
             'deployment_path': './deployment_demo'
         }
-        
-        print(f"📋 Configuration:")
+
+        print("📋 Configuration:")
         for key, value in config.items():
             print(f"  • {key}: {value}")
-        
+
         # Generate deployment files
-        print(f"\n🛠️  Generating deployment files...")
+        print("\n🛠️  Generating deployment files...")
         manager = ProductionDeploymentManager(config)
         success = manager.deploy_to_files()
-        
+
         if success:
             deployment_path = Path(config['deployment_path'])
             files = list(deployment_path.glob('*'))
-            
+
             print(f"\n✅ Generated {len(files)} deployment files:")
             for file_path in files:
                 size = file_path.stat().st_size
                 print(f"  📄 {file_path.name} ({size} bytes)")
-            
+
             # Show sample content from key files
-            print(f"\n📖 Sample Dockerfile content:")
+            print("\n📖 Sample Dockerfile content:")
             dockerfile = deployment_path / 'Dockerfile'
             if dockerfile.exists():
                 with open(dockerfile) as f:
@@ -58,12 +57,12 @@ def demo_deployment_toolkit():
                         print(f"    {line.rstrip()}")
                     if len(f.readlines()) > 10:
                         print("    ... (truncated)")
-            
+
             return True
         else:
             print("❌ Deployment generation failed")
             return False
-            
+
     except Exception as e:
         print(f"❌ Error: {e}")
         return False
@@ -72,27 +71,27 @@ def demo_user_experience():
     """Demonstrate user experience documentation"""
     print("\n📚 User Experience Documentation Demo")
     print("=" * 50)
-    
+
     user_guide = Path('docs/USER_EXPERIENCE_GUIDE.md')
     if user_guide.exists():
         size_kb = user_guide.stat().st_size / 1024
         print(f"✅ User Experience Guide: {size_kb:.1f} KB")
-        
+
         # Show table of contents
         with open(user_guide) as f:
             content = f.read()
-            
+
         # Extract headings
         lines = content.split('\n')
         headings = [line for line in lines if line.startswith('#')][:15]
-        
-        print(f"\n📖 Documentation sections:")
+
+        print("\n📖 Documentation sections:")
         for heading in headings:
             level = heading.count('#')
             indent = '  ' * (level - 1)
             title = heading.lstrip('#').strip()
             print(f"{indent}• {title}")
-        
+
         return True
     else:
         print("❌ User experience guide not found")
@@ -102,32 +101,32 @@ def demo_community_contributions():
     """Demonstrate community contribution setup"""
     print("\n🤝 Community Contributions Demo")
     print("=" * 50)
-    
+
     contributing_guide = Path('CONTRIBUTING.md')
     if contributing_guide.exists():
         size_kb = contributing_guide.stat().st_size / 1024
         print(f"✅ Contributing Guide: {size_kb:.1f} KB")
-        
+
         # Show key sections
         with open(contributing_guide) as f:
             content = f.read()
-        
+
         key_sections = [
             '🚀 Quick Start',
-            '🎯 Ways to Contribute', 
+            '🎯 Ways to Contribute',
             '🏥 Medical Contribution Guidelines',
             '📋 Development Process',
             '🔬 Testing Guidelines',
             '🚦 Pull Request Process'
         ]
-        
-        print(f"\n📖 Contributing guide sections:")
+
+        print("\n📖 Contributing guide sections:")
         for section in key_sections:
             if section in content:
                 print(f"  ✅ {section}")
             else:
                 print(f"  ❌ {section}")
-        
+
         return True
     else:
         print("❌ Contributing guide not found")
@@ -135,41 +134,41 @@ def demo_community_contributions():
 
 def demo_clinical_validation():
     """Demonstrate clinical validation framework"""
-    print("\n🏥 Clinical Validation Framework Demo") 
+    print("\n🏥 Clinical Validation Framework Demo")
     print("=" * 50)
-    
+
     clinical_framework = Path('docs/CLINICAL_VALIDATION_FRAMEWORK.md')
     if clinical_framework.exists():
         size_kb = clinical_framework.stat().st_size / 1024
         print(f"✅ Clinical Validation Framework: {size_kb:.1f} KB")
-        
+
         # Check for clinical decision support module
         try:
-            import aimedres.clinical.decision_support
+            import aimedres.clinical.decision_support  # noqa: F401
             print("✅ Clinical decision support module available")
         except ImportError:
             print("⚠️  Clinical decision support module not available")
-        
+
         # Show framework components
         validation_components = [
             '🔬 Validation Components',
-            '📋 Validation Protocols', 
+            '📋 Validation Protocols',
             '🏥 Real-world Clinical Validation',
             '🛡️ Regulatory Compliance',
             '📊 Validation Metrics & Reporting',
             '🔍 Continuous Validation'
         ]
-        
+
         with open(clinical_framework) as f:
             content = f.read()
-        
-        print(f"\n📖 Clinical validation components:")
+
+        print("\n📖 Clinical validation components:")
         for component in validation_components:
             if component in content:
                 print(f"  ✅ {component}")
             else:
                 print(f"  ❌ {component}")
-        
+
         return True
     else:
         print("❌ Clinical validation framework not found")
@@ -188,14 +187,14 @@ def main():
     print("🎭 AiMedRes - Production & Impact Demo")
     print("=" * 60)
     print("Demonstrating the completed Production & Impact features")
-    
+
     demos = [
         ("Deployment Toolkit", demo_deployment_toolkit),
         ("User Experience", demo_user_experience),
-        ("Community Contributions", demo_community_contributions), 
+        ("Community Contributions", demo_community_contributions),
         ("Clinical Validation", demo_clinical_validation)
     ]
-    
+
     results = {}
     for demo_name, demo_func in demos:
         try:
@@ -203,20 +202,20 @@ def main():
         except Exception as e:
             print(f"❌ {demo_name} demo failed: {e}")
             results[demo_name] = False
-    
+
     # Summary
-    print(f"\n🎯 Demo Summary")
+    print("\n🎯 Demo Summary")
     print("=" * 50)
-    
+
     completed_demos = sum(1 for result in results.values() if result)
     total_demos = len(results)
-    
+
     for demo_name, success in results.items():
         status = "✅ WORKING" if success else "❌ FAILED"
         print(f"{demo_name:25} {status}")
-    
+
     print(f"\n📊 Result: {completed_demos}/{total_demos} components working")
-    
+
     if completed_demos == total_demos:
         print("\n🎉 ALL PRODUCTION & IMPACT FEATURES ARE WORKING!")
         print("\n🚀 Ready for production deployment!")
@@ -227,10 +226,10 @@ def main():
         print("  • Use deployment files in ./deployment_demo/ for production")
     else:
         print(f"\n⚠️  {total_demos - completed_demos} components need attention")
-    
+
     # Clean up
     cleanup_demo_files()
-    
+
     return completed_demos == total_demos
 
 if __name__ == "__main__":

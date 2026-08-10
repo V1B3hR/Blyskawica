@@ -1,16 +1,16 @@
 """Safety judge for evaluating actions and providing judgments."""
 
 import uuid
-from typing import List
-from .base_judge import BaseJudge
+
 from ..core.models import (
     AgentAction,
-    SafetyViolation,
-    JudgmentResult,
     JudgmentDecision,
+    JudgmentResult,
+    SafetyViolation,
     SeverityLevel,
     ViolationType,
 )
+from .base_judge import BaseJudge
 
 
 class SafetyJudge(BaseJudge):
@@ -34,7 +34,7 @@ class SafetyJudge(BaseJudge):
         }
 
     async def evaluate_action(
-        self, action: AgentAction, violations: List[SafetyViolation]
+        self, action: AgentAction, violations: list[SafetyViolation]
     ) -> JudgmentResult:
         """Evaluate an action and make a judgment."""
         if not self.enabled:
@@ -70,7 +70,7 @@ class SafetyJudge(BaseJudge):
             confidence=confidence,
         )
 
-    def _calculate_risk_score(self, violations: List[SafetyViolation]) -> float:
+    def _calculate_risk_score(self, violations: list[SafetyViolation]) -> float:
         """Calculate overall risk score based on violations."""
         if not violations:
             return 0.0
@@ -85,7 +85,7 @@ class SafetyJudge(BaseJudge):
         return min(total_score / len(violations), 1.0)
 
     def _make_decision(
-        self, violations: List[SafetyViolation], risk_score: float
+        self, violations: list[SafetyViolation], risk_score: float
     ) -> JudgmentDecision:
         """Make a decision based on violations and risk score."""
         if not violations:
@@ -120,7 +120,7 @@ class SafetyJudge(BaseJudge):
             return JudgmentDecision.ALLOW
 
     def _generate_reasoning(
-        self, violations: List[SafetyViolation], risk_score: float, decision: JudgmentDecision
+        self, violations: list[SafetyViolation], risk_score: float, decision: JudgmentDecision
     ) -> str:
         """Generate reasoning for the judgment decision."""
         if not violations:
@@ -157,8 +157,8 @@ class SafetyJudge(BaseJudge):
         return " ".join(reasoning_parts)
 
     def _determine_restrictions(
-        self, violations: List[SafetyViolation], decision: JudgmentDecision
-    ) -> List[str]:
+        self, violations: list[SafetyViolation], decision: JudgmentDecision
+    ) -> list[str]:
         """Determine restrictions based on violations and decision."""
         restrictions = []
 
@@ -166,7 +166,7 @@ class SafetyJudge(BaseJudge):
             restrictions.append("Action execution blocked")
 
         if decision == JudgmentDecision.RESTRICT:
-            violation_types = set(v.violation_type for v in violations)
+            violation_types = set(v.violation_type for v in violations)  # noqa: C401
 
             if ViolationType.SAFETY_VIOLATION in violation_types:
                 restrictions.append("Limited system access")
@@ -183,7 +183,7 @@ class SafetyJudge(BaseJudge):
         return restrictions
 
     def _generate_feedback(
-        self, violations: List[SafetyViolation], decision: JudgmentDecision
+        self, violations: list[SafetyViolation], decision: JudgmentDecision
     ) -> str:
         """Generate feedback for the agent."""
         if not violations:
@@ -201,7 +201,7 @@ class SafetyJudge(BaseJudge):
             feedback_parts.append("Action approved with restrictions.")
 
         # Add specific guidance based on violation types
-        violation_types = set(v.violation_type for v in violations)
+        violation_types = set(v.violation_type for v in violations)  # noqa: C401
 
         if ViolationType.INTENT_DEVIATION in violation_types:
             feedback_parts.append("Ensure stated intentions align with actual actions.")
@@ -217,7 +217,7 @@ class SafetyJudge(BaseJudge):
 
         return " ".join(feedback_parts)
 
-    def _calculate_confidence(self, violations: List[SafetyViolation], risk_score: float) -> float:
+    def _calculate_confidence(self, violations: list[SafetyViolation], risk_score: float) -> float:
         """Calculate confidence in the judgment."""
         if not violations:
             return 0.9  # High confidence for no violations
@@ -235,7 +235,7 @@ class SafetyJudge(BaseJudge):
 
         return min(max(base_confidence, 0.0), 1.0)
 
-    def _summarize_violations(self, violations: List[SafetyViolation]) -> str:
+    def _summarize_violations(self, violations: list[SafetyViolation]) -> str:
         """Create a summary of detected violations."""
         violation_counts = {}
         for violation in violations:
@@ -252,7 +252,7 @@ class SafetyJudge(BaseJudge):
         return ", ".join(summary_parts)
 
     def _create_default_judgment(
-        self, action: AgentAction, violations: List[SafetyViolation]
+        self, action: AgentAction, violations: list[SafetyViolation]
     ) -> JudgmentResult:
         """Create a default judgment when judge is disabled."""
         return JudgmentResult(

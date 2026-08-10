@@ -16,6 +16,11 @@ import time
 
 import numpy as np
 import torch
+from core.social_learning import (
+    CompetitiveCooperativeEnvironment,
+    NegotiationProtocol,
+    SwarmIntelligenceBehavior,
+)
 
 from adaptiveneuralnetwork.applications.continual_learning import (
     AdvancedImageProcessor,
@@ -24,11 +29,6 @@ from adaptiveneuralnetwork.applications.continual_learning import (
     LifelongLearningBenchmark,
     MemoryAugmentedArchitecture,
     ProgressiveNeuralNetwork,
-)
-from core.social_learning import (
-    CompetitiveCooperativeEnvironment,
-    NegotiationProtocol,
-    SwarmIntelligenceBehavior,
 )
 
 
@@ -206,8 +206,8 @@ def demo_lifelong_learning_benchmark():
     print("\n📈 Generating benchmark report...")
 
     # Mock task loaders and model for evaluation
-    mock_task_loaders = dict.fromkeys(range(3))  # Placeholder
-    baseline_performances = {0: 0.75, 1: 0.70, 2: 0.73}
+    mock_task_loaders = dict.fromkeys(range(3))  # Placeholder  # noqa: F841
+    baseline_performances = {0: 0.75, 1: 0.70, 2: 0.73}  # noqa: F841
 
     # Create mock continual learning system
     config = ContinualLearningConfig(
@@ -215,7 +215,7 @@ def demo_lifelong_learning_benchmark():
         enable_lifelong_benchmarking=True,
         enable_metaplasticity=False, synaptic_consolidation=False
     )
-    mock_system = ContinualLearningSystem(config)
+    mock_system = ContinualLearningSystem(config)  # noqa: F841
 
     # Simulate metrics
     mock_metrics = {

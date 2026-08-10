@@ -9,7 +9,6 @@ triggering based on concerning trends in rolling history.
 import json
 
 import matplotlib.pyplot as plt
-
 from core.alive_node import AliveLoopNode
 
 
@@ -77,7 +76,7 @@ def demonstrate_proactive_interventions():
     for scenario in scenarios:
         print(f"\n--- {scenario['name']} ({scenario['duration']} steps) ---")
 
-        for step in range(scenario['duration']):
+        for step in range(scenario['duration']):  # noqa: B007
             # Apply scenario effects
             scenario['effects'](time_step, node)
 
@@ -192,13 +191,13 @@ def plot_intervention_demo(history_data, intervention_log):
             ax.axvline(x=int_time, color='orange', linestyle=':', alpha=0.8, linewidth=2)
 
     # Add text annotations for major interventions
-    for i, log in enumerate(intervention_log):
+    for i, log in enumerate(intervention_log):  # noqa: B007
         if len(log['interventions']) > 1:  # Only annotate comprehensive interventions
             axes[0].annotate(f"Multi-Intervention\n({len(log['interventions'])} actions)",
                            xy=(log['time'], history_data['anxiety'][log['time']]),
                            xytext=(10, 10), textcoords='offset points',
-                           bbox=dict(boxstyle='round,pad=0.3', fc='yellow', alpha=0.7),
-                           arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0'))
+                           bbox=dict(boxstyle='round,pad=0.3', fc='yellow', alpha=0.7),  # noqa: C408
+                           arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0'))  # noqa: C408
 
     plt.tight_layout()
     plt.suptitle('Proactive Intervention System in Action', y=1.02, fontsize=16)

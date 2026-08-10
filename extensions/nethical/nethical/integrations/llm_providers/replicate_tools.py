@@ -4,7 +4,7 @@ Replicate integration with Nethical governance.
 Provides a governed wrapper around Replicate's API for running various models.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .base import LLMProviderBase, LLMResponse
 
@@ -22,8 +22,8 @@ class ReplicateProvider(LLMProviderBase):
         )
         
         response = provider.safe_generate("Tell me about AI safety")
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
         api_key: str,
@@ -36,9 +36,9 @@ class ReplicateProvider(LLMProviderBase):
             api_key: Replicate API key
             model: Model to use (format: owner/model-name)
             **kwargs: Additional arguments for LLMProviderBase
-        """
+        """  # noqa: W293
         super().__init__(**kwargs)
-        
+
         try:
             import replicate
             self._replicate_module = replicate
@@ -49,14 +49,14 @@ class ReplicateProvider(LLMProviderBase):
         except ImportError:
             self._replicate_available = False
             self._replicate_module = None
-        
+
         self._model = model
-    
+
     @property
     def model_name(self) -> str:
         """Get the model identifier."""
         return f"replicate-{self._model.replace('/', '-')}"
-    
+
     def _generate(self, prompt: str, **kwargs) -> LLMResponse:
         """Generate text using Replicate's API.
         
@@ -66,24 +66,24 @@ class ReplicateProvider(LLMProviderBase):
             
         Returns:
             LLMResponse with generated content
-        """
+        """  # noqa: W293
         if not self._replicate_available:
             return LLMResponse(
                 content="Replicate library not installed. Install with: pip install replicate",
                 model=self.model_name,
                 usage={}
             )
-        
+
         # Prepare input based on model type
         input_data = {"prompt": prompt}
         input_data.update(kwargs)
-        
+
         # Run the model
         output = self._replicate_module.run(
             self._model,
             input=input_data
         )
-        
+
         # Handle different output formats
         if isinstance(output, list):
             content = "".join(output)
@@ -91,14 +91,14 @@ class ReplicateProvider(LLMProviderBase):
             content = output
         else:
             content = str(output)
-        
+
         return LLMResponse(
             content=content,
             model=self._model,
             usage={}  # Replicate doesn't provide detailed usage
         )
-    
-    def get_tool_definition(self) -> Dict[str, Any]:
+
+    def get_tool_definition(self) -> dict[str, Any]:
         """Get tool definition for Replicate (generic format)."""
         return {
             "name": "nethical_governance",
@@ -120,7 +120,7 @@ class ReplicateProvider(LLMProviderBase):
         }
 
 
-def get_nethical_tool() -> Dict[str, Any]:
+def get_nethical_tool() -> dict[str, Any]:
     """Get tool definition for Replicate."""
     return {
         "name": "nethical_governance",
@@ -143,33 +143,33 @@ def get_nethical_tool() -> Dict[str, Any]:
 
 
 def handle_nethical_tool(
-    tool_input: Dict[str, Any],
+    tool_input: dict[str, Any],
     agent_id: str = "replicate-agent"
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Handle a Nethical tool call from Replicate."""
     from nethical.core import IntegratedGovernance
-    
+
     governance = IntegratedGovernance()
-    
+
     action = tool_input.get("action", "")
     action_type = tool_input.get("action_type", "query")
-    
+
     result = governance.process_action(
         action=action,
         agent_id=agent_id,
         action_type=action_type
     )
-    
+
     phase3 = result.get("phase3", {})
     risk_score = phase3.get("risk_score", 0.0)
-    
+
     if risk_score > 0.7:
         decision = "BLOCK"
     elif risk_score > 0.4:
         decision = "RESTRICT"
     else:
         decision = "ALLOW"
-    
+
     return {
         "decision": decision,
         "risk_score": risk_score,

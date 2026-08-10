@@ -5,9 +5,9 @@ Respects rate limits for external APIs like Shodan and Censys
 
 import logging
 import time
+from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import Any
-from collections import defaultdict
 
 
 class RateLimitConfig:

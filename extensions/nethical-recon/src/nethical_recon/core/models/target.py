@@ -10,7 +10,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field, model_validator
 
 
-class TargetType(str, Enum):
+class TargetType(str, Enum):  # noqa: UP042
     """Type of target."""
 
     DOMAIN = "domain"
@@ -19,7 +19,7 @@ class TargetType(str, Enum):
     URL = "url"
 
 
-class TargetScope(str, Enum):
+class TargetScope(str, Enum):  # noqa: UP042
     """Scope of the target for engagement."""
 
     IN_SCOPE = "in_scope"

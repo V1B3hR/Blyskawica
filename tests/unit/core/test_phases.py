@@ -2,8 +2,6 @@
 Tests for phase scheduling system.
 """
 
-import numpy as np
-import pytest
 import torch
 
 from adaptiveneuralnetwork.central_nervous_system.phases import Phase, PhaseScheduler

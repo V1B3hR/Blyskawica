@@ -94,7 +94,7 @@ def demo_contextual_language_understanding():
     print(f"   ✓ Embedding system created with {sum(p.numel() for p in embedder.parameters())} parameters")
 
     # Sample text data (token IDs)
-    sentences = [
+    sentences = [  # noqa: F841
         "The cat sat on the mat",  # Represented as token IDs
         "Advanced neural networks learn patterns"
     ]

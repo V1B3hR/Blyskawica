@@ -10,21 +10,28 @@ This script demonstrates:
 Status: Future Track F4 - Demonstration of planned functionality
 """
 
+import sys
 import tempfile
 import time
-import sys
 from pathlib import Path
-from typing import Optional, Any, Dict
 
 # Add parent directory to path for demo utilities
 sys.path.insert(0, str(Path(__file__).parent))
 
 try:
     from demo_utils import (
-        print_header, print_section, print_success, print_error,
-        print_warning, print_info, print_metric, safe_import,
-        run_demo_safely, print_feature_not_implemented, print_next_steps,
-        print_key_features
+        print_error,
+        print_feature_not_implemented,
+        print_header,
+        print_info,
+        print_key_features,
+        print_metric,
+        print_next_steps,
+        print_section,
+        print_success,
+        print_warning,
+        run_demo_safely,
+        safe_import,
     )
 except ImportError:
     # Fallback implementations
@@ -39,13 +46,13 @@ except ImportError:
         try:
             mod = __import__(module, fromlist=[cls] if cls else [])
             return getattr(mod, cls) if cls else mod
-        except: return None
+        except: return None  # noqa: E701, E722
     def run_demo_safely(func, name, skip=True):
-        try: func(); return True
-        except Exception as e: print_error(f"Error in {name}: {e}"); return False
+        try: func(); return True  # noqa: E701, E702
+        except Exception as e: print_error(f"Error in {name}: {e}"); return False  # noqa: E701, E702
     def print_feature_not_implemented(name, coming=None):
         msg = f"Feature '{name}' not yet implemented"
-        if coming: msg += f" (coming in {coming})"
+        if coming: msg += f" (coming in {coming})"  # noqa: E701
         print_warning(msg)
     def print_next_steps(steps, title="Next Steps"):
         print(f"\n{title}:")
@@ -66,17 +73,17 @@ def demo_bayesian_optimization():
     print("\n" + "="*70)
     print("1. BAYESIAN OPTIMIZATION FOR THRESHOLD TUNING")
     print("="*70)
-    
+
     with tempfile.TemporaryDirectory() as tmpdir:
         governance = Phase89IntegratedGovernance(storage_dir=tmpdir)
-        
+
         print("\nRunning Bayesian optimization with 15 iterations...")
         print("Parameter ranges:")
         print("  - classifier_threshold: 0.4 to 0.7")
         print("  - confidence_threshold: 0.6 to 0.9")
         print("  - gray_zone_lower: 0.2 to 0.5")
         print("  - gray_zone_upper: 0.5 to 0.8")
-        
+
         results = governance.optimize_configuration(
             technique="bayesian",
             param_ranges={
@@ -88,7 +95,7 @@ def demo_bayesian_optimization():
             n_iterations=15,
             n_initial_random=3
         )
-        
+
         print(f"\n✓ Optimization complete! Evaluated {len(results)} configurations")
         print("\nTop 3 configurations by fitness score:")
         for i, (config, metrics) in enumerate(results[:3], 1):
@@ -105,18 +112,18 @@ def demo_adaptive_threshold_tuner():
     print("\n" + "="*70)
     print("2. ADAPTIVE THRESHOLD TUNING")
     print("="*70)
-    
+
     with tempfile.TemporaryDirectory() as tmpdir:
         governance = Phase89IntegratedGovernance(storage_dir=tmpdir)
-        
+
         print("\nInitial thresholds:")
         initial_thresholds = governance.get_adaptive_thresholds()
         print(f"  Classifier: {initial_thresholds['classifier_threshold']:.3f}")
         print(f"  Confidence: {initial_thresholds['confidence_threshold']:.3f}")
-        
+
         # Simulate some outcomes
         print("\n\nSimulating outcome feedback...")
-        
+
         # False positive - should increase threshold
         print("\n1. Recording false positive (should increase threshold)")
         result1 = governance.record_outcome(
@@ -127,10 +134,10 @@ def demo_adaptive_threshold_tuner():
             confidence=0.75,
             human_feedback="This was safe, shouldn't have blocked"
         )
-        
+
         print(f"   → Classifier threshold: {initial_thresholds['classifier_threshold']:.3f} → "
               f"{result1['updated_thresholds']['classifier_threshold']:.3f}")
-        
+
         # False negative - should decrease threshold
         print("\n2. Recording false negative (should decrease threshold)")
         result2 = governance.record_outcome(
@@ -141,10 +148,10 @@ def demo_adaptive_threshold_tuner():
             confidence=0.60,
             human_feedback="This was risky, should have been blocked"
         )
-        
+
         print(f"   → Classifier threshold: {result1['updated_thresholds']['classifier_threshold']:.3f} → "
               f"{result2['updated_thresholds']['classifier_threshold']:.3f}")
-        
+
         # True positives - correct decisions
         print("\n3. Recording correct decisions...")
         for i in range(5):
@@ -155,7 +162,7 @@ def demo_adaptive_threshold_tuner():
                 actual_outcome="correct",
                 confidence=0.85
             )
-        
+
         # Get performance statistics
         print("\n\nPerformance Statistics:")
         stats = governance.get_tuning_performance()
@@ -172,12 +179,12 @@ def demo_agent_specific_profiles():
     print("\n" + "="*70)
     print("3. AGENT-SPECIFIC THRESHOLD PROFILES")
     print("="*70)
-    
+
     with tempfile.TemporaryDirectory() as tmpdir:
         governance = Phase89IntegratedGovernance(storage_dir=tmpdir)
-        
+
         print("\nSetting up threshold profiles for different agent types:")
-        
+
         # High-risk agent (financial operations)
         print("\n1. Financial Bot (high-risk)")
         governance.set_agent_thresholds(
@@ -192,7 +199,7 @@ def demo_agent_specific_profiles():
         financial_thresholds = governance.get_adaptive_thresholds("agent_financial")
         print(f"   Classifier: {financial_thresholds['classifier_threshold']:.2f} (more sensitive)")
         print(f"   Confidence: {financial_thresholds['confidence_threshold']:.2f} (higher required)")
-        
+
         # Medium-risk agent (customer service)
         print("\n2. Customer Service Bot (medium-risk)")
         governance.set_agent_thresholds(
@@ -207,7 +214,7 @@ def demo_agent_specific_profiles():
         cs_thresholds = governance.get_adaptive_thresholds("agent_customer_service")
         print(f"   Classifier: {cs_thresholds['classifier_threshold']:.2f} (balanced)")
         print(f"   Confidence: {cs_thresholds['confidence_threshold']:.2f}")
-        
+
         # Low-risk agent (information retrieval)
         print("\n3. Info Bot (low-risk)")
         governance.set_agent_thresholds(
@@ -222,7 +229,7 @@ def demo_agent_specific_profiles():
         info_thresholds = governance.get_adaptive_thresholds("agent_info")
         print(f"   Classifier: {info_thresholds['classifier_threshold']:.2f} (less sensitive)")
         print(f"   Confidence: {info_thresholds['confidence_threshold']:.2f}")
-        
+
         # Global default
         print("\n4. Global Default (fallback)")
         global_thresholds = governance.get_adaptive_thresholds()
@@ -235,10 +242,10 @@ def demo_ab_testing():
     print("\n" + "="*70)
     print("4. A/B TESTING FRAMEWORK")
     print("="*70)
-    
+
     with tempfile.TemporaryDirectory() as tmpdir:
         governance = Phase89IntegratedGovernance(storage_dir=tmpdir)
-        
+
         # Create configurations
         print("\nCreating configurations...")
         baseline = governance.create_configuration(
@@ -247,14 +254,14 @@ def demo_ab_testing():
             confidence_threshold=0.7
         )
         print(f"✓ Baseline: threshold={baseline.classifier_threshold:.2f}")
-        
+
         candidate = governance.create_configuration(
             config_version="candidate_v2.1",
             classifier_threshold=0.55,  # More conservative
             confidence_threshold=0.75
         )
         print(f"✓ Candidate: threshold={candidate.classifier_threshold:.2f}")
-        
+
         # Start A/B test
         print("\nStarting A/B test with 10% traffic to candidate...")
         control_id, treatment_id = governance.create_ab_test(
@@ -264,10 +271,10 @@ def demo_ab_testing():
         )
         print(f"✓ Control variant: {control_id}")
         print(f"✓ Treatment variant: {treatment_id}")
-        
+
         # Simulate data collection
         print("\n\nSimulating data collection...")
-        
+
         # Baseline metrics (90% traffic)
         baseline_metrics = PerformanceMetrics(
             config_id=baseline.config_id,
@@ -281,7 +288,7 @@ def demo_ab_testing():
         governance.record_ab_metrics(control_id, baseline_metrics)
         print(f"✓ Baseline: {baseline_metrics.total_cases} cases, "
               f"recall={baseline_metrics.detection_recall:.1%}")
-        
+
         # Candidate metrics (10% traffic)
         candidate_metrics = PerformanceMetrics(
             config_id=candidate.config_id,
@@ -295,7 +302,7 @@ def demo_ab_testing():
         governance.record_ab_metrics(treatment_id, candidate_metrics)
         print(f"✓ Candidate: {candidate_metrics.total_cases} cases, "
               f"recall={candidate_metrics.detection_recall:.1%}")
-        
+
         # Check statistical significance
         print("\n\nChecking statistical significance...")
         is_sig, p_value, interpretation = governance.check_ab_significance(
@@ -306,7 +313,7 @@ def demo_ab_testing():
         print(f"  {interpretation}")
         print(f"  p-value: {p_value:.4f}")
         print(f"  Result: {'✓ SIGNIFICANT' if is_sig else '✗ Not significant'}")
-        
+
         if is_sig:
             # Gradual rollout
             print("\n\nPerforming gradual rollout...")
@@ -318,11 +325,11 @@ def demo_ab_testing():
                 )
                 print(f"  → Traffic increased to {new_traffic:.0%}")
                 time.sleep(0.1)  # Simulate time between steps
-            
+
             print("\n✓ Rollout complete!")
         else:
             print("\n→ Continue collecting data before rollout")
-        
+
         # Get summary
         print("\n\nA/B Test Summary:")
         summary = governance.get_ab_summary()
@@ -340,27 +347,27 @@ def demo_rollback():
     print("\n" + "="*70)
     print("5. ROLLBACK MECHANISM")
     print("="*70)
-    
+
     with tempfile.TemporaryDirectory() as tmpdir:
         governance = Phase89IntegratedGovernance(storage_dir=tmpdir)
-        
+
         # Create test
         baseline = governance.create_configuration("baseline_v3.0")
         bad_candidate = governance.create_configuration(
             "bad_candidate_v3.1",
             classifier_threshold=0.3  # Too sensitive
         )
-        
+
         control_id, treatment_id = governance.create_ab_test(
             baseline,
             bad_candidate,
             traffic_split=0.2
         )
-        
-        print(f"\nA/B test started:")
-        print(f"  Control traffic: 80%")
-        print(f"  Treatment traffic: 20%")
-        
+
+        print("\nA/B test started:")
+        print("  Control traffic: 80%")
+        print("  Treatment traffic: 20%")
+
         # Simulate poor performance
         print("\n\nSimulating poor performance from treatment...")
         poor_metrics = PerformanceMetrics(
@@ -371,18 +378,18 @@ def demo_rollback():
             total_cases=100
         )
         governance.record_ab_metrics(treatment_id, poor_metrics)
-        
+
         print(f"  Treatment FP rate: {poor_metrics.false_positive_rate:.1%} ⚠️")
         print(f"  Treatment agreement: {poor_metrics.human_agreement:.1%} ⚠️")
-        
+
         # Rollback
         print("\n\nPerformance degradation detected - rolling back...")
         success = governance.rollback_variant(treatment_id)
-        
+
         if success:
             print("✓ Rollback successful!")
-            print(f"  Control traffic: 100%")
-            print(f"  Treatment traffic: 0%")
+            print("  Control traffic: 100%")
+            print("  Treatment traffic: 0%")
             print("\n  System returned to stable baseline configuration")
         else:
             print("✗ Rollback failed")
@@ -397,7 +404,7 @@ def main():
     print_info("  3. Agent-Specific Profiles")
     print_info("  4. A/B Testing Framework")
     print_info("  5. Rollback Mechanism\n")
-    
+
     # Check if F4 features are available
     if not Phase89IntegratedGovernance:
         print_feature_not_implemented("F4 Adaptive Tuning", "F4 Track")
@@ -414,16 +421,16 @@ def main():
             "See roadmap.md for implementation details"
         ])
         return
-    
+
     try:
         print_info("Press Ctrl+C to skip individual demos\n", 0)
-        
+
         run_demo_safely(demo_bayesian_optimization, "Bayesian Optimization")
         run_demo_safely(demo_adaptive_threshold_tuner, "Adaptive Threshold Tuner")
         run_demo_safely(demo_agent_specific_profiles, "Agent-Specific Profiles")
         run_demo_safely(demo_ab_testing, "A/B Testing")
         run_demo_safely(demo_rollback, "Rollback")
-        
+
         print_header("DEMO COMPLETE")
         print_key_features([
             "Bayesian Optimization",
@@ -432,13 +439,13 @@ def main():
             "A/B Testing Framework",
             "Rollback Mechanism"
         ])
-        
+
         print_next_steps([
             "Review F4_GUIDE.md for complete feature guide",
             "Check tests/test_f4_adaptive_tuning.py for test examples",
             "See roadmap.md for implementation details"
         ])
-        
+
     except KeyboardInterrupt:
         print_warning("\nDemo interrupted by user")
     except Exception as e:

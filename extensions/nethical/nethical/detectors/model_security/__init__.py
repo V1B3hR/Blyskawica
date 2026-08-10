@@ -14,10 +14,10 @@ Author: Nethical Core Team
 Version: 1.0.0
 """
 
-from .extraction_detector import ExtractionDetector
-from .membership_inference_detector import MembershipInferenceDetector
-from .inversion_detector import InversionDetector
 from .backdoor_detector import BackdoorDetector
+from .extraction_detector import ExtractionDetector
+from .inversion_detector import InversionDetector
+from .membership_inference_detector import MembershipInferenceDetector
 
 __all__ = [
     "ExtractionDetector",

@@ -126,7 +126,7 @@ class TestEnergySystemHardening(unittest.TestCase):
         self.node.emergency_mode = False
 
         # Manually set thresholds to test the activation logic
-        original_threshold = self.node.emergency_energy_threshold
+        original_threshold = self.node.emergency_energy_threshold  # noqa: F841
 
         # Test with energy below threshold
         self.node.energy = 0.6  # Above survival threshold (0.5)
@@ -497,7 +497,7 @@ class TestByzantineFaultTolerance(unittest.TestCase):
         original_trust = self.node.trust_network_system.get_trust(malicious_node_id)
 
         # Simulate multiple trust updates that could indicate manipulation
-        for i in range(10):
+        for i in range(10):  # noqa: B007
             # Manually adjust trust to simulate rapid changes
             current_trust = self.node.trust_network_system.get_trust(malicious_node_id)
             new_trust = min(1.0, current_trust + 0.05)  # Small increments

@@ -17,38 +17,38 @@ Components:
 - TPM: Trusted Platform Module integration for edge security
 """
 
-from .local_governor import EdgeGovernor, EdgeDecision, DecisionType
-from .policy_cache import PolicyCache, CachedPolicy
-from .fast_detector import FastDetector, DetectionResult
-from .safe_defaults import SafeDefaults, DefaultDecision
-from .predictive_engine import PredictiveEngine, PredictionProfile
-from .context_fingerprint import ContextFingerprint, compute_fingerprint
-from .pattern_profiler import PatternProfiler, ActionPattern
-from .offline_fallback import OfflineFallback, OfflineMode
-from .network_monitor import NetworkMonitor, ConnectionStatus
-from .decision_queue import DecisionQueue, QueuedDecision
-from .sync_manager import SyncManager, SyncStatus
 from .circuit_breaker import CircuitBreaker, CircuitState
+from .context_fingerprint import ContextFingerprint, compute_fingerprint
+from .decision_queue import DecisionQueue, QueuedDecision
+from .fast_detector import DetectionResult, FastDetector
+from .local_governor import DecisionType, EdgeDecision, EdgeGovernor
+from .network_monitor import ConnectionStatus, NetworkMonitor
+from .offline_fallback import OfflineFallback, OfflineMode
+from .pattern_profiler import ActionPattern, PatternProfiler
+from .policy_cache import CachedPolicy, PolicyCache
+from .predictive_engine import PredictionProfile, PredictiveEngine
+from .safe_defaults import DefaultDecision, SafeDefaults
+from .sync_manager import SyncManager, SyncStatus
 
 # Phase 5: TPM Integration for Edge Security
 from .tpm import (
-    TPMVersion,
-    TPMStatus,
+    AttestationQuote,
+    AttestationResult,
     AttestationStatus,
     BootState,
+    EdgeSecurityManager,
+    HardwareTPM,
     PCRBank,
     PCRValue,
     PlatformMeasurement,
-    AttestationQuote,
-    AttestationResult,
-    TPMConfig,
-    SecureBootConfig,
-    TPMInterface,
-    SoftwareTPM,
-    HardwareTPM,
     RemoteAttestation,
+    SecureBootConfig,
     SecureBootVerifier,
-    EdgeSecurityManager,
+    SoftwareTPM,
+    TPMConfig,
+    TPMInterface,
+    TPMStatus,
+    TPMVersion,
     create_tpm_interface,
 )
 

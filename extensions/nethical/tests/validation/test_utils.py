@@ -19,7 +19,7 @@ def extract_action_content(action: Any) -> str:
         
     Returns:
         String representation of the action content
-    """
+    """  # noqa: W293
     if hasattr(action, 'content'):
         return action.content
     elif hasattr(action, 'action'):

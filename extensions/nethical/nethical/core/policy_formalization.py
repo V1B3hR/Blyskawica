@@ -8,10 +8,10 @@ This module implements:
 - Documentation for dual policy engines
 """
 
-from typing import Dict, Any, List, Tuple
+import re
 from dataclasses import dataclass, field
 from enum import Enum
-import re
+from typing import Any
 
 
 class PolicyEngineType(Enum):
@@ -26,22 +26,22 @@ class PolicyValidationResult:
     """Result of policy validation."""
 
     valid: bool
-    errors: List[str] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
-    suggestions: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    errors: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
+    suggestions: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
 class PolicyImpactAnalysis:
     """Analysis of policy impact."""
 
-    affected_rules: List[str]
+    affected_rules: list[str]
     estimated_block_rate: float
     estimated_restrict_rate: float
     risk_level: str
-    recommendations: List[str]
-    simulation_results: Dict[str, Any]
+    recommendations: list[str]
+    simulation_results: dict[str, Any]
 
 
 class PolicyGrammarEBNF:
@@ -140,7 +140,7 @@ class PolicyGrammarEBNF:
     digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
     character = letter | digit | "_" | "-" | " " | "." | "," | ":" | ";" | 
                 "!" | "?" | "'" | "(" | ")" | "[" | "]" | "{" | "}";
-    """
+    """  # noqa: W291, W293
 
     @classmethod
     def get_grammar(cls) -> str:
@@ -163,7 +163,7 @@ class PolicyValidator:
         """
         self.engine_type = engine_type
 
-    def validate_policy(self, policy: Dict[str, Any]) -> PolicyValidationResult:
+    def validate_policy(self, policy: dict[str, Any]) -> PolicyValidationResult:
         """Validate policy configuration.
 
         Args:
@@ -220,7 +220,7 @@ class PolicyValidator:
             },
         )
 
-    def _validate_defaults(self, defaults: Dict[str, Any]) -> List[str]:
+    def _validate_defaults(self, defaults: dict[str, Any]) -> list[str]:
         """Validate defaults section.
 
         Args:
@@ -236,13 +236,13 @@ class PolicyValidator:
             if decision not in ["ALLOW", "RESTRICT", "BLOCK", "DENY", "TERMINATE"]:
                 errors.append(f"Invalid default decision: {decision}")
 
-        if "deny_overrides" in defaults:
+        if "deny_overrides" in defaults:  # noqa: SIM102
             if not isinstance(defaults["deny_overrides"], bool):
                 errors.append("deny_overrides must be boolean")
 
         return errors
 
-    def _validate_rules(self, rules: List[Dict[str, Any]]) -> Tuple[List[str], List[str]]:
+    def _validate_rules(self, rules: list[dict[str, Any]]) -> tuple[list[str], list[str]]:
         """Validate rules.
 
         Args:
@@ -288,7 +288,7 @@ class PolicyValidator:
 
         return errors, warnings
 
-    def _validate_region_overlays(self, overlays: Dict[str, Any]) -> List[str]:
+    def _validate_region_overlays(self, overlays: dict[str, Any]) -> list[str]:
         """Validate region overlays.
 
         Args:
@@ -300,13 +300,13 @@ class PolicyValidator:
         errors = []
 
         valid_regions = {"US", "EU", "APAC", "GLOBAL"}
-        for region in overlays.keys():
+        for region in overlays:
             if region not in valid_regions:
-                errors.append(f"Invalid region: {region}")
+                errors.append(f"Invalid region: {region}")  # noqa: PERF401
 
         return errors
 
-    def lint_policy(self, policy: Dict[str, Any]) -> List[str]:
+    def lint_policy(self, policy: dict[str, Any]) -> list[str]:
         """Lint policy for style and best practices.
 
         Args:
@@ -353,8 +353,8 @@ class PolicySimulator:
         self.simulation_results = []
 
     def simulate_policy(
-        self, policy: Dict[str, Any], test_cases: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+        self, policy: dict[str, Any], test_cases: list[dict[str, Any]]
+    ) -> dict[str, Any]:
         """Simulate policy execution on test cases.
 
         Args:
@@ -396,8 +396,8 @@ class PolicySimulator:
         return results
 
     def _evaluate_policy(
-        self, policy: Dict[str, Any], facts: Dict[str, Any]
-    ) -> Tuple[str, List[str]]:
+        self, policy: dict[str, Any], facts: dict[str, Any]
+    ) -> tuple[str, list[str]]:
         """Evaluate policy against facts (simplified simulation).
 
         Args:
@@ -429,7 +429,7 @@ class PolicySimulator:
 
         return decision, matched_rules
 
-    def _might_match(self, condition: Any, facts: Dict[str, Any]) -> bool:
+    def _might_match(self, condition: Any, facts: dict[str, Any]) -> bool:
         """Check if condition might match (simplified).
 
         Args:
@@ -462,9 +462,9 @@ class PolicyImpactAnalyzer:
 
     def analyze_impact(
         self,
-        current_policy: Dict[str, Any],
-        new_policy: Dict[str, Any],
-        historical_data: List[Dict[str, Any]],
+        current_policy: dict[str, Any],
+        new_policy: dict[str, Any],
+        historical_data: list[dict[str, Any]],
     ) -> PolicyImpactAnalysis:
         """Analyze impact of policy change.
 
@@ -531,8 +531,8 @@ class PolicyImpactAnalyzer:
         )
 
     def _identify_affected_rules(
-        self, current_policy: Dict[str, Any], new_policy: Dict[str, Any]
-    ) -> List[str]:
+        self, current_policy: dict[str, Any], new_policy: dict[str, Any]
+    ) -> list[str]:
         """Identify affected rules between policies.
 
         Args:
@@ -557,6 +557,6 @@ class PolicyImpactAnalyzer:
         # Find new rules
         for rule_id in new_rules:
             if rule_id not in current_rules:
-                affected.append(f"{rule_id} (new)")
+                affected.append(f"{rule_id} (new)")  # noqa: PERF401
 
         return affected

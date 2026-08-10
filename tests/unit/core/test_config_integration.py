@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from adaptiveneuralnetwork.config import AdaptiveNeuralNetworkConfig, load_config
+from adaptiveneuralnetwork.config import AdaptiveNeuralNetworkConfig
 
 
 class TestAliveLoopNodeConfigIntegration:
@@ -196,7 +196,7 @@ class TestAliveLoopNodeConfigIntegration:
         assert node.calm_history.maxlen == 100
 
         # Verify emotion histories also use the configured max length
-        for emotion_name, history_deque in node.emotion_histories.items():
+        for emotion_name, history_deque in node.emotion_histories.items():  # noqa: B007
             assert history_deque.maxlen == 100
 
     def test_config_validation_warnings_in_node_creation(self):

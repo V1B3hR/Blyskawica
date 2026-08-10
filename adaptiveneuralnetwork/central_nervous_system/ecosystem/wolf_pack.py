@@ -16,11 +16,11 @@ Referencja: https://github.com/V1B3hR/nethical-recon
 """
 
 import logging
-import time
 import threading
+import time
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -80,9 +80,9 @@ class ThreatProfile:
     passive_contacts: int   = 0
 
     # Active recon data
-    response_latency: Optional[float] = None
+    response_latency: float | None = None
     behavioral_pattern: str = "unknown"
-    attack_vectors: List[str] = field(default_factory=list)
+    attack_vectors: list[str] = field(default_factory=list)
 
     # Enrichment / global intel
     threat_class:    ThreatClass = ThreatClass.UNKNOWN
@@ -91,9 +91,9 @@ class ThreatProfile:
     intent_score:    float = 0.0    # 0=neutralny, 1=wrogie intencje
 
     # Attack surface mapping
-    known_weaknesses: List[str] = field(default_factory=list)
+    known_weaknesses: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "target_id":        self.target_id,
             "threat_class":     self.threat_class.value,
@@ -116,8 +116,8 @@ class PackMember:
     drone_id: str
     role: str          # "sensor", "infiltrator", "defender", "striker"
     is_active: bool = False
-    assigned_target: Optional[str] = None
-    last_report: Optional[Dict] = None
+    assigned_target: str | None = None
+    last_report: dict | None = None
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -150,11 +150,11 @@ class WolfPack:
 
         # Stan operacji
         self.phase = ReconPhase.IDLE
-        self.active_profiles: Dict[str, ThreatProfile] = {}
-        self.intel_log: List[Dict] = []
+        self.active_profiles: dict[str, ThreatProfile] = {}
+        self.intel_log: list[dict] = []
 
         # Stado — drony
-        self.pack: List[PackMember] = [
+        self.pack: list[PackMember] = [
             PackMember("drone_alpha",   role="sensor"),
             PackMember("drone_beta",    role="infiltrator"),
             PackMember("drone_gamma",   role="defender"),
@@ -171,7 +171,7 @@ class WolfPack:
     # ──────────────────────────────────────────────────────────────────────────
     # FAZA 1: PASSIVE RECON — cisza i nasłuch (nethical-recon: passive_recon/)
     # ──────────────────────────────────────────────────────────────────────────
-    def passive_scan(self, signal_data: Dict[str, Any]) -> Optional[ThreatProfile]:
+    def passive_scan(self, signal_data: dict[str, Any]) -> ThreatProfile | None:
         """
         Nasłuch pasywny — ZERO aktywnej emisji.
         Analizuje entropię i regularność sygnałów wejściowych.
@@ -214,7 +214,7 @@ class WolfPack:
     # ──────────────────────────────────────────────────────────────────────────
     # FAZA 2: ACTIVE RECON — ostrożna weryfikacja (nethical-recon: active_recon/)
     # ──────────────────────────────────────────────────────────────────────────
-    def active_scan(self, profile: ThreatProfile, probe_data: Dict[str, Any]) -> ThreatProfile:
+    def active_scan(self, profile: ThreatProfile, probe_data: dict[str, Any]) -> ThreatProfile:
         """
         Aktywna weryfikacja — minimalna emisja, maksymalny zysk informacyjny.
         Mapuje attack_surface i buduje behavioral_pattern.
@@ -261,7 +261,7 @@ class WolfPack:
     # FAZA 3: INTEL FUSION — wzbogacenie (nethical-recon: enrichment/ + global_intelligence/)
     # ──────────────────────────────────────────────────────────────────────────
     def intel_fusion(self, profile: ThreatProfile,
-                     global_context: Optional[Dict] = None) -> ThreatProfile:
+                     global_context: dict | None = None) -> ThreatProfile:
         """
         Wzbogacenie profilu o globalny kontekst i intencje.
         Odpowiednik nethical-recon enrichment/ + global_intelligence/.
@@ -351,7 +351,7 @@ class WolfPack:
     # FAZA 5: EXECUTION — drony wykonują (nethical-recon: weapons/ + nanobots/)
     # ──────────────────────────────────────────────────────────────────────────
     def execute(self, decision: PackDecision,
-                profile: ThreatProfile) -> Dict[str, Any]:
+                profile: ThreatProfile) -> dict[str, Any]:
         """
         Stado wykonuje decyzję Alfy.
         Każda ścieżka aktywuje inny zestaw dronów.
@@ -360,7 +360,7 @@ class WolfPack:
             self.phase = ReconPhase.EXECUTION if decision != PackDecision.WITHDRAW \
                          else ReconPhase.WITHDRAWAL
 
-        report: Dict[str, Any] = {
+        report: dict[str, Any] = {
             "decision":  decision.name,
             "target":    profile.target_id,
             "timestamp": time.time(),
@@ -421,10 +421,10 @@ class WolfPack:
     # PIPELINE — pełny cykl operacyjny
     # ──────────────────────────────────────────────────────────────────────────
     def run_operation(self,
-                      signal_data:    Dict[str, Any],
-                      probe_data:     Optional[Dict[str, Any]] = None,
-                      global_context: Optional[Dict[str, Any]] = None
-                      ) -> Optional[Dict[str, Any]]:
+                      signal_data:    dict[str, Any],
+                      probe_data:     dict[str, Any] | None = None,
+                      global_context: dict[str, Any] | None = None
+                      ) -> dict[str, Any] | None:
         """
         Pełny cykl: Passive → Active → Intel → Decision → Execute.
         Zwraca raport operacyjny lub None jeśli passive_recon nie wykrył zagrożenia.
@@ -480,7 +480,7 @@ class WolfPack:
             self._boost_neurochemistry(chemical, amount)
 
     def _log_intel(self, profile: ThreatProfile,
-                   phase: str, extra: Optional[Dict] = None):
+                   phase: str, extra: dict | None = None):
         entry = {
             "phase":     phase,
             "timestamp": time.time(),
@@ -490,11 +490,11 @@ class WolfPack:
             entry.update(extra)
         self.intel_log.append(entry)
 
-    def get_intel_report(self) -> List[Dict]:
+    def get_intel_report(self) -> list[dict]:
         """Zwraca pełny dziennik operacyjny."""
         return list(self.intel_log)
 
-    def get_pack_status(self) -> Dict[str, Any]:
+    def get_pack_status(self) -> dict[str, Any]:
         """Status stada i bieżącej fazy."""
         return {
             "phase":    self.phase.value,

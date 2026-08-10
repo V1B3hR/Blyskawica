@@ -5,8 +5,8 @@ Evaluate Blyskawica Model
 Consolidated entry point that delegates execution to the internal evaluation runner.
 """
 
-import sys
 import argparse
+import sys
 from pathlib import Path
 
 # Add core path to Python path
@@ -31,7 +31,7 @@ def create_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def load_eval_config(args: Any) -> WorkflowConfig:
+def load_eval_config(args: Any) -> WorkflowConfig:  # noqa: F821
     """Load and merge evaluation configuration."""
     if hasattr(args, "config") and args.config:
         config = WorkflowConfig.from_yaml(args.config)

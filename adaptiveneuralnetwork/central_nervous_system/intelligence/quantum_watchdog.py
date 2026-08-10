@@ -16,18 +16,19 @@ Filozofia:
   Anomalia = gdy rozkład odbiega więcej niż 2σ od historycznej średniej.
 """
 
-import json
-import time
 import hashlib
+import json
 import logging
-import threading
 import math
 import random
+import threading
+import time
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Optional, Dict, Any, List
-from dataclasses import dataclass, asdict, field
+from typing import Any
 
 import torch
+
 from adaptiveneuralnetwork.cognitive_tools.ground_loop_isolator import GroundLoopIsolator
 
 logger = logging.getLogger(__name__)
@@ -36,7 +37,7 @@ try:
     from qiskit import QuantumCircuit
     from qiskit.quantum_info import SparsePauliOp
     from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
-    from qiskit_ibm_runtime import QiskitRuntimeService, EstimatorV2 as IBMEstimator
+    from qiskit_ibm_runtime import EstimatorV2 as IBMEstimator, QiskitRuntimeService
     _QUANTUM_AVAILABLE = True
 except ImportError:
     _QUANTUM_AVAILABLE = False
@@ -48,7 +49,6 @@ except ImportError:
     _AER_AVAILABLE = False
 
 def get_workspace_root():
-    import os
     from pathlib import Path
     current = Path(__file__).resolve()
     for parent in current.parents:
@@ -69,7 +69,7 @@ class IntegritySnapshot:
     timestamp: float
     backend: str
     job_id: str
-    expectation_vector: List[float]   # <Z_i> dla każdego kubitu
+    expectation_vector: list[float]   # <Z_i> dla każdego kubitu
     fingerprint: str                  # SHA-256 wektora oczekiwań
     defcon_level: int = 1             # 1=OK, 2=WATCH, 3=ALERT, 4=CRITICAL
     anomaly_detected: bool = False
@@ -102,10 +102,10 @@ class QuantumIntegrityWatchdog:
                  identity_guard=None):
         self.config = config or WatchdogConfig()
         self.identity_guard = identity_guard
-        self.service: Optional[Any] = None
-        self.history: List[IntegritySnapshot] = []
+        self.service: Any | None = None
+        self.history: list[IntegritySnapshot] = []
         self._stop_event = threading.Event()
-        self._thread: Optional[threading.Thread] = None
+        self._thread: threading.Thread | None = None
 
         # Synaptic Ground Loop Isolation
         self.use_gli_stabilization = getattr(self.config, 'use_gli_stabilization', True)
@@ -121,7 +121,7 @@ class QuantumIntegrityWatchdog:
 
     def _connect(self):
         try:
-            with open(self.config.api_key_path, 'r', encoding='utf-8') as f:
+            with open(self.config.api_key_path, encoding='utf-8') as f:
                 api_key = json.load(f).get("apikey")
             self.service = QiskitRuntimeService(
                 channel="ibm_quantum_platform", token=api_key
@@ -135,7 +135,7 @@ class QuantumIntegrityWatchdog:
         vault_path = Path(self.config.vault_path)
         if vault_path.exists():
             try:
-                with open(vault_path, 'r', encoding='utf-8') as f:
+                with open(vault_path, encoding='utf-8') as f:
                     data = json.load(f)
                 self.history = [IntegritySnapshot(**s) for s in data]
                 logger.info(f"[Watchdog] Załadowano {len(self.history)} snapshotów z vault.")
@@ -158,19 +158,19 @@ class QuantumIntegrityWatchdog:
         """
         qc = QuantumCircuit(self.config.n_qubits)
         # Para splątanych stanów Bella
-        qc.h(0); qc.cx(0, 1)  # Bell pair 1
-        qc.h(2); qc.cx(2, 3)  # Bell pair 2
+        qc.h(0); qc.cx(0, 1)  # Bell pair 1  # noqa: E702
+        qc.h(2); qc.cx(2, 3)  # Bell pair 2  # noqa: E702
         # Dodatkowe splątanie między parami (wrażliwe na błędy sprzętu)
         qc.cx(1, 2)
         return qc
 
-    def _fingerprint(self, vector: List[float]) -> str:
+    def _fingerprint(self, vector: list[float]) -> str:
         """SHA-256 z wektora oczekiwań (zaokrąglony do 4 miejsc)."""
         rounded = [round(v, 4) for v in vector]
         data = json.dumps(rounded, separators=(',', ':'))
         return hashlib.sha256(data.encode()).hexdigest()[:16]
 
-    def _compute_drift(self, current_vector: List[float]) -> float:
+    def _compute_drift(self, current_vector: list[float]) -> float:
         """
         Oblicza dryf względem historycznej średniej w jednostkach σ.
         Zwraca 0.0 jeśli brak historii.
@@ -343,7 +343,7 @@ class QuantumIntegrityWatchdog:
                 logger.error(f"[Watchdog] Błąd w pętli: {e}")
             self._stop_event.wait(self.config.check_interval_sec)
 
-    def get_status_report(self) -> Dict[str, Any]:
+    def get_status_report(self) -> dict[str, Any]:
         """Zwraca raport statusu dla ArchitecturalMirror."""
         if not self.history:
             return {"status": "no_data", "audits": 0}
@@ -364,7 +364,6 @@ class QuantumIntegrityWatchdog:
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    import sys
     logging.basicConfig(
         level=logging.INFO,
         format="%(message)s"

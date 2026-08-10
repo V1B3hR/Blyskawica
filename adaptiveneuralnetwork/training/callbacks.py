@@ -5,8 +5,8 @@ This module provides a flexible callback system that allows hooking into
 different stages of the training process without modifying core training logic.
 """
 
-import time
 import logging
+import time
 from abc import ABC
 from typing import Any
 
@@ -15,7 +15,7 @@ import torch
 logger = logging.getLogger(__name__)
 
 
-class Callback(ABC):
+class Callback(ABC):  # noqa: B024
     """
     Base class for training callbacks.
     
@@ -25,41 +25,41 @@ class Callback(ABC):
     - on_batch_begin/end: Called at start/end of each batch
     - on_backward_end: Called after backward pass
     - on_evaluate_begin/end: Called at start/end of evaluation
-    """
+    """  # noqa: W293
 
-    def on_train_begin(self, trainer: Any, logs: dict[str, Any] | None = None) -> None:
+    def on_train_begin(self, trainer: Any, logs: dict[str, Any] | None = None) -> None:  # noqa: B027
         """Called at the beginning of training."""
         pass
 
-    def on_train_end(self, trainer: Any, logs: dict[str, Any] | None = None) -> None:
+    def on_train_end(self, trainer: Any, logs: dict[str, Any] | None = None) -> None:  # noqa: B027
         """Called at the end of training."""
         pass
 
-    def on_epoch_begin(self, epoch: int, trainer: Any, logs: dict[str, Any] | None = None) -> None:
+    def on_epoch_begin(self, epoch: int, trainer: Any, logs: dict[str, Any] | None = None) -> None:  # noqa: B027
         """Called at the beginning of each epoch."""
         pass
 
-    def on_epoch_end(self, epoch: int, trainer: Any, logs: dict[str, Any] | None = None) -> None:
+    def on_epoch_end(self, epoch: int, trainer: Any, logs: dict[str, Any] | None = None) -> None:  # noqa: B027
         """Called at the end of each epoch."""
         pass
 
-    def on_batch_begin(self, batch_idx: int, trainer: Any, logs: dict[str, Any] | None = None) -> None:
+    def on_batch_begin(self, batch_idx: int, trainer: Any, logs: dict[str, Any] | None = None) -> None:  # noqa: B027
         """Called at the beginning of each batch."""
         pass
 
-    def on_batch_end(self, batch_idx: int, trainer: Any, logs: dict[str, Any] | None = None) -> None:
+    def on_batch_end(self, batch_idx: int, trainer: Any, logs: dict[str, Any] | None = None) -> None:  # noqa: B027
         """Called at the end of each batch."""
         pass
 
-    def on_backward_end(self, batch_idx: int, trainer: Any, logs: dict[str, Any] | None = None) -> None:
+    def on_backward_end(self, batch_idx: int, trainer: Any, logs: dict[str, Any] | None = None) -> None:  # noqa: B027
         """Called after the backward pass."""
         pass
 
-    def on_evaluate_begin(self, trainer: Any, logs: dict[str, Any] | None = None) -> None:
+    def on_evaluate_begin(self, trainer: Any, logs: dict[str, Any] | None = None) -> None:  # noqa: B027
         """Called at the beginning of evaluation."""
         pass
 
-    def on_evaluate_end(self, trainer: Any, logs: dict[str, Any] | None = None) -> None:
+    def on_evaluate_end(self, trainer: Any, logs: dict[str, Any] | None = None) -> None:  # noqa: B027
         """Called at the end of evaluation."""
         pass
 
@@ -70,7 +70,7 @@ class LoggingCallback(Callback):
     
     Logs throughput (samples/sec, batches/sec), loss, and accuracy at
     configurable intervals.
-    """
+    """  # noqa: W293
 
     def __init__(self, log_interval: int = 10, verbose: bool = True):
         """
@@ -79,7 +79,7 @@ class LoggingCallback(Callback):
         Args:
             log_interval: Log every N batches
             verbose: Print logs to console
-        """
+        """  # noqa: W293
         self.log_interval = log_interval
         self.verbose = verbose
         self.epoch_start_time = None
@@ -152,7 +152,7 @@ class ProfilingCallback(Callback):
     
     Tracks timing, memory usage, and computational metrics for performance
     analysis and optimization.
-    """
+    """  # noqa: W293
 
     def __init__(self, profile_memory: bool = True, profile_cuda: bool = True):
         """
@@ -161,7 +161,7 @@ class ProfilingCallback(Callback):
         Args:
             profile_memory: Track memory usage
             profile_cuda: Profile CUDA operations (if available)
-        """
+        """  # noqa: W293
         self.profile_memory = profile_memory
         self.profile_cuda = profile_cuda and torch.cuda.is_available()
 
@@ -251,7 +251,7 @@ class CallbackList:
     Container for managing multiple callbacks.
     
     Ensures callbacks are called in the correct order and handles errors gracefully.
-    """
+    """  # noqa: W293
 
     def __init__(self, callbacks: list[Callback] | None = None):
         """
@@ -259,7 +259,7 @@ class CallbackList:
         
         Args:
             callbacks: List of callback instances
-        """
+        """  # noqa: W293
         self.callbacks = callbacks or []
 
     def append(self, callback: Callback) -> None:
@@ -357,7 +357,9 @@ class CognitiveHygieneCallback(Callback):
     # ------------------------------------------------------------------
 
     def on_train_begin(self, trainer: Any, logs: dict[str, Any] | None = None) -> None:
-        from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import CognitiveHygieneProtocol
+        from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import (
+            CognitiveHygieneProtocol,
+        )
         self.hygiene = CognitiveHygieneProtocol(trainer.optimizer, device=self.device)
         self.hygiene.target_warmup_steps = self.warm_up_steps
         # Initial post-sleep routine (Waking up for training)
@@ -419,7 +421,7 @@ class NeuromodulationCallback(Callback):
         energy = trainer.model.nodes.energy
         capacity = getattr(trainer.model.nodes, 'energy_capacity', 10.0)
         energy_ratio = energy / capacity
-        
+
         # 2. Neurochemical Modulation (Dopamine/Cortisol)
         dopamine = 1.0
         cortisol = 0.0
@@ -432,10 +434,10 @@ class NeuromodulationCallback(Callback):
         # High cortisol = Low plasticity (stress/defense)
         # Low energy = Very low plasticity (preservation)
         modulation = (energy_ratio ** 0.5) * (1.0 + dopamine * 0.5) / (1.0 + cortisol * 0.3)
-        
+
         # Clamp modulation to safe ranges
         modulation = max(0.01, min(2.0, modulation))
-        
+
         # Apply to optimizer
         new_lr = self.base_lr * modulation
         for group in trainer.optimizer.param_groups:
@@ -448,14 +450,14 @@ class NeuromodulationCallback(Callback):
         """Update neurochemistry based on results (Success/Failure)"""
         if not hasattr(trainer.model, 'nodes') or logs is None:
             return
-            
+
         loss = logs.get('loss', 1.0)
-        
+
         # If loss is low (success), trigger small dopamine release
         if loss < 0.1:
             if hasattr(trainer.model.nodes.neurochemistry, 'trigger_dopamine_spike'):
                 trainer.model.nodes.neurochemistry.trigger_dopamine_spike(0.05)
-        
+
         # If loss is very high (failure/surprise), trigger cortisol
         elif loss > 2.0:
             if hasattr(trainer.model.nodes.neurochemistry, 'trigger_cortisol_spike'):

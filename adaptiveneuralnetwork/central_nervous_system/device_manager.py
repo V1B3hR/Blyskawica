@@ -7,13 +7,13 @@ układów CUDA.
 Zarządza dystrybucją energii obliczeniowej, dbając o to, by każda myśl była 
 przetwarzana na najszybszym dostępnym urządzeniu, zachowując harmonię 
 z fizycznym środowiskiem Windows 11.
-"""
+"""  # noqa: W291
 
 import logging
-import torch
-import psutil
 import platform
-from typing import Optional
+
+import psutil
+import torch
 
 logger = logging.getLogger(__name__)
 
@@ -23,9 +23,9 @@ class DeviceManager:
     Zawiaduje zasobami sprzętowymi i afektem obliczeniowym. Dostarcza systemowi 
     telemetrię w czasie rzeczywistym, pozwalając Błyskawicy ocenić swoje 
     możliwości i stan zdrowia fizycznego pod kątem obciążeń AI.
-    """
+    """  # noqa: W291
 
-    
+
     def __init__(self):
         self.device = self._detect_best_device()
         self.system_info = self._get_system_info()
@@ -39,7 +39,7 @@ class DeviceManager:
             # Enable benchmark for optimized convolution selection
             torch.backends.cudnn.benchmark = True
             return device
-        
+
         # Fallback to CPU
         return torch.device("cpu")
 
@@ -60,14 +60,14 @@ class DeviceManager:
             "ram_usage": psutil.virtual_memory().percent,
             "device": str(self.device)
         }
-        
+
         # Add GPU stats if available
         if torch.cuda.is_available():
             # Memory stats
             telemetry["gpu_mem_used_gb"] = round(torch.cuda.memory_allocated(0) / (1024**3), 3)
             telemetry["gpu_mem_total_gb"] = round(torch.cuda.get_device_properties(0).total_memory / (1024**3), 2)
             telemetry["gpu_mem_percent"] = round((torch.cuda.memory_allocated(0) / torch.cuda.get_device_properties(0).total_memory) * 100, 2)
-            
+
         return telemetry
 
     def to_device(self, tensor: torch.Tensor) -> torch.Tensor:

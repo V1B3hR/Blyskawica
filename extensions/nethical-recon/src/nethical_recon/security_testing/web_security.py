@@ -6,7 +6,7 @@ import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 import requests
 
@@ -53,7 +53,7 @@ class SecurityTest:
     name: str
     description: str
     category: str
-    owasp_ref: Optional[str] = None
+    owasp_ref: str | None = None
 
 
 class WebSecurityTester:

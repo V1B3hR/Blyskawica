@@ -6,6 +6,7 @@ Maps atomic properties to neural populations and bonds to synchrony.
 import torch
 import torch.nn as nn
 
+
 class MolecularAffinity(nn.Module):
     """
     Simulates chemical interactions as neural resonance.
@@ -25,13 +26,13 @@ class MolecularAffinity(nn.Module):
         """Determines affinity as a sync coefficient."""
         props_a = self.atomic_properties.get(atom_a)
         props_b = self.atomic_properties.get(atom_b)
-        if props_a is None or props_b is None: return 0.0
+        if props_a is None or props_b is None: return 0.0  # noqa: E701
         delta_en = torch.abs(props_a[0] - props_b[0])
         return (1.0 / (1.0 + delta_en)).item()
 
     def simulate_reaction(self, reactants: list):
         """Standard interaction simulator (Bond calculation)."""
-        if len(reactants) < 2: return 0.0
+        if len(reactants) < 2: return 0.0  # noqa: E701
         total_resonance = 0.0
         for i in range(len(reactants)):
             for j in range(i+1, len(reactants)):
@@ -49,10 +50,10 @@ class MolecularAffinity(nn.Module):
         stability = self.simulate_reaction(reactants)
         threshold = self.calculate_activation_energy(reactants)
         effective_stability = stability / (1.0 + environmental_entropy * 10.0)
-        
+
         is_stable = effective_stability > 0.4
         yield_rate = max(0.0, effective_stability - (threshold / 10.0))
-        
+
         return {
             "stability": effective_stability,
             "is_stable": is_stable,
@@ -65,4 +66,4 @@ if __name__ == "__main__":
     # Testing H2O under high entropy (0.1)
     res = chem.simulate_thermodynamic_reaction(["H", "H", "O"], environmental_entropy=0.1)
     print(f"[CHEMISTRY] Water Synthesis: Stable={res['is_stable']}, Yield={res['yield']:.4f}")
-    print(f"[CHEMISTRY] Molecular logic fully synchronized with physics. !!!")
+    print("[CHEMISTRY] Molecular logic fully synchronized with physics. !!!")

@@ -8,8 +8,9 @@ Models the enterprise signal processing pipeline:
 
 import json
 import os
-import torch
+
 import numpy as np
+import torch
 
 DATA_DIR = r"c:\Projekty\Blyskawica_V8\data"
 OUTPUT_DIR = r"c:\Projekty\Blyskawica_V8\k8s"
@@ -20,37 +21,37 @@ def run_rocm_hipfft_emulation():
     Utilizes PyTorch CUDA/ROCm accelerated FFT (compiles to hipFFT on AMD).
     """
     print("\n--- [AMD ROCm hipFFT Acceleration Emulation] ---")
-    
+
     # Load NASA IMS bearing data snapshot
     ims_path = os.path.join(DATA_DIR, "nasa_ims_bearing_signals.json")
     if not os.path.exists(ims_path):
         print("[Error] NASA IMS dataset not found. Please generate datasets first.")
         return
-        
-    with open(ims_path, "r") as f:
+
+    with open(ims_path) as f:
         dataset = json.load(f)
-        
+
     fault_signal = np.array(dataset["outer_race_fault"]["vibration_data_snapshot"])
-    
+
     # Convert to PyTorch Tensor (moves to GPU if CUDA/ROCm is available)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     signal_tensor = torch.tensor(fault_signal, dtype=torch.float32, device=device)
-    
+
     print(f"[+] Loaded signal snapshot onto device: {device}")
-    
+
     # Perform Fast Fourier Transform (translates to hipFFT on AMD GPU architectures)
     fft_result = torch.fft.fft(signal_tensor)
     fft_magnitude = torch.abs(fft_result)
-    
+
     # Extract dominant defect frequencies
     top_magnitudes, top_indices = torch.topk(fft_magnitude[:len(fft_magnitude)//2], k=3)
-    
-    print(f"[+] hipFFT Spectrum analysis complete:")
+
+    print("[+] hipFFT Spectrum analysis complete:")
     for i in range(3):
         freq_bin = top_indices[i].item()
         mag = top_magnitudes[i].item()
         print(f"    * Dominant Peak {i+1}: Frequency Bin {freq_bin} | Amplitude: {mag:.4f}")
-        
+
     print("[OK] AMD ROCm hipFFT acceleration validated successfully.")
 
 def generate_openshift_manifests():
@@ -60,7 +61,7 @@ def generate_openshift_manifests():
     """
     print("\n--- [Red Hat OpenShift Containerization Manifests] ---")
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-    
+
     # 1. Dockerfile
     dockerfile_content = """# Use ROCm-enabled PyTorch image as base for AMD compatibility
 FROM rocm/pytorch:rocm6.0_ubuntu22.04_py3.10_pytorch2.1.2
@@ -84,7 +85,7 @@ CMD ["python", "scripts/train_cognitive_industry.py"]
     with open(dockerfile_path, "w") as f:
         f.write(dockerfile_content.strip())
     print(f"[+] Dockerfile generated at: {dockerfile_path}")
-    
+
     # 2. Kubernetes Deployment YAML for OpenShift
     k8s_deployment = """apiVersion: apps/v1
 kind: Deployment

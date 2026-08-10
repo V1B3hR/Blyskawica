@@ -24,9 +24,10 @@ from torch.utils.data import DataLoader
 try:
     from tqdm import tqdm
 except ImportError:
-    tqdm = lambda x, *args, **kwargs: x  # fallback to no progress bar
+    tqdm = lambda x, *args, **kwargs: x  # fallback to no progress bar  # noqa: E731
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 # Handle relative imports for both module use and direct execution
@@ -35,23 +36,26 @@ if __name__ == "__main__":
     from pathlib import Path
     # Add parent directory to path to enable imports when run as script
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+    from adaptiveneuralnetwork.central_nervous_system.episodic_memory import EpisodicMemory
+    from adaptiveneuralnetwork.central_nervous_system.neuromodulation import NeuromodulationSystem
+    from adaptiveneuralnetwork.central_nervous_system.node_state_bridge import NodeStateBridge
     from adaptiveneuralnetwork.training.callbacks import Callback, CallbackList
-    from adaptiveneuralnetwork.central_nervous_system.node_state_bridge import NodeStateBridge
-    from adaptiveneuralnetwork.central_nervous_system.episodic_memory import EpisodicMemory
-    from adaptiveneuralnetwork.central_nervous_system.neuromodulation import NeuromodulationSystem
 else:
-    from .callbacks import Callback, CallbackList
-    from adaptiveneuralnetwork.central_nervous_system.workspace import GlobalWorkspace
-    from adaptiveneuralnetwork.central_nervous_system.narrative import NarrativeEngine
-    from adaptiveneuralnetwork.central_nervous_system.node_state_bridge import NodeStateBridge
+    from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import CRAEngine
     from adaptiveneuralnetwork.central_nervous_system.episodic_memory import EpisodicMemory
-    from adaptiveneuralnetwork.central_nervous_system.neuromodulation import NeuromodulationSystem
+    from adaptiveneuralnetwork.central_nervous_system.narrative import NarrativeEngine
     from adaptiveneuralnetwork.central_nervous_system.nas import TopologyAdapter
-    from adaptiveneuralnetwork.peripheral_nervous_system.sensory_hub import SensoryHub
+    from adaptiveneuralnetwork.central_nervous_system.neuromodulation import NeuromodulationSystem
+    from adaptiveneuralnetwork.central_nervous_system.node_state_bridge import NodeStateBridge
+    from adaptiveneuralnetwork.central_nervous_system.performance_profiler import (
+        PerformanceProfiler,
+    )
     from adaptiveneuralnetwork.central_nervous_system.social import TheoryOfMind
     from adaptiveneuralnetwork.central_nervous_system.system_audit import SystemAudit
-    from adaptiveneuralnetwork.central_nervous_system.performance_profiler import PerformanceProfiler
-    from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import CRAEngine
+    from adaptiveneuralnetwork.central_nervous_system.workspace import GlobalWorkspace
+    from adaptiveneuralnetwork.peripheral_nervous_system.sensory_hub import SensoryHub
+
+    from .callbacks import Callback, CallbackList
 
 
 class Trainer:
@@ -112,17 +116,17 @@ class Trainer:
         self.episodic_memory = episodic_memory
         self.bridge = bridge or (NodeStateBridge(device=str(self.device)) if hasattr(model, 'phase_scheduler') else None)
         self.dream_replay_ratio = dream_replay_ratio
-        
+
         # Phase 7.1 Neuromodulation
         self.neuromodulation = NeuromodulationSystem()
-        
+
         # Phase 3: Conscious Relational Autopoiesis (C.R.A.) Engine
         self.cra_engine = CRAEngine(architect_id="Creator").to(self.device)
-        
+
         # Tier 1 - Introspective Learning Flags
         self.enable_meta_learning = False
         self.enable_nas = True
-        
+
         # Initialize NAS Topology Adapter if model hidden_dim is accessible
         hidden_dim = getattr(model, 'hidden_dim', 128)
         if hasattr(model, 'hidden_dim'):
@@ -136,10 +140,10 @@ class Trainer:
         self.workspace = GlobalWorkspace(hidden_dim=hidden_dim, capacity=5).to(self.device)
         if hasattr(model, 'dynamics'):
             model.dynamics.workspace = self.workspace
-            
+
         # Tier 2: Narrative Synthesis
         self.narrative_engine = NarrativeEngine(feature_dim=hidden_dim).to(self.device)
-        
+
         vision_dim = 784
         if hasattr(model, 'vl_config') and hasattr(model.vl_config, 'vision_feature_dim'):
             vision_dim = model.vl_config.vision_feature_dim
@@ -154,21 +158,23 @@ class Trainer:
                     break
         audio_dim = model.vl_config.audio_feature_dim if hasattr(model, 'vl_config') and hasattr(model.vl_config, 'audio_feature_dim') else 256
         self.sensory_hub = SensoryHub(
-            hidden_dim=hidden_dim, 
+            hidden_dim=hidden_dim,
             device=str(self.device),
             vision_input_size=vision_dim,
             audio_input_size=audio_dim
         ).to(self.device)
         self.tom = None # Will find in callbacks or initialize
-        
+
         # Inject Workspace into MetacognitiveMonitor if present in callbacks
-        from adaptiveneuralnetwork.central_nervous_system.metacognitive_monitor import MetacognitiveMonitor
+        from adaptiveneuralnetwork.central_nervous_system.metacognitive_monitor import (
+            MetacognitiveMonitor,
+        )
         for callback in self.callbacks.callbacks:
             if isinstance(callback, MetacognitiveMonitor):
                 callback.workspace = self.workspace
                 if hasattr(callback, 'tom'):
                     self.tom = callback.tom
-                    
+
         if self.tom is None:
             self.tom = TheoryOfMind(hidden_dim=hidden_dim).to(self.device)
 
@@ -322,7 +328,7 @@ class Trainer:
             data = data.to(self.device) if 'data' in locals() else next(iter(sensory_inputs.values()))
             target = target.to(self.device)
             entity_id = 'unknown_partner' if 'entity_id' not in locals() else entity_id
-            
+
             # 0. High-Fidelity Sensory Grounding (Tier 3)
             # Fetch deception risk for the current entity
             deception_risk = self.tom.get_or_create_entity(entity_id).trust_score if self.tom else 0.0
@@ -341,7 +347,7 @@ class Trainer:
             # Fused Sensory Context (Grounded and Synchronized)
             # Pass workspace_state for Top-Down Attention gating (Task 2)
             ws_state = self.workspace.get_workspace_state() if self.workspace else None
-            
+
             # 1. Polyphasic Nap Check (Energy Management)
             if hasattr(self.model, 'phase_scheduler') and hasattr(self.model, 'nodes'):
                 is_napping = self.model.phase_scheduler.polyphasic_nap(self.model.nodes.energy)
@@ -349,8 +355,8 @@ class Trainer:
                     logger.info(f"[TRAINER] Node micro-nap active at batch {batch_idx}")
 
             grounding_latent = self.sensory_hub.ground(
-                sensory_inputs, 
-                text_tokens=sensory_inputs.get('text'), 
+                sensory_inputs,
+                text_tokens=sensory_inputs.get('text'),
                 workspace_state=ws_state,
                 deception_risk=deception_risk
             )
@@ -391,10 +397,10 @@ class Trainer:
                     logits = model_output['logits'] if isinstance(model_output, dict) else model_output
                     loss = self.criterion(logits, target)
                     loss = loss / self.gradient_accumulation_steps
-                
+
                 # Apply Phase 3 C.R.A. Relational Homeostasis
                 loss = self.cra_engine(loss)
-                
+
                 # Assign model_output to output for later use in metrics
                 output = model_output
 
@@ -414,7 +420,7 @@ class Trainer:
                 self._apply_gradient_modulation()
 
             self.callbacks.on_backward_end(batch_idx, self, logs=batch_logs)
-            
+
             # Log workspace dynamics (if present)
             if self.workspace is not None:
                 ws_state = self.workspace.get_workspace_state()
@@ -441,7 +447,7 @@ class Trainer:
                 # Applied after optimizer step via per-node biological state if available
                 if self.bridge is not None and hasattr(self.model, 'nodes'):
                     # This would ideally happen inside optimizer.step() but can be simulated
-                    # by scaling gradients before the step. 
+                    # by scaling gradients before the step.
                     # For now, we scale gradients BEFORE the optimizer step below.
                     pass
 
@@ -451,17 +457,17 @@ class Trainer:
             # Update modulatory signals based on current loss and node anxiety
             anxiety_val = self.model.nodes.anxiety if hasattr(self.model, 'nodes') else 0.5
             success_val = np.clip(1.0 - (loss.item() * self.gradient_accumulation_steps), 0.0, 1.0)
-            
+
             self.neuromodulation.update_homeostasis(
                 task_success=success_val,
                 anxiety=anxiety_val
             )
             mod_signals = self.neuromodulation.get_neuromodulatory_bias()
             lr_scale = mod_signals.get('learning_rate_scale', 1.0)
-            
+
             # Apply Phase 3 C.R.A. Neurochemical Learning Multiplier
             cra_multiplier = self.cra_engine.neuro_state.get_learning_multiplier()
-            
+
             # Apply Dopamine scaling to all parameter groups
             for param_group in self.optimizer.param_groups:
                 if 'initial_lr' not in param_group:
@@ -470,13 +476,13 @@ class Trainer:
 
             # Track metrics
             total_loss += loss.item() * self.gradient_accumulation_steps
-            
+
             # Handle dictionary output for predictions
             if isinstance(output, dict) and 'predictions' in output:
                 pred = output['predictions'].view_as(target)
             else:
                 pred = output.argmax(dim=1)
-                
+
             correct += (pred == target).sum().item()
             total += target.size(0)
 
@@ -488,7 +494,7 @@ class Trainer:
             batch_logs['accuracy'] = correct / total if total > 0 else 0.0
             for name, fn in self.metrics.items():
                 batch_logs[name] = fn(output, target)
-                
+
             # Tier 2: Log Autonoetic State (Self vs World)
             if hasattr(self.model, 'dynamics') and hasattr(self.model.dynamics, 'autonoetic_score'):
                 batch_logs['autonoetic_score'] = self.model.dynamics.autonoetic_score.item()
@@ -581,14 +587,14 @@ class Trainer:
             return data, target
 
         batch_size = data.size(0)
-        
+
         # Identify nodes in sleep phase
         if hasattr(self.model, 'phase_scheduler'):
             # Check if majority of nodes are in sleep
             phases = self.model.phase_scheduler.node_phases
             # SLEEP = 1
             sleep_mask = (phases == 1)
-            
+
             if sleep_mask.any():
                 # Check for sub-phase priority
                 # If we are in DEEP sleep, we focus on restoration (less replay)
@@ -603,7 +609,7 @@ class Trainer:
                 num_dream_samples = int(batch_size * self.dream_replay_ratio)
                 if num_dream_samples > 0:
                     dream_data, dream_target, _, dream_self = self.episodic_memory.sample(num_dream_samples)
-                    
+
                     if dream_data.size(0) > 0:
                         replace_idx = torch.randperm(batch_size)[:dream_data.size(0)]
                         try:
@@ -611,12 +617,12 @@ class Trainer:
                                 with torch.no_grad():
                                     self.model.node_state.self_context *= 0.9
                                     self.model.node_state.self_context += 0.1 * dream_self.mean(dim=0).unsqueeze(0).unsqueeze(0)
-                            
+
                             data[replace_idx] = dream_data.to(self.device).view_as(data[replace_idx])
                             target[replace_idx] = dream_target.to(self.device)
                         except RuntimeError:
                             pass
-                        
+
         return data, target
 
     def _perform_rem_consolidation(self):
@@ -636,8 +642,8 @@ class Trainer:
 
         self.model.train()
         for exp_input in replay_batch:
-            # We need targets for supervised replay; if not available in buffer, 
-            # we skip or use a self-supervised objective. 
+            # We need targets for supervised replay; if not available in buffer,
+            # we skip or use a self-supervised objective.
             # For this architecture, we assume the buffer stores inputs.
             # Here we just perform a forward pass to 'refresh' the internal state
             # or apply a small gradient step if targets were stored (extended version).
@@ -645,17 +651,17 @@ class Trainer:
                 # Basic 'Neural Refresh': run forward pass on hard examples
                 # This helps stabilize the spiking dynamics and thresholds for these patterns
                 exp_input = exp_input.to(self.device)
-                
+
                 # If the experience is stored as a simple tensor, we might need to reshape
                 if exp_input.dim() == 2: # [Batch, Dim]
                     exp_input = exp_input.unsqueeze(0) # [1, Batch, Dim]
-                
+
                 # Perform a 'quiet' update (no full backward if we don't have targets)
-                # But if we want TRUE consolidation, we need targets. 
+                # But if we want TRUE consolidation, we need targets.
                 # Register_experience can be expanded to store targets.
                 with torch.no_grad():
                     _ = self.model(exp_input)
-                
+
             except Exception as e:
                 logger.debug(f"REM Replay failed for sample: {e}")
 
@@ -674,7 +680,7 @@ class Trainer:
         # 1. Biological Scaling (Energy/Phase/Anxiety)
         state_mod = self.bridge.bridge_state(self.model.nodes)
         bio_scale = state_mod['gradient_scale'].mean().item()
-        
+
         # 2. Social Scaling (Trust/Reputation)
         social_scale = 1.0
         if hasattr(self.model, 'phase_scheduler') and hasattr(self.model.phase_scheduler, 'social_context'):
@@ -686,14 +692,14 @@ class Trainer:
                 reputation = ctx.trust_matrix.mean(dim=1)
             else:
                 reputation = torch.ones(1) * 0.8 # Default trust
-            
+
             # Trust floor to prevent total gradient death in isolated nodes
             trust_weighted = torch.clamp(reputation.mean(), min=0.1).item()
             social_scale = trust_weighted
 
         # Combined scale
         total_scale = bio_scale * social_scale
-        
+
         # Scale all model gradients
         for param in self.model.parameters():
             if param.grad is not None:
@@ -708,42 +714,42 @@ class Trainer:
         split = batch_size // 2
         support_x, query_x = data[:split], data[split:]
         support_y, query_y = target[:split], target[split:]
-        
+
         # 1. Inner Loop: Rapid Adaptation
         # Initialize adapted parameters
         adapted_params = {n: p.clone() for n, p in self.model.named_parameters()}
-        
+
         for _ in range(inner_steps):
             # Functional forward pass using current dynamics
             # Assuming self.model has a functional interface
             support_output = self.model(support_x, params=adapted_params)
             support_loss = self.criterion(support_output, support_y)
-            
+
             # Compute gradients relative to adapted_params
             grads = torch.autograd.grad(
-                support_loss, 
+                support_loss,
                 adapted_params.values(),
                 create_graph=True,
                 allow_unused=True
             )
-            
+
             # Update adapted params (Self-optimization)
             new_params = {}
-            for (name, param), grad in zip(adapted_params.items(), grads):
+            for (name, param), grad in zip(adapted_params.items(), grads):  # noqa: B905
                 if grad is not None:
                     new_params[name] = param - 0.01 * grad # Inner LR
                 else:
                     new_params[name] = param
             adapted_params = new_params
-            
+
         # 2. Outer Loop: Meta-Update
         # Test performance on Query set using adapted parameters
         query_output = self.model(query_x, params=adapted_params)
         meta_loss = self.criterion(query_output, query_y)
-        
+
         # Backward on meta_loss updates the ORIGINAL model parameters
         meta_loss.backward()
-        
+
         return meta_loss, query_output
 
     def save_checkpoint(self, path: str) -> None:
@@ -820,12 +826,12 @@ if __name__ == "__main__":
                 b1 = params.get('network.0.bias', self.network[0].bias)
                 w2 = params.get('network.3.weight', self.network[3].weight)
                 b2 = params.get('network.3.bias', self.network[3].bias)
-                
+
                 x = torch.nn.functional.linear(x, w1, b1)
                 x = torch.nn.functional.relu(x)
                 x = torch.nn.functional.linear(x, w2, b2)
                 return x
-                
+
             return self.network(x)
 
     # Create dummy dataset

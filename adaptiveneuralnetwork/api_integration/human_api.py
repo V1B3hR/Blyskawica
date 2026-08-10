@@ -127,7 +127,7 @@ class HumanSignalManager:
             
         Returns:
             Dictionary mapping state variables to their new values
-        """
+        """  # noqa: W293
         if source_name:
             return self.adapter.fetch_signals(source_name, params)
         else:

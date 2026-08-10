@@ -87,7 +87,7 @@ class PluginBase(ABC):
         """Called after inference."""
         return output_data
 
-    def on_model_update(self, model: AdaptiveModel, update_type: str) -> None:
+    def on_model_update(self, model: AdaptiveModel, update_type: str) -> None:  # noqa: B027
         """Called when model is updated."""
         pass
 

@@ -9,7 +9,7 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
 logger = logging.getLogger(__name__)
@@ -236,7 +236,7 @@ class CISAComplianceReporter:
 
             <h2>Active CISA Alerts</h2>
             <p>Total Alerts: {report.alerts_section.get('total_alerts', 0)}</p>
-            {f'<p class="critical">⚠️ SHIELDS UP ACTIVE</p>' if report.alerts_section.get('shields_up_active') else ''}
+            {'<p class="critical">⚠️ SHIELDS UP ACTIVE</p>' if report.alerts_section.get('shields_up_active') else ''}
 
             <h2>Compliance Status</h2>
             <div class="metric"><strong>Policy Adherence:</strong> {report.compliance_section.get('policy_adherence', 0)}%</div>
@@ -272,7 +272,7 @@ class CISAComplianceReporter:
             "remediation_timeline": report.remediation_timeline,
         }
 
-    def get_report(self, report_id: UUID) -> Optional[CISAComplianceReport]:
+    def get_report(self, report_id: UUID) -> CISAComplianceReport | None:
         """Get report by ID."""
         return self._reports.get(report_id)
 

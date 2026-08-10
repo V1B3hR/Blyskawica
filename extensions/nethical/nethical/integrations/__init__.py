@@ -75,9 +75,9 @@ Usage Examples:
     
     tool = NethicalLlamaIndexTool(block_threshold=0.7)
     result = tool("Check if this action is safe")
-"""
+"""  # noqa: W293
 
-from typing import Dict, Any
+from typing import Any, Dict  # noqa: UP035
 
 # Legacy integrations
 __all__ = ["logging_connectors", "webhook", "ml_platforms", "langchain_tools", "mlflow_connector", "ray_serve_connector", "llm_providers", "agent_frameworks", "observability", "cloud"]
@@ -121,10 +121,10 @@ except ImportError:
 # Observability platforms
 try:
     from .observability import (
-        ObservabilityProvider,
-        ObservabilityManager,
-        TraceSpan,
         GovernanceMetrics,
+        ObservabilityManager,
+        ObservabilityProvider,
+        TraceSpan,
         create_observability_stack,
         get_observability_info,
     )
@@ -161,12 +161,12 @@ except ImportError:
 # Vector stores
 try:
     from .vector_stores import (
-        VectorStoreProvider,
-        VectorSearchResult,
-        PINECONE_AVAILABLE,
-        WEAVIATE_AVAILABLE,
         CHROMA_AVAILABLE,
+        PINECONE_AVAILABLE,
         QDRANT_AVAILABLE,
+        WEAVIATE_AVAILABLE,
+        VectorSearchResult,
+        VectorStoreProvider,
     )
     VECTOR_STORES_AVAILABLE = True
     __all__.extend([
@@ -183,10 +183,10 @@ except ImportError:
 # Import key functions for convenience
 try:
     from .claude_tools import (
-        get_nethical_tool,
-        handle_nethical_tool,
         evaluate_action,
         get_governance_instance,
+        get_nethical_tool,
+        handle_nethical_tool,
     )
     CLAUDE_AVAILABLE = True
     __all__.extend([
@@ -207,9 +207,13 @@ except ImportError:
 
 try:
     from .grok_tools import (
-        get_nethical_tool as get_grok_tool,
-        handle_nethical_tool as handle_grok_tool,
         evaluate_action as evaluate_grok_action,
+    )
+    from .grok_tools import (
+        get_nethical_tool as get_grok_tool,
+    )
+    from .grok_tools import (
+        handle_nethical_tool as handle_grok_tool,
     )
     GROK_AVAILABLE = True
     __all__.extend([
@@ -222,9 +226,13 @@ except ImportError:
 
 try:
     from .gemini_tools import (
-        get_nethical_tool as get_gemini_tool,
-        handle_nethical_tool as handle_gemini_tool,
         evaluate_action as evaluate_gemini_action,
+    )
+    from .gemini_tools import (
+        get_nethical_tool as get_gemini_tool,
+    )
+    from .gemini_tools import (
+        handle_nethical_tool as handle_gemini_tool,
     )
     GEMINI_AVAILABLE = True
     __all__.extend([
@@ -238,12 +246,12 @@ except ImportError:
 __all__.extend(["CLAUDE_AVAILABLE", "REST_API_AVAILABLE", "GROK_AVAILABLE", "GEMINI_AVAILABLE", "VECTOR_STORES_AVAILABLE", "LLM_PROVIDERS_AVAILABLE", "AGENT_FRAMEWORKS_AVAILABLE", "OBSERVABILITY_AVAILABLE", "CLOUD_ML_AVAILABLE", "get_integration_info"])
 
 
-def get_integration_info() -> Dict[str, Any]:
+def get_integration_info() -> dict[str, Any]:
     """Get information about available integrations.
     
     Returns:
         Dict with integration availability and setup instructions
-    """
+    """  # noqa: W293
     info = {
         "claude": {
             "available": CLAUDE_AVAILABLE,

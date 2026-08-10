@@ -4,11 +4,11 @@ Event Stream Manager
 Manages event streaming with support for multiple backends.
 """
 
-import json
 import logging
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from enum import Enum
-from typing import Any, Callable, Optional
+from typing import Any
 
 from .events import BaseEvent
 
@@ -122,7 +122,7 @@ class EventStreamManager:
     TOPIC_SCANS = "nethical.scans"
     TOPIC_CISA = "nethical.cisa"
 
-    def __init__(self, backend: StreamBackend = StreamBackend.MEMORY, config: Optional[dict[str, Any]] = None):
+    def __init__(self, backend: StreamBackend = StreamBackend.MEMORY, config: dict[str, Any] | None = None):
         """
         Initialize event stream manager.
 
@@ -132,8 +132,8 @@ class EventStreamManager:
         """
         self.backend = backend
         self.config = config or {}
-        self._producer: Optional[EventProducer] = None
-        self._consumer: Optional[EventConsumer] = None
+        self._producer: EventProducer | None = None
+        self._consumer: EventConsumer | None = None
         self._initialize_backend()
 
     def _initialize_backend(self):

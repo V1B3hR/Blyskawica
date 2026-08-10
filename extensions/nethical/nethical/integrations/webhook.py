@@ -23,23 +23,24 @@ Enhancements for nethical:
 - Parallel broadcast via ThreadPoolExecutor
 """
 
+import hashlib
+import hmac
 import json
 import logging
-import time
-import hmac
-import hashlib
 import random
 import threading
+import time
 from abc import ABC, abstractmethod
+from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
-from urllib import request, error
-from urllib.parse import urlparse
-from http.client import HTTPResponse
 from email.message import Message
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from enum import Enum
+from http.client import HTTPResponse
+from typing import Any
+from urllib import error, request
+from urllib.parse import urlparse
 
 
 class WebhookStatus(Enum):
@@ -56,11 +57,11 @@ class WebhookPayload:
     """Webhook payload"""
 
     event_type: str
-    data: Dict[str, Any]
+    data: dict[str, Any]
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
         return {
             "event_type": self.event_type,
@@ -83,14 +84,14 @@ class WebhookDelivery:
     payload: WebhookPayload
     status: WebhookStatus = WebhookStatus.PENDING
     attempt_count: int = 0
-    last_attempt: Optional[datetime] = None
-    response_code: Optional[int] = None
-    error_message: Optional[str] = None
-    duration_ms: Optional[float] = None
-    response_headers: Optional[Dict[str, str]] = None
-    response_body_excerpt: Optional[str] = None
+    last_attempt: datetime | None = None
+    response_code: int | None = None
+    error_message: str | None = None
+    duration_ms: float | None = None
+    response_headers: dict[str, str] | None = None
+    response_body_excerpt: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
         return {
             "delivery_id": self.delivery_id,
@@ -124,17 +125,17 @@ class HTTPWebhookDispatcher(WebhookDispatcher):
     def __init__(
         self,
         url: str,
-        headers: Optional[Dict[str, str]] = None,
+        headers: dict[str, str] | None = None,
         timeout: int = 30,
         max_retries: int = 3,
         retry_delay: float = 1.0,
         backoff_factor: float = 1.5,
-        secret: Optional[str] = None,
-        user_agent: Optional[str] = "nethical-webhook/1.0 (+https://github.com/V1B3hR/nethical)",
-        rate_limit_per_sec: Optional[float] = None,
+        secret: str | None = None,
+        user_agent: str | None = "nethical-webhook/1.0 (+https://github.com/V1B3hR/nethical)",
+        rate_limit_per_sec: float | None = None,
         dry_run: bool = False,
-        on_success: Optional[Callable[[WebhookDelivery], None]] = None,
-        on_failure: Optional[Callable[[WebhookDelivery], None]] = None,
+        on_success: Callable[[WebhookDelivery], None] | None = None,
+        on_failure: Callable[[WebhookDelivery], None] | None = None,
     ):
         """
         Initialize HTTP webhook dispatcher
@@ -172,7 +173,7 @@ class HTTPWebhookDispatcher(WebhookDispatcher):
         if self.user_agent:
             self.headers.setdefault("User-Agent", self.user_agent)
 
-        self.deliveries: List[WebhookDelivery] = []
+        self.deliveries: list[WebhookDelivery] = []
         self._deliveries_lock = threading.Lock()
 
         # Rate limiting state
@@ -194,7 +195,7 @@ class HTTPWebhookDispatcher(WebhookDispatcher):
             
         Raises:
             ValueError: If URL scheme is not http or https
-        """
+        """  # noqa: W293
         parsed = urlparse(url)
         if parsed.scheme not in ['http', 'https']:
             raise ValueError(
@@ -203,7 +204,7 @@ class HTTPWebhookDispatcher(WebhookDispatcher):
             )
 
     def _should_retry(
-        self, status_code: Optional[int], err: Optional[BaseException], attempt: int
+        self, status_code: int | None, err: BaseException | None, attempt: int
     ) -> bool:
         if attempt >= self.max_retries:
             return False
@@ -220,7 +221,7 @@ class HTTPWebhookDispatcher(WebhookDispatcher):
         return False
 
     def _compute_delay(
-        self, base: float, attempt: int, retry_after: Optional[float] = None
+        self, base: float, attempt: int, retry_after: float | None = None
     ) -> float:
         if retry_after is not None:
             return max(0.0, retry_after)
@@ -253,9 +254,9 @@ class HTTPWebhookDispatcher(WebhookDispatcher):
         except Exception:
             return ""
 
-    def _headers_to_dict(self, headers: Message) -> Dict[str, str]:
+    def _headers_to_dict(self, headers: Message) -> dict[str, str]:
         try:
-            return {k: v for k, v in headers.items()}
+            return {k: v for k, v in headers.items()}  # noqa: C416
         except Exception:
             # Fallback
             return {}
@@ -297,7 +298,7 @@ class HTTPWebhookDispatcher(WebhookDispatcher):
             return delivery
 
         # Attempt delivery with retries
-        last_err: Optional[BaseException] = None
+        last_err: BaseException | None = None
         for attempt in range(1, self.max_retries + 1):
             delivery.attempt_count = attempt
             delivery.last_attempt = datetime.now(timezone.utc)
@@ -307,7 +308,7 @@ class HTTPWebhookDispatcher(WebhookDispatcher):
             self._apply_rate_limit()
 
             start = time.monotonic()
-            retry_after_secs: Optional[float] = None
+            retry_after_secs: float | None = None
             try:
                 # Prepare request
                 req = request.Request(self.url, data=body_bytes, headers=req_headers, method="POST")
@@ -418,7 +419,7 @@ class HTTPWebhookDispatcher(WebhookDispatcher):
             self.deliveries.append(delivery)
         return delivery
 
-    def get_delivery_status(self, delivery_id: str) -> Optional[WebhookDelivery]:
+    def get_delivery_status(self, delivery_id: str) -> WebhookDelivery | None:
         """Get delivery status"""
         with self._deliveries_lock:
             for delivery in self.deliveries:
@@ -445,11 +446,11 @@ class SlackWebhookDispatcher(HTTPWebhookDispatcher):
 
     def send_message(
         self,
-        text: Optional[str] = None,
-        username: Optional[str] = "Nethical",
-        icon_emoji: Optional[str] = ":robot_face:",
-        attachments: Optional[List[Dict]] = None,
-        blocks: Optional[List[Dict]] = None,
+        text: str | None = None,
+        username: str | None = "Nethical",
+        icon_emoji: str | None = ":robot_face:",
+        attachments: list[dict] | None = None,
+        blocks: list[dict] | None = None,
     ) -> WebhookDelivery:
         """
         Send message to Slack
@@ -464,7 +465,7 @@ class SlackWebhookDispatcher(HTTPWebhookDispatcher):
         Returns:
             WebhookDelivery record
         """
-        payload_data: Dict[str, Any] = {
+        payload_data: dict[str, Any] = {
             "username": username,
         }
         if icon_emoji:
@@ -485,7 +486,7 @@ class SlackWebhookDispatcher(HTTPWebhookDispatcher):
         title: str,
         message: str,
         severity: str = "info",
-        fields: Optional[Dict[str, str]] = None,
+        fields: dict[str, str] | None = None,
         use_blocks: bool = True,
     ) -> WebhookDelivery:
         """
@@ -510,7 +511,7 @@ class SlackWebhookDispatcher(HTTPWebhookDispatcher):
         color = color_map.get(severity.lower(), "#dddddd")
 
         if use_blocks:
-            blocks: List[Dict[str, Any]] = [
+            blocks: list[dict[str, Any]] = [
                 {"type": "header", "text": {"type": "plain_text", "text": f"{title}"}},
                 {
                     "type": "section",
@@ -537,7 +538,7 @@ class SlackWebhookDispatcher(HTTPWebhookDispatcher):
             )
             return self.send_message(text=None, blocks=blocks)
         else:
-            attachment: Dict[str, Any] = {
+            attachment: dict[str, Any] = {
                 "color": color,
                 "title": title,
                 "text": message,
@@ -569,9 +570,9 @@ class DiscordWebhookDispatcher(HTTPWebhookDispatcher):
     def send_message(
         self,
         content: str,
-        username: Optional[str] = "Nethical",
-        embeds: Optional[List[Dict]] = None,
-        avatar_url: Optional[str] = None,
+        username: str | None = "Nethical",
+        embeds: list[dict] | None = None,
+        avatar_url: str | None = None,
     ) -> WebhookDelivery:
         """
         Send message to Discord
@@ -585,7 +586,7 @@ class DiscordWebhookDispatcher(HTTPWebhookDispatcher):
         Returns:
             WebhookDelivery record
         """
-        payload_data: Dict[str, Any] = {"content": content, "username": username}
+        payload_data: dict[str, Any] = {"content": content, "username": username}
 
         if avatar_url:
             payload_data["avatar_url"] = avatar_url
@@ -602,12 +603,12 @@ class DiscordWebhookDispatcher(HTTPWebhookDispatcher):
         title: str,
         description: str,
         color: int = 0x2ECC71,
-        fields: Optional[Dict[str, str]] = None,
+        fields: dict[str, str] | None = None,
     ) -> WebhookDelivery:
         """
         Helper to send a single embed
         """
-        embed: Dict[str, Any] = {
+        embed: dict[str, Any] = {
             "title": title,
             "description": description,
             "color": color,
@@ -630,11 +631,11 @@ class APIIntegration(ABC):
         """Authenticate with the API"""
 
     @abstractmethod
-    def send_data(self, data: Dict[str, Any]) -> bool:
+    def send_data(self, data: dict[str, Any]) -> bool:
         """Send data to the API"""
 
     @abstractmethod
-    def receive_data(self) -> Dict[str, Any]:
+    def receive_data(self) -> dict[str, Any]:
         """Receive data from the API"""
 
 
@@ -646,7 +647,7 @@ class GenericAPIIntegration(APIIntegration):
     """
 
     def __init__(
-        self, base_url: str, api_key: Optional[str] = None, auth_header: str = "Authorization"
+        self, base_url: str, api_key: str | None = None, auth_header: str = "Authorization"
     ):
         """
         Initialize API integration
@@ -672,7 +673,7 @@ class GenericAPIIntegration(APIIntegration):
         self.authenticated = True
         return True
 
-    def send_data(self, data: Dict[str, Any]) -> bool:
+    def send_data(self, data: dict[str, Any]) -> bool:
         """Send data to API"""
         # Stub implementation
         logging.info(
@@ -680,7 +681,7 @@ class GenericAPIIntegration(APIIntegration):
         )
         return True
 
-    def receive_data(self) -> Dict[str, Any]:
+    def receive_data(self) -> dict[str, Any]:
         """Receive data from API"""
         # Stub implementation
         logging.info(f"[STUB] Would receive data from {self.base_url}")
@@ -700,7 +701,7 @@ class WebhookManager:
     """
 
     def __init__(self, max_workers: int = 4):
-        self.webhooks: Dict[str, WebhookDispatcher] = {}
+        self.webhooks: dict[str, WebhookDispatcher] = {}
         self.max_workers = max_workers
 
     def add_webhook(self, name: str, dispatcher: WebhookDispatcher):
@@ -708,12 +709,12 @@ class WebhookManager:
         self.webhooks[name] = dispatcher
 
     def broadcast(
-        self, event_type: str, data: Dict[str, Any], **metadata
-    ) -> Dict[str, WebhookDelivery]:
+        self, event_type: str, data: dict[str, Any], **metadata
+    ) -> dict[str, WebhookDelivery]:
         """Broadcast to all webhooks in parallel"""
         payload = WebhookPayload(event_type=event_type, data=data, metadata=metadata)
 
-        results: Dict[str, WebhookDelivery] = {}
+        results: dict[str, WebhookDelivery] = {}
         if not self.webhooks:
             logging.warning("No webhooks configured for broadcast")
             return results
@@ -745,8 +746,8 @@ class WebhookManager:
         return results
 
     def send_to(
-        self, webhook_name: str, event_type: str, data: Dict[str, Any], **metadata
-    ) -> Optional[WebhookDelivery]:
+        self, webhook_name: str, event_type: str, data: dict[str, Any], **metadata
+    ) -> WebhookDelivery | None:
         """Send to specific webhook"""
         if webhook_name not in self.webhooks:
             logging.error(f"Webhook '{webhook_name}' not found")

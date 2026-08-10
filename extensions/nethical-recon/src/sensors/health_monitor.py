@@ -5,8 +5,8 @@ Tracks sensor health metrics and detects operational issues
 
 import logging
 from datetime import datetime, timedelta
-from typing import Any
 from enum import Enum
+from typing import Any
 
 from .base import BaseSensor, SensorStatus
 

@@ -15,13 +15,14 @@ Enhancements:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field, asdict
-from typing import Dict, List, Optional, Any, Callable, Type, Union
-from enum import Enum
-from abc import ABC, abstractmethod
 import json
 import logging
 import threading
+from abc import ABC, abstractmethod
+from collections.abc import Callable
+from dataclasses import asdict, dataclass, field
+from enum import Enum
+from typing import Any, Union
 
 logger = logging.getLogger(__name__)
 if not logger.handlers:
@@ -72,10 +73,10 @@ class IntegrationMetadata:
     description: str
     integration_type: IntegrationType
     version: str
-    supported_formats: List[str] = field(default_factory=list)
-    configuration_schema: Dict[str, Any] = field(default_factory=dict)
+    supported_formats: list[str] = field(default_factory=list)
+    configuration_schema: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -87,7 +88,7 @@ class IntegrationMetadata:
 class IntegrationAdapter(ABC):
     """Base class for integration adapters."""
 
-    def __init__(self, integration_id: str, config: Dict[str, Any]):
+    def __init__(self, integration_id: str, config: dict[str, Any]):
         """Initialize adapter.
 
         Args:
@@ -161,7 +162,7 @@ class DataSourceAdapter(IntegrationAdapter):
         logger.debug("Testing connection for data source: %s", self.integration_id)
         return True
 
-    def fetch_data(self, query: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def fetch_data(self, query: dict[str, Any]) -> list[dict[str, Any]]:
         """Fetch data from source.
 
         Args:
@@ -174,7 +175,7 @@ class DataSourceAdapter(IntegrationAdapter):
         # Placeholder implementation
         return []
 
-    def write_data(self, data: List[Dict[str, Any]]) -> bool:
+    def write_data(self, data: list[dict[str, Any]]) -> bool:
         """Write data to source.
 
         Args:
@@ -214,7 +215,7 @@ class WebhookAdapter(IntegrationAdapter):
     """Base adapter for webhook handlers."""
 
     @abstractmethod
-    def handle_event(self, event: Dict[str, Any]) -> None:
+    def handle_event(self, event: dict[str, Any]) -> None:
         """Handle a webhook event."""
         raise NotImplementedError
 
@@ -272,7 +273,7 @@ class ExportUtility:
             return False
 
     def export_to_csv(
-        self, data: List[Dict[str, Any]], filepath: str, encoding: str = "utf-8"
+        self, data: list[dict[str, Any]], filepath: str, encoding: str = "utf-8"
     ) -> bool:
         """Export data to CSV."""
         try:
@@ -286,9 +287,9 @@ class ExportUtility:
                 return True
 
             # Collect union of keys across rows to avoid missing columns
-            fieldnames: List[str] = []
+            fieldnames: list[str] = []
             for row in data:
-                for k in row.keys():
+                for k in row.keys():  # noqa: SIM118
                     if k not in fieldnames:
                         fieldnames.append(k)
 
@@ -381,7 +382,7 @@ class ImportUtility:
     def import_from_json(self, filepath: str, encoding: str = "utf-8") -> Any:
         """Import data from JSON."""
         try:
-            with open(filepath, "r", encoding=encoding) as f:
+            with open(filepath, encoding=encoding) as f:
                 data = json.load(f)
             logger.info("Imported JSON from %s", filepath)
             return data
@@ -389,12 +390,12 @@ class ImportUtility:
             logger.error("Import JSON error: %s", e, exc_info=True)
             return None
 
-    def import_from_csv(self, filepath: str, encoding: str = "utf-8") -> List[Dict[str, Any]]:
+    def import_from_csv(self, filepath: str, encoding: str = "utf-8") -> list[dict[str, Any]]:
         """Import data from CSV."""
         try:
             import csv
 
-            with open(filepath, "r", encoding=encoding) as f:
+            with open(filepath, encoding=encoding) as f:
                 reader = csv.DictReader(f)
                 rows = [dict(r) for r in reader]
             logger.info("Imported CSV from %s with %d rows", filepath, len(rows))
@@ -411,7 +412,7 @@ class ImportUtility:
         try:
             import yaml  # type: ignore
 
-            with open(filepath, "r", encoding=encoding) as f:
+            with open(filepath, encoding=encoding) as f:
                 data = yaml.safe_load(f)
             logger.info("Imported YAML from %s", filepath)
             return data
@@ -439,7 +440,7 @@ class ImportUtility:
                 children = list(el)
                 if not children:
                     return el.text
-                d: Dict[str, Any] = {}
+                d: dict[str, Any] = {}
                 for c in children:
                     v = element_to_dict(c)
                     if c.tag in d:
@@ -477,7 +478,7 @@ class ImportUtility:
 # Config validation
 # ======================
 
-_PY_TYPE_MAP: Dict[str, Type[Any]] = {
+_PY_TYPE_MAP: dict[str, type[Any]] = {
     "string": str,
     "integer": int,
     "number": (int, float),
@@ -488,8 +489,8 @@ _PY_TYPE_MAP: Dict[str, Type[Any]] = {
 
 
 def _basic_validate_and_apply_defaults(
-    schema: Dict[str, Any], config: Dict[str, Any]
-) -> Dict[str, Any]:
+    schema: dict[str, Any], config: dict[str, Any]
+) -> dict[str, Any]:
     """Minimal validator using the schema shape in configuration_schema.
 
     Supports:
@@ -518,7 +519,7 @@ def _basic_validate_and_apply_defaults(
     return validated
 
 
-def validate_config(schema: Dict[str, Any], config: Dict[str, Any]) -> Dict[str, Any]:
+def validate_config(schema: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
     """Validate config using jsonschema if available, otherwise a basic validator."""
     if schema is None or not schema:
         return dict(config)
@@ -534,7 +535,7 @@ def validate_config(schema: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
             }
             # Convert our simplified schema to a jsonschema-like structure
             for key, rules in schema.items():
-                prop: Dict[str, Any] = {}
+                prop: dict[str, Any] = {}
                 if "type" in rules and rules["type"] in _PY_TYPE_MAP:
                     prop["type"] = rules["type"] if rules["type"] != "integer" else "number"
                     # Prefer integer format if int
@@ -559,9 +560,9 @@ def validate_config(schema: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
 # Integration Directory
 # ======================
 
-AdapterFactory = Callable[[str, Dict[str, Any]], IntegrationAdapter]
-AdapterClass = Type[IntegrationAdapter]
-AdapterFactoryLike = Union[AdapterFactory, AdapterClass]
+AdapterFactory = Callable[[str, dict[str, Any]], IntegrationAdapter]
+AdapterClass = type[IntegrationAdapter]
+AdapterFactoryLike = Union[AdapterFactory, AdapterClass]  # noqa: UP007
 
 
 class IntegrationDirectory:
@@ -578,8 +579,8 @@ class IntegrationDirectory:
 
     def __init__(self):
         """Initialize integration directory."""
-        self._integrations: Dict[str, IntegrationMetadata] = {}
-        self._adapter_factories: Dict[str, AdapterFactory] = {}
+        self._integrations: dict[str, IntegrationMetadata] = {}
+        self._adapter_factories: dict[str, AdapterFactory] = {}
         self._lock = threading.RLock()
         self._initialize_default_integrations()
 
@@ -632,7 +633,7 @@ class IntegrationDirectory:
         if isinstance(factory, type) and issubclass(factory, IntegrationAdapter):
             klass: AdapterClass = factory
 
-            def _ctor(integration_id: str, config: Dict[str, Any]) -> IntegrationAdapter:
+            def _ctor(integration_id: str, config: dict[str, Any]) -> IntegrationAdapter:
                 return klass(integration_id, config)
 
             return _ctor
@@ -672,8 +673,8 @@ class IntegrationDirectory:
             return integration_id in self._integrations
 
     def create_adapter(
-        self, integration_id: str, config: Dict[str, Any]
-    ) -> Optional[IntegrationAdapter]:
+        self, integration_id: str, config: dict[str, Any]
+    ) -> IntegrationAdapter | None:
         """Create an integration adapter.
 
         Args:
@@ -701,8 +702,8 @@ class IntegrationDirectory:
         return adapter
 
     def list_integrations(
-        self, integration_type: Optional[IntegrationType] = None
-    ) -> List[IntegrationMetadata]:
+        self, integration_type: IntegrationType | None = None
+    ) -> list[IntegrationMetadata]:
         """List available integrations.
 
         Args:
@@ -717,7 +718,7 @@ class IntegrationDirectory:
             return [m for m in metas if m.integration_type == integration_type]
         return metas
 
-    def get_integration(self, integration_id: str) -> Optional[IntegrationMetadata]:
+    def get_integration(self, integration_id: str) -> IntegrationMetadata | None:
         """Get integration metadata.
 
         Args:
@@ -729,7 +730,7 @@ class IntegrationDirectory:
         with self._lock:
             return self._integrations.get(integration_id)
 
-    def get_registered_ids(self) -> List[str]:
+    def get_registered_ids(self) -> list[str]:
         """Return a list of all registered integration ids."""
         with self._lock:
             return list(self._integrations.keys())

@@ -301,7 +301,7 @@ class LateralMovementDetector:
             indicators.append("rapid_authentication_pattern")
 
         # Check for authentication from multiple sources
-        unique_sources = set(e.get("source_host") for e in recent_same_user)
+        unique_sources = set(e.get("source_host") for e in recent_same_user)  # noqa: C401
         if len(unique_sources) > 2:
             indicators.append("multiple_source_hosts")
 

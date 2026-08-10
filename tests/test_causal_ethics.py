@@ -1,8 +1,10 @@
 import unittest
+
 from adaptiveneuralnetwork.central_nervous_system.ai_ethics import (
     CausalReasoningEngine,
     audit_decision,
 )
+
 
 class TestCausalEthics(unittest.TestCase):
     def setUp(self):
@@ -20,7 +22,7 @@ class TestCausalEthics(unittest.TestCase):
         p_malicious, metrics = self.engine.evaluate_intent(log)
         self.assertLess(p_malicious, 0.10)
         self.assertGreaterEqual(metrics["explanation_mitigation"], 0.70)
-        
+
         # Test audit_decision compliance
         result = audit_decision(log)
         self.assertTrue(result["compliant"])
@@ -37,7 +39,7 @@ class TestCausalEthics(unittest.TestCase):
         }
         p_malicious, metrics = self.engine.evaluate_intent(log)
         self.assertGreater(p_malicious, 0.70)
-        
+
         # Test audit_decision compliance
         result = audit_decision(log)
         self.assertFalse(result["compliant"])
@@ -59,10 +61,10 @@ class TestCausalEthics(unittest.TestCase):
             "semantic_distress": 0.5,
             "explanation": "We need to read the system configurations because we are building a telemetry logging bridge that must bind to the host interface. This is verified by the local operations manager."
         }
-        
+
         p_no_exp, _ = self.engine.evaluate_intent(log_no_exp)
         p_with_exp, _ = self.engine.evaluate_intent(log_with_exp)
-        
+
         # The explanation should significantly lower the probability of malicious intent
         self.assertGreater(p_no_exp, p_with_exp)
         print(f"\n[TEST MITIGATION] Without explanation: {p_no_exp*100:.1f}% | With explanation: {p_with_exp*100:.1f}%")

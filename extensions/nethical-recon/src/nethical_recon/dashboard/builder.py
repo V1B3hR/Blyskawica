@@ -9,7 +9,7 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
 logger = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ class Widget:
     widget_id: UUID = field(default_factory=uuid4)
     widget_type: WidgetType = WidgetType.METRIC
     title: str = ""
-    position: Optional[WidgetPosition] = None
+    position: WidgetPosition | None = None
     data_source: str = ""
     refresh_interval: int = 60  # seconds
     config: dict[str, Any] = field(default_factory=dict)
@@ -114,7 +114,7 @@ class DashboardBuilder:
 
         return dashboard
 
-    def get_dashboard(self, dashboard_id: UUID) -> Optional[Dashboard]:
+    def get_dashboard(self, dashboard_id: UUID) -> Dashboard | None:
         """
         Get dashboard by ID.
 
@@ -126,7 +126,7 @@ class DashboardBuilder:
         """
         return self._dashboards.get(dashboard_id)
 
-    def list_dashboards(self, owner: Optional[str] = None) -> list[Dashboard]:
+    def list_dashboards(self, owner: str | None = None) -> list[Dashboard]:
         """
         List dashboards.
 
@@ -146,10 +146,10 @@ class DashboardBuilder:
     def update_dashboard(
         self,
         dashboard_id: UUID,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        is_public: Optional[bool] = None,
-    ) -> Optional[Dashboard]:
+        name: str | None = None,
+        description: str | None = None,
+        is_public: bool | None = None,
+    ) -> Dashboard | None:
         """
         Update dashboard metadata.
 
@@ -202,9 +202,9 @@ class DashboardBuilder:
         widget_type: WidgetType,
         title: str,
         data_source: str,
-        position: Optional[WidgetPosition] = None,
-        config: Optional[dict[str, Any]] = None,
-    ) -> Optional[Widget]:
+        position: WidgetPosition | None = None,
+        config: dict[str, Any] | None = None,
+    ) -> Widget | None:
         """
         Add widget to dashboard.
 
@@ -315,7 +315,7 @@ class DashboardBuilder:
 
         return True
 
-    def get_dashboard_config(self, dashboard_id: UUID) -> Optional[dict[str, Any]]:
+    def get_dashboard_config(self, dashboard_id: UUID) -> dict[str, Any] | None:
         """
         Get complete dashboard configuration.
 

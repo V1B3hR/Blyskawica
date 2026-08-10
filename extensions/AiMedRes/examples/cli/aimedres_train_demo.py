@@ -23,10 +23,10 @@ def run_demo():
     print()
     print("This demonstration will run in dry-run mode to show what would execute.")
     print()
-    
+
     # Change to repo root
     repo_root = Path(__file__).parent.parent.parent
-    
+
     # Run with dry-run to show what would happen
     cmd = [
         "./aimedres", "train",
@@ -37,15 +37,15 @@ def run_demo():
         "--batch", "128",
         "--dry-run"
     ]
-    
+
     print("=" * 80)
     print(f"Running: {' '.join(cmd)}")
     print("=" * 80)
     print()
-    
+
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=60, cwd=repo_root)
     output = result.stdout + result.stderr
-    
+
     # Print key information
     for line in output.split('\n'):
         # Print important lines
@@ -55,10 +55,10 @@ def run_demo():
             'Successful:', 'Skipped:', 'All selected'
         ]):
             print(line)
-    
+
     print()
     print("=" * 80)
-    
+
     if result.returncode == 0:
         print("✅ SUCCESS: Command executed successfully (dry-run mode)")
         print()

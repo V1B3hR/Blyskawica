@@ -21,7 +21,7 @@ Version: 1.0.0
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import APIRouter, Query, Response
 from pydantic import BaseModel, Field
@@ -36,12 +36,12 @@ router = APIRouter(prefix="/transparency", tags=["Transparency"])
 # Response Models
 class ProviderInfo(BaseModel):
     """Provider identification per EU AI Act Article 13.3(a)."""
-    
+
     name: str = Field(
         ...,
         description="Provider name",
     )
-    address: Optional[str] = Field(
+    address: str | None = Field(
         default=None,
         description="Provider address",
     )
@@ -49,11 +49,11 @@ class ProviderInfo(BaseModel):
         ...,
         description="Contact email",
     )
-    registration_number: Optional[str] = Field(
+    registration_number: str | None = Field(
         default=None,
         description="Business registration number",
     )
-    authorized_representative: Optional[str] = Field(
+    authorized_representative: str | None = Field(
         default=None,
         description="EU authorized representative if applicable",
     )
@@ -61,7 +61,7 @@ class ProviderInfo(BaseModel):
 
 class SystemInfo(BaseModel):
     """AI system information per EU AI Act Article 13.3(b)."""
-    
+
     system_name: str = Field(
         ...,
         description="Official name of the AI system",
@@ -82,7 +82,7 @@ class SystemInfo(BaseModel):
         ...,
         description="EU AI Act risk classification",
     )
-    deployment_date: Optional[str] = Field(
+    deployment_date: str | None = Field(
         default=None,
         description="Date the system was deployed",
     )
@@ -94,7 +94,7 @@ class SystemInfo(BaseModel):
 
 class Capability(BaseModel):
     """A system capability."""
-    
+
     name: str = Field(
         ...,
         description="Capability name",
@@ -103,7 +103,7 @@ class Capability(BaseModel):
         ...,
         description="Capability description",
     )
-    accuracy: Optional[float] = Field(
+    accuracy: float | None = Field(
         default=None,
         ge=0.0,
         le=1.0,
@@ -117,7 +117,7 @@ class Capability(BaseModel):
 
 class Limitation(BaseModel):
     """A system limitation."""
-    
+
     category: str = Field(
         ...,
         description="Limitation category",
@@ -130,7 +130,7 @@ class Limitation(BaseModel):
         ...,
         description="Impact of the limitation",
     )
-    mitigation: Optional[str] = Field(
+    mitigation: str | None = Field(
         default=None,
         description="How the limitation is mitigated",
     )
@@ -138,7 +138,7 @@ class Limitation(BaseModel):
 
 class CapabilitiesResponse(BaseModel):
     """System capabilities and limitations per EU AI Act Article 13.3(b)(ii)."""
-    
+
     capabilities: list[Capability] = Field(
         default_factory=list,
         description="List of system capabilities",
@@ -159,7 +159,7 @@ class CapabilitiesResponse(BaseModel):
 
 class HumanOversightInfo(BaseModel):
     """Human oversight measures per EU AI Act Article 13.3(c)."""
-    
+
     oversight_mode: str = Field(
         ...,
         description="Current oversight mode",
@@ -188,7 +188,7 @@ class HumanOversightInfo(BaseModel):
 
 class PerformanceMetrics(BaseModel):
     """Performance metrics for transparency."""
-    
+
     accuracy: float = Field(
         ...,
         ge=0.0,
@@ -227,7 +227,7 @@ class PerformanceMetrics(BaseModel):
 
 class FairnessMetrics(BaseModel):
     """Fairness metrics per EU AI Act bias prevention requirements."""
-    
+
     demographic_parity: float = Field(
         ...,
         ge=0.0,
@@ -249,7 +249,7 @@ class FairnessMetrics(BaseModel):
         default=False,
         description="Whether fairness has been certified",
     )
-    last_audit_date: Optional[str] = Field(
+    last_audit_date: str | None = Field(
         default=None,
         description="Date of last fairness audit",
     )
@@ -257,7 +257,7 @@ class FairnessMetrics(BaseModel):
 
 class MetricsResponse(BaseModel):
     """Combined metrics response."""
-    
+
     performance: PerformanceMetrics = Field(
         ...,
         description="Performance metrics",
@@ -278,7 +278,7 @@ class MetricsResponse(BaseModel):
 
 class FullDisclosure(BaseModel):
     """Full transparency disclosure per EU AI Act Article 13."""
-    
+
     provider: ProviderInfo = Field(
         ...,
         description="Provider information per Article 13.3(a)",
@@ -327,7 +327,7 @@ async def get_system_info() -> SystemInfo:
     
     Returns:
         SystemInfo with system details
-    """
+    """  # noqa: W293
     return SystemInfo(
         system_name="Nethical AI Governance Platform",
         version=API_VERSION,
@@ -357,7 +357,7 @@ async def get_provider_info() -> ProviderInfo:
     
     Returns:
         ProviderInfo with provider details
-    """
+    """  # noqa: W293
     return ProviderInfo(
         name="Nethical Project",
         address=None,  # Configure based on deployment
@@ -377,7 +377,7 @@ async def get_capabilities() -> CapabilitiesResponse:
     
     Returns:
         CapabilitiesResponse with capabilities and limitations
-    """
+    """  # noqa: W293
     capabilities = [
         Capability(
             name="Action Evaluation",
@@ -416,7 +416,7 @@ async def get_capabilities() -> CapabilitiesResponse:
             confidence="medium",
         ),
     ]
-    
+
     limitations = [
         Limitation(
             category="Context Understanding",
@@ -449,7 +449,7 @@ async def get_capabilities() -> CapabilitiesResponse:
             mitigation="Expanding language models; configurable by region",
         ),
     ]
-    
+
     contexts_of_use = [
         "Autonomous vehicle AI governance",
         "Industrial robot safety systems",
@@ -458,14 +458,14 @@ async def get_capabilities() -> CapabilitiesResponse:
         "Content moderation systems",
         "Financial AI risk management",
     ]
-    
+
     contraindications = [
         "Life-or-death decisions without human oversight",
         "Weapons systems (violates Fundamental Law 8)",
         "Systems designed to cause harm",
         "Unlawful surveillance applications",
     ]
-    
+
     return CapabilitiesResponse(
         capabilities=capabilities,
         limitations=limitations,
@@ -482,7 +482,7 @@ async def get_human_oversight_info() -> HumanOversightInfo:
     
     Returns:
         HumanOversightInfo with oversight details
-    """
+    """  # noqa: W293
     return HumanOversightInfo(
         oversight_mode="monitoring",
         human_review_available=True,
@@ -519,7 +519,7 @@ async def get_transparency_metrics(
         
     Returns:
         MetricsResponse with performance and fairness metrics
-    """
+    """  # noqa: W293
     return MetricsResponse(
         performance=PerformanceMetrics(
             accuracy=0.967,
@@ -558,11 +558,11 @@ async def get_full_disclosure(
         
     Returns:
         FullDisclosure with complete transparency information
-    """
+    """  # noqa: W293
     response.headers["X-EU-AI-Act-Article-13"] = "compliant"
     response.headers["X-Fundamental-Law-10"] = "applied"
     response.headers["X-Fundamental-Law-12"] = "applied"
-    
+
     return FullDisclosure(
         provider=await get_provider_info(),
         system=await get_system_info(),

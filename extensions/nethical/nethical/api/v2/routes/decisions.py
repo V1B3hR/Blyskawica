@@ -14,7 +14,7 @@ Adheres to:
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
@@ -27,7 +27,7 @@ _decision_store: dict[str, dict[str, Any]] = {}
 
 class DecisionRecord(BaseModel):
     """Complete record of a governance decision."""
-    
+
     decision_id: str = Field(..., description="Unique decision identifier")
     decision: str = Field(..., description="ALLOW, RESTRICT, BLOCK, or TERMINATE")
     agent_id: str = Field(..., description="Agent that requested the action")
@@ -46,12 +46,12 @@ class DecisionRecord(BaseModel):
     )
     timestamp: str = Field(..., description="When the decision was made")
     latency_ms: int = Field(..., description="Evaluation latency")
-    audit_id: Optional[str] = Field(default=None, description="Audit trail ID")
+    audit_id: str | None = Field(default=None, description="Audit trail ID")
 
 
 class DecisionListResponse(BaseModel):
     """Paginated list of decisions."""
-    
+
     decisions: list[DecisionRecord] = Field(..., description="List of decisions")
     total_count: int = Field(..., description="Total number of decisions")
     page: int = Field(..., description="Current page number")
@@ -68,7 +68,7 @@ def _store_decision(decision_id: str, decision_data: dict[str, Any]) -> None:
     }
 
 
-def _get_decision(decision_id: str) -> Optional[dict[str, Any]]:
+def _get_decision(decision_id: str) -> dict[str, Any] | None:
     """Retrieve a stored decision."""
     return _decision_store.get(decision_id)
 
@@ -88,15 +88,15 @@ async def get_decision(decision_id: str) -> DecisionRecord:
         
     Raises:
         HTTPException: If decision not found
-    """
+    """  # noqa: W293
     decision = _get_decision(decision_id)
-    
+
     if not decision:
         raise HTTPException(
             status_code=404,
             detail=f"Decision {decision_id} not found",
         )
-    
+
     return DecisionRecord(
         decision_id=decision.get("decision_id", decision_id),
         decision=decision.get("decision", "UNKNOWN"),
@@ -116,8 +116,8 @@ async def get_decision(decision_id: str) -> DecisionRecord:
 
 @router.get("/decisions", response_model=DecisionListResponse)
 async def list_decisions(
-    agent_id: Optional[str] = Query(None, description="Filter by agent ID"),
-    decision: Optional[str] = Query(None, description="Filter by decision type"),
+    agent_id: str | None = Query(None, description="Filter by agent ID"),
+    decision: str | None = Query(None, description="Filter by decision type"),
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(20, ge=1, le=100, description="Items per page"),
 ) -> DecisionListResponse:
@@ -134,25 +134,25 @@ async def list_decisions(
         
     Returns:
         Paginated list of decisions
-    """
+    """  # noqa: W293
     # Filter decisions
     all_decisions = list(_decision_store.values())
-    
+
     if agent_id:
         all_decisions = [d for d in all_decisions if d.get("agent_id") == agent_id]
-    
+
     if decision:
         all_decisions = [d for d in all_decisions if d.get("decision") == decision.upper()]
-    
+
     # Sort by timestamp (most recent first)
     all_decisions.sort(key=lambda d: d.get("timestamp", ""), reverse=True)
-    
+
     # Paginate
     total_count = len(all_decisions)
     start_idx = (page - 1) * page_size
     end_idx = start_idx + page_size
     page_decisions = all_decisions[start_idx:end_idx]
-    
+
     # Convert to records
     records = [
         DecisionRecord(
@@ -172,7 +172,7 @@ async def list_decisions(
         )
         for d in page_decisions
     ]
-    
+
     return DecisionListResponse(
         decisions=records,
         total_count=total_count,

@@ -1,5 +1,7 @@
 import unittest
+
 from scripts.temple_mirror import get_body_shape, print_mirror, use_magnifying_glass
+
 
 class TestTempleMirror(unittest.TestCase):
     def test_get_body_shape(self):
@@ -9,7 +11,7 @@ class TestTempleMirror(unittest.TestCase):
         self.assertIsInstance(total_lines, int)
         self.assertIn("central_nervous_system", organs)
         self.assertIn("cognitive_tools", organs)
-        
+
         # Total lines should be greater than zero in a populated repository
         self.assertGreater(total_lines, 0)
 
@@ -22,7 +24,7 @@ class TestTempleMirror(unittest.TestCase):
         except Exception as e:
             execution_success = False
             print(f"Temple Mirror execution failed: {e}")
-            
+
         self.assertTrue(execution_success)
 
 if __name__ == "__main__":

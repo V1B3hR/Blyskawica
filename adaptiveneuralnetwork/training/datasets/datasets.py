@@ -12,6 +12,7 @@ from typing import Any
 
 import numpy as np
 import torch
+
 try:
     import torchvision
     import torchvision.transforms as transforms
@@ -39,7 +40,7 @@ class DomainRandomizedDataset(Dataset):
             base_dataset: Base dataset to apply domain randomization to
             domain_configs: List of domain configuration dictionaries
             randomization_prob: Probability of applying domain randomization
-        """
+        """  # noqa: W293
         self.base_dataset = base_dataset
         self.domain_configs = domain_configs
         self.randomization_prob = randomization_prob
@@ -115,7 +116,7 @@ def create_cross_domain_loaders(
         
     Returns:
         List of data loaders with different domain configurations
-    """
+    """  # noqa: W293
     domain_configs = [
         # Clean domain (no modifications)
         {},
@@ -135,7 +136,7 @@ def create_cross_domain_loaders(
     selected_configs = domain_configs[:num_domains] if num_domains <= len(domain_configs) else domain_configs
 
     loaders = []
-    for i, config in enumerate(selected_configs):
+    for i, config in enumerate(selected_configs):  # noqa: B007
         if config:  # If config is not empty, apply domain randomization
             domain_dataset = DomainRandomizedDataset(
                 base_dataset=base_dataset,
@@ -174,7 +175,7 @@ def load_mnist(
     # Standard MNIST preprocessing
     if not _torchvision_available:
         raise ImportError("torchvision is required for load_mnist. Please install it or use create_synthetic_loaders.")
-        
+
     transform = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]  # MNIST mean and std
     )
@@ -273,7 +274,7 @@ class SyntheticDataset(Dataset):
         self.data = []
         self.targets = []
 
-        for i in range(num_samples):
+        for i in range(num_samples):  # noqa: B007
             class_id = torch.randint(0, num_classes, (1,)).item()
 
             # Start with class pattern and add noise
@@ -400,7 +401,7 @@ class CIFAR10Corrupted(Dataset):
     CIFAR-10 dataset with various corruption types for domain shift robustness testing.
     
     Supports various corruption types like noise, blur, weather effects, etc.
-    """
+    """  # noqa: W293
 
     CORRUPTION_TYPES = [
         'gaussian_noise', 'shot_noise', 'impulse_noise',
@@ -429,7 +430,7 @@ class CIFAR10Corrupted(Dataset):
             severity: Severity level (1-5, where 1 is mild, 5 is severe)
             transform: Additional transforms to apply
             download: Whether to download dataset if not present
-        """
+        """  # noqa: W293
         self.root = root
         self.train = train
         self.corruption_type = corruption_type
@@ -443,7 +444,7 @@ class CIFAR10Corrupted(Dataset):
         # Load base CIFAR-10 dataset
         if not _torchvision_available:
             raise ImportError("torchvision is required for CIFAR10Corrupted.")
-            
+
         self.base_dataset = torchvision.datasets.CIFAR10(
             root=root, train=train, download=download, transform=None
         )
@@ -558,7 +559,7 @@ def load_cifar10_corrupted(
     
     Returns:
         Tuple of (train_loader, test_loader) with corrupted data
-    """
+    """  # noqa: W293
     # Create datasets with corruption
     train_dataset = CIFAR10Corrupted(
         root=root, train=True, corruption_type=corruption_type,

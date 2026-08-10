@@ -17,11 +17,12 @@ import json
 import logging
 import pickle
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +69,7 @@ class OfflineRequest:
     request_id: str
     operation: str  # get, set, delete
     key: str
-    value: Optional[Any] = None
+    value: Any | None = None
     timestamp: datetime = field(default_factory=datetime.utcnow)
     priority: int = 0
     retry_count: int = 0
@@ -127,7 +128,7 @@ class SatelliteCache:
 
     def __init__(
         self,
-        config: Optional[SatelliteCacheConfig] = None,
+        config: SatelliteCacheConfig | None = None,
         region_id: str = "satellite",
     ):
         """
@@ -141,14 +142,14 @@ class SatelliteCache:
         self.region_id = region_id
 
         # In-memory cache
-        self._cache: Dict[str, CacheEntry] = {}
+        self._cache: dict[str, CacheEntry] = {}
 
         # Offline request queue
-        self._offline_queue: List[OfflineRequest] = []
+        self._offline_queue: list[OfflineRequest] = []
 
         # Sync tracking
-        self._pending_sync: Set[str] = set()
-        self._last_sync: Optional[datetime] = None
+        self._pending_sync: set[str] = set()
+        self._last_sync: datetime | None = None
         self._is_online = True
 
         # Persistence
@@ -163,10 +164,10 @@ class SatelliteCache:
         self._compression_savings_bytes = 0
 
         # Callbacks
-        self._conflict_callback: Optional[Callable] = None
+        self._conflict_callback: Callable | None = None
 
         # Background tasks
-        self._sync_task: Optional[asyncio.Task] = None
+        self._sync_task: asyncio.Task | None = None
 
         logger.info(
             f"SatelliteCache initialized for region {region_id}, "
@@ -188,7 +189,7 @@ class SatelliteCache:
             logger.info("Connection restored - initiating cache sync")
             asyncio.create_task(self.sync_pending())
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         """
         Get value from cache (read-local strategy).
 
@@ -228,7 +229,7 @@ class SatelliteCache:
         self,
         key: str,
         value: Any,
-        ttl: Optional[int] = None,
+        ttl: int | None = None,
         write_through: bool = True,
     ):
         """
@@ -322,7 +323,7 @@ class SatelliteCache:
         Args:
             pattern: Pattern to match (simple prefix match)
         """
-        keys_to_delete = [k for k in self._cache.keys() if k.startswith(pattern)]
+        keys_to_delete = [k for k in self._cache.keys() if k.startswith(pattern)]  # noqa: SIM118
         for key in keys_to_delete:
             self.delete(key, sync=True)
         logger.debug(f"Invalidated {len(keys_to_delete)} keys matching '{pattern}'")
@@ -393,7 +394,7 @@ class SatelliteCache:
                 elif request.operation == "delete":
                     # Confirm deletion
                     processed += 1
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 logger.error(f"Failed to process offline request: {e}")
                 request.retry_count += 1
                 if request.retry_count < request.max_retries:
@@ -406,7 +407,7 @@ class SatelliteCache:
         self,
         operation: str,
         key: str,
-        value: Optional[Any] = None,
+        value: Any | None = None,
         priority: int = 0,
     ):
         """Queue a request for offline processing."""
@@ -555,7 +556,7 @@ class SatelliteCache:
         except Exception as e:
             logger.error(f"Failed to persist cache entry {entry.key}: {e}")
 
-    def _load_from_persistence(self, key: str) -> Optional[CacheEntry]:
+    def _load_from_persistence(self, key: str) -> CacheEntry | None:
         """Load entry from persistent storage."""
         if not self.config.persistence_enabled:
             return None
@@ -589,7 +590,7 @@ class SatelliteCache:
         except Exception as e:
             logger.error(f"Failed to delete persisted cache entry {key}: {e}")
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get cache metrics."""
         total_requests = self._hits + self._misses
         hit_rate = self._hits / total_requests if total_requests > 0 else 0
@@ -613,7 +614,7 @@ class SatelliteCache:
             "region": self.region_id,
         }
 
-    def get_sync_status(self) -> Dict[str, Any]:
+    def get_sync_status(self) -> dict[str, Any]:
         """Get synchronization status."""
         synced = sum(
             1 for e in self._cache.values() if e.sync_state == SyncState.SYNCED
@@ -652,5 +653,5 @@ class SatelliteCache:
                         await callback(key, entry)
                     else:
                         callback(key, entry)
-                except Exception as e:
+                except Exception as e:  # noqa: PERF203
                     logger.error(f"Sync callback failed for {key}: {e}")

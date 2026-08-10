@@ -52,11 +52,11 @@ class TestEnergyBoundary(unittest.TestCase):
 
     def test_action_with_minimal_energy(self):
         """Test node behavior when energy is just above action threshold"""
-        initial_energy = self.minimal_node.energy
-        initial_position = self.minimal_node.position.copy()
+        initial_energy = self.minimal_node.energy  # noqa: F841
+        initial_position = self.minimal_node.position.copy()  # noqa: F841
 
         # Try to perform an action that requires energy
-        result = self.minimal_node.move()
+        result = self.minimal_node.move()  # noqa: F841
 
         # Should not go negative
         self.assertGreaterEqual(self.minimal_node.energy, 0)
@@ -68,7 +68,7 @@ class TestEnergyBoundary(unittest.TestCase):
 
     def test_action_with_depleted_energy(self):
         """Test node behavior when energy is below action threshold"""
-        initial_energy = self.depleted_node.energy
+        initial_energy = self.depleted_node.energy  # noqa: F841
         initial_position = self.depleted_node.position.copy()
 
         # Try to move with depleted energy

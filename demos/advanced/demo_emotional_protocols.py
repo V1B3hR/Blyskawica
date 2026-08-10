@@ -19,7 +19,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '.'))
 
 
 import numpy as np
-
 from core.alive_node import AliveLoopNode
 from core.capacitor import CapacitorInSpace
 from core.network import TunedAdaptiveFieldNetwork

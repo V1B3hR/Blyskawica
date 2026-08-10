@@ -14,7 +14,11 @@ import unittest
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-from adaptiveneuralnetwork.central_nervous_system.explainable_ai import DecisionType, ExplainableDecisionLogger, ReasoningStep
+from adaptiveneuralnetwork.central_nervous_system.explainable_ai import (
+    DecisionType,
+    ExplainableDecisionLogger,
+    ReasoningStep,
+)
 
 
 class TestExplainableDecisionLogger(unittest.TestCase):

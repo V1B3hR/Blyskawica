@@ -96,7 +96,7 @@ class TestCreativeProblemSolving(unittest.TestCase):
         self.assertGreaterEqual(len(diverse_solutions), 3)
 
         # Test that each category has multiple solutions
-        for category, solutions in diverse_solutions.items():
+        for category, solutions in diverse_solutions.items():  # noqa: B007
             self.assertGreaterEqual(len(solutions), 2)
 
         # Test diversity within categories
@@ -167,7 +167,7 @@ class TestCreativeProblemSolving(unittest.TestCase):
         Expected: Inspiration phase should enhance creative output quality and novelty
         """
         # Mock phase transition system
-        phase_system = {
+        phase_system = {  # noqa: F841
             "current_phase": "active",
             "phase_energy": 0.5,
             "creativity_boost": 1.0

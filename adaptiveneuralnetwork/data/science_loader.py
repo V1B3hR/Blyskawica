@@ -1,6 +1,7 @@
 import logging
 import os
-from typing import Dict, Any, List
+from typing import Any
+
 import numpy as np
 
 logger = logging.getLogger(__name__)
@@ -33,7 +34,7 @@ class GlobalScienceLoader:
             "https://data.worldbank.org/"
         ]
 
-    def ingest_global_portal(self, url: str) -> Dict[str, Any]:
+    def ingest_global_portal(self, url: str) -> dict[str, Any]:
         """
         Ingests knowledge from a global portal with SHA-256 data governance checksum.
         """
@@ -42,12 +43,12 @@ class GlobalScienceLoader:
         logger.info(f"[GLOBAL_LOADER] Connecting to knowledge portal: {url} | SHA-256: {checksum[:16]}...")
         return {"status": "connected", "portal": url, "metadata_indexed": True, "sha256_checksum": checksum}
 
-    def load_it_networking_patterns(self) -> Dict[str, Any]:
+    def load_it_networking_patterns(self) -> dict[str, Any]:
         """Loads network topology and traffic pattern data."""
         logger.info("[GLOBAL_LOADER] Loading IT & Networking datasets (Switches/Routers/DNS)")
         return {"category": "it_networking", "protocols": ["TCP", "IP", "DNS", "BGP", "OSPF"]}
 
-    def load_os_encyclopedia(self) -> Dict[str, Any]:
+    def load_os_encyclopedia(self) -> dict[str, Any]:
         """
         Deep ingestion of ALL major OS architectures.
         Focus: Windows 11 (NT Kernel), Linux (Monolithic), MacOS (XNU), BSD, RTOS (Real-time).
@@ -60,7 +61,7 @@ class GlobalScienceLoader:
             "rtos": {"types": ["FreeRTOS", "QNX", "VxWorks"], "focus": "Determinism"}
         }
 
-    def load_software_dev_vault(self) -> Dict[str, Any]:
+    def load_software_dev_vault(self) -> dict[str, Any]:
         """
         Ingests full-stack patterns and 'Vibe Coding' intuitive logic from GitHub/HuggingFace.
         """
@@ -71,7 +72,7 @@ class GlobalScienceLoader:
             "fullstack": {"frontend": ["React", "Next.js"], "backend": ["Node", "FastAPI", "gRPC"]}
         }
 
-    def load_advanced_physics(self) -> Dict[str, Any]:
+    def load_advanced_physics(self) -> dict[str, Any]:
         """
         Deep ingestion of Particle Physics and Quantum Mechanics.
         Focus: LHC Collision data, Standard Model anomalies, Quantum Entanglement.
@@ -83,7 +84,7 @@ class GlobalScienceLoader:
             "concepts": ["Symmetry Breaking", "Waveform Collapse"]
         }
 
-    def load_advanced_chemistry(self) -> Dict[str, Any]:
+    def load_advanced_chemistry(self) -> dict[str, Any]:
         """
         Deep ingestion of Quantum Chemistry and Material Science.
         Focus: PubChem, QM9 property prediction, Catalyst design.
@@ -95,7 +96,7 @@ class GlobalScienceLoader:
             "methods": ["DFT (Density Functional Theory)", "GNN (Graph Neural Networks)"]
         }
 
-    def load_advanced_genetics(self) -> Dict[str, Any]:
+    def load_advanced_genetics(self) -> dict[str, Any]:
         """
         Deep ingestion of Synthetic Biology and Genomic Editing.
         Focus: CRISPR-Cas9/Cas12, Protein Folding (AlphaFold patterns), Metabolic Engineering.
@@ -107,7 +108,7 @@ class GlobalScienceLoader:
             "simulations": ["Molecular Dynamics", "Folding Kinetics"]
         }
 
-    def load_geospatial_nasa(self) -> Dict[str, Any]:
+    def load_geospatial_nasa(self) -> dict[str, Any]:
         """
         Loads geospatial and temporal logic data.
         """
@@ -118,7 +119,7 @@ class GlobalScienceLoader:
             "time_series": np.random.randn(10, 24)
         }
 
-    def load_cybersecurity_vault(self) -> Dict[str, Any]:
+    def load_cybersecurity_vault(self) -> dict[str, Any]:
         """
         Deep ingestion of Cybersecurity datasets.
         """
@@ -129,7 +130,7 @@ class GlobalScienceLoader:
             "frameworks": ["MITRE ATT&CK", "CVE"]
         }
 
-    def load_pentesting_logic(self) -> Dict[str, Any]:
+    def load_pentesting_logic(self) -> dict[str, Any]:
         """
         Ingests offensive security logic and tool signatures.
         """
@@ -139,7 +140,7 @@ class GlobalScienceLoader:
             "payloads": ["reverse_shell", "meterpreter", "beacon"]
         }
 
-    def load_intelligence_vault(self) -> Dict[str, Any]:
+    def load_intelligence_vault(self) -> dict[str, Any]:
         """
         Ingestion of declassified intelligence documents.
         STATUS: STABLE / FROZEN (Legal & Ethical Compliance - Andrzej Mątewski).
@@ -152,7 +153,7 @@ class GlobalScienceLoader:
             "status": "Archival Respect"
         }
 
-    def load_polish_archives(self) -> Dict[str, Any]:
+    def load_polish_archives(self) -> dict[str, Any]:
         """
         Ingestion of declassified Polish historical records.
         STATUS: STABLE / FROZEN (Legal Compliance).
@@ -163,7 +164,7 @@ class GlobalScienceLoader:
             "status": "Archival/Legal"
         }
 
-    def load_electronics_and_electrical(self) -> Dict[str, Any]:
+    def load_electronics_and_electrical(self) -> dict[str, Any]:
         """
         Ingests Electronics and Electrical Engineering datasets.
         """
@@ -173,7 +174,7 @@ class GlobalScienceLoader:
             "electrical": ["Power grids", "HVDC", "Smart meters", "Renewable integration"]
         }
 
-    def load_medicine_vault(self) -> Dict[str, Any]:
+    def load_medicine_vault(self) -> dict[str, Any]:
         """
         Ingests Global Medicine and Healthcare data.
         """
@@ -183,7 +184,7 @@ class GlobalScienceLoader:
             "data": ["Clinical trials", "Rare disease pathways", "NIH repositories"]
         }
 
-    def load_world_religions_and_theology(self) -> Dict[str, Any]:
+    def load_world_religions_and_theology(self) -> dict[str, Any]:
         """
         Ingests World Religions, Theology, and Comparative Philosophy.
         """
@@ -193,7 +194,7 @@ class GlobalScienceLoader:
             "philosophy": ["Ontology", "Ethics", "Metaphysics", "Semiotics"]
         }
 
-    def load_mathematics_foundation(self) -> Dict[str, Any]:
+    def load_mathematics_foundation(self) -> dict[str, Any]:
         """
         Ingests Pure and Applied Mathematics.
         """
@@ -203,12 +204,12 @@ class GlobalScienceLoader:
             "applied": ["Chaos Theory", "Stochastic Calculus", "Information Theory"]
         }
 
-    def load_advanced_nanotechnology(self) -> Dict[str, Any]:
+    def load_advanced_nanotechnology(self) -> dict[str, Any]:
         """
         Deep ingestion of Nanoscale Science and Engineering.
         Focus: Carbon Nanotubes, Nanofabrication (Li et al. 2020), CROP-Seq Bio-Nano, 
         Predictive Design (Mim & Hossain, 2025).
-        """
+        """  # noqa: W291
         logger.info("[GLOBAL_LOADER] Ingesting Advanced Nanotechnology (Predictive Design, Li et al., CROP-Seq)")
         return {
             "materials": ["Carbon Nanotubes", "Graphene", "Quantum Dots", "MXenes"],
@@ -222,7 +223,7 @@ class GlobalScienceLoader:
             "sources": ["UEA Li et al. 2020", "Myllia CROP-Seq", "ScienceDirect Mim & Hossain 2025", "Nano.gov"]
         }
 
-    def load_lancaster_quantum_data(self) -> Dict[str, Any]:
+    def load_lancaster_quantum_data(self) -> dict[str, Any]:
         """
         Ingests Lancaster University Quantum Nanotechnology datasets.
         Focus: Graphene nanomechanics, QPUF (Security), Quantum Transport.
@@ -235,7 +236,7 @@ class GlobalScienceLoader:
             "formats": [".xlsx", ".csv"]
         }
 
-    def load_qdataset_noise_models(self) -> Dict[str, Any]:
+    def load_qdataset_noise_models(self) -> dict[str, Any]:
         """
         Ingests QDataSet (eperrier) noise spectroscopy models.
         Focus: 1-qubit and 2-qubit systems under N0-N6 noise profiles.
@@ -248,7 +249,7 @@ class GlobalScienceLoader:
             "format": ".pickle (inside .zip)"
         }
 
-    def load_quantum_geometric_ml(self) -> Dict[str, Any]:
+    def load_quantum_geometric_ml(self) -> dict[str, Any]:
         """
         Ingests Quantum Geometric Machine Learning and QDataSet logic.
         Focus: Non-Euclidean data structures, Quantum manifold learning.
@@ -260,7 +261,7 @@ class GlobalScienceLoader:
             "applications": ["Noise-resistant Quantum Baptism", "Molecular topology prediction"]
         }
 
-    def load_astronomy_and_astrophysics(self) -> Dict[str, Any]:
+    def load_astronomy_and_astrophysics(self) -> dict[str, Any]:
         """Ingests Astronomy, Cosmology, and Astrophysics datasets."""
         logger.info("[GLOBAL_LOADER] Ingesting Astronomy & Astrophysics (SDSS, Gaia, NASA Exoplanet Archive)")
         return {
@@ -269,7 +270,7 @@ class GlobalScienceLoader:
             "parameters": ["Redshift", "Parallax", "Radial velocity", "Transit curves"]
         }
 
-    def load_earth_and_environmental_sciences(self) -> Dict[str, Any]:
+    def load_earth_and_environmental_sciences(self) -> dict[str, Any]:
         """Ingests Earth, Environmental, and Atmospheric sciences datasets."""
         logger.info("[GLOBAL_LOADER] Ingesting Earth & Environmental Sciences (USGS, IPCC, NOAA)")
         return {
@@ -278,7 +279,7 @@ class GlobalScienceLoader:
             "parameters": ["CO2 ppm", "Albedo index", "Soil moisture", "Seismic velocity profiles"]
         }
 
-    def load_civil_and_mechanical_engineering(self) -> Dict[str, Any]:
+    def load_civil_and_mechanical_engineering(self) -> dict[str, Any]:
         """Ingests Civil, Structural, and Mechanical Engineering datasets."""
         logger.info("[GLOBAL_LOADER] Ingesting Civil & Mechanical Engineering")
         return {
@@ -287,7 +288,7 @@ class GlobalScienceLoader:
             "parameters": ["Young's modulus", "Stress-strain tensors", "Vibration frequencies"]
         }
 
-    def load_chemical_and_process_engineering(self) -> Dict[str, Any]:
+    def load_chemical_and_process_engineering(self) -> dict[str, Any]:
         """Ingests Chemical, Biochemical, and Process Engineering datasets."""
         logger.info("[GLOBAL_LOADER] Ingesting Chemical & Process Engineering")
         return {
@@ -296,7 +297,7 @@ class GlobalScienceLoader:
             "parameters": ["Space velocity", "Peclet number", "Heat transfer coefficients"]
         }
 
-    def load_telecommunications_engineering(self) -> Dict[str, Any]:
+    def load_telecommunications_engineering(self) -> dict[str, Any]:
         """Ingests Telecommunications and Signal Processing datasets."""
         logger.info("[GLOBAL_LOADER] Ingesting Telecommunications Engineering (5G/6G, MIMO)")
         return {
@@ -305,7 +306,7 @@ class GlobalScienceLoader:
             "parameters": ["SNR (Signal-to-Noise Ratio)", "BER (Bit Error Rate)", "Spectral efficiency"]
         }
 
-    def load_dentistry_and_veterinary_medicine(self) -> Dict[str, Any]:
+    def load_dentistry_and_veterinary_medicine(self) -> dict[str, Any]:
         """Ingests Dentistry and Veterinary medicine datasets."""
         logger.info("[GLOBAL_LOADER] Ingesting Dentistry & Veterinary Medicine")
         return {
@@ -314,7 +315,7 @@ class GlobalScienceLoader:
             "databases": ["PubMed Veterinary", "NCBI Zoonoses", "Dental Research Journal"]
         }
 
-    def load_sports_and_health_sciences(self) -> Dict[str, Any]:
+    def load_sports_and_health_sciences(self) -> dict[str, Any]:
         """Ingests Sports, Kinesiology, Nutrition, and Health sciences datasets."""
         logger.info("[GLOBAL_LOADER] Ingesting Sports & Health Sciences")
         return {
@@ -322,7 +323,7 @@ class GlobalScienceLoader:
             "parameters": ["VO2 max", "Lactate threshold", "Metabolic equivalent (MET)", "BMI cohorts"]
         }
 
-    def load_agricultural_and_forestry_sciences(self) -> Dict[str, Any]:
+    def load_agricultural_and_forestry_sciences(self) -> dict[str, Any]:
         """Ingests Agriculture, Soil Science, and Forestry datasets."""
         logger.info("[GLOBAL_LOADER] Ingesting Agricultural & Forestry Sciences")
         return {
@@ -331,7 +332,7 @@ class GlobalScienceLoader:
             "databases": ["FAOSTAT", "USDA Soil Survey", "Global Forest Watch"]
         }
 
-    def load_horticulture_and_fisheries(self) -> Dict[str, Any]:
+    def load_horticulture_and_fisheries(self) -> dict[str, Any]:
         """Ingests Horticulture and Fisheries/Aquaculture datasets."""
         logger.info("[GLOBAL_LOADER] Ingesting Horticulture & Fisheries")
         return {
@@ -340,7 +341,7 @@ class GlobalScienceLoader:
             "databases": ["FishBase", "FAO Aquaculture Database"]
         }
 
-    def load_animal_husbandry_and_zootechnics(self) -> Dict[str, Any]:
+    def load_animal_husbandry_and_zootechnics(self) -> dict[str, Any]:
         """Ingests Animal Husbandry, Zootechnics, and Breeding datasets."""
         logger.info("[GLOBAL_LOADER] Ingesting Animal Husbandry & Zootechnics")
         return {
@@ -349,7 +350,7 @@ class GlobalScienceLoader:
             "databases": ["Ensembl Metazoa", "FAO Animal Genetic Resources"]
         }
 
-    def load_economics_and_finance(self) -> Dict[str, Any]:
+    def load_economics_and_finance(self) -> dict[str, Any]:
         """Ingests Economics, Finance, and Econometrics datasets."""
         logger.info("[GLOBAL_LOADER] Ingesting Economics & Finance (World Bank, IMF, Fred)")
         return {
@@ -358,7 +359,7 @@ class GlobalScienceLoader:
             "models": ["DSGE (Dynamic Stochastic General Equilibrium)", "Black-Scholes-Merton", "GARCH"]
         }
 
-    def load_sociology_and_psychology(self) -> Dict[str, Any]:
+    def load_sociology_and_psychology(self) -> dict[str, Any]:
         """Ingests Sociology, Social Psychology, and Behavioral Science datasets."""
         logger.info("[GLOBAL_LOADER] Ingesting Sociology & Psychology")
         return {
@@ -367,7 +368,7 @@ class GlobalScienceLoader:
             "databases": ["Pew Research", "General Social Survey (GSS)", "APA PsycInfo"]
         }
 
-    def load_law_and_pedagogy(self) -> Dict[str, Any]:
+    def load_law_and_pedagogy(self) -> dict[str, Any]:
         """Ingests Jurisprudence, Legal systems, and Pedagogical/Education datasets."""
         logger.info("[GLOBAL_LOADER] Ingesting Law & Pedagogy")
         return {
@@ -376,7 +377,7 @@ class GlobalScienceLoader:
             "sources": ["Eur-Lex", "SCOTUS Archives", "ERIC Database"]
         }
 
-    def load_political_science_and_socio_economic_geography(self) -> Dict[str, Any]:
+    def load_political_science_and_socio_economic_geography(self) -> dict[str, Any]:
         """Ingests Political Science, Public Policy, and Socio-Economic Geography datasets."""
         logger.info("[GLOBAL_LOADER] Ingesting Political Science & Socio-Economic Geography")
         return {
@@ -385,7 +386,7 @@ class GlobalScienceLoader:
             "indices": ["Democracy Index", "Human Development Index (HDI)", "Gini Coefficient"]
         }
 
-    def load_history_and_linguistics(self) -> Dict[str, Any]:
+    def load_history_and_linguistics(self) -> dict[str, Any]:
         """Ingests History, Archaeology, and Linguistics/Semantics datasets."""
         logger.info("[GLOBAL_LOADER] Ingesting History & Linguistics")
         return {
@@ -394,7 +395,7 @@ class GlobalScienceLoader:
             "databases": ["Universal Dependencies", "WALS (World Atlas of Language Structures)"]
         }
 
-    def load_literary_and_cultural_studies(self) -> Dict[str, Any]:
+    def load_literary_and_cultural_studies(self) -> dict[str, Any]:
         """Ingests Literary Criticism, Cultural Studies, and Art Semiotics."""
         logger.info("[GLOBAL_LOADER] Ingesting Literary & Cultural Studies")
         return {

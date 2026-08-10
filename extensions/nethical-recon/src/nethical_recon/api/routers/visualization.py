@@ -10,13 +10,8 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from nethical_recon.attack_surface import AttackSurfaceMapper
-from nethical_recon.visualization import (
-    DeltaMonitor,
-    ExposedAssetDetector,
-    GraphBuilder,
-)
 from nethical_recon.api.auth import get_current_user
+from nethical_recon.attack_surface import AttackSurfaceMapper
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +47,7 @@ async def generate_graph(
     try:
         # In a real implementation, we would load the snapshot from storage
         # For now, this is a placeholder that shows the structure
-        mapper = AttackSurfaceMapper()
+        mapper = AttackSurfaceMapper()  # noqa: F841
 
         # This would load actual snapshot data
         # snapshot = load_snapshot(request.snapshot_id)
@@ -69,7 +64,7 @@ async def generate_graph(
         raise
     except Exception as e:
         logger.error(f"Graph generation failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Graph generation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Graph generation failed: {str(e)}")  # noqa: B904
 
 
 @router.post("/delta-monitor")
@@ -99,7 +94,7 @@ async def monitor_delta(
         raise
     except Exception as e:
         logger.error(f"Delta monitoring failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Delta monitoring failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Delta monitoring failed: {str(e)}")  # noqa: B904
 
 
 @router.post("/exposed-assets")
@@ -126,4 +121,4 @@ async def detect_exposed_assets(
         raise
     except Exception as e:
         logger.error(f"Exposed asset detection failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Exposed asset detection failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Exposed asset detection failed: {str(e)}")  # noqa: B904

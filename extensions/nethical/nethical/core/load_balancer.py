@@ -8,10 +8,11 @@ governance requests across multiple regions and instances.
 import logging
 import random
 import time
-from typing import Any, Callable, Dict, List, Optional
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from threading import Lock
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -113,8 +114,8 @@ class LoadBalancer:
         self.health_check_timeout = health_check_timeout
         self.max_retries = max_retries
 
-        self.instances: Dict[str, BackendInstance] = {}
-        self.regions: Dict[str, List[str]] = {}  # region_id -> instance_ids
+        self.instances: dict[str, BackendInstance] = {}
+        self.regions: dict[str, list[str]] = {}  # region_id -> instance_ids
 
         # For round-robin
         self._rr_index = 0
@@ -184,8 +185,8 @@ class LoadBalancer:
             logger.info(f"Removed instance {instance_id}")
 
     def get_instance(
-        self, region_id: Optional[str] = None, exclude_instances: Optional[List[str]] = None
-    ) -> Optional[BackendInstance]:
+        self, region_id: str | None = None, exclude_instances: list[str] | None = None
+    ) -> BackendInstance | None:
         """
         Get next instance based on strategy.
 
@@ -229,18 +230,18 @@ class LoadBalancer:
 
         return None
 
-    def _round_robin(self, instances: List[BackendInstance]) -> BackendInstance:
+    def _round_robin(self, instances: list[BackendInstance]) -> BackendInstance:
         """Round-robin selection."""
         with self._rr_lock:
             instance = instances[self._rr_index % len(instances)]
             self._rr_index = (self._rr_index + 1) % len(instances)
             return instance
 
-    def _least_connections(self, instances: List[BackendInstance]) -> BackendInstance:
+    def _least_connections(self, instances: list[BackendInstance]) -> BackendInstance:
         """Select instance with least active connections."""
         return min(instances, key=lambda x: x.active_connections)
 
-    def _weighted_round_robin(self, instances: List[BackendInstance]) -> BackendInstance:
+    def _weighted_round_robin(self, instances: list[BackendInstance]) -> BackendInstance:
         """Weighted round-robin selection."""
         # Create weighted list
         weighted_instances = []
@@ -256,7 +257,7 @@ class LoadBalancer:
             return instance
 
     def _region_aware(
-        self, instances: List[BackendInstance], region_id: Optional[str]
+        self, instances: list[BackendInstance], region_id: str | None
     ) -> BackendInstance:
         """
         Region-aware selection.
@@ -275,9 +276,9 @@ class LoadBalancer:
     def execute_request(
         self,
         request_func: Callable[[str], Any],
-        region_id: Optional[str] = None,
-        timeout: Optional[int] = None,
-    ) -> Optional[Any]:
+        region_id: str | None = None,
+        timeout: int | None = None,
+    ) -> Any | None:
         """
         Execute request with load balancing and retries.
 
@@ -358,7 +359,7 @@ class LoadBalancer:
             instance.is_healthy = False
             instance.last_health_check = time.time()
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """
         Get load balancer statistics.
 
@@ -370,7 +371,7 @@ class LoadBalancer:
 
         instance_stats = []
         for inst in self.instances.values():
-            instance_stats.append(
+            instance_stats.append(  # noqa: PERF401
                 {
                     "instance_id": inst.instance_id,
                     "region_id": inst.region_id,

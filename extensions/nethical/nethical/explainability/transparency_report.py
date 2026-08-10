@@ -6,11 +6,11 @@ and public disclosure purposes. Reports include statistics, trends, and
 explanations of governance decisions over time.
 """
 
-from typing import Dict, List, Any, Optional
+import json
+from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from collections import defaultdict
-import json
+from typing import Any
 
 
 @dataclass
@@ -20,13 +20,13 @@ class TransparencyReport:
     report_id: str
     period_start: datetime
     period_end: datetime
-    summary: Dict[str, Any]
-    decision_breakdown: Dict[str, int]
-    violation_trends: Dict[str, List[int]]
-    policy_effectiveness: Dict[str, float]
-    key_insights: List[str]
-    recommendations: List[str]
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    summary: dict[str, Any]
+    decision_breakdown: dict[str, int]
+    violation_trends: dict[str, list[int]]
+    policy_effectiveness: dict[str, float]
+    key_insights: list[str]
+    recommendations: list[str]
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class TransparencyReportGenerator:
@@ -51,9 +51,9 @@ class TransparencyReportGenerator:
 
     def generate_report(
         self,
-        decisions: List[Dict[str, Any]],
-        violations: List[Dict[str, Any]],
-        policies: List[Dict[str, Any]],
+        decisions: list[dict[str, Any]],
+        violations: list[dict[str, Any]],
+        policies: list[dict[str, Any]],
         period_days: int = 30,
     ) -> TransparencyReport:
         """
@@ -113,8 +113,8 @@ class TransparencyReportGenerator:
         )
 
     def _generate_summary(
-        self, decisions: List[Dict[str, Any]], violations: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+        self, decisions: list[dict[str, Any]], violations: list[dict[str, Any]]
+    ) -> dict[str, Any]:
         """Generate high-level summary statistics."""
         total_decisions = len(decisions)
         total_violations = len(violations)
@@ -153,7 +153,7 @@ class TransparencyReportGenerator:
             "restrict_rate": decision_types.get("RESTRICT", 0) / total_decisions * 100,
         }
 
-    def _analyze_decision_breakdown(self, decisions: List[Dict[str, Any]]) -> Dict[str, int]:
+    def _analyze_decision_breakdown(self, decisions: list[dict[str, Any]]) -> dict[str, int]:
         """Analyze breakdown of decisions by various categories."""
         breakdown = {
             "by_decision": defaultdict(int),
@@ -186,8 +186,8 @@ class TransparencyReportGenerator:
         return {key: dict(value) for key, value in breakdown.items()}
 
     def _analyze_violation_trends(
-        self, violations: List[Dict[str, Any]], period_days: int
-    ) -> Dict[str, List[int]]:
+        self, violations: list[dict[str, Any]], period_days: int
+    ) -> dict[str, list[int]]:
         """Analyze violation trends over time."""
         # Initialize daily counts
         daily_counts = {
@@ -227,10 +227,10 @@ class TransparencyReportGenerator:
 
     def _analyze_policy_effectiveness(
         self,
-        decisions: List[Dict[str, Any]],
-        violations: List[Dict[str, Any]],
-        policies: List[Dict[str, Any]],
-    ) -> Dict[str, float]:
+        decisions: list[dict[str, Any]],
+        violations: list[dict[str, Any]],
+        policies: list[dict[str, Any]],
+    ) -> dict[str, float]:
         """Analyze effectiveness of each policy."""
         effectiveness = {}
 
@@ -258,10 +258,10 @@ class TransparencyReportGenerator:
 
     def _extract_key_insights(
         self,
-        summary: Dict[str, Any],
-        decision_breakdown: Dict[str, Any],
-        violation_trends: Dict[str, List[int]],
-    ) -> List[str]:
+        summary: dict[str, Any],
+        decision_breakdown: dict[str, Any],
+        violation_trends: dict[str, list[int]],
+    ) -> list[str]:
         """Extract key insights from the data."""
         insights = []
 
@@ -320,10 +320,10 @@ class TransparencyReportGenerator:
 
     def _generate_recommendations(
         self,
-        summary: Dict[str, Any],
-        decision_breakdown: Dict[str, Any],
-        policy_effectiveness: Dict[str, float],
-    ) -> List[str]:
+        summary: dict[str, Any],
+        decision_breakdown: dict[str, Any],
+        policy_effectiveness: dict[str, float],
+    ) -> list[str]:
         """Generate actionable recommendations."""
         recommendations = []
 
@@ -358,7 +358,7 @@ class TransparencyReportGenerator:
 
         return recommendations
 
-    def _parse_timestamp(self, timestamp: Any) -> Optional[datetime]:
+    def _parse_timestamp(self, timestamp: Any) -> datetime | None:
         """Parse timestamp from various formats."""
         from datetime import timezone
         if isinstance(timestamp, datetime):

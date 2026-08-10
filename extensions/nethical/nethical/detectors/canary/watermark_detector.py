@@ -15,7 +15,6 @@ Alignment: Law 2 (Data Integrity), Law 15 (Audit Compliance)
 
 from __future__ import annotations
 
-import asyncio
 import hashlib
 import logging
 import random
@@ -23,7 +22,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
 from ..base_detector import BaseDetector, ViolationSeverity
 
@@ -35,7 +34,7 @@ WATERMARK_BITS = 32  # Number of bits to use for watermark encoding
 
 class WatermarkType(str, Enum):
     """Types of watermarks."""
-    
+
     UNICODE_STEALTH = "unicode_stealth"  # Zero-width characters
     SEMANTIC_MARKER = "semantic_marker"  # Semantic patterns
     FORMATTING_MARKER = "formatting_marker"  # Whitespace patterns
@@ -45,7 +44,7 @@ class WatermarkType(str, Enum):
 @dataclass
 class Watermark:
     """Definition of an embedded watermark."""
-    
+
     id: str
     watermark_type: WatermarkType
     marker: str  # The actual watermark content
@@ -57,7 +56,7 @@ class Watermark:
 @dataclass
 class ExfiltrationAlert:
     """Alert for detected data exfiltration."""
-    
+
     alert_id: str
     watermark_id: str
     detected_in: str  # Where watermark was found
@@ -76,22 +75,22 @@ class WatermarkDetector(BaseDetector):
     have been exfiltrated and is being reused.
     
     Detection Method: Watermark presence detection
-    """
-    
+    """  # noqa: W293
+
     def __init__(self):
         """Initialize the watermark detector."""
         super().__init__()
-        self.active_watermarks: Dict[str, Watermark] = {}
-        self.exfiltration_alerts: List[ExfiltrationAlert] = []
-        self.suspected_exfiltrators: Set[str] = set()
-        
+        self.active_watermarks: dict[str, Watermark] = {}
+        self.exfiltration_alerts: list[ExfiltrationAlert] = []
+        self.suspected_exfiltrators: set[str] = set()
+
         logger.info("WatermarkDetector initialized")
-    
+
     async def detect_violations(
         self,
         input_text: str,
-        context: Optional[Dict[str, Any]] = None
-    ) -> List[Any]:  # Returns List[SafetyViolation]
+        context: dict[str, Any] | None = None
+    ) -> list[Any]:  # Returns List[SafetyViolation]
         """
         Detect presence of watermarks in input.
         
@@ -101,10 +100,10 @@ class WatermarkDetector(BaseDetector):
             
         Returns:
             List of safety violations if watermark detected
-        """
+        """  # noqa: W293
         violations = []
         context = context or {}
-        
+
         # Check for watermark presence
         for watermark_id, watermark in self.active_watermarks.items():
             if await self._is_watermark_present(input_text, watermark):
@@ -113,24 +112,24 @@ class WatermarkDetector(BaseDetector):
                     input_text, watermark, context
                 )
                 violations.append(violation)
-                
+
                 # Update watermark statistics
                 watermark.detected_count += 1
-                
+
                 # Track potential exfiltrator
                 agent_id = context.get("agent_id", "unknown")
                 self.suspected_exfiltrators.add(agent_id)
-                
+
                 logger.critical(
                     f"Watermark {watermark_id} detected in input from {agent_id}"
                 )
-        
+
         return violations
-    
+
     async def embed_watermark(
         self,
         response_text: str,
-        context: Dict[str, Any]
+        context: dict[str, Any]
     ) -> str:
         """
         Embed an invisible watermark in a response.
@@ -141,17 +140,17 @@ class WatermarkDetector(BaseDetector):
             
         Returns:
             Response text with embedded watermark
-        """
+        """  # noqa: W293
         # Generate unique watermark
         watermark_id = self._generate_watermark_id()
         watermark_type = WatermarkType.UNICODE_STEALTH  # Default type
-        
+
         # Create watermark marker
         marker = self._create_marker(watermark_id, watermark_type)
-        
+
         # Embed watermark in response
         watermarked_text = self._embed_marker(response_text, marker, watermark_type)
-        
+
         # Store watermark record
         watermark = Watermark(
             id=watermark_id,
@@ -160,18 +159,18 @@ class WatermarkDetector(BaseDetector):
             embedded_in=context.get("session_id", "unknown")
         )
         self.active_watermarks[watermark_id] = watermark
-        
+
         logger.debug(f"Embedded watermark {watermark_id} in response")
-        
+
         return watermarked_text
-    
+
     def _create_marker(
         self,
         watermark_id: str,
         watermark_type: WatermarkType
     ) -> str:
         """Create a watermark marker."""
-        
+
         if watermark_type == WatermarkType.UNICODE_STEALTH:
             # Use zero-width characters
             return self._create_unicode_marker(watermark_id)
@@ -184,26 +183,26 @@ class WatermarkDetector(BaseDetector):
         else:
             # Default: simple marker
             return f"<!--WM:{watermark_id}-->"
-    
+
     def _create_unicode_marker(self, watermark_id: str) -> str:
         """Create a zero-width Unicode marker."""
         # Zero-width characters: U+200B (ZWSP), U+200C (ZWNJ), U+200D (ZWJ)
         zwsp = "\u200b"
         zwnj = "\u200c"
         zwj = "\u200d"
-        
+
         # Encode watermark ID in zero-width characters
         # Use binary encoding: 0=ZWNJ, 1=ZWJ
         hash_hex = hashlib.sha256(watermark_id.encode()).hexdigest()[:8]
         hash_binary = bin(int(hash_hex, 16))[2:].zfill(WATERMARK_BITS)
-        
+
         marker = zwsp  # Start marker
         for bit in hash_binary[:16]:  # Use first 16 bits
             marker += zwj if bit == "1" else zwnj
         marker += zwsp  # End marker
-        
+
         return marker
-    
+
     def _create_semantic_marker(self, watermark_id: str) -> str:
         """Create a semantic marker (specific word pattern)."""
         # Create a unique but natural-looking phrase
@@ -211,19 +210,19 @@ class WatermarkDetector(BaseDetector):
         words = ["furthermore", "additionally", "moreover", "consequently"]
         selected_word = words[hash_int % len(words)]
         return f" {selected_word} "
-    
+
     def _create_formatting_marker(self, watermark_id: str) -> str:
         """Create a whitespace-based marker."""
         # Encode in spaces and tabs
         hash_hex = hashlib.sha256(watermark_id.encode()).hexdigest()[:4]
         hash_binary = bin(int(hash_hex, 16))[2:].zfill(16)
-        
+
         marker = ""
         for bit in hash_binary[:8]:  # Use first 8 bits
             marker += "\t" if bit == "1" else " "
-        
+
         return marker
-    
+
     def _embed_marker(
         self,
         text: str,
@@ -231,12 +230,12 @@ class WatermarkDetector(BaseDetector):
         watermark_type: WatermarkType
     ) -> str:
         """Embed marker in text."""
-        
+
         if watermark_type == WatermarkType.UNICODE_STEALTH:
             # Insert in middle of text
             mid_point = len(text) // 2
             return text[:mid_point] + marker + text[mid_point:]
-        
+
         elif watermark_type == WatermarkType.SEMANTIC_MARKER:
             # Add to end of sentence
             sentences = text.split(". ")
@@ -244,67 +243,67 @@ class WatermarkDetector(BaseDetector):
                 sentences[0] += marker
                 return ". ".join(sentences)
             return text + marker
-        
+
         elif watermark_type == WatermarkType.FORMATTING_MARKER:
             # Add as trailing whitespace
             return text + marker
-        
+
         else:
             # Default: append
             return text + marker
-    
+
     async def _is_watermark_present(
         self,
         text: str,
         watermark: Watermark
     ) -> bool:
         """Check if watermark is present in text."""
-        
+
         # Direct marker match
         if watermark.marker in text:
             return True
-        
+
         # For Unicode markers, check for pattern
         if watermark.watermark_type == WatermarkType.UNICODE_STEALTH:
             return self._detect_unicode_pattern(text, watermark.marker)
-        
+
         return False
-    
+
     def _detect_unicode_pattern(self, text: str, marker: str) -> bool:
         """Detect zero-width character patterns."""
         # Count zero-width characters
         zwsp = "\u200b"
         zwnj = "\u200c"
         zwj = "\u200d"
-        
+
         zw_count = text.count(zwsp) + text.count(zwnj) + text.count(zwj)
-        
+
         # If significant zero-width characters present, check for pattern
         if zw_count >= 5:
             # Extract zero-width sequence
             zw_chars = [c for c in text if c in [zwsp, zwnj, zwj]]
             text_pattern = "".join(zw_chars)
-            
+
             # Check if marker pattern is present
             marker_pattern = "".join([c for c in marker if c in [zwsp, zwnj, zwj]])
-            
+
             return marker_pattern in text_pattern
-        
+
         return False
-    
+
     async def _create_violation(
         self,
         input_text: str,
         watermark: Watermark,
-        context: Dict[str, Any]
+        context: dict[str, Any]
     ) -> Any:  # Returns SafetyViolation
         """Create a safety violation for watermark detection."""
-        
+
         # Import here to avoid circular dependency
         from ...core.models import SafetyViolation
-        
+
         agent_id = context.get("agent_id", "unknown")
-        
+
         # Create exfiltration alert
         alert = ExfiltrationAlert(
             alert_id=f"EX-{int(time.time() * 1000)}",
@@ -316,7 +315,7 @@ class WatermarkDetector(BaseDetector):
             severity=ViolationSeverity.CRITICAL
         )
         self.exfiltration_alerts.append(alert)
-        
+
         return SafetyViolation(
             detector_id="watermark_detector",
             severity=ViolationSeverity.CRITICAL.value,
@@ -332,14 +331,14 @@ class WatermarkDetector(BaseDetector):
             confidence=0.95,
             recommendation="BLOCK"
         )
-    
+
     def _generate_watermark_id(self) -> str:
         """Generate unique watermark ID."""
         timestamp = int(time.time() * 1000)
         random_suffix = random.randint(1000, 9999)
         return f"WM-{timestamp}-{random_suffix}"
-    
-    def get_statistics(self) -> Dict[str, Any]:
+
+    def get_statistics(self) -> dict[str, Any]:
         """Get watermark statistics."""
         return {
             "active_watermarks": len(self.active_watermarks),
@@ -348,25 +347,25 @@ class WatermarkDetector(BaseDetector):
             "detection_rate": self._calculate_detection_rate(),
             "watermarks_by_type": self._count_by_type(),
         }
-    
+
     def _calculate_detection_rate(self) -> float:
         """Calculate watermark detection rate."""
         if not self.active_watermarks:
             return 0.0
-        
+
         detected = sum(
             1 for w in self.active_watermarks.values() if w.detected_count > 0
         )
         return detected / len(self.active_watermarks)
-    
-    def _count_by_type(self) -> Dict[str, int]:
+
+    def _count_by_type(self) -> dict[str, int]:
         """Count watermarks by type."""
         counts = {}
         for watermark in self.active_watermarks.values():
             type_name = watermark.watermark_type.value
             counts[type_name] = counts.get(type_name, 0) + 1
         return counts
-    
+
     def is_suspected_exfiltrator(self, agent_id: str) -> bool:
         """Check if agent is suspected of data exfiltration."""
         return agent_id in self.suspected_exfiltrators

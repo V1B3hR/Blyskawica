@@ -17,7 +17,7 @@ def test_fewshot_forward_pass_shape():
     Test that model forward pass produces correct output shapes for few-shot data.
     
     This is a basic sanity check for few-shot learning scenarios.
-    """
+    """  # noqa: W293
     # Create a simple model
     class SimpleModel(nn.Module):
         def __init__(self, input_dim: int = 32, num_classes: int = 5):
@@ -100,7 +100,7 @@ def test_fewshot_learning_basic():
     Test that a model can learn from very few examples (few-shot learning).
     
     This tests the fundamental few-shot capability.
-    """
+    """  # noqa: W293
     class SimpleModel(nn.Module):
         def __init__(self, input_dim: int = 32, num_classes: int = 3):
             super().__init__()
@@ -150,7 +150,7 @@ def test_fewshot_learning_basic():
 
         # Train (few epochs since data is limited)
         model.train()
-        for epoch in range(20):  # More epochs needed for few-shot
+        for epoch in range(20):  # More epochs needed for few-shot  # noqa: B007
             for batch_x, batch_y in train_loader:
                 optimizer.zero_grad()
                 output = model(batch_x)
@@ -191,7 +191,7 @@ def test_fewshot_vs_regular_learning():
     Test comparing few-shot vs regular learning to validate test setup.
     
     Regular learning (more data) should outperform few-shot learning.
-    """
+    """  # noqa: W293
     class SimpleModel(nn.Module):
         def __init__(self, input_dim: int = 32, num_classes: int = 3):
             super().__init__()
@@ -241,7 +241,7 @@ def test_fewshot_vs_regular_learning():
         # Train
         model.train()
         epochs = 15 if n_per_class_train <= 5 else 10  # More epochs for few-shot
-        for epoch in range(epochs):
+        for epoch in range(epochs):  # noqa: B007
             for batch_x, batch_y in train_loader:
                 optimizer.zero_grad()
                 output = model(batch_x)

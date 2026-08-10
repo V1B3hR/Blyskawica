@@ -5,7 +5,12 @@ Tests for the TimeManager system
 import time
 import unittest
 
-from adaptiveneuralnetwork.central_nervous_system.time_manager import TimeConfig, TimeManager, get_time_manager, set_time_manager
+from adaptiveneuralnetwork.central_nervous_system.time_manager import (
+    TimeConfig,
+    TimeManager,
+    get_time_manager,
+    set_time_manager,
+)
 
 
 class TestTimeManager(unittest.TestCase):

@@ -4,13 +4,14 @@ Real-Time Telemetry & VR Driving Sensor Stream Benchmark Script for Błyskawica 
 
 Evaluates high-throughput temporal spike pattern extraction on dynamic 
 continuous telemetry sensor streams using Neuromorphic Temporal Encoders and C.R.A.
-"""
+"""  # noqa: W291
 
 import json
 import logging
 import sys
 import time
 from pathlib import Path
+
 import torch
 
 # Configure logging
@@ -19,8 +20,10 @@ logger = logging.getLogger("vr_driving_benchmark")
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from adaptiveneuralnetwork.applications.sensory_processing import SensoryConfig, SensoryProcessingPipeline
-from adaptiveneuralnetwork.central_nervous_system.neuromorphic.temporal_coding import TemporalConfig, TemporalPatternEncoder
+from adaptiveneuralnetwork.central_nervous_system.neuromorphic.temporal_coding import (  # noqa: E402
+    TemporalConfig,
+    TemporalPatternEncoder,
+)
 
 
 def run_benchmark():
@@ -86,7 +89,7 @@ def run_benchmark():
         json.dump(results, f, indent=2)
 
     logger.info("=" * 70)
-    logger.info(f"VR Driving Telemetry Benchmark Completed!")
+    logger.info("VR Driving Telemetry Benchmark Completed!")
     logger.info(f"Throughput:           {throughput:.2f} ticks/sec")
     logger.info(f"Avg Step Latency:     {avg_step_latency:.3f} ms")
     logger.info(f"Mean Spike Rate:      {results['mean_pattern_spike_rate']}")

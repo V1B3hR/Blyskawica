@@ -10,7 +10,7 @@ import threading
 import time
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ class StreamEvent:
 
     event_type: StreamEventType
     subject: str
-    payload: Dict[str, Any]
+    payload: dict[str, Any]
     timestamp: float = field(default_factory=time.time)
     source: str = "local"
     priority: str = "normal"
@@ -88,12 +88,12 @@ class EventPublisher:
         self.flush_interval = flush_interval
 
         # Event buffer for batching
-        self._buffer: List[StreamEvent] = []
+        self._buffer: list[StreamEvent] = []
         self._lock = threading.RLock()
 
         # Background flusher
         self._running = False
-        self._flush_thread: Optional[threading.Thread] = None
+        self._flush_thread: threading.Thread | None = None
 
         # Metrics
         self._events_published = 0
@@ -195,7 +195,7 @@ class EventPublisher:
         self,
         policy_id: str,
         event_type: str = "updated",
-        content: Optional[Dict] = None,
+        content: dict | None = None,
     ):
         """Publish a policy update event."""
         event = StreamEvent(
@@ -242,7 +242,7 @@ class EventPublisher:
         )
         self.publish_immediate(event)
 
-    def publish_security_breach(self, details: Dict[str, Any]):
+    def publish_security_breach(self, details: dict[str, Any]):
         """Publish a security breach event."""
         event = StreamEvent(
             event_type=StreamEventType.SECURITY_BREACH,
@@ -252,7 +252,7 @@ class EventPublisher:
         )
         self.publish_immediate(event)
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get publisher metrics."""
         return {
             "events_published": self._events_published,
@@ -263,7 +263,7 @@ class EventPublisher:
 
 
 # Type hints
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING  # noqa: E402
 
 if TYPE_CHECKING:
     from .nats_client import NATSClient

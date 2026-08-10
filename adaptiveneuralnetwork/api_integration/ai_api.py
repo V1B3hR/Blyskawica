@@ -94,7 +94,7 @@ class AISignalManager:
             
         Returns:
             Dictionary mapping state variables to their new values
-        """
+        """  # noqa: W293
         params = system_params or {}
 
         if source_name:

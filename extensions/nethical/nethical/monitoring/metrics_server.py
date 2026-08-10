@@ -11,7 +11,6 @@ Endpoints:
 
 import asyncio
 import logging
-from typing import Optional
 
 try:
     from aiohttp import web
@@ -33,7 +32,7 @@ class MetricsServer:
     
     Default port: 9090
     Endpoint: /metrics
-    """
+    """  # noqa: W293
 
     def __init__(self, metrics: PrometheusMetrics, port: int = 9090, host: str = '0.0.0.0'):
         """Initialize metrics server.
@@ -42,28 +41,28 @@ class MetricsServer:
             metrics: PrometheusMetrics instance to export
             port: Port to listen on (default: 9090)
             host: Host to bind to (default: 0.0.0.0)
-        """
+        """  # noqa: W293
         if not AIOHTTP_AVAILABLE:
             raise RuntimeError(
                 "aiohttp is required for MetricsServer. "
                 "Install with: pip install aiohttp>=3.9.0"
             )
-        
+
         self.metrics = metrics
         self.port = port
         self.host = host
-        self.app: Optional[web.Application] = None
-        self.runner: Optional[web.AppRunner] = None
-        self.site: Optional[web.TCPSite] = None
+        self.app: web.Application | None = None
+        self.runner: web.AppRunner | None = None
+        self.site: web.TCPSite | None = None
         self._setup_routes()
-    
+
     def _setup_routes(self) -> None:
         """Setup HTTP routes for the metrics server."""
         self.app = web.Application()
         self.app.router.add_get('/metrics', self.handle_metrics)
         self.app.router.add_get('/health', self.handle_health)
         self.app.router.add_get('/', self.handle_root)
-    
+
     async def handle_metrics(self, request: web.Request) -> web.Response:
         """Serve Prometheus metrics.
         
@@ -72,7 +71,7 @@ class MetricsServer:
             
         Returns:
             Response with Prometheus metrics in text format
-        """
+        """  # noqa: W293
         try:
             metrics_output = self.metrics.export_metrics()
             return web.Response(
@@ -85,7 +84,7 @@ class MetricsServer:
                 text="Internal server error while exporting metrics",
                 status=500
             )
-    
+
     async def handle_health(self, request: web.Request) -> web.Response:
         """Health check endpoint.
         
@@ -94,7 +93,7 @@ class MetricsServer:
             
         Returns:
             JSON response with health status
-        """
+        """  # noqa: W293
         # Safely handle the possibility that 'enabled' is missing
         metrics_enabled = getattr(self.metrics, 'enabled', None)
         health_data = {
@@ -103,7 +102,7 @@ class MetricsServer:
             'server': 'nethical-metrics'
         }
         return web.json_response(health_data)
-    
+
     async def handle_root(self, request: web.Request) -> web.Response:
         """Root endpoint with server information.
         
@@ -112,7 +111,7 @@ class MetricsServer:
             
         Returns:
             HTML response with links to available endpoints
-        """
+        """  # noqa: W293
         html = """
         <html>
             <head><title>Nethical Metrics Server</title></head>
@@ -128,7 +127,7 @@ class MetricsServer:
         </html>
         """
         return web.Response(text=html, content_type='text/html')
-    
+
     async def start_async(self) -> None:
         """Start the metrics server asynchronously."""
         self.runner = web.AppRunner(self.app)
@@ -137,33 +136,33 @@ class MetricsServer:
         await self.site.start()
         logger.info(f"Metrics server started on {self.host}:{self.port}")
         logger.info(f"Metrics available at http://{self.host}:{self.port}/metrics")
-    
+
     async def stop_async(self) -> None:
         """Stop the metrics server asynchronously."""
         if self.runner:
             await self.runner.cleanup()
             logger.info("Metrics server stopped")
-    
+
     def start(self) -> None:
         """Start metrics server (blocking).
         
         This method starts the server and blocks until interrupted.
         Use start_async() for non-blocking operation.
-        """
+        """  # noqa: W293
         try:
             web.run_app(self.app, host=self.host, port=self.port, print=lambda x: None)
         except KeyboardInterrupt:
             logger.info("Metrics server stopped by user")
-    
+
     async def run_forever(self) -> None:
         """Run the metrics server forever.
         
         This is a non-blocking version that can be used with asyncio.
         Raises CancelledError when cancelled so upstream can catch.
-        """
+        """  # noqa: W293
         await self.start_async()
         try:
-            while True:
+            while True:  # noqa: ASYNC110
                 await asyncio.sleep(3600)  # Sleep for an hour
         except asyncio.CancelledError:
             logger.info("Metrics server cancelled")
@@ -173,7 +172,7 @@ class MetricsServer:
 
 
 def start_metrics_server(
-    metrics: Optional[PrometheusMetrics] = None,
+    metrics: PrometheusMetrics | None = None,
     port: int = 9090,
     host: str = '0.0.0.0'
 ) -> MetricsServer:
@@ -191,13 +190,13 @@ def start_metrics_server(
         >>> from nethical.monitoring import start_metrics_server
         >>> server = start_metrics_server(port=9090)
         >>> # Server is now running on http://0.0.0.0:9090/metrics
-    """
+    """  # noqa: W293
     if metrics is None:
         from nethical.monitoring.prometheus_exporter import get_prometheus_metrics
         metrics = get_prometheus_metrics()
-    
+
     server = MetricsServer(metrics, port=port, host=host)
-    
+
     # Start in a background thread/task
     import threading
     def server_start():
@@ -207,13 +206,13 @@ def start_metrics_server(
             logger.exception(f"Metrics server encountered error: {exc}")
     thread = threading.Thread(target=server_start, daemon=True)
     thread.start()
-    
+
     logger.info(f"Metrics server starting in background on {host}:{port}")
     return server
 
 
 async def start_metrics_server_async(
-    metrics: Optional[PrometheusMetrics] = None,
+    metrics: PrometheusMetrics | None = None,
     port: int = 9090,
     host: str = '0.0.0.0'
 ) -> MetricsServer:
@@ -231,12 +230,12 @@ async def start_metrics_server_async(
         >>> from nethical.monitoring import start_metrics_server_async
         >>> server = await start_metrics_server_async(port=9090)
         >>> # Server is now running
-    """
+    """  # noqa: W293
     if metrics is None:
         from nethical.monitoring.prometheus_exporter import get_prometheus_metrics
         metrics = get_prometheus_metrics()
-    
+
     server = MetricsServer(metrics, port=port, host=host)
     await server.start_async()
-    
+
     return server

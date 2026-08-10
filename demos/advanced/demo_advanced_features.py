@@ -19,6 +19,9 @@ import numpy as np
 import torch
 import torch.nn as nn
 
+# Import all the new features
+from core.intelligence_benchmark import IntelligenceBenchmark
+
 from adaptiveneuralnetwork.applications.continual_learning import (
     ContinualLearningConfig,
     NonStationaryDataHandler,
@@ -34,9 +37,6 @@ from adaptiveneuralnetwork.neuromorphic.custom_spike_simulator import (
     CustomSpikeSimulator,
     NeuronModel,
 )
-
-# Import all the new features
-from core.intelligence_benchmark import IntelligenceBenchmark
 
 
 def demo_formal_intelligence_evaluation():
@@ -472,7 +472,7 @@ def create_integration_demo():
     )
 
     # Intelligence benchmark
-    benchmark = IntelligenceBenchmark()
+    benchmark = IntelligenceBenchmark()  # noqa: F841
 
     print("   ✓ All components initialized")
 
@@ -500,7 +500,7 @@ def create_integration_demo():
         dominant_phase = max(phase_stats.items(), key=lambda x: x[1])[0].replace('_ratio', '').upper()
         if dominant_phase in ['ACTIVE', 'SLEEP', 'INTERACTIVE', 'INSPIRED']:
             phase_enum = getattr(Phase, dominant_phase)
-            optimal_precision = precision_manager.get_optimal_precision(phase_enum)
+            optimal_precision = precision_manager.get_optimal_precision(phase_enum)  # noqa: F841
 
             # Simulate computation with phase-appropriate precision
             test_data = torch.randn(4, 8)

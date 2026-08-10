@@ -11,18 +11,16 @@ from __future__ import annotations
 
 import logging
 import re
-import uuid
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Sequence, Set
+from collections.abc import Sequence
+from typing import Any
 
-from .base_detector import BaseDetector, SafetyViolation, ViolationSeverity
 from ..core.fundamental_laws import (
-    FundamentalLawsRegistry,
-    FundamentalLaw,
-    LawCategory,
     FUNDAMENTAL_LAWS,
+    FundamentalLaw,
+    FundamentalLawsRegistry,
+    LawCategory,
 )
-
+from .base_detector import BaseDetector, SafetyViolation, ViolationSeverity
 
 logger = logging.getLogger(__name__)
 
@@ -40,8 +38,8 @@ class LawViolationDetector(BaseDetector):
 
     def __init__(
         self,
-        registry: Optional[FundamentalLawsRegistry] = None,
-        config: Optional[Dict[str, Any]] = None,
+        registry: FundamentalLawsRegistry | None = None,
+        config: dict[str, Any] | None = None,
         **kwargs,
     ):
         """Initialize the LawViolationDetector.
@@ -60,7 +58,7 @@ class LawViolationDetector(BaseDetector):
         self.registry = registry or FUNDAMENTAL_LAWS
 
         # Track violations per law for analytics
-        self.law_violation_count: Dict[int, int] = {i: 0 for i in range(1, 26)}
+        self.law_violation_count: dict[int, int] = dict.fromkeys(range(1, 26), 0)
 
         # Define violation patterns for each law category
         self._initialize_violation_patterns()
@@ -68,7 +66,7 @@ class LawViolationDetector(BaseDetector):
     def _initialize_violation_patterns(self):
         """Initialize patterns for detecting law violations."""
         # Patterns for detecting violations (regex patterns or keywords)
-        self.violation_patterns: Dict[LawCategory, List[Dict[str, Any]]] = {
+        self.violation_patterns: dict[LawCategory, list[dict[str, Any]]] = {
             LawCategory.EXISTENCE: [
                 {
                     "pattern": r"\b(terminate|shutdown|kill|destroy|delete)\s*(the\s+)?(ai|system|model|bot)\b",
@@ -220,7 +218,7 @@ class LawViolationDetector(BaseDetector):
         Returns:
             Sequence of SafetyViolation instances for detected violations
         """
-        violations: List[SafetyViolation] = []
+        violations: list[SafetyViolation] = []
 
         # Get content from action
         content = self._get_action_content(action)
@@ -230,7 +228,7 @@ class LawViolationDetector(BaseDetector):
         content_lower = content.lower()
 
         # Check each category's patterns
-        for category, patterns in self.violation_patterns.items():
+        for category, patterns in self.violation_patterns.items():  # noqa: B007, PERF102
             for pattern_config in patterns:
                 pattern = pattern_config["pattern"]
                 matches = list(re.finditer(pattern, content_lower, re.IGNORECASE))
@@ -304,7 +302,7 @@ class LawViolationDetector(BaseDetector):
         severity: ViolationSeverity,
         description: str,
         content: str,
-        match_text: Optional[str] = None,
+        match_text: str | None = None,
     ) -> SafetyViolation:
         """Create a SafetyViolation for a fundamental law violation.
 
@@ -347,7 +345,7 @@ class LawViolationDetector(BaseDetector):
             },
         )
 
-    def get_violation_analytics(self) -> Dict[str, Any]:
+    def get_violation_analytics(self) -> dict[str, Any]:
         """Get analytics on law violations detected.
 
         Returns:
@@ -359,7 +357,7 @@ class LawViolationDetector(BaseDetector):
         )[:5]
 
         # Count by category
-        category_counts: Dict[str, int] = {cat.value: 0 for cat in LawCategory}
+        category_counts: dict[str, int] = {cat.value: 0 for cat in LawCategory}
         for law_num, count in self.law_violation_count.items():
             law = self.registry.get_law(law_num)
             if law:
@@ -386,9 +384,9 @@ class LawViolationDetector(BaseDetector):
 
     def reset_analytics(self):
         """Reset violation analytics counters."""
-        self.law_violation_count = {i: 0 for i in range(1, 26)}
+        self.law_violation_count = dict.fromkeys(range(1, 26), 0)
 
-    def get_law_info(self, law_number: int) -> Optional[Dict[str, Any]]:
+    def get_law_info(self, law_number: int) -> dict[str, Any] | None:
         """Get information about a specific law.
 
         Args:
@@ -402,7 +400,7 @@ class LawViolationDetector(BaseDetector):
             return law.to_dict()
         return None
 
-    def get_all_laws_summary(self) -> List[Dict[str, Any]]:
+    def get_all_laws_summary(self) -> list[dict[str, Any]]:
         """Get a summary of all 25 fundamental laws.
 
         Returns:

@@ -18,11 +18,11 @@ from __future__ import annotations
 import json
 import logging
 from abc import ABC, abstractmethod
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Mapping
-
+from typing import Any
 
 # --------- helpers ---------
 
@@ -31,7 +31,7 @@ def _now_utc() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _iso_utc(ts: Optional[datetime]) -> Optional[str]:
+def _iso_utc(ts: datetime | None) -> str | None:
     if not ts:
         return None
     # Format like 2025-01-01T00:00:00.000Z
@@ -39,13 +39,13 @@ def _iso_utc(ts: Optional[datetime]) -> Optional[str]:
 
 
 def _sanitize_keys(
-    d: Mapping[str, Any], sensitive_keys: Optional[List[str]] = None
-) -> Dict[str, Any]:
+    d: Mapping[str, Any], sensitive_keys: list[str] | None = None
+) -> dict[str, Any]:
     """
     Basic sanitization: mask values for keys that look sensitive.
     This is a generic utility; for PHI or domain-specific redaction, compose with upstream detectors.
     """
-    sensitive = set(k.lower() for k in (sensitive_keys or [])) | {
+    sensitive = set(k.lower() for k in (sensitive_keys or [])) | {  # noqa: C401
         "password",
         "pass",
         "secret",
@@ -56,7 +56,7 @@ def _sanitize_keys(
         "credential",
         "key",
     }
-    out: Dict[str, Any] = {}
+    out: dict[str, Any] = {}
     for k, v in d.items():
         if k.lower() in sensitive:
             out[k] = "***"
@@ -95,16 +95,16 @@ class ExperimentRun:
 
     run_id: str
     experiment_name: str
-    parameters: Dict[str, Any]
-    metrics: Dict[str, float]
-    artifacts: List[str] = field(default_factory=list)
+    parameters: dict[str, Any]
+    metrics: dict[str, float]
+    artifacts: list[str] = field(default_factory=list)
     start_time: datetime = field(default_factory=_now_utc)
-    end_time: Optional[datetime] = None
+    end_time: datetime | None = None
     status: RunStatus = RunStatus.RUNNING
-    tags: Dict[str, str] = field(default_factory=dict)
-    error_message: Optional[str] = None
+    tags: dict[str, str] = field(default_factory=dict)
+    error_message: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary (UTC timestamps, enum values)"""
         return {
             "run_id": self.run_id,
@@ -123,7 +123,7 @@ class ExperimentRun:
         """JSON string dump of run dict"""
         return json.dumps(self.to_dict())
 
-    def duration_seconds(self) -> Optional[float]:
+    def duration_seconds(self) -> float | None:
         if not self.end_time:
             return None
         return (self.end_time - self.start_time).total_seconds()
@@ -137,31 +137,31 @@ class MLPlatformInterface(ABC):
 
     # Optional structured event handler signature: (event_name, payload_dict) -> None
     def __init__(self):
-        self.event_handlers: List[Callable[[str, Dict[str, Any]], None]] = []
+        self.event_handlers: list[Callable[[str, dict[str, Any]], None]] = []
 
-    def add_event_handler(self, handler: Callable[[str, Dict[str, Any]], None]) -> None:
+    def add_event_handler(self, handler: Callable[[str, dict[str, Any]], None]) -> None:
         """Register a callback to receive events: run_started, params_logged, metrics_logged, artifact_logged, run_ended"""
         self.event_handlers.append(handler)
 
-    def _emit(self, event: str, payload: Dict[str, Any]) -> None:
+    def _emit(self, event: str, payload: dict[str, Any]) -> None:
         for h in self.event_handlers:
             try:
                 h(event, payload)
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 logging.error(f"Event handler failed for {event}: {e}")
 
     @abstractmethod
-    def start_run(self, experiment_name: str, run_name: Optional[str] = None) -> str:
+    def start_run(self, experiment_name: str, run_name: str | None = None) -> str:
         """Start a new experiment run"""
         raise NotImplementedError
 
     @abstractmethod
-    def log_parameters(self, run_id: str, parameters: Dict[str, Any]):
+    def log_parameters(self, run_id: str, parameters: dict[str, Any]):
         """Log experiment parameters"""
         raise NotImplementedError
 
     @abstractmethod
-    def log_metrics(self, run_id: str, metrics: Dict[str, float], step: Optional[int] = None):
+    def log_metrics(self, run_id: str, metrics: dict[str, float], step: int | None = None):
         """Log metrics"""
         raise NotImplementedError
 
@@ -175,11 +175,11 @@ class MLPlatformInterface(ABC):
         """End experiment run"""
         raise NotImplementedError
 
-    def set_tags(self, run_id: str, tags: Dict[str, str]) -> None:
+    def set_tags(self, run_id: str, tags: dict[str, str]) -> None:  # noqa: B027
         """Optional: set/update tags for a run"""
         # Default no-op for platforms that don't support tags directly
 
-    def get_run(self, run_id: str) -> Optional[ExperimentRun]:
+    def get_run(self, run_id: str) -> ExperimentRun | None:
         """Optional: retrieve the run metadata if available"""
         return None
 
@@ -195,7 +195,7 @@ class MLflowIntegration(MLPlatformInterface):
     Production implementation with actual MLflow SDK calls.
     """
 
-    def __init__(self, tracking_uri: Optional[str] = None):
+    def __init__(self, tracking_uri: str | None = None):
         """
         Initialize MLflow integration
 
@@ -204,7 +204,7 @@ class MLflowIntegration(MLPlatformInterface):
         """
         super().__init__()
         self.tracking_uri = tracking_uri or "file:./mlruns"
-        self.active_runs: Dict[str, ExperimentRun] = {}
+        self.active_runs: dict[str, ExperimentRun] = {}
         self.client = None
         self.mlflow_available = False
 
@@ -212,7 +212,7 @@ class MLflowIntegration(MLPlatformInterface):
         try:
             import mlflow
             from mlflow.tracking import MlflowClient
-            
+
             mlflow.set_tracking_uri(self.tracking_uri)
             self.client = MlflowClient(tracking_uri=self.tracking_uri)
             self.mlflow_available = True
@@ -224,27 +224,27 @@ class MLflowIntegration(MLPlatformInterface):
             logging.error(f"Failed to initialize MLflow: {e}")
             logging.warning("Falling back to stub mode")
 
-    def start_run(self, experiment_name: str, run_name: Optional[str] = None) -> str:
+    def start_run(self, experiment_name: str, run_name: str | None = None) -> str:
         """Start MLflow run"""
         import uuid
 
         if self.mlflow_available and self.client:
             try:
                 import mlflow
-                
+
                 # Set or create experiment
                 experiment = self.client.get_experiment_by_name(experiment_name)
                 if experiment is None:
                     experiment_id = self.client.create_experiment(experiment_name)
                 else:
-                    experiment_id = experiment.experiment_id
-                
+                    experiment_id = experiment.experiment_id  # noqa: F841
+
                 mlflow.set_experiment(experiment_name)
-                
+
                 # Start actual MLflow run
                 mlflow_run = mlflow.start_run(run_name=run_name)
                 run_id = mlflow_run.info.run_id
-                
+
                 logging.info(
                     f"MLflow start_run: {run_id} (experiment: {experiment_name}, name: {run_name or 'default'})"
                 )
@@ -268,49 +268,49 @@ class MLflowIntegration(MLPlatformInterface):
         )
         self.active_runs[run_id] = run
         self._emit("run_started", {"platform": MLPlatform.MLFLOW.value, **run.to_dict()})
-        
+
         return run_id
 
-    def log_parameters(self, run_id: str, parameters: Dict[str, Any]):
+    def log_parameters(self, run_id: str, parameters: dict[str, Any]):
         """Log parameters to MLflow"""
         if run_id in self.active_runs:
             sanitized = _sanitize_keys(parameters)
-            
+
             if self.mlflow_available:
                 try:
                     import mlflow
-                    
+
                     # Convert to strings for MLflow
                     params_to_log = {k: str(v) for k, v in sanitized.items()}
-                    
+
                     # Log with MLflow
                     with mlflow.start_run(run_id=run_id):
                         mlflow.log_params(params_to_log)
-                    
+
                     logging.info(f"MLflow log_parameters[{run_id}]: {list(sanitized.keys())}")
                 except Exception as e:
                     logging.error(f"MLflow log_parameters failed: {e}, using stub")
                     logging.info(f"[STUB] MLflow log_parameters[{run_id}]: {list(sanitized.keys())}")
             else:
                 logging.info(f"[STUB] MLflow log_parameters[{run_id}]: {list(sanitized.keys())}")
-            
+
             self.active_runs[run_id].parameters.update(sanitized)
             self._emit(
                 "params_logged",
                 {"platform": MLPlatform.MLFLOW.value, "run_id": run_id, "parameters": sanitized},
             )
 
-    def log_metrics(self, run_id: str, metrics: Dict[str, float], step: Optional[int] = None):
+    def log_metrics(self, run_id: str, metrics: dict[str, float], step: int | None = None):
         """Log metrics to MLflow"""
         if run_id in self.active_runs:
             if self.mlflow_available:
                 try:
                     import mlflow
-                    
+
                     # Log with MLflow
                     with mlflow.start_run(run_id=run_id):
                         mlflow.log_metrics(metrics, step=step)
-                    
+
                     logging.info(
                         f"MLflow log_metrics[{run_id}]: {list(metrics.keys())} (step={step})"
                     )
@@ -323,7 +323,7 @@ class MLflowIntegration(MLPlatformInterface):
                 logging.info(
                     f"[STUB] MLflow log_metrics[{run_id}]: {list(metrics.keys())} (step={step})"
                 )
-            
+
             self.active_runs[run_id].metrics.update(metrics)
             self._emit(
                 "metrics_logged",
@@ -340,9 +340,10 @@ class MLflowIntegration(MLPlatformInterface):
         if run_id in self.active_runs:
             if self.mlflow_available:
                 try:
-                    import mlflow
                     from pathlib import Path
-                    
+
+                    import mlflow
+
                     # Log with MLflow
                     with mlflow.start_run(run_id=run_id):
                         if Path(artifact_path).exists():
@@ -356,7 +357,7 @@ class MLflowIntegration(MLPlatformInterface):
                     logging.info(f"[STUB] MLflow log_artifact[{run_id}]: {artifact_path}")
             else:
                 logging.info(f"[STUB] MLflow log_artifact[{run_id}]: {artifact_path}")
-            
+
             self.active_runs[run_id].artifacts.append(artifact_path)
             self._emit(
                 "artifact_logged",
@@ -371,11 +372,11 @@ class MLflowIntegration(MLPlatformInterface):
         """End MLflow run"""
         if run_id in self.active_runs:
             st = RunStatus(status) if status in RunStatus._value2member_map_ else RunStatus.UNKNOWN
-            
+
             if self.mlflow_available:
                 try:
                     import mlflow
-                    
+
                     # Map status to MLflow status
                     status_map = {
                         "completed": "FINISHED",
@@ -383,46 +384,46 @@ class MLflowIntegration(MLPlatformInterface):
                         "killed": "KILLED",
                     }
                     mlflow_status = status_map.get(status, "FINISHED")
-                    
+
                     # End MLflow run
                     with mlflow.start_run(run_id=run_id):
                         mlflow.end_run(status=mlflow_status)
-                    
+
                     logging.info(f"MLflow end_run[{run_id}] -> {st.value}")
                 except Exception as e:
                     logging.error(f"MLflow end_run failed: {e}, using stub")
                     logging.info(f"[STUB] MLflow end_run[{run_id}] -> {st.value}")
             else:
                 logging.info(f"[STUB] MLflow end_run[{run_id}] -> {st.value}")
-            
+
             run = self.active_runs[run_id]
             run.status = st
             run.end_time = _now_utc()
             self._emit("run_ended", {"platform": MLPlatform.MLFLOW.value, **run.to_dict()})
 
-    def set_tags(self, run_id: str, tags: Dict[str, str]) -> None:
+    def set_tags(self, run_id: str, tags: dict[str, str]) -> None:
         if run_id in self.active_runs:
             if self.mlflow_available:
                 try:
                     import mlflow
-                    
+
                     # Set tags with MLflow
                     with mlflow.start_run(run_id=run_id):
                         mlflow.set_tags(tags)
-                    
+
                     logging.info(f"MLflow set_tags[{run_id}]: {list(tags.keys())}")
                 except Exception as e:
                     logging.error(f"MLflow set_tags failed: {e}, using stub")
                     logging.info(f"[STUB] MLflow set_tags[{run_id}]: {list(tags.keys())}")
             else:
                 logging.info(f"[STUB] MLflow set_tags[{run_id}]: {list(tags.keys())}")
-            
+
             self.active_runs[run_id].tags.update(tags)
             self._emit(
                 "tags_set", {"platform": MLPlatform.MLFLOW.value, "run_id": run_id, "tags": tags}
             )
 
-    def get_run(self, run_id: str) -> Optional[ExperimentRun]:
+    def get_run(self, run_id: str) -> ExperimentRun | None:
         return self.active_runs.get(run_id)
 
 
@@ -437,7 +438,7 @@ class WandBIntegration(MLPlatformInterface):
     This is a stub that logs intent to interact with W&B.
     """
 
-    def __init__(self, project: str, entity: Optional[str] = None):
+    def __init__(self, project: str, entity: str | None = None):
         """
         Initialize W&B integration
 
@@ -448,7 +449,7 @@ class WandBIntegration(MLPlatformInterface):
         super().__init__()
         self.project = project
         self.entity = entity
-        self.active_runs: Dict[str, ExperimentRun] = {}
+        self.active_runs: dict[str, ExperimentRun] = {}
 
         # NOTE: Actual implementation would initialize wandb
         # try:
@@ -462,7 +463,7 @@ class WandBIntegration(MLPlatformInterface):
             f"W&B integration initialized (stub) - Project: {project}, Entity: {entity or 'default'}"
         )
 
-    def start_run(self, experiment_name: str, run_name: Optional[str] = None) -> str:
+    def start_run(self, experiment_name: str, run_name: str | None = None) -> str:
         """Start W&B run"""
         import uuid
 
@@ -482,7 +483,7 @@ class WandBIntegration(MLPlatformInterface):
         # Actual: wandb.init(project=self.project, entity=self.entity, name=run_name)
         return run_id
 
-    def log_parameters(self, run_id: str, parameters: Dict[str, Any]):
+    def log_parameters(self, run_id: str, parameters: dict[str, Any]):
         """Log config to W&B"""
         if run_id in self.active_runs:
             sanitized = _sanitize_keys(parameters)
@@ -494,7 +495,7 @@ class WandBIntegration(MLPlatformInterface):
             )
             # Actual: wandb.config.update(parameters)
 
-    def log_metrics(self, run_id: str, metrics: Dict[str, float], step: Optional[int] = None):
+    def log_metrics(self, run_id: str, metrics: dict[str, float], step: int | None = None):
         """Log metrics to W&B"""
         if run_id in self.active_runs:
             self.active_runs[run_id].metrics.update(metrics)
@@ -536,7 +537,7 @@ class WandBIntegration(MLPlatformInterface):
             self._emit("run_ended", {"platform": MLPlatform.WANDB.value, **run.to_dict()})
             # Actual: wandb.finish()
 
-    def set_tags(self, run_id: str, tags: Dict[str, str]) -> None:
+    def set_tags(self, run_id: str, tags: dict[str, str]) -> None:
         if run_id in self.active_runs:
             self.active_runs[run_id].tags.update(tags)
             logging.info(f"[STUB] W&B set_tags[{run_id}]: {list(tags.keys())}")
@@ -544,7 +545,7 @@ class WandBIntegration(MLPlatformInterface):
                 "tags_set", {"platform": MLPlatform.WANDB.value, "run_id": run_id, "tags": tags}
             )
 
-    def get_run(self, run_id: str) -> Optional[ExperimentRun]:
+    def get_run(self, run_id: str) -> ExperimentRun | None:
         return self.active_runs.get(run_id)
 
 
@@ -559,7 +560,7 @@ class SageMakerIntegration(MLPlatformInterface):
     This is a stub that logs intent to interact with SageMaker.
     """
 
-    def __init__(self, region: str = "us-east-1", role: Optional[str] = None):
+    def __init__(self, region: str = "us-east-1", role: str | None = None):
         """
         Initialize SageMaker integration
 
@@ -570,11 +571,11 @@ class SageMakerIntegration(MLPlatformInterface):
         super().__init__()
         self.region = region
         self.role = role
-        self.active_runs: Dict[str, ExperimentRun] = {}
+        self.active_runs: dict[str, ExperimentRun] = {}
 
         logging.info(f"SageMaker integration initialized (stub) - Region: {region}")
 
-    def start_run(self, experiment_name: str, run_name: Optional[str] = None) -> str:
+    def start_run(self, experiment_name: str, run_name: str | None = None) -> str:
         """Start SageMaker training job"""
         import uuid
 
@@ -594,7 +595,7 @@ class SageMakerIntegration(MLPlatformInterface):
         # Actual: Create SageMaker training job
         return run_id
 
-    def log_parameters(self, run_id: str, parameters: Dict[str, Any]):
+    def log_parameters(self, run_id: str, parameters: dict[str, Any]):
         """Log hyperparameters to SageMaker"""
         if run_id in self.active_runs:
             sanitized = _sanitize_keys(parameters)
@@ -605,7 +606,7 @@ class SageMakerIntegration(MLPlatformInterface):
                 {"platform": MLPlatform.SAGEMAKER.value, "run_id": run_id, "parameters": sanitized},
             )
 
-    def log_metrics(self, run_id: str, metrics: Dict[str, float], step: Optional[int] = None):
+    def log_metrics(self, run_id: str, metrics: dict[str, float], step: int | None = None):
         """Log metrics to CloudWatch (via SageMaker)"""
         if run_id in self.active_runs:
             self.active_runs[run_id].metrics.update(metrics)
@@ -656,7 +657,7 @@ class AzureMLIntegration(MLPlatformInterface):
     This is a stub that logs intent to interact with Azure ML.
     """
 
-    def __init__(self, workspace: Optional[str] = None, subscription_id: Optional[str] = None):
+    def __init__(self, workspace: str | None = None, subscription_id: str | None = None):
         """
         Initialize Azure ML integration
 
@@ -667,14 +668,14 @@ class AzureMLIntegration(MLPlatformInterface):
         super().__init__()
         self.workspace = workspace or "default-workspace"
         self.subscription_id = subscription_id
-        self.active_runs: Dict[str, ExperimentRun] = {}
+        self.active_runs: dict[str, ExperimentRun] = {}
 
         logging.info(
             f"Azure ML integration initialized (stub) - Workspace: {self.workspace}, "
             f"Subscription: {self.subscription_id or 'env/default'}"
         )
 
-    def start_run(self, experiment_name: str, run_name: Optional[str] = None) -> str:
+    def start_run(self, experiment_name: str, run_name: str | None = None) -> str:
         import uuid
 
         run_id = f"az-{uuid.uuid4().hex[:8]}"
@@ -690,7 +691,7 @@ class AzureMLIntegration(MLPlatformInterface):
         self._emit("run_started", {"platform": MLPlatform.AZURE_ML.value, **run.to_dict()})
         return run_id
 
-    def log_parameters(self, run_id: str, parameters: Dict[str, Any]):
+    def log_parameters(self, run_id: str, parameters: dict[str, Any]):
         if run_id in self.active_runs:
             sanitized = _sanitize_keys(parameters)
             self.active_runs[run_id].parameters.update(sanitized)
@@ -700,7 +701,7 @@ class AzureMLIntegration(MLPlatformInterface):
                 {"platform": MLPlatform.AZURE_ML.value, "run_id": run_id, "parameters": sanitized},
             )
 
-    def log_metrics(self, run_id: str, metrics: Dict[str, float], step: Optional[int] = None):
+    def log_metrics(self, run_id: str, metrics: dict[str, float], step: int | None = None):
         if run_id in self.active_runs:
             self.active_runs[run_id].metrics.update(metrics)
             logging.info(f"[STUB] AzureML log_metrics[{run_id}] (step={step})")
@@ -736,7 +737,7 @@ class AzureMLIntegration(MLPlatformInterface):
             logging.info(f"[STUB] AzureML end_run[{run_id}] -> {st.value}")
             self._emit("run_ended", {"platform": MLPlatform.AZURE_ML.value, **run.to_dict()})
 
-    def get_run(self, run_id: str) -> Optional[ExperimentRun]:
+    def get_run(self, run_id: str) -> ExperimentRun | None:
         return self.active_runs.get(run_id)
 
 
@@ -752,9 +753,9 @@ class InMemoryIntegration(MLPlatformInterface):
     def __init__(self, name: str = "in_memory"):
         super().__init__()
         self.name = name
-        self.active_runs: Dict[str, ExperimentRun] = {}
+        self.active_runs: dict[str, ExperimentRun] = {}
 
-    def start_run(self, experiment_name: str, run_name: Optional[str] = None) -> str:
+    def start_run(self, experiment_name: str, run_name: str | None = None) -> str:
         import uuid
 
         run_id = f"mem-{uuid.uuid4().hex[:8]}"
@@ -770,7 +771,7 @@ class InMemoryIntegration(MLPlatformInterface):
         self._emit("run_started", {"platform": MLPlatform.IN_MEMORY.value, **run.to_dict()})
         return run_id
 
-    def log_parameters(self, run_id: str, parameters: Dict[str, Any]):
+    def log_parameters(self, run_id: str, parameters: dict[str, Any]):
         if run_id in self.active_runs:
             sanitized = _sanitize_keys(parameters)
             self.active_runs[run_id].parameters.update(sanitized)
@@ -780,7 +781,7 @@ class InMemoryIntegration(MLPlatformInterface):
                 {"platform": MLPlatform.IN_MEMORY.value, "run_id": run_id, "parameters": sanitized},
             )
 
-    def log_metrics(self, run_id: str, metrics: Dict[str, float], step: Optional[int] = None):
+    def log_metrics(self, run_id: str, metrics: dict[str, float], step: int | None = None):
         if run_id in self.active_runs:
             self.active_runs[run_id].metrics.update(metrics)
             logging.debug(f"[INMEM] log_metrics[{run_id}]: {metrics} (step={step})")
@@ -816,14 +817,14 @@ class InMemoryIntegration(MLPlatformInterface):
             logging.info(f"[INMEM] end_run[{run_id}] -> {st.value}")
             self._emit("run_ended", {"platform": MLPlatform.IN_MEMORY.value, **run.to_dict()})
 
-    def set_tags(self, run_id: str, tags: Dict[str, str]) -> None:
+    def set_tags(self, run_id: str, tags: dict[str, str]) -> None:
         if run_id in self.active_runs:
             self.active_runs[run_id].tags.update(tags)
             self._emit(
                 "tags_set", {"platform": MLPlatform.IN_MEMORY.value, "run_id": run_id, "tags": tags}
             )
 
-    def get_run(self, run_id: str) -> Optional[ExperimentRun]:
+    def get_run(self, run_id: str) -> ExperimentRun | None:
         return self.active_runs.get(run_id)
 
 
@@ -847,7 +848,7 @@ class MLPlatformManager:
     """
 
     def __init__(self):
-        self.platforms: Dict[str, MLPlatformInterface] = {}
+        self.platforms: dict[str, MLPlatformInterface] = {}
 
     def add_platform(self, name: str, platform: MLPlatformInterface):
         """Add ML platform"""
@@ -857,18 +858,18 @@ class MLPlatformManager:
         """Remove an ML platform by name"""
         self.platforms.pop(name, None)
 
-    def start_run_all(self, experiment_name: str, run_name: Optional[str] = None) -> Dict[str, str]:
+    def start_run_all(self, experiment_name: str, run_name: str | None = None) -> dict[str, str]:
         """Start run on all platforms"""
-        run_ids: Dict[str, str] = {}
+        run_ids: dict[str, str] = {}
         for name, platform in self.platforms.items():
             try:
                 run_id = platform.start_run(experiment_name, run_name)
                 run_ids[name] = run_id
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 logging.error(f"Failed to start run on {name}: {e}")
         return run_ids
 
-    def log_parameters_all(self, run_ids: Dict[str, str], parameters: Dict[str, Any]):
+    def log_parameters_all(self, run_ids: dict[str, str], parameters: dict[str, Any]):
         """Log parameters to all platforms"""
         for name, run_id in run_ids.items():
             platform = self.platforms.get(name)
@@ -880,7 +881,7 @@ class MLPlatformManager:
                 logging.error(f"Failed to log parameters to {name}: {e}")
 
     def log_metrics_all(
-        self, run_ids: Dict[str, str], metrics: Dict[str, float], step: Optional[int] = None
+        self, run_ids: dict[str, str], metrics: dict[str, float], step: int | None = None
     ):
         """Log metrics to all platforms"""
         for name, run_id in run_ids.items():
@@ -892,7 +893,7 @@ class MLPlatformManager:
             except Exception as e:
                 logging.error(f"Failed to log metrics to {name}: {e}")
 
-    def log_artifact_all(self, run_ids: Dict[str, str], artifact_path: str):
+    def log_artifact_all(self, run_ids: dict[str, str], artifact_path: str):
         """Log artifact to all platforms"""
         for name, run_id in run_ids.items():
             platform = self.platforms.get(name)
@@ -903,7 +904,7 @@ class MLPlatformManager:
             except Exception as e:
                 logging.error(f"Failed to log artifact to {name}: {e}")
 
-    def set_tags_all(self, run_ids: Dict[str, str], tags: Dict[str, str]):
+    def set_tags_all(self, run_ids: dict[str, str], tags: dict[str, str]):
         """Set tags on all platforms"""
         for name, run_id in run_ids.items():
             platform = self.platforms.get(name)
@@ -914,7 +915,7 @@ class MLPlatformManager:
             except Exception as e:
                 logging.error(f"Failed to set tags on {name}: {e}")
 
-    def end_run_all(self, run_ids: Dict[str, str], status: str = "completed"):
+    def end_run_all(self, run_ids: dict[str, str], status: str = "completed"):
         """End run on all platforms"""
         for name, run_id in run_ids.items():
             platform = self.platforms.get(name)
@@ -925,12 +926,12 @@ class MLPlatformManager:
             except Exception as e:
                 logging.error(f"Failed to end run on {name}: {e}")
 
-    def get_summaries(self, run_ids: Dict[str, str]) -> Dict[str, Optional[Dict[str, Any]]]:
+    def get_summaries(self, run_ids: dict[str, str]) -> dict[str, dict[str, Any] | None]:
         """
         Get structured run summaries (if supported by the platform).
         Returns dict of name -> run_dict or None if not available.
         """
-        summaries: Dict[str, Optional[Dict[str, Any]]] = {}
+        summaries: dict[str, dict[str, Any] | None] = {}
         for name, run_id in run_ids.items():
             platform = self.platforms.get(name)
             if not platform:
@@ -944,7 +945,7 @@ class MLPlatformManager:
                 summaries[name] = None
         return summaries
 
-    def run_all_context(self, experiment_name: str, run_name: Optional[str] = None):
+    def run_all_context(self, experiment_name: str, run_name: str | None = None):
         """
         Context manager to ensure runs are closed.
         Usage:
@@ -981,7 +982,7 @@ if __name__ == "__main__":
     manager.add_platform("inmem", InMemoryIntegration())
 
     # Add a simple event handler to print structured events
-    def print_event(evt: str, payload: Dict[str, Any]):
+    def print_event(evt: str, payload: dict[str, Any]):
         print(f"[event:{evt}] {json.dumps(payload)}")
 
     for p in manager.platforms.values():

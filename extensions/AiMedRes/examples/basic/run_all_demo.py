@@ -4,8 +4,8 @@ Demonstration of the "Run All" training functionality.
 This script shows how the training orchestrator discovers and prepares to run all models.
 """
 
-import sys
 import subprocess
+import sys
 from pathlib import Path
 
 
@@ -21,7 +21,7 @@ def run_demo_command(description, cmd):
     print(f"📌 {description}")
     print(f"💻 Command: {' '.join(cmd)}")
     print()
-    
+
     try:
         result = subprocess.run(
             cmd,
@@ -29,18 +29,18 @@ def run_demo_command(description, cmd):
             text=True,
             timeout=60
         )
-        
+
         output = result.stdout + result.stderr
         print(output)
-        
+
         if result.returncode != 0:
             print(f"❌ Command failed with exit code {result.returncode}")
             return False
-        
+
         return True
-        
+
     except subprocess.TimeoutExpired:
-        print(f"❌ Command timed out")
+        print("❌ Command timed out")
         return False
     except Exception as e:
         print(f"❌ Command failed: {e}")
@@ -56,12 +56,12 @@ def main():
     print("This demonstration shows how the training orchestrator automatically")
     print("discovers and can run ALL medical AI training scripts in the repository.")
     print()
-    
+
     # Change to repository root
     repo_root = Path(__file__).parent
     import os
     os.chdir(repo_root)
-    
+
     # Demo 1: List all discovered jobs
     print_section("Step 1: Discover All Training Jobs")
     print("The orchestrator automatically finds all training scripts:")
@@ -70,7 +70,7 @@ def main():
         "List all discovered training jobs",
         [sys.executable, "run_all_training.py", "--list"]
     )
-    
+
     # Demo 2: Preview what would run
     print_section("Step 2: Preview 'Run All' Commands")
     print("See what commands would execute when running all training:")
@@ -80,7 +80,7 @@ def main():
         "Preview all commands with epochs=10",
         [sys.executable, "run_all_training.py", "--dry-run", "--epochs", "10", "--folds", "3"]
     )
-    
+
     # Demo 3: Show filtering
     print_section("Step 3: Selective Training")
     print("You can also run specific models only:")
@@ -89,7 +89,7 @@ def main():
         "Preview training only ALS and Alzheimer's models",
         [sys.executable, "run_all_training.py", "--dry-run", "--only", "als", "alzheimers", "--epochs", "5"]
     )
-    
+
     # Demo 4: Show parallel mode
     print_section("Step 4: Parallel Execution")
     print("For faster training, run multiple models in parallel:")
@@ -98,7 +98,7 @@ def main():
         "Preview parallel execution with 4 workers",
         [sys.executable, "run_all_training.py", "--dry-run", "--parallel", "--max-workers", "4", "--epochs", "5"]
     )
-    
+
     # Summary
     print_section("Summary")
     print("✅ The 'Run All' functionality is fully operational!")
@@ -118,7 +118,7 @@ def main():
     print()
     print("🎉 Ready to train all medical AI models!")
     print()
-    
+
     return 0
 
 

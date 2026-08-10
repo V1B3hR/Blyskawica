@@ -17,6 +17,7 @@ import torch
 import torch.nn as nn
 
 from adaptiveneuralnetwork.central_nervous_system.neuromorphic import NeuromorphicConfig
+
 from .hardware_backends import BaseHardwareBackend, HardwareConstraints, HardwareMetrics
 
 logger = logging.getLogger(__name__)
@@ -207,7 +208,7 @@ class CustomSpikeSimulator(BaseHardwareBackend):
         for layer in network_config['layers']:
             layer_neurons = {}
 
-            for i in range(layer['output_size']):
+            for i in range(layer['output_size']):  # noqa: B007
                 neuron = self._create_single_neuron(
                     neuron_id,
                     layer['neuron_model'],
@@ -384,7 +385,7 @@ class CustomSpikeSimulator(BaseHardwareBackend):
         first_layer_name = list(self.neurons.keys())[0]
         first_layer_neurons = self.neurons[first_layer_name]
 
-        for i, (neuron_id, neuron) in enumerate(first_layer_neurons.items()):
+        for i, (neuron_id, neuron) in enumerate(first_layer_neurons.items()):  # noqa: B007
             if i < input_size:
                 stimulation = input_data[0, i].item() * 10.0  # Scale factor
                 neuron['i_syn'] += stimulation
@@ -393,7 +394,7 @@ class CustomSpikeSimulator(BaseHardwareBackend):
         """Update all neurons and return number of spikes."""
         total_spikes = 0
 
-        for layer_name, layer_neurons in self.neurons.items():
+        for layer_name, layer_neurons in self.neurons.items():  # noqa: B007
             for neuron_id, neuron in layer_neurons.items():
                 if self._update_single_neuron(neuron):
                     total_spikes += 1
@@ -476,7 +477,7 @@ class CustomSpikeSimulator(BaseHardwareBackend):
 
         v = neuron['v']
         u = neuron['u']
-        I = neuron['i_syn']
+        I = neuron['i_syn']  # noqa: E741
 
         # Izhikevich equations
         dv = 0.04 * v * v + 5 * v + 140 - u + I
@@ -536,7 +537,7 @@ class CustomSpikeSimulator(BaseHardwareBackend):
         """Update synaptic connections and return number of operations."""
         synaptic_ops = 0
 
-        for synapse_id, synapse in self.synapses.items():
+        for synapse_id, synapse in self.synapses.items():  # noqa: B007
             pre_id = synapse['pre_neuron_id']
             post_id = synapse['post_neuron_id']
 
@@ -568,7 +569,7 @@ class CustomSpikeSimulator(BaseHardwareBackend):
 
     def _apply_stdp(self) -> None:
         """Apply STDP plasticity rule."""
-        for synapse_id, synapse in self.synapses.items():
+        for synapse_id, synapse in self.synapses.items():  # noqa: B007
             pre_neuron = self._find_neuron_by_id(synapse['pre_neuron_id'])
             post_neuron = self._find_neuron_by_id(synapse['post_neuron_id'])
 
@@ -599,7 +600,7 @@ class CustomSpikeSimulator(BaseHardwareBackend):
         output = torch.zeros(batch_size, output_size, device=self.device)
 
         recent_window = 10.0  # ms
-        for i, (neuron_id, neuron) in enumerate(last_layer_neurons.items()):
+        for i, (neuron_id, neuron) in enumerate(last_layer_neurons.items()):  # noqa: B007
             # Count spikes in recent window
             recent_spikes = sum(1 for t in neuron['spike_history']
                               if self.simulation_time - t < recent_window)

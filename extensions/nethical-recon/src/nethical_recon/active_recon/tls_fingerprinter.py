@@ -6,7 +6,6 @@ import hashlib
 import socket
 import ssl
 from dataclasses import dataclass, field
-from typing import Optional
 
 
 @dataclass
@@ -15,16 +14,16 @@ class TLSInfo:
 
     host: str
     port: int
-    protocol_version: Optional[str] = None
-    cipher_suite: Optional[str] = None
-    certificate_subject: Optional[str] = None
-    certificate_issuer: Optional[str] = None
-    certificate_serial: Optional[str] = None
-    certificate_not_before: Optional[str] = None
-    certificate_not_after: Optional[str] = None
+    protocol_version: str | None = None
+    cipher_suite: str | None = None
+    certificate_subject: str | None = None
+    certificate_issuer: str | None = None
+    certificate_serial: str | None = None
+    certificate_not_before: str | None = None
+    certificate_not_after: str | None = None
     san_list: list[str] = field(default_factory=list)
-    ja3_hash: Optional[str] = None
-    error: Optional[str] = None
+    ja3_hash: str | None = None
+    error: str | None = None
 
 
 class TLSFingerprinter:
@@ -85,7 +84,7 @@ class TLSFingerprinter:
                     # This is a placeholder for future enhancement
                     result.ja3_hash = self._compute_ja3_hash(ssock)
 
-        except socket.timeout:
+        except TimeoutError:
             result.error = "Connection timeout"
         except ssl.SSLError as e:
             result.error = f"SSL error: {str(e)}"

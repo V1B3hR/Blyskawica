@@ -6,17 +6,15 @@ Tests cache invalidation across all levels.
 
 import time
 
-import pytest
-
-from nethical.cache.l1_memory import L1MemoryCache
-from nethical.cache.l3_global import L3GlobalCache
 from nethical.cache.cache_hierarchy import CacheHierarchy, HierarchyConfig
+from nethical.cache.event_propagation import CacheEvent, EventPropagation, EventType
 from nethical.cache.invalidation import (
-    InvalidationManager,
     InvalidationEvent,
+    InvalidationManager,
     InvalidationType,
 )
-from nethical.cache.event_propagation import EventPropagation, CacheEvent, EventType
+from nethical.cache.l1_memory import L1MemoryCache
+from nethical.cache.l3_global import L3GlobalCache
 
 
 class TestL1MemoryCache:
@@ -173,7 +171,7 @@ class TestCacheHierarchy:
         hierarchy = CacheHierarchy()
 
         hierarchy.set("key1", "value1")
-        
+
         # Multiple gets to ensure L1 hit tracking
         result = hierarchy.get("key1")
         result = hierarchy.get("key1")  # Second get

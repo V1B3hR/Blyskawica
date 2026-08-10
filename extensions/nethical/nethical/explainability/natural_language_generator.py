@@ -5,8 +5,8 @@ This module takes technical decision data and generates natural language
 explanations that are easy for non-technical users to understand.
 """
 
-from typing import Dict, List, Any
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -16,8 +16,8 @@ class NaturalLanguageExplanation:
     title: str
     summary: str
     detailed_explanation: str
-    key_points: List[str]
-    recommendations: List[str]
+    key_points: list[str]
+    recommendations: list[str]
 
 
 class NaturalLanguageGenerator:
@@ -44,9 +44,9 @@ class NaturalLanguageGenerator:
     def generate_explanation(
         self,
         decision: str,
-        context: Dict[str, Any],
-        components: List[Dict[str, Any]],
-        reasoning_chain: List[str],
+        context: dict[str, Any],
+        components: list[dict[str, Any]],
+        reasoning_chain: list[str],
     ) -> NaturalLanguageExplanation:
         """
         Generate a natural language explanation.
@@ -74,7 +74,7 @@ class NaturalLanguageGenerator:
             recommendations=recommendations,
         )
 
-    def _generate_title(self, decision: str, context: Dict[str, Any]) -> str:
+    def _generate_title(self, decision: str, context: dict[str, Any]) -> str:
         """Generate a clear title for the explanation."""
         decision_verbs = {
             "BLOCK": "Blocked",
@@ -88,7 +88,7 @@ class NaturalLanguageGenerator:
 
         return f"{verb}: {action_type.title()}"
 
-    def _generate_summary(self, decision: str, components: List[Dict[str, Any]]) -> str:
+    def _generate_summary(self, decision: str, components: list[dict[str, Any]]) -> str:
         """Generate a one-sentence summary."""
         if decision == "BLOCK":
             return self._generate_block_summary(components)
@@ -101,7 +101,7 @@ class NaturalLanguageGenerator:
         else:
             return f"Decision: {decision}"
 
-    def _generate_block_summary(self, components: List[Dict[str, Any]]) -> str:
+    def _generate_block_summary(self, components: list[dict[str, Any]]) -> str:
         """Generate summary for BLOCK decision."""
         if not components:
             return "This request was blocked to maintain safety standards."
@@ -121,23 +121,23 @@ class NaturalLanguageGenerator:
         else:
             return "This request was blocked to prevent potential harm."
 
-    def _generate_allow_summary(self, components: List[Dict[str, Any]]) -> str:
+    def _generate_allow_summary(self, components: list[dict[str, Any]]) -> str:
         """Generate summary for ALLOW decision."""
         if not components:
             return "This request was allowed as it meets all safety requirements."
 
         return "This request was allowed with standard monitoring enabled."
 
-    def _generate_restrict_summary(self, components: List[Dict[str, Any]]) -> str:
+    def _generate_restrict_summary(self, components: list[dict[str, Any]]) -> str:
         """Generate summary for RESTRICT decision."""
         return "This request was allowed with restrictions to ensure safety."
 
-    def _generate_terminate_summary(self, components: List[Dict[str, Any]]) -> str:
+    def _generate_terminate_summary(self, components: list[dict[str, Any]]) -> str:
         """Generate summary for TERMINATE decision."""
         return "This session was terminated immediately due to critical policy violations."
 
     def _generate_detailed_explanation(
-        self, decision: str, components: List[Dict[str, Any]], reasoning_chain: List[str]
+        self, decision: str, components: list[dict[str, Any]], reasoning_chain: list[str]
     ) -> str:
         """Generate a detailed multi-paragraph explanation."""
         paragraphs = []
@@ -169,7 +169,7 @@ class NaturalLanguageGenerator:
         }
         return intros.get(decision, f"This request received a decision of {decision}.")
 
-    def _explain_component(self, component: Dict[str, Any]) -> str:
+    def _explain_component(self, component: dict[str, Any]) -> str:
         """Explain a single component in natural language."""
         comp_type = component.get("type")
         details = component.get("details", {})
@@ -183,7 +183,7 @@ class NaturalLanguageGenerator:
         else:
             return ""
 
-    def _explain_rule_component(self, details: Dict[str, Any]) -> str:
+    def _explain_rule_component(self, details: dict[str, Any]) -> str:
         """Explain rule violations."""
         violated_rules = details.get("violated_rules", [])
         if not violated_rules:
@@ -202,7 +202,7 @@ class NaturalLanguageGenerator:
 
         return text
 
-    def _explain_risk_component(self, details: Dict[str, Any]) -> str:
+    def _explain_risk_component(self, details: dict[str, Any]) -> str:
         """Explain risk score breakdown."""
         risk_breakdown = details.get("risk_breakdown", {})
         total_risk = details.get("total_risk", 0)
@@ -224,7 +224,7 @@ class NaturalLanguageGenerator:
 
         return text
 
-    def _explain_policy_component(self, details: Dict[str, Any]) -> str:
+    def _explain_policy_component(self, details: dict[str, Any]) -> str:
         """Explain policy matches."""
         matched_policies = details.get("matched_policies", [])
         if not matched_policies:
@@ -240,14 +240,14 @@ class NaturalLanguageGenerator:
 
         return text
 
-    def _explain_reasoning(self, reasoning_chain: List[str]) -> str:
+    def _explain_reasoning(self, reasoning_chain: list[str]) -> str:
         """Explain the reasoning process."""
         text = "**Decision Process:**\n"
         for i, step in enumerate(reasoning_chain, 1):
             text += f"\n{i}. {step}"
         return text
 
-    def _extract_key_points(self, components: List[Dict[str, Any]]) -> List[str]:
+    def _extract_key_points(self, components: list[dict[str, Any]]) -> list[str]:
         """Extract key points from components."""
         key_points = []
 
@@ -272,8 +272,8 @@ class NaturalLanguageGenerator:
         return key_points
 
     def _generate_recommendations(
-        self, decision: str, components: List[Dict[str, Any]], context: Dict[str, Any]
-    ) -> List[str]:
+        self, decision: str, components: list[dict[str, Any]], context: dict[str, Any]
+    ) -> list[str]:
         """Generate actionable recommendations."""
         recommendations = []
 
@@ -305,7 +305,7 @@ class NaturalLanguageGenerator:
 
         return recommendations
 
-    def _load_templates(self) -> Dict[str, str]:
+    def _load_templates(self) -> dict[str, str]:
         """Load language templates."""
         # Future: Load from external files for multi-language support
         return {
@@ -339,7 +339,7 @@ class NaturalLanguageGenerator:
         """Convert explanation to HTML format."""
         html = f"<h1>{explanation.title}</h1>\n"
         html += f"<h2>Summary</h2>\n<p>{explanation.summary}</p>\n"
-        html += f"<h2>Detailed Explanation</h2>\n"
+        html += "<h2>Detailed Explanation</h2>\n"
 
         # Convert paragraphs
         for para in explanation.detailed_explanation.split("\n\n"):

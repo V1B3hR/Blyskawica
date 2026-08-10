@@ -5,20 +5,18 @@ Tests for KEV client, alerts, policy modes, compliance reporting,
 and other CISA-related functionality.
 """
 
-import pytest
-from unittest.mock import Mock, patch
 from datetime import datetime
+from unittest.mock import Mock, patch
 
+import pytest
 from nethical_recon.compliance import (
     CISAKEVClient,
     KEVEntry,
-    CISAAlertFeedClient,
-    CISAShieldsUpMonitor,
 )
-from nethical_recon.compliance.cisa_policy import CISAPolicyMode, CISAPolicyManager
-from nethical_recon.compliance.cisa_reporting import CISAComplianceReporter
-from nethical_recon.compliance.cisa_mapping import CISACategoryMapper
 from nethical_recon.compliance.cisa_attack_surface import CISAAttackSurfaceMonitor
+from nethical_recon.compliance.cisa_mapping import CISACategoryMapper
+from nethical_recon.compliance.cisa_policy import CISAPolicyManager, CISAPolicyMode
+from nethical_recon.compliance.cisa_reporting import CISAComplianceReporter
 from nethical_recon.plugins import CISABODChecker
 
 

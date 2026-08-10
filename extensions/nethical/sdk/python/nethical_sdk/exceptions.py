@@ -6,23 +6,23 @@ API interactions.
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 
 class NethicalError(Exception):
     """Base exception for Nethical SDK errors."""
-    
+
     def __init__(
         self,
         message: str,
-        request_id: Optional[str] = None,
-        details: Optional[dict[str, Any]] = None,
+        request_id: str | None = None,
+        details: dict[str, Any] | None = None,
     ):
         super().__init__(message)
         self.message = message
         self.request_id = request_id
         self.details = details or {}
-    
+
     def __str__(self) -> str:
         parts = [self.message]
         if self.request_id:
@@ -38,7 +38,7 @@ class AuthenticationError(NethicalError):
     - API key is invalid
     - API key has expired
     - Insufficient permissions
-    """
+    """  # noqa: W293
     pass
 
 
@@ -46,15 +46,15 @@ class RateLimitError(NethicalError):
     """Raised when rate limit is exceeded.
     
     Contains information about when to retry.
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
         message: str,
-        retry_after: Optional[int] = None,
-        limit: Optional[int] = None,
-        remaining: Optional[int] = None,
-        reset_at: Optional[str] = None,
+        retry_after: int | None = None,
+        limit: int | None = None,
+        remaining: int | None = None,
+        reset_at: str | None = None,
         **kwargs,
     ):
         super().__init__(message, **kwargs)
@@ -68,12 +68,12 @@ class ValidationError(NethicalError):
     """Raised when request validation fails.
     
     Contains details about which fields failed validation.
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
         message: str,
-        field_errors: Optional[dict[str, list[str]]] = None,
+        field_errors: dict[str, list[str]] | None = None,
         **kwargs,
     ):
         super().__init__(message, **kwargs)
@@ -85,8 +85,8 @@ class ServerError(NethicalError):
     
     This indicates a problem on the server side that may
     be transient.
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
         message: str,
@@ -112,14 +112,14 @@ class DecisionBlockedError(NethicalError):
     
     This is a convenience exception for when you want to
     treat blocked decisions as errors.
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
         message: str,
         decision: str,
         reason: str,
-        violations: Optional[list[dict]] = None,
+        violations: list[dict] | None = None,
         **kwargs,
     ):
         super().__init__(message, **kwargs)

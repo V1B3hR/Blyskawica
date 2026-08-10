@@ -174,7 +174,7 @@ class BenchmarkTableGenerator:
                         active_nodes = f"{val:.1f}%"
 
             # Check in nested results
-            for main_key, main_data in self.results.items():
+            for main_key, main_data in self.results.items():  # noqa: B007
                 if isinstance(main_data, dict):
                     # Look for experiment results
                     if "experiments" in main_data:
@@ -304,7 +304,7 @@ class BenchmarkTableGenerator:
             flops = "TBD"
 
             # Look through all results for performance data
-            for result_key, result_data in self.results.items():
+            for result_key, result_data in self.results.items():  # noqa: B007
                 if isinstance(result_data, dict):
                     # Check for performance metrics
                     if "performance" in result_data:
@@ -338,8 +338,8 @@ class BenchmarkTableGenerator:
 
             # Generate tables
             main_table = self.generate_main_benchmark_table()
-            robustness_table = self.generate_robustness_table()
-            performance_table = self.generate_performance_table()
+            robustness_table = self.generate_robustness_table()  # noqa: F841
+            performance_table = self.generate_performance_table()  # noqa: F841
 
             # Update main benchmark table
             main_pattern = r'(\| Model Variant \| Dataset \| Test Acc \| Active Node % \| Notes \|.*?\n\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|)([^#]*?)(?=\n##|\n\*\*|$)'

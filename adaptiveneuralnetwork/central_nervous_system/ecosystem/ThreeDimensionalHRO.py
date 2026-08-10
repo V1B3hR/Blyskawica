@@ -1,11 +1,12 @@
 import logging
-import random
-import time
-import threading
-import numpy as np
-from typing import Dict, Any, List, Optional
 import math
-from typing import Dict, Any, List, Optional, Callable
+import random
+import threading
+import time
+from collections.abc import Callable
+from typing import Any
+
+import numpy as np
 
 # --- Logging setup ---
 logger = logging.getLogger(__name__)
@@ -64,7 +65,7 @@ def is_image_encoder(model_name: str) -> bool:
 def is_cognitive_engine(engine_name: str) -> bool:
     return engine_name in cognitive_engines
 
-def build_image_encoder(config_encoder: Dict[str, Any], verbose: bool = False, **kwargs) -> Any:
+def build_image_encoder(config_encoder: dict[str, Any], verbose: bool = False, **kwargs) -> Any:
     model_name = config_encoder['NAME']
     if model_name.startswith('cls_'):
         model_name = model_name[4:]
@@ -80,9 +81,9 @@ def build_cognitive_engine(engine_name: str, **kwargs) -> Any:
 # --- Thread-safe system state for cognitive engine ---
 class SystemState:
     def __init__(self, max_snapshots: int = 10000):
-        self._state: Dict[str, Any] = {}
+        self._state: dict[str, Any] = {}
         self._lock = threading.RLock()
-        self._snapshots: List[Dict[str, Any]] = []
+        self._snapshots: list[dict[str, Any]] = []
         self._in_transaction = False
         self._max_snapshots = int(max_snapshots)
 
@@ -217,9 +218,9 @@ class MicrobiomeSpecies:
 class Lactobacillus(MicrobiomeSpecies):
     def __init__(self, abundance=2):
         super().__init__(
-            name="Lactobacillus", 
+            name="Lactobacillus",
             role="anxiety_reducer",
-            effect=lambda sys: sys.absorb_overload(2), 
+            effect=lambda sys: sys.absorb_overload(2),
             abundance=abundance
         )
 
@@ -227,9 +228,9 @@ class Lactobacillus(MicrobiomeSpecies):
 class Bifidobacterium(MicrobiomeSpecies):
     def __init__(self, abundance=2):
         super().__init__(
-            name="Bifidobacterium", 
+            name="Bifidobacterium",
             role="memory_helper",
-            effect=lambda sys: sys.boost_memory(1), 
+            effect=lambda sys: sys.boost_memory(1),
             abundance=abundance
         )
 
@@ -237,10 +238,10 @@ class Bifidobacterium(MicrobiomeSpecies):
 class Pathogenus(MicrobiomeSpecies):
     def __init__(self, abundance=1):
         super().__init__(
-            name="Pathogenus", 
+            name="Pathogenus",
             role="anxiety_trigger",
-            effect=lambda sys: sys.trigger_anxiety(3), 
-            is_bad=True, 
+            effect=lambda sys: sys.trigger_anxiety(3),
+            is_bad=True,
             abundance=abundance
         )
 
@@ -294,7 +295,7 @@ class ThreeDimensionalHRO:
         compute_backend: str = "local",
         optimization_strategy: str = "simple",
         rcd=None,
-        monitors: Optional[List] = None,
+        monitors: list | None = None,
         species_capacity: int = 10,
     ):
         self.x_axis = reasoning_mode
@@ -304,9 +305,9 @@ class ThreeDimensionalHRO:
         self.rcd = rcd
         self.monitors = monitors or []
         self.neural_available = _TORCH_AVAILABLE
-        self.reasoning_cache: Dict[str, Any] = {}
+        self.reasoning_cache: dict[str, Any] = {}
         self._cache_lock = threading.RLock()
-        self.optimization_history: List[Dict[str, Any]] = []
+        self.optimization_history: list[dict[str, Any]] = []
         self._opt_lock = threading.RLock()
         self.microbiome_state = MicrobiomeSystemState()
         self.neurons = [NeuronLoop() for _ in range(10)]
@@ -429,7 +430,7 @@ class ThreeDimensionalHRO:
             logger.error(f"[Diagnostics] Error: {e}")
             return False
 
-    def think(self, content: str, **kwargs) -> Dict[str, Any]:
+    def think(self, content: str, **kwargs) -> dict[str, Any]:
         if self.x_axis == "sequential":
             return self._sequential_reasoning(content, **kwargs)
         if self.x_axis == "neural":
@@ -443,7 +444,7 @@ class ThreeDimensionalHRO:
             return self._hybrid_fusion(seq, neu, **kwargs)
         return seq
 
-    def _normalize_outcome(self, outcome: Any, start_time: float) -> Dict[str, Any]:
+    def _normalize_outcome(self, outcome: Any, start_time: float) -> dict[str, Any]:
         if isinstance(outcome, dict):
             out = dict(outcome)
         else:
@@ -453,7 +454,7 @@ class ThreeDimensionalHRO:
         out["runtime"] = time.perf_counter() - start_time
         return out
 
-    def _sequential_reasoning(self, content: str, **kwargs) -> Dict[str, Any]:
+    def _sequential_reasoning(self, content: str, **kwargs) -> dict[str, Any]:
         start = time.perf_counter()
         steps = [s.strip() for s in content.split(".") if s.strip()]
         reasoning_steps = []
@@ -477,7 +478,7 @@ class ThreeDimensionalHRO:
         }
         return self._normalize_outcome(out, start)
 
-    def _neural_reasoning(self, content: str, **kwargs) -> Dict[str, Any]:
+    def _neural_reasoning(self, content: str, **kwargs) -> dict[str, Any]:
         start = time.perf_counter()
         if not self.neural_available:
             out = {
@@ -510,7 +511,7 @@ class ThreeDimensionalHRO:
         }
         return self._normalize_outcome(out, start)
 
-    def _hybrid_fusion(self, seq_result: Dict[str, Any], neural_result: Dict[str, Any], **kwargs) -> Dict[str, Any]:
+    def _hybrid_fusion(self, seq_result: dict[str, Any], neural_result: dict[str, Any], **kwargs) -> dict[str, Any]:
         start = time.perf_counter()
         fusion_weight = float(kwargs.get("neural_weight", 0.6))
         seq_conf = float(seq_result.get("confidence", 0.5))
@@ -527,7 +528,7 @@ class ThreeDimensionalHRO:
         }
         return self._normalize_outcome(out, start)
 
-    def safe_think(self, agent_name: str, content: str, *, resource_budget: Optional[float] = None, **kwargs) -> Dict[str, Any]:
+    def safe_think(self, agent_name: str, content: str, *, resource_budget: float | None = None, **kwargs) -> dict[str, Any]:
         intent = {
             "agent": agent_name,
             "action": "think",
@@ -550,7 +551,7 @@ class ThreeDimensionalHRO:
                 logger.exception("Monitor raised: %s", me)
         return out
 
-    def optimize(self, problem_space: Dict[str, Any], **kwargs) -> Dict[str, Any]:
+    def optimize(self, problem_space: dict[str, Any], **kwargs) -> dict[str, Any]:
         if self.z_axis == "simple":
             return self._simple_optimization(problem_space, **kwargs)
         if self.z_axis == "complex":
@@ -559,7 +560,7 @@ class ThreeDimensionalHRO:
             return self._adaptive_optimization(problem_space, **kwargs)
         return self._simple_optimization(problem_space, **kwargs)
 
-    def _simple_optimization(self, problem_space: Dict[str, Any], **kwargs) -> Dict[str, Any]:
+    def _simple_optimization(self, problem_space: dict[str, Any], **kwargs) -> dict[str, Any]:
         iterations = int(kwargs.get("iterations", 50))
         best_score = float("-inf")
         best_solution = None
@@ -575,7 +576,7 @@ class ThreeDimensionalHRO:
             self.optimization_history.append(out)
         return out
 
-    def _complex_optimization(self, problem_space: Dict[str, Any], **kwargs) -> Dict[str, Any]:
+    def _complex_optimization(self, problem_space: dict[str, Any], **kwargs) -> dict[str, Any]:
         dimensions = int(problem_space.get("dimensions", 5))
         temperature = float(kwargs.get("initial_temperature", 100.0))
         cooling_rate = float(kwargs.get("cooling_rate", 0.95))
@@ -594,36 +595,36 @@ class ThreeDimensionalHRO:
             if accept:
                 current, current_e = neighbor, n_e
                 if current_e < best_e:
-                    best, best_e = current.copy(), current_e
+                    best, best_e = current.copy(), current_e  # noqa: F841
             temperature *= cooling_rate
             iteration += 1
         out = {"strategy": "complex", "algorithm": "simulated_annealing", "iterations": iteration, "best_energy": best_e}
         with self._opt_lock:
             self.optimization_history.append(out)
         return out
-    
-    def _adaptive_optimization(self, problem_space: Dict[str, Any], **kwargs) -> Dict[str, Any]:
+
+    def _adaptive_optimization(self, problem_space: dict[str, Any], **kwargs) -> dict[str, Any]:
         """Adaptive optimization strategy that selects the best approach based on problem complexity."""
         dimensions = int(problem_space.get("dimensions", 5))
-        
+
         # Use simple optimization for small problems, complex for larger ones
         if dimensions <= 3:
             return self._simple_optimization(problem_space, **kwargs)
         else:
             return self._complex_optimization(problem_space, **kwargs)
-    
+
     def _qubo_energy(self, solution, problem_space):
         """Calculate QUBO energy for a given solution."""
         # Simple energy function for demonstration
         return sum(x * (i + 1) for i, x in enumerate(solution))
-    
+
     def _acceptance_probability(self, current_energy, new_energy, temperature):
         """Calculate acceptance probability for simulated annealing."""
         if new_energy < current_energy:
             return 1.0
         return np.exp(-(new_energy - current_energy) / temperature) if temperature > 0 else 0.0
-    
-    def get_status(self) -> Dict[str, Any]:
+
+    def get_status(self) -> dict[str, Any]:
         """Get the current status of the 3NGIN3 engine."""
         return {
             "position": f"({self.x_axis}, {self.y_axis}, {self.z_axis})",
@@ -639,7 +640,7 @@ class ThreeDimensionalHRO:
                 "constraints_active": self.rcd is not None
             } if self.rcd is not None else None
         }
-    
+
     def move_to_coordinates(self, x: str = None, y: str = None, z: str = None):
         """Move the engine to new coordinates in the 3D space."""
         if x is not None:
@@ -648,22 +649,22 @@ class ThreeDimensionalHRO:
             self.y_axis = y
         if z is not None:
             self.z_axis = z
-        
+
         logger.info(f"Engine moved to ({self.x_axis}, {self.y_axis}, {self.z_axis})")
-        out = {"strategy": "complex", "algorithm": "simulated_annealing", "iterations": iteration, 
-               "best_solution": {"parameters": best, "energy": best_e}, "final_temperature": temperature}
+        out = {"strategy": "complex", "algorithm": "simulated_annealing", "iterations": iteration,  # noqa: F821
+               "best_solution": {"parameters": best, "energy": best_e}, "final_temperature": temperature}  # noqa: F821
         with self._opt_lock:
             self.optimization_history.append(out)
         return out
 
-    def _adaptive_optimization(self, problem_space: Dict[str, Any], **kwargs) -> Dict[str, Any]:
+    def _adaptive_optimization(self, problem_space: dict[str, Any], **kwargs) -> dict[str, Any]:
         complexity = problem_space.get("complexity", "medium")
         if complexity == "low" or problem_space.get("dimensions", 3) < 5:
             return self._simple_optimization(problem_space, **kwargs)
         else:
             return self._complex_optimization(problem_space, **kwargs)
 
-    def _qubo_energy(self, solution: List[int], problem_space: Dict[str, Any]) -> float:
+    def _qubo_energy(self, solution: list[int], problem_space: dict[str, Any]) -> float:
         n = len(solution)
         energy = 0.0
         for i in range(n):

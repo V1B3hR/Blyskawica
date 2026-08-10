@@ -22,9 +22,10 @@ from .preprocessing import NeuromorphicPreprocessor
 
 # Import neuromorphic components from the main package
 try:
-    from ..api.model import AdaptiveModel
     from adaptiveneuralnetwork.central_nervous_system.dynamics import AdaptiveDynamics
     from adaptiveneuralnetwork.central_nervous_system.nodes import NodeState
+
+    from ..api.model import AdaptiveModel
 except ImportError:
     warnings.warn("Neuromorphic components not available. Some features will be disabled.", stacklevel=2)
     AdaptiveDynamics = None
@@ -41,7 +42,7 @@ class AdaptiveAutoMLEngine:
     
     This engine integrates energy dynamics, phase transitions, and adaptive
     thresholds from the neuromorphic network to guide AutoML decisions.
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
@@ -54,7 +55,7 @@ class AdaptiveAutoMLEngine:
         Args:
             config: AutoML configuration object
             random_state: Random seed for reproducibility
-        """
+        """  # noqa: W293
         self.config = config or AutoMLConfig()
         self.random_state = random_state
 
@@ -107,7 +108,7 @@ class AdaptiveAutoMLEngine:
             
         Returns:
             Tuple of (processed_data, preprocessing_info)
-        """
+        """  # noqa: W293
         logger.info("Starting automated preprocessing pipeline")
 
         # Convert to DataFrame if necessary
@@ -171,7 +172,7 @@ class AdaptiveAutoMLEngine:
             
         Returns:
             Tuple of (engineered_data, engineering_info)
-        """
+        """  # noqa: W293
         logger.info("Starting neuromorphic feature engineering")
 
         # Initialize feature engineer
@@ -215,7 +216,7 @@ class AdaptiveAutoMLEngine:
             
         Returns:
             Tuple of (selected_features, selection_info)
-        """
+        """  # noqa: W293
         logger.info("Starting adaptive feature selection")
 
         # Initialize feature selector
@@ -262,7 +263,7 @@ class AdaptiveAutoMLEngine:
             
         Returns:
             Tuple of (best_params, optimization_info)
-        """
+        """  # noqa: W293
         logger.info("Starting energy-aware hyperparameter optimization")
 
         # Initialize optimizer
@@ -302,7 +303,7 @@ class AdaptiveAutoMLEngine:
             
         Returns:
             Configured NeuromorphicPipeline
-        """
+        """  # noqa: W293
         logger.info("Creating complete AutoML pipeline")
 
         # Initialize pipeline
@@ -363,7 +364,7 @@ class AdaptiveAutoMLEngine:
             
         Returns:
             Tuple of (processed_features, target, complete_results)
-        """
+        """  # noqa: W293
         logger.info("Running complete AutoML pipeline")
 
         # Step 1: Preprocessing
@@ -478,7 +479,7 @@ def create_automl_engine(
         
     Returns:
         Configured AdaptiveAutoMLEngine instance
-    """
+    """  # noqa: W293
     from .config import create_default_config, create_high_performance_config, create_minimal_config
 
     config_creators = {

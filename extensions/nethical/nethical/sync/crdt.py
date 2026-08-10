@@ -24,10 +24,9 @@ import logging
 import uuid
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, Generic, List, Optional, Set, Tuple, TypeVar, Union
+from typing import Any, Generic, TypeVar
 
-from .vector_clock import VectorClock, HybridLogicalClock, EventOrder
-
+from .vector_clock import EventOrder, HybridLogicalClock, VectorClock
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +60,7 @@ class GCounter:
         node_id: ID of the local node
     """
 
-    counts: Dict[str, int] = field(default_factory=dict)
+    counts: dict[str, int] = field(default_factory=dict)
     node_id: str = ""
 
     def increment(self, amount: int = 1) -> "GCounter":
@@ -100,12 +99,12 @@ class GCounter:
             self.counts[node_id] = max(self.counts.get(node_id, 0), count)
         return self
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {"counts": dict(self.counts), "node_id": self.node_id}
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "GCounter":
+    def from_dict(cls, data: dict[str, Any]) -> "GCounter":
         """Create from dictionary."""
         return cls(
             counts=dict(data.get("counts", {})),
@@ -161,7 +160,7 @@ class PNCounter:
         self.decrements.merge(other.decrements)
         return self
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "increments": self.increments.to_dict(),
@@ -170,7 +169,7 @@ class PNCounter:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "PNCounter":
+    def from_dict(cls, data: dict[str, Any]) -> "PNCounter":
         """Create from dictionary."""
         return cls(
             increments=GCounter.from_dict(data.get("increments", {})),
@@ -193,7 +192,7 @@ class LWWRegister(Generic[T]):
         node_id: ID of the local node
     """
 
-    value: Optional[T] = None
+    value: T | None = None
     timestamp: HybridLogicalClock = field(default_factory=HybridLogicalClock)
     node_id: str = ""
 
@@ -216,7 +215,7 @@ class LWWRegister(Generic[T]):
         self.timestamp.now()
         return self
 
-    def get(self) -> Optional[T]:
+    def get(self) -> T | None:
         """Get the current value."""
         return self.value
 
@@ -241,7 +240,7 @@ class LWWRegister(Generic[T]):
             )
         return self
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "value": self.value,
@@ -250,7 +249,7 @@ class LWWRegister(Generic[T]):
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "LWWRegister":
+    def from_dict(cls, data: dict[str, Any]) -> "LWWRegister":
         """Create from dictionary."""
         return cls(
             value=data.get("value"),
@@ -276,8 +275,8 @@ class ORSet(Generic[T]):
         node_id: ID of the local node
     """
 
-    elements: Dict[T, Set[str]] = field(default_factory=dict)
-    tombstones: Set[str] = field(default_factory=set)
+    elements: dict[T, set[str]] = field(default_factory=dict)
+    tombstones: set[str] = field(default_factory=set)
     node_id: str = ""
 
     def add(self, element: T) -> "ORSet[T]":
@@ -326,7 +325,7 @@ class ORSet(Generic[T]):
         live_tags = self.elements[element] - self.tombstones
         return len(live_tags) > 0
 
-    def to_set(self) -> Set[T]:
+    def to_set(self) -> set[T]:
         """Get the current set of elements."""
         result = set()
         for element, tags in self.elements.items():
@@ -356,7 +355,7 @@ class ORSet(Generic[T]):
 
         return self
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         # Convert hashable elements to strings for JSON
         elements_serialized = {
@@ -369,7 +368,7 @@ class ORSet(Generic[T]):
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ORSet":
+    def from_dict(cls, data: dict[str, Any]) -> "ORSet":
         """Create from dictionary."""
         elements = {
             k: set(v) for k, v in data.get("elements", {}).items()
@@ -394,10 +393,10 @@ class MVRegister(Generic[T]):
         node_id: ID of the local node
     """
 
-    values: List[Tuple[T, VectorClock]] = field(default_factory=list)
+    values: list[tuple[T, VectorClock]] = field(default_factory=list)
     node_id: str = ""
 
-    def set(self, value: T, clock: Optional[VectorClock] = None) -> "MVRegister[T]":
+    def set(self, value: T, clock: VectorClock | None = None) -> "MVRegister[T]":
         """
         Set a new value.
 
@@ -433,11 +432,11 @@ class MVRegister(Generic[T]):
 
         return self
 
-    def get(self) -> List[T]:
+    def get(self) -> list[T]:
         """Get all current values (may be multiple if concurrent writes)."""
         return [v for v, _ in self.values]
 
-    def get_single(self) -> Optional[T]:
+    def get_single(self) -> T | None:
         """Get a single value (arbitrary if multiple concurrent values)."""
         if self.values:
             return self.values[0][0]
@@ -481,7 +480,7 @@ class MVRegister(Generic[T]):
         self.values = result_values
         return self
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "values": [(v, c.to_dict()) for v, c in self.values],
@@ -489,7 +488,7 @@ class MVRegister(Generic[T]):
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "MVRegister":
+    def from_dict(cls, data: dict[str, Any]) -> "MVRegister":
         """Create from dictionary."""
         values = [
             (v, VectorClock.from_dict(c)) for v, c in data.get("values", [])
@@ -511,10 +510,10 @@ class PolicyState:
     """
 
     policy_id: str
-    content: Dict[str, Any]
+    content: dict[str, Any]
     version_hash: str = ""
     status: PolicyStatus = PolicyStatus.QUARANTINE
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
         """Compute version hash if not provided."""
@@ -527,7 +526,7 @@ class PolicyState:
         content_str = json.dumps(self.content, sort_keys=True)
         return hashlib.sha256(content_str.encode()).hexdigest()[:16]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "policy_id": self.policy_id,
@@ -538,7 +537,7 @@ class PolicyState:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "PolicyState":
+    def from_dict(cls, data: dict[str, Any]) -> "PolicyState":
         """Create from dictionary."""
         return cls(
             policy_id=data.get("policy_id", ""),
@@ -566,11 +565,11 @@ class PolicyDelta:
 
     policy_id: str
     operation: str  # "add", "update", "deprecate", "delete"
-    state: Optional[PolicyState] = None
+    state: PolicyState | None = None
     timestamp: HybridLogicalClock = field(default_factory=HybridLogicalClock)
     source_node: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "policy_id": self.policy_id,
@@ -581,7 +580,7 @@ class PolicyDelta:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "PolicyDelta":
+    def from_dict(cls, data: dict[str, Any]) -> "PolicyDelta":
         """Create from dictionary."""
         state = None
         if data.get("state"):
@@ -610,9 +609,9 @@ class CRDTMergeResult:
 
     merged_count: int = 0
     conflict_count: int = 0
-    conflicts: List[str] = field(default_factory=list)
-    new_policies: List[str] = field(default_factory=list)
-    updated_policies: List[str] = field(default_factory=list)
+    conflicts: list[str] = field(default_factory=list)
+    new_policies: list[str] = field(default_factory=list)
+    updated_policies: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -640,9 +639,9 @@ class PolicyCRDT:
         node_id: ID of this node
     """
 
-    policies: Dict[str, LWWRegister[PolicyState]] = field(default_factory=dict)
+    policies: dict[str, LWWRegister[PolicyState]] = field(default_factory=dict)
     active_policies: ORSet = field(default_factory=ORSet)
-    version_history: Dict[str, PNCounter] = field(default_factory=dict)
+    version_history: dict[str, PNCounter] = field(default_factory=dict)
     clock: HybridLogicalClock = field(default_factory=HybridLogicalClock)
     node_id: str = ""
 
@@ -691,7 +690,7 @@ class PolicyCRDT:
             source_node=self.node_id,
         )
 
-    def update_policy(self, policy_id: str, new_content: Dict[str, Any]) -> Optional[PolicyDelta]:
+    def update_policy(self, policy_id: str, new_content: dict[str, Any]) -> PolicyDelta | None:
         """
         Update an existing policy's content.
 
@@ -720,7 +719,7 @@ class PolicyCRDT:
 
         return self.add_policy(new_state)
 
-    def deprecate_policy(self, policy_id: str) -> Optional[PolicyDelta]:
+    def deprecate_policy(self, policy_id: str) -> PolicyDelta | None:
         """
         Deprecate a policy (mark as deprecated but keep in system).
 
@@ -763,7 +762,7 @@ class PolicyCRDT:
             source_node=self.node_id,
         )
 
-    def delete_policy(self, policy_id: str) -> Optional[PolicyDelta]:
+    def delete_policy(self, policy_id: str) -> PolicyDelta | None:
         """
         Delete a policy (soft delete).
 
@@ -805,7 +804,7 @@ class PolicyCRDT:
             source_node=self.node_id,
         )
 
-    def get_policy(self, policy_id: str) -> Optional[PolicyState]:
+    def get_policy(self, policy_id: str) -> PolicyState | None:
         """
         Get a policy by ID.
 
@@ -819,7 +818,7 @@ class PolicyCRDT:
             return None
         return self.policies[policy_id].get()
 
-    def get_active_policies(self) -> List[PolicyState]:
+    def get_active_policies(self) -> list[PolicyState]:
         """Get all active policies."""
         result = []
         for policy_id in self.active_policies.to_set():
@@ -828,10 +827,10 @@ class PolicyCRDT:
                 result.append(state)
         return result
 
-    def get_all_policies(self) -> List[PolicyState]:
+    def get_all_policies(self) -> list[PolicyState]:
         """Get all policies (including inactive)."""
         result = []
-        for policy_id, register in self.policies.items():
+        for policy_id, register in self.policies.items():  # noqa: B007, PERF102
             state = register.get()
             if state:
                 result.append(state)
@@ -862,7 +861,7 @@ class PolicyCRDT:
             else:
                 # Existing policy - merge with LWW
                 local_state = self.policies[policy_id].get()
-                other_state = other_register.get()
+                other_state = other_register.get()  # noqa: F841
 
                 self.policies[policy_id].merge(other_register)
                 merged_state = self.policies[policy_id].get()
@@ -917,7 +916,7 @@ class PolicyCRDT:
 
         return False
 
-    def get_deltas_since(self, since_timestamp: int) -> List[PolicyDelta]:
+    def get_deltas_since(self, since_timestamp: int) -> list[PolicyDelta]:
         """
         Get all deltas since a given timestamp.
 
@@ -956,13 +955,13 @@ class PolicyCRDT:
                 (pid, reg.timestamp.timestamp())
                 for pid, reg in self.policies.items()
             ]),
-            "active": sorted(list(self.active_policies.to_set())),
+            "active": sorted(list(self.active_policies.to_set())),  # noqa: C414
         }
 
         state_str = json.dumps(state_dict, sort_keys=True)
         return hashlib.sha256(state_str.encode()).hexdigest()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "policies": {
@@ -977,7 +976,7 @@ class PolicyCRDT:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "PolicyCRDT":
+    def from_dict(cls, data: dict[str, Any]) -> "PolicyCRDT":
         """Create from dictionary."""
         policies = {}
         for pid, reg_data in data.get("policies", {}).items():

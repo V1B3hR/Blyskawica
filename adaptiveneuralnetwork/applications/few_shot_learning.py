@@ -12,17 +12,24 @@ from typing import Any
 import torch
 import torch.nn as nn
 
-from adaptiveneuralnetwork.central_nervous_system.neuromorphic import NeuromorphicConfig
 from adaptiveneuralnetwork.central_nervous_system.neuromorphic import (
     MetaplasticitySynapse,
+    NeuromorphicConfig,
     PopulationLayer,
     SparseDistributedRepresentation,
     STDPSynapse,
     TemporalPatternEncoder,
 )
-from adaptiveneuralnetwork.central_nervous_system.neuromorphic.cognitive_fluidity import CognitiveFluiditySystem
-from adaptiveneuralnetwork.central_nervous_system.neuromorphic.advanced_neurons import NeuronV3Config
-from adaptiveneuralnetwork.central_nervous_system.neuromorphic.plasticity import MetaplasticityConfig, STDPConfig
+from adaptiveneuralnetwork.central_nervous_system.neuromorphic.advanced_neurons import (
+    NeuronV3Config,
+)
+from adaptiveneuralnetwork.central_nervous_system.neuromorphic.cognitive_fluidity import (
+    CognitiveFluiditySystem,
+)
+from adaptiveneuralnetwork.central_nervous_system.neuromorphic.plasticity import (
+    MetaplasticityConfig,
+    STDPConfig,
+)
 from adaptiveneuralnetwork.central_nervous_system.neuromorphic.temporal_coding import TemporalConfig
 
 logger = logging.getLogger(__name__)
@@ -58,7 +65,7 @@ class FewShotLearningConfig:
     # Memory parameters
     memory_capacity: int = 1000
     memory_sparsity: float = 0.1
-    
+
     # Meta-learning settings
     meta_learning_mode: str = 'prototypical'  # 'prototypical', 'maml', or 'hybrid'
     inner_loop_steps: int = 5
@@ -72,7 +79,7 @@ class PrototypicalMemory(nn.Module):
     
     Stores class prototypes in a neuromorphic memory system with
     sparse activation patterns for efficient storage and retrieval.
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
@@ -166,7 +173,7 @@ class RapidPlasticityModule(nn.Module):
     
     Implements fast synaptic changes that enable few-shot learning
     through spike-timing dependent plasticity mechanisms.
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
@@ -248,7 +255,7 @@ class RapidPlasticityModule(nn.Module):
         target_spikes = torch.zeros(support_targets.size(0), self.output_size, device=support_targets.device)
         target_spikes.scatter_(1, support_targets.unsqueeze(1), 1.0)
 
-        for step in range(num_steps):
+        for step in range(num_steps):  # noqa: B007
             # Generate input spikes (rate coding)
             input_spikes = (torch.rand_like(support_inputs) < torch.sigmoid(support_inputs)).float()
 
@@ -276,7 +283,7 @@ class FewShotLearningSystem(nn.Module):
     
     Combines temporal pattern encoding, prototypical memory, and rapid plasticity
     for efficient few-shot learning.
-    """
+    """  # noqa: W293
 
     def __init__(self, config: FewShotLearningConfig):
         super().__init__()
@@ -356,7 +363,7 @@ class FewShotLearningSystem(nn.Module):
                 inhibition_strength=0.15
             )
         ])
-        
+
         # Projections between layers
         self.layer_projections = nn.ModuleList([
             nn.Linear(256, self.config.feature_dim)
@@ -372,7 +379,7 @@ class FewShotLearningSystem(nn.Module):
 
         # Track metrics for cognitive fluidity (use historical config for forward pass stability)
         mod_config = getattr(self, 'cognitive_config', {})
-        
+
         # Process through population layers with projections
         for i, layer in enumerate(self.feature_layers):
             features, _ = layer(features, modulatory_config=mod_config)
@@ -391,7 +398,7 @@ class FewShotLearningSystem(nn.Module):
         """Forward pass for few-shot learning episode."""
         if self.config.meta_learning_mode == 'maml' and params is not None:
              return self.functional_forward(query_x, params)
-             
+
         # Extract features for support and query sets
         support_features = self.extract_features(support_x)
         query_features = self.extract_features(query_x)
@@ -406,7 +413,7 @@ class FewShotLearningSystem(nn.Module):
 
         if self.config.meta_learning_mode == 'prototypical':
             return self._prototypical_forward(support_patterns, support_y, query_patterns)
-        
+
         return self._prototypical_forward(support_patterns, support_y, query_patterns)
 
     def _prototypical_forward(self, support_patterns, support_y, query_patterns):
@@ -434,7 +441,7 @@ class FewShotLearningSystem(nn.Module):
             # Convert to spike patterns for STDP learning
             support_spikes = (torch.rand_like(support_patterns) < torch.sigmoid(support_patterns)).float()
 
-            adaptation_stats = self.rapid_plasticity.rapid_adapt(
+            adaptation_stats = self.rapid_plasticity.rapid_adapt(  # noqa: F841
                 support_spikes, support_y, self.config.fast_adaptation_steps
             )
 
@@ -447,7 +454,7 @@ class FewShotLearningSystem(nn.Module):
         # Ensure query is in the same space as prototypes (memory_dim)
         if self.prototypical_memory is not None:
             query_patterns, _ = self.prototypical_memory.memory_encoder(query_patterns)
-            
+
         query_expanded = query_patterns.unsqueeze(1)  # [batch_size, 1, memory_dim]
         prototypes_expanded = class_prototypes.unsqueeze(0)  # [1, n_classes, memory_dim]
 
@@ -464,7 +471,7 @@ class FewShotLearningSystem(nn.Module):
             fluidity_results = self.fluidity_system.step(query_patterns)
             self.cognitive_load = fluidity_results['load']
             self.cognitive_config = fluidity_results['controls']
-            
+
         return logits
 
     def functional_forward(self, x: torch.Tensor, params: dict[str, torch.Tensor]) -> torch.Tensor:
@@ -473,10 +480,10 @@ class FewShotLearningSystem(nn.Module):
         # This is simplified - in a real MAML we'd need a functional feature extractor
         # For now, we apply it to the classifier head
         features = self.extract_features(x)
-        
+
         weight = params.get('classifier.weight', self.classifier.weight)
         bias = params.get('classifier.bias', self.classifier.bias)
-        
+
         return torch.nn.functional.linear(features, weight, bias)
 
     def meta_learn_maml(
@@ -488,35 +495,34 @@ class FewShotLearningSystem(nn.Module):
         meta_optimizer: torch.optim.Optimizer
     ) -> dict[str, float]:
         """Perform MAML meta-update."""
-        from copy import deepcopy
-        
+
         # 1. Inner Loop Adaptation
         # Since we're in PyTorch, we can't easily differentiate through nn.Module weights
         # without a library like 'higher'. We simulate it with functional gradients.
-        
+
         # Initialize adapted params with original params
         adapted_params = {n: p for n, p in self.named_parameters() if p.requires_grad}
-        
+
         criterion = nn.CrossEntropyLoss()
-        
+
         for _ in range(self.config.inner_loop_steps):
             # Compute support loss
-            # We use features from the current model for simplicity, 
+            # We use features from the current model for simplicity,
             # only adapting the classifier head in this implementation
             support_logits = self.functional_forward(support_x, adapted_params)
             support_loss = criterion(support_logits, support_y)
-            
+
             # Compute gradients for adaptation
             grads = torch.autograd.grad(
-                support_loss, 
-                adapted_params.values(), 
+                support_loss,
+                adapted_params.values(),
                 create_graph=not self.config.first_order_maml,
                 allow_unused=True
             )
-            
+
             # Manual SGD update for inner loop
             new_adapted_params = {}
-            for (name, param), grad in zip(adapted_params.items(), grads):
+            for (name, param), grad in zip(adapted_params.items(), grads):  # noqa: B905
                 if grad is not None:
                     new_adapted_params[name] = param - self.config.inner_lr * grad
                 else:
@@ -527,15 +533,15 @@ class FewShotLearningSystem(nn.Module):
         # Compute query loss with adapted parameters
         query_logits = self.functional_forward(query_x, adapted_params)
         meta_loss = criterion(query_logits, query_y)
-        
+
         # Meta-optimization
         meta_optimizer.zero_grad()
         meta_loss.backward()
         meta_optimizer.step()
-        
+
         # Metrics
         accuracy = (query_logits.argmax(dim=1) == query_y).float().mean().item()
-        
+
         return {
             'meta_loss': meta_loss.item(),
             'accuracy': accuracy,

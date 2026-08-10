@@ -6,8 +6,8 @@ docs/ASYNC_FACTORY_PATTERN.md
 """
 
 import asyncio
-import pytest
 
+import pytest
 
 
 class TestAsyncFactoryPattern:
@@ -119,8 +119,8 @@ class TestAsyncFactoryPattern:
     async def test_starlink_provider_factory(self):
         """Test StarlinkProvider async factory pattern."""
         from nethical.connectivity.satellite.starlink import (
-            StarlinkProvider,
             ConnectionConfig,
+            StarlinkProvider,
         )
 
         # Test factory method
@@ -150,11 +150,11 @@ class TestAsyncFactoryPattern:
     @pytest.mark.asyncio
     async def test_l2_redis_cache_factory(self):
         """Test L2RedisCache async factory pattern."""
-        from nethical.cache.l2_redis import L2RedisCache, L2Config
+        from nethical.cache.l2_redis import L2Config, L2RedisCache
 
         # Test factory method
         config = L2Config(host="localhost", port=6379)
-        
+
         # Note: This will fail to connect without Redis server
         # but we can verify the factory pattern works
         try:
@@ -253,8 +253,9 @@ class TestAsyncFactoryPatternPerformance:
     @pytest.mark.asyncio
     async def test_factory_method_latency(self):
         """Test that factory method doesn't add significant overhead."""
-        from nethical.grpc.client import NethicalGRPCClient
         import time
+
+        from nethical.grpc.client import NethicalGRPCClient
 
         start = time.perf_counter()
         client = await NethicalGRPCClient.create()

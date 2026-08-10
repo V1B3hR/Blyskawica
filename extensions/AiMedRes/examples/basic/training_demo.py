@@ -4,10 +4,11 @@ Quick demonstration that the training command works.
 This runs a minimal version to validate the orchestration.
 """
 
-import sys
 import subprocess
-from pathlib import Path
+import sys
 import time
+from pathlib import Path
+
 
 def demo_training_command():
     """Demonstrate the training command with minimal parameters"""
@@ -27,7 +28,7 @@ def demo_training_command():
     print()
     print("-" * 80)
     print()
-    
+
     # Run with minimal parameters
     cmd = [
         sys.executable, "run_all_training.py",
@@ -36,35 +37,35 @@ def demo_training_command():
         "--only", "als",
         "--verbose"
     ]
-    
+
     print("Running command:")
     print("  " + " ".join(cmd))
     print()
     print("-" * 80)
     print()
-    
+
     start_time = time.time()
-    
+
     result = subprocess.run(
         cmd,
         cwd=Path(__file__).parent,
         timeout=300  # 5 minute timeout
     )
-    
+
     elapsed = time.time() - start_time
-    
+
     print()
     print("-" * 80)
     print()
     print(f"Command completed in {elapsed:.1f} seconds")
     print(f"Exit code: {result.returncode}")
     print()
-    
+
     # Check for output files
     results_dir = Path(__file__).parent / "results"
     logs_dir = Path(__file__).parent / "logs"
     summaries_dir = Path(__file__).parent / "summaries"
-    
+
     print("Output locations:")
     if results_dir.exists():
         print(f"  ✓ Results: {results_dir}")
@@ -72,7 +73,7 @@ def demo_training_command():
         print(f"  ✓ Logs: {logs_dir}")
     if summaries_dir.exists():
         print(f"  ✓ Summaries: {summaries_dir}")
-    
+
     print()
     print("=" * 80)
     print("VALIDATION COMPLETE")
@@ -88,7 +89,7 @@ def demo_training_command():
     print()
     print("  ./run_medical_training.sh")
     print()
-    
+
     return result.returncode
 
 if __name__ == '__main__':

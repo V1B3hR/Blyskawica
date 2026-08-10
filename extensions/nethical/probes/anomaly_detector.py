@@ -5,11 +5,12 @@ Provides intelligent anomaly detection across all probes and manages
 alerting and escalation policies.
 """
 
+import statistics
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set
-import statistics
+from typing import Any
 
 from .base_probe import ProbeResult, ProbeStatus
 
@@ -29,13 +30,13 @@ class Alert:
     probe_name: str
     message: str
     timestamp: datetime
-    metrics: Dict[str, Any] = field(default_factory=dict)
-    violations: List[str] = field(default_factory=list)
+    metrics: dict[str, Any] = field(default_factory=dict)
+    violations: list[str] = field(default_factory=list)
     acknowledged: bool = False
     resolved: bool = False
     escalated: bool = False
-    
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
         return {
             "alert_id": self.alert_id,
@@ -63,8 +64,8 @@ class AnomalyDetector:
     - Trend analysis
     - Pattern recognition
     - Correlation analysis
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
         sensitivity: float = 2.0,
@@ -76,12 +77,12 @@ class AnomalyDetector:
         Args:
             sensitivity: Standard deviations for anomaly threshold
             lookback_window: Number of historical samples to analyze
-        """
+        """  # noqa: W293
         self.sensitivity = sensitivity
         self.lookback_window = lookback_window
-        self._metric_history: Dict[str, List[float]] = {}
-    
-    def analyze(self, result: ProbeResult) -> Optional[Dict[str, Any]]:
+        self._metric_history: dict[str, list[float]] = {}
+
+    def analyze(self, result: ProbeResult) -> dict[str, Any] | None:
         """
         Analyze probe result for anomalies.
         
@@ -90,9 +91,9 @@ class AnomalyDetector:
         
         Returns:
             Anomaly details if detected, None otherwise
-        """
+        """  # noqa: W293
         anomalies = {}
-        
+
         # Check for status anomalies
         if result.status == ProbeStatus.CRITICAL:
             anomalies["status"] = {
@@ -100,24 +101,24 @@ class AnomalyDetector:
                 "severity": "high",
                 "message": f"Probe {result.probe_name} in critical state",
             }
-        
+
         # Check metric anomalies
         for metric_name, metric_value in result.metrics.items():
             if not isinstance(metric_value, (int, float)):
                 continue
-            
+
             key = f"{result.probe_name}.{metric_name}"
-            
+
             # Add to history
             if key not in self._metric_history:
                 self._metric_history[key] = []
-            
+
             self._metric_history[key].append(metric_value)
-            
+
             # Keep only lookback window
             if len(self._metric_history[key]) > self.lookback_window:
                 self._metric_history[key].pop(0)
-            
+
             # Check for anomaly
             if len(self._metric_history[key]) >= 10:  # Need minimum samples
                 anomaly = self._detect_statistical_anomaly(
@@ -127,15 +128,15 @@ class AnomalyDetector:
                 )
                 if anomaly:
                     anomalies[metric_name] = anomaly
-        
+
         return anomalies if anomalies else None
-    
+
     def _detect_statistical_anomaly(
         self,
         metric_key: str,
         current_value: float,
-        history: List[float],
-    ) -> Optional[Dict[str, Any]]:
+        history: list[float],
+    ) -> dict[str, Any] | None:
         """
         Detect statistical anomaly using z-score.
         
@@ -146,19 +147,19 @@ class AnomalyDetector:
         
         Returns:
             Anomaly details if detected
-        """
+        """  # noqa: W293
         if len(history) < 2:
             return None
-        
+
         try:
             mean = statistics.mean(history)
             stdev = statistics.stdev(history)
-            
+
             if stdev == 0:
                 return None
-            
+
             z_score = abs((current_value - mean) / stdev)
-            
+
             if z_score > self.sensitivity:
                 return {
                     "type": "statistical_anomaly",
@@ -169,18 +170,18 @@ class AnomalyDetector:
                     "stdev": stdev,
                     "message": f"Metric {metric_key} deviates {z_score:.2f} stdevs from mean",
                 }
-        
+
         except Exception:
             pass
-        
+
         return None
-    
+
     def detect_trend(
         self,
         probe_name: str,
         metric_name: str,
         min_samples: int = 5,
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Detect trend in metric values.
         
@@ -191,30 +192,30 @@ class AnomalyDetector:
         
         Returns:
             Trend description if detected
-        """
+        """  # noqa: W293
         key = f"{probe_name}.{metric_name}"
-        
+
         if key not in self._metric_history:
             return None
-        
+
         history = self._metric_history[key]
-        
+
         if len(history) < min_samples:
             return None
-        
+
         # Simple trend detection: check if consistently increasing or decreasing
         recent = history[-min_samples:]
-        
+
         increasing = all(recent[i] <= recent[i + 1] for i in range(len(recent) - 1))
         decreasing = all(recent[i] >= recent[i + 1] for i in range(len(recent) - 1))
-        
+
         if increasing:
             change = ((recent[-1] - recent[0]) / recent[0] * 100) if recent[0] != 0 else 0
             return f"Increasing trend: {change:.1f}% change over {min_samples} samples"
         elif decreasing:
             change = ((recent[0] - recent[-1]) / recent[0] * 100) if recent[0] != 0 else 0
             return f"Decreasing trend: {change:.1f}% change over {min_samples} samples"
-        
+
         return None
 
 
@@ -229,8 +230,8 @@ class AlertSystem:
     - Escalation policies
     - Alert routing
     - Alert history
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
         escalation_threshold_seconds: int = 3600,
@@ -242,23 +243,23 @@ class AlertSystem:
         Args:
             escalation_threshold_seconds: Time before escalating unacknowledged alerts
             max_alerts: Maximum alerts to keep in history
-        """
+        """  # noqa: W293
         self.escalation_threshold_seconds = escalation_threshold_seconds
         self.max_alerts = max_alerts
-        self._alerts: List[Alert] = []
-        self._active_alerts: Dict[str, Alert] = {}
-        self._alert_handlers: Dict[AlertSeverity, List[Callable]] = {
+        self._alerts: list[Alert] = []
+        self._active_alerts: dict[str, Alert] = {}
+        self._alert_handlers: dict[AlertSeverity, list[Callable]] = {
             severity: [] for severity in AlertSeverity
         }
         self._next_alert_id = 1
-    
+
     def create_alert(
         self,
         severity: AlertSeverity,
         probe_name: str,
         message: str,
-        metrics: Optional[Dict[str, Any]] = None,
-        violations: Optional[List[str]] = None,
+        metrics: dict[str, Any] | None = None,
+        violations: list[str] | None = None,
     ) -> Alert:
         """
         Create a new alert.
@@ -272,13 +273,13 @@ class AlertSystem:
         
         Returns:
             Created alert
-        """
+        """  # noqa: W293
         # Check for duplicate active alert
         alert_key = f"{probe_name}:{message}"
         if alert_key in self._active_alerts:
             # Return existing alert
             return self._active_alerts[alert_key]
-        
+
         # Create new alert
         alert = Alert(
             alert_id=f"ALT-{self._next_alert_id:06d}",
@@ -289,23 +290,23 @@ class AlertSystem:
             metrics=metrics or {},
             violations=violations or [],
         )
-        
+
         self._next_alert_id += 1
         self._alerts.append(alert)
         self._active_alerts[alert_key] = alert
-        
+
         # Trim history
         if len(self._alerts) > self.max_alerts:
             old_alert = self._alerts.pop(0)
             alert_key = f"{old_alert.probe_name}:{old_alert.message}"
             if alert_key in self._active_alerts and self._active_alerts[alert_key].resolved:
                 del self._active_alerts[alert_key]
-        
+
         # Trigger handlers
         self._trigger_handlers(alert)
-        
+
         return alert
-    
+
     def acknowledge_alert(self, alert_id: str) -> bool:
         """Acknowledge an alert"""
         for alert in self._alerts:
@@ -313,7 +314,7 @@ class AlertSystem:
                 alert.acknowledged = True
                 return True
         return False
-    
+
     def resolve_alert(self, alert_id: str) -> bool:
         """Resolve an alert"""
         for alert in self._alerts:
@@ -324,11 +325,11 @@ class AlertSystem:
                     del self._active_alerts[alert_key]
                 return True
         return False
-    
+
     def get_active_alerts(
         self,
-        severity: Optional[AlertSeverity] = None,
-    ) -> List[Alert]:
+        severity: AlertSeverity | None = None,
+    ) -> list[Alert]:
         """
         Get active alerts.
         
@@ -337,32 +338,32 @@ class AlertSystem:
         
         Returns:
             List of active alerts
-        """
+        """  # noqa: W293
         alerts = list(self._active_alerts.values())
         if severity:
             alerts = [a for a in alerts if a.severity == severity]
         return sorted(alerts, key=lambda a: a.timestamp, reverse=True)
-    
-    def check_escalation(self) -> List[Alert]:
+
+    def check_escalation(self) -> list[Alert]:
         """
         Check for alerts that need escalation.
         
         Returns:
             List of alerts to escalate
-        """
+        """  # noqa: W293
         now = datetime.utcnow()
         escalation_threshold = timedelta(seconds=self.escalation_threshold_seconds)
         to_escalate = []
-        
+
         for alert in self._active_alerts.values():
             if not alert.acknowledged and not alert.escalated:
                 age = now - alert.timestamp
                 if age > escalation_threshold:
                     alert.escalated = True
                     to_escalate.append(alert)
-        
+
         return to_escalate
-    
+
     def register_handler(
         self,
         severity: AlertSeverity,
@@ -374,24 +375,24 @@ class AlertSystem:
         Args:
             severity: Severity level to handle
             handler: Handler function
-        """
+        """  # noqa: W293
         self._alert_handlers[severity].append(handler)
-    
+
     def _trigger_handlers(self, alert: Alert):
         """Trigger registered handlers for alert"""
         for handler in self._alert_handlers[alert.severity]:
-            try:
+            try:  # noqa: SIM105
                 handler(alert)
-            except Exception:
+            except Exception:  # noqa: PERF203
                 pass  # Don't let handler errors block alert creation
-    
-    def get_metrics(self) -> Dict[str, Any]:
+
+    def get_metrics(self) -> dict[str, Any]:
         """Get alert system metrics"""
         active = self.get_active_alerts()
         critical = [a for a in active if a.severity == AlertSeverity.CRITICAL]
         warning = [a for a in active if a.severity == AlertSeverity.WARNING]
         unacknowledged = [a for a in active if not a.acknowledged]
-        
+
         return {
             "total_alerts": len(self._alerts),
             "active_alerts": len(active),

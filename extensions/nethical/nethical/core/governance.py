@@ -15,40 +15,40 @@ This file maintains backward compatibility by re-exporting all public APIs.
 
 # Core types and models
 from .governance_core import (
-    # Enums
-    ViolationType,
-    SubMission,
-    Severity,
-    Decision,
-    ActionType,
     VIOLATION_SUB_MISSIONS,
+    ActionType,
     # Data Models
     AgentAction,
-    SafetyViolation,
+    Decision,
+    EnhancedSafetyGovernance,
     JudgmentResult,
     MonitoringConfig,
     # Core system
     PersistenceManager,
-    EnhancedSafetyGovernance,
     SafetyGovernance,  # Alias for backward compatibility
+    SafetyViolation,
+    Severity,
+    SubMission,
+    # Enums
+    ViolationType,
 )
 
 # Detectors
 from .governance_detectors import (
-    BaseDetector,
-    EthicalViolationDetector,
-    SafetyViolationDetector,
-    ManipulationDetector,
-    PrivacyDetector,
     AdversarialDetector,
-    DarkPatternDetector,
+    BaseDetector,
     CognitiveWarfareDetector,
-    SystemLimitsDetector,
-    HallucinationDetector,
-    MisinformationDetector,
-    ToxicContentDetector,
-    ModelExtractionDetector,
+    DarkPatternDetector,
     DataPoisoningDetector,
+    EthicalViolationDetector,
+    HallucinationDetector,
+    ManipulationDetector,
+    MisinformationDetector,
+    ModelExtractionDetector,
+    PrivacyDetector,
+    SafetyViolationDetector,
+    SystemLimitsDetector,
+    ToxicContentDetector,
     UnauthorizedAccessDetector,
 )
 
@@ -56,11 +56,11 @@ from .governance_detectors import (
 from .governance_evaluation import (
     IntentDeviationMonitor,
     SafetyJudge,
-    generate_id,
-    sha256_content_key,
     entropy,
+    generate_id,
     looks_like_base64,
     might_be_rot13,
+    sha256_content_key,
 )
 
 # For backward compatibility, expose all public APIs

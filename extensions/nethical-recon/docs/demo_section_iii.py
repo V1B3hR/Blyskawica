@@ -25,8 +25,8 @@ def demo_active_recon():
     from nethical_recon.active_recon import (
         ActiveScanner,
         BannerGrabber,
-        TLSFingerprinter,
         ScanProfile,
+        TLSFingerprinter,
     )
 
     # Active Scanner
@@ -51,7 +51,7 @@ def demo_active_recon():
     # TLS Fingerprinter
     print("\n3. TLS Fingerprinter (JA3 Foundation)")
     print("-" * 40)
-    fingerprinter = TLSFingerprinter(timeout=5)
+    fingerprinter = TLSFingerprinter(timeout=5)  # noqa: F841
     print("✅ TLS fingerprinter initialized")
     print("   Features:")
     print("     - Protocol version detection")
@@ -67,17 +67,17 @@ def demo_visualization():
     print("=" * 60)
 
     from nethical_recon.visualization import (
-        GraphBuilder,
         DeltaMonitor,
         ExposedAssetDetector,
-        NodeType,
         ExposureLevel,
+        GraphBuilder,
+        NodeType,
     )
 
     # Graph Builder
     print("\n1. Graph Builder")
     print("-" * 40)
-    builder = GraphBuilder()
+    builder = GraphBuilder()  # noqa: F841
     print("✅ Graph builder initialized")
     print("   Node types:")
     for node_type in NodeType:
@@ -87,7 +87,7 @@ def demo_visualization():
     # Delta Monitor
     print("\n2. Delta Monitor (Change Detection)")
     print("-" * 40)
-    monitor = DeltaMonitor()
+    monitor = DeltaMonitor()  # noqa: F841
     print("✅ Delta monitor initialized")
     print("   Change types detected:")
     print("     - New/removed assets")
@@ -114,16 +114,16 @@ def demo_security_testing():
     print("=" * 60)
 
     from nethical_recon.security_testing import (
-        WebSecurityTester,
         APISecurityTester,
         ComplianceReporter,
+        WebSecurityTester,
     )
     from nethical_recon.security_testing.compliance import ComplianceFramework
 
     # Web Security Tester
     print("\n1. Web Security Tester (OWASP WSTG)")
     print("-" * 40)
-    tester = WebSecurityTester(timeout=10)
+    tester = WebSecurityTester(timeout=10)  # noqa: F841
     print("✅ Web security tester initialized")
     print("   Tests implemented:")
     print("     - Security headers (X-Frame-Options, CSP, HSTS, etc.)")
@@ -133,7 +133,7 @@ def demo_security_testing():
     # API Security Tester
     print("\n2. API Security Tester (OWASP API Top 10)")
     print("-" * 40)
-    api_tester = APISecurityTester(timeout=10)
+    api_tester = APISecurityTester(timeout=10)  # noqa: F841
     print("✅ API security tester initialized")
     print("   Tests implemented:")
     print("     - Authentication enforcement")
@@ -143,7 +143,7 @@ def demo_security_testing():
     # Compliance Reporter
     print("\n3. Compliance Reporter")
     print("-" * 40)
-    reporter = ComplianceReporter()
+    reporter = ComplianceReporter()  # noqa: F841
     print("✅ Compliance reporter initialized")
     print("   Supported frameworks:")
     for framework in ComplianceFramework:

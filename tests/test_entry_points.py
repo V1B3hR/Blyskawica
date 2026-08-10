@@ -1,4 +1,5 @@
 import os
+
 """
 Tests for unified training and evaluation entry points.
 
@@ -7,17 +8,17 @@ without requiring heavy dependencies like torch.
 """
 
 # Test configuration loading without importing torch-dependent modules
-import sys
-import tempfile
-from pathlib import Path
+import sys  # noqa: E402
+import tempfile  # noqa: E402
+from pathlib import Path  # noqa: E402
 
-import pytest
+import pytest  # noqa: E402
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import the config directly from train.py to avoid torch dependency
-import eval as eval_module
-import train
+import eval as eval_module  # noqa: E402
+import train  # noqa: E402
 
 
 class TestConfigurationSystem:
@@ -181,7 +182,7 @@ class TestTrainScript:
         assert config.optimizer.learning_rate == 0.01
         assert config.training.device == "cpu"
         assert config.training.seed == 123
-        assert config.training.use_amp == True
+        assert config.training.use_amp == True  # noqa: E712
 
 
 class TestEvalScript:

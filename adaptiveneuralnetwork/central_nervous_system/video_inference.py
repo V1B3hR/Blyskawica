@@ -334,7 +334,7 @@ class RealTimeInferenceEngine:
                 # Run inference
                 inference_start = time.time()
                 results = self._run_batch_inference(batch_sequences, batch_infos, batch_timestamps)
-                inference_time = (time.time() - inference_start) * 1000  # Convert to ms
+                inference_time = (time.time() - inference_start) * 1000  # Convert to ms  # noqa: F841
 
                 # Submit results
                 for result in results:
@@ -350,7 +350,7 @@ class RealTimeInferenceEngine:
 
                 # Record performance
                 if results:
-                    avg_latency = sum(r.latency_ms for r in results) / len(results)
+                    avg_latency = sum(r.latency_ms for r in results) / len(results)  # noqa: F841
                     self.performance_monitor.record_throughput(time.time() - inference_start)
 
                 # Clear batch
@@ -428,7 +428,7 @@ class RealTimeInferenceEngine:
                     self.frame_count += 1
 
                     # Adaptive processing
-                    new_resolution = self.adaptive_processor.adapt_resolution(confidence, total_latency)
+                    new_resolution = self.adaptive_processor.adapt_resolution(confidence, total_latency)  # noqa: F841
                     skip_frames = self.adaptive_processor.should_skip_frame(
                         total_latency, self.input_queue.qsize()
                     )

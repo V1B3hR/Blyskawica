@@ -19,7 +19,7 @@ Mapa chemiczna → fizyczna (zaktualizowana):
 """
 
 import logging
-from typing import Dict, Any
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -144,7 +144,7 @@ class NeurochemicalBridge:
             f"Cortisol={cortisol_factor:.2f} | Testosterone={testosterone_factor:.2f}"
         )
 
-    def get_current_metrics(self) -> Dict[str, float]:
+    def get_current_metrics(self) -> dict[str, float]:
         """Zwraca obecne parametry fizyczne wyindukowane przez chemię."""
         sample_atom = next(iter(self.body.atoms.values()))
         return {

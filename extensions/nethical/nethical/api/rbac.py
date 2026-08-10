@@ -11,10 +11,11 @@ Roles:
 from __future__ import annotations
 
 import os
+from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
 from enum import Enum
 from functools import wraps
-from typing import Annotated, Any, Callable, Optional
+from typing import Annotated, Any
 
 import bcrypt
 import jwt
@@ -43,7 +44,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
 
 class Role(str, Enum):
     """User roles for RBAC."""
-    
+
     ADMIN = "admin"
     AUDITOR = "auditor"
     OPERATOR = "operator"
@@ -51,7 +52,7 @@ class Role(str, Enum):
 
 class TokenData(BaseModel):
     """Token payload data."""
-    
+
     username: str
     role: Role
     scopes: list[str] = []
@@ -59,11 +60,11 @@ class TokenData(BaseModel):
 
 class User(BaseModel):
     """User model for authentication."""
-    
+
     id: int
     username: str
     email: str
-    full_name: Optional[str] = None
+    full_name: str | None = None
     role: Role
     is_active: bool = True
 
@@ -77,7 +78,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         
     Returns:
         True if password matches
-    """
+    """  # noqa: W293
     try:
         return bcrypt.checkpw(
             plain_password.encode('utf-8'),
@@ -95,13 +96,13 @@ def get_password_hash(password: str) -> str:
         
     Returns:
         Hashed password
-    """
+    """  # noqa: W293
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
     return hashed.decode('utf-8')
 
 
-def create_access_token(data: dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
+def create_access_token(data: dict[str, Any], expires_delta: timedelta | None = None) -> str:
     """Create JWT access token.
     
     Args:
@@ -110,18 +111,18 @@ def create_access_token(data: dict[str, Any], expires_delta: Optional[timedelta]
         
     Returns:
         JWT token string
-    """
+    """  # noqa: W293
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    
+
     to_encode.update({
         "exp": expire,
         "iat": datetime.now(timezone.utc),
     })
-    
+
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
@@ -139,36 +140,36 @@ async def get_current_user(
         
     Raises:
         HTTPException: If token is invalid or expired
-    """
+    """  # noqa: W293
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    
+
     try:
         token = credentials.credentials
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         role: str = payload.get("role")
-        
+
         if username is None or role is None:
             raise credentials_exception
-        
+
         token_data = TokenData(
             username=username,
             role=Role(role),
             scopes=payload.get("scopes", [])
         )
     except jwt.ExpiredSignatureError:
-        raise HTTPException(
+        raise HTTPException(  # noqa: B904
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token has expired",
             headers={"WWW-Authenticate": "Bearer"},
         )
     except (jwt.InvalidTokenError, ValueError):
-        raise credentials_exception
-    
+        raise credentials_exception  # noqa: B904
+
     # In production, fetch user from database
     # For now, return user from token data
     user = User(
@@ -179,10 +180,10 @@ async def get_current_user(
         role=token_data.role,
         is_active=True
     )
-    
+
     if not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
-    
+
     return user
 
 
@@ -200,36 +201,36 @@ def require_role(*allowed_roles: Role) -> Callable:
         @require_role(Role.ADMIN)
         async def admin_endpoint(user: User = Depends(get_current_user)):
             return {"message": "Admin access granted"}
-    """
+    """  # noqa: W293
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         async def wrapper(*args, **kwargs):
             # Get current user from kwargs (injected by FastAPI)
             user = kwargs.get("current_user")
-            
+
             if user is None:
                 # Try to get from args if not in kwargs
                 for arg in args:
                     if isinstance(arg, User):
                         user = arg
                         break
-            
+
             if user is None:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Authentication required"
                 )
-            
+
             if user.role not in allowed_roles:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail=f"Access denied. Required role: {', '.join(r.value for r in allowed_roles)}"
                 )
-            
+
             return await func(*args, **kwargs)
-        
+
         return wrapper
-    
+
     return decorator
 
 
@@ -245,7 +246,7 @@ def require_admin(current_user: Annotated[User, Depends(get_current_user)]) -> U
         
     Raises:
         HTTPException: If user is not admin
-    """
+    """  # noqa: W293
     if current_user.role != Role.ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -265,7 +266,7 @@ def require_auditor_or_admin(current_user: Annotated[User, Depends(get_current_u
         
     Raises:
         HTTPException: If user is not auditor or admin
-    """
+    """  # noqa: W293
     if current_user.role not in [Role.ADMIN, Role.AUDITOR]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

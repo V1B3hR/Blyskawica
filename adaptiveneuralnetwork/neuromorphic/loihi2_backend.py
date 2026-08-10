@@ -14,6 +14,7 @@ import torch
 import torch.nn as nn
 
 from adaptiveneuralnetwork.central_nervous_system.neuromorphic import NeuromorphicPlatform
+
 from .hardware_backends import (
     BaseHardwareBackend,
     HardwareConstraints,

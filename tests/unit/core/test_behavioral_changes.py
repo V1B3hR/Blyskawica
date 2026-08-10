@@ -6,13 +6,10 @@ changing thresholds, and modifying attack resilience parameters actually
 affect the behavior of the system.
 """
 
-from collections import deque
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
-import pytest
-
-from adaptiveneuralnetwork.config import AdaptiveNeuralNetworkConfig
 from adaptiveneuralnetwork.central_nervous_system.alive_node import AliveLoopNode
+from adaptiveneuralnetwork.config import AdaptiveNeuralNetworkConfig
 
 
 class TestProactiveInterventionBehavior:

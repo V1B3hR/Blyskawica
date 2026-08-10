@@ -1,7 +1,7 @@
 import os
+import shutil
 import urllib.request
 import zipfile
-import shutil
 from pathlib import Path
 
 REPOS = {
@@ -22,18 +22,18 @@ def download_and_extract():
         zip_path = EXT_DIR / f"{name}.zip"
         try:
             urllib.request.urlretrieve(url, zip_path)
-            
+
             print(f"Extracting {name}...")
             with zipfile.ZipFile(zip_path, 'r') as zip_ref:
                 zip_ref.extractall(EXT_DIR)
-            
+
             # GitHub zips usually extract to a folder named repo-main
             extracted_folder = EXT_DIR / f"{name}-main"
             final_folder = EXT_DIR / name
-            
+
             if final_folder.exists():
                 shutil.rmtree(final_folder)
-                
+
             os.rename(extracted_folder, final_folder)
             os.remove(zip_path)
             print(f"[OK] Successfully integrated {name}")

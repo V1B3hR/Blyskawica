@@ -75,7 +75,7 @@ class STDPSynapse(nn.Module):
     
     Classic STDP rule where pre-before-post leads to potentiation (LTP)
     and post-before-pre leads to depression (LTD).
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
@@ -128,7 +128,7 @@ class STDPSynapse(nn.Module):
             
         Returns:
             Tuple of (synaptic_current, plasticity_info)
-        """
+        """  # noqa: W291, W293
         if dt is None:
             dt = 0.001  # Default 1ms
 
@@ -178,7 +178,7 @@ class STDPSynapse(nn.Module):
             if self.config.multiplicative:
                 # Multiplicative STDP
                 potentiation_mask = weight_changes > 0
-                depression_mask = weight_changes < 0
+                depression_mask = weight_changes < 0  # noqa: F841
 
                 pot_change = weight_changes * (self.config.w_max - self.weights)
                 dep_change = weight_changes * (self.weights - self.config.w_min)
@@ -253,7 +253,7 @@ class MetaplasticitySynapse(nn.Module):
     
     Implements sliding threshold metaplasticity where the plasticity
     threshold adapts based on postsynaptic activity history.
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
@@ -300,7 +300,7 @@ class MetaplasticitySynapse(nn.Module):
             
         Returns:
             Tuple of (synaptic_current, plasticity_info)
-        """
+        """  # noqa: W293
         if dt is None:
             dt = 0.001
 
@@ -379,7 +379,7 @@ class HomeostaticScaling(nn.Module):
     
     Multiplicatively scales all synapses to maintain target firing rates,
     preserving relative weight relationships while ensuring network stability.
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
@@ -421,7 +421,7 @@ class HomeostaticScaling(nn.Module):
             
         Returns:
             Tuple of (scaled_weights, homeostatic_info)
-        """
+        """  # noqa: W293
         if dt is None:
             dt = 0.001
 
@@ -487,7 +487,7 @@ class MultiTimescalePlasticity(nn.Module):
     - Fast STDP (milliseconds to seconds)  
     - Slow homeostatic scaling (minutes to hours)
     - Intermediate metaplasticity (seconds to minutes)
-    """
+    """  # noqa: W291, W293
 
     def __init__(
         self,
@@ -534,7 +534,7 @@ class MultiTimescalePlasticity(nn.Module):
             
         Returns:
             Tuple of (synaptic_current, plasticity_info)
-        """
+        """  # noqa: W293
         if dt is None:
             dt = 0.001
 

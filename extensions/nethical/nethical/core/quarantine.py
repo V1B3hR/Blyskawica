@@ -7,10 +7,10 @@ This module implements:
 """
 
 import time
-from typing import Dict, List, Optional, Any, Set
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from enum import Enum
+from typing import Any
 
 
 class QuarantineReason(str, Enum):
@@ -62,15 +62,15 @@ class QuarantineRecord:
     reason: QuarantineReason
     status: QuarantineStatus = QuarantineStatus.PENDING
     initiated_at: datetime = field(default_factory=datetime.utcnow)
-    activated_at: Optional[datetime] = None
-    released_at: Optional[datetime] = None
-    expires_at: Optional[datetime] = None
+    activated_at: datetime | None = None
+    released_at: datetime | None = None
+    expires_at: datetime | None = None
     duration_hours: float = 24.0
     auto_release: bool = False
     policy: QuarantinePolicy = field(default_factory=QuarantinePolicy)
-    affected_agents: Set[str] = field(default_factory=set)
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    activation_time_ms: Optional[float] = None  # Time to activate quarantine
+    affected_agents: set[str] = field(default_factory=set)
+    metadata: dict[str, Any] = field(default_factory=dict)
+    activation_time_ms: float | None = None  # Time to activate quarantine
 
 
 class QuarantineManager:
@@ -100,13 +100,13 @@ class QuarantineManager:
         self.target_activation_time_s = target_activation_time_s
 
         # Active quarantines
-        self.quarantines: Dict[str, QuarantineRecord] = {}
+        self.quarantines: dict[str, QuarantineRecord] = {}
 
         # Quarantine history
-        self.history: List[QuarantineRecord] = []
+        self.history: list[QuarantineRecord] = []
 
         # Cohort-to-agents mapping
-        self.cohort_agents: Dict[str, Set[str]] = {}
+        self.cohort_agents: dict[str, set[str]] = {}
 
     def register_agent_cohort(self, agent_id: str, cohort: str):
         """Register agent as part of cohort.
@@ -123,10 +123,10 @@ class QuarantineManager:
         self,
         cohort: str,
         reason: QuarantineReason,
-        duration_hours: Optional[float] = None,
-        auto_release: Optional[bool] = None,
-        policy: Optional[QuarantinePolicy] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        duration_hours: float | None = None,
+        auto_release: bool | None = None,
+        policy: QuarantinePolicy | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> QuarantineRecord:
         """Quarantine an agent cohort.
 
@@ -204,7 +204,7 @@ class QuarantineManager:
 
         return True
 
-    def get_quarantine_status(self, cohort: str) -> Dict[str, Any]:
+    def get_quarantine_status(self, cohort: str) -> dict[str, Any]:
         """Get quarantine status for cohort.
 
         Args:
@@ -219,7 +219,7 @@ class QuarantineManager:
             return {"is_quarantined": False, "cohort": cohort}
 
         # Check if expired
-        if record.expires_at and datetime.now(timezone.utc) > record.expires_at:
+        if record.expires_at and datetime.now(timezone.utc) > record.expires_at:  # noqa: SIM102
             if record.auto_release:
                 self.release_cohort(cohort, reason="auto_expired")
                 return {
@@ -266,7 +266,7 @@ class QuarantineManager:
 
         return False
 
-    def get_quarantine_policy(self, cohort: str) -> Optional[QuarantinePolicy]:
+    def get_quarantine_policy(self, cohort: str) -> QuarantinePolicy | None:
         """Get quarantine policy for cohort.
 
         Args:
@@ -278,7 +278,7 @@ class QuarantineManager:
         record = self.quarantines.get(cohort)
         return record.policy if record else None
 
-    def list_quarantines(self, active_only: bool = True) -> List[Dict[str, Any]]:
+    def list_quarantines(self, active_only: bool = True) -> list[dict[str, Any]]:
         """List quarantines.
 
         Args:
@@ -297,7 +297,7 @@ class QuarantineManager:
 
     def simulate_attack_response(
         self, cohort: str, attack_type: str = "synthetic"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Simulate attack and measure quarantine response time.
 
         Args:
@@ -344,7 +344,7 @@ class QuarantineManager:
         expired = []
 
         for cohort, record in list(self.quarantines.items()):
-            if record.expires_at and datetime.now(timezone.utc) > record.expires_at:
+            if record.expires_at and datetime.now(timezone.utc) > record.expires_at:  # noqa: SIM102
                 if record.auto_release:
                     expired.append(cohort)
 
@@ -353,7 +353,7 @@ class QuarantineManager:
 
         return len(expired)
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get quarantine system statistics.
 
         Returns:
@@ -382,7 +382,7 @@ class QuarantineManager:
         self,
         cohort: str,
         isolation_level: HardwareIsolationLevel = HardwareIsolationLevel.NETWORK_ONLY,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> QuarantineRecord:
         """Apply hardware isolation to a cohort.
 
@@ -442,7 +442,7 @@ class QuarantineManager:
 
         return record
 
-    def get_hardware_isolation_status(self, cohort: str) -> Dict[str, Any]:
+    def get_hardware_isolation_status(self, cohort: str) -> dict[str, Any]:
         """Get hardware isolation status for a cohort.
 
         Args:

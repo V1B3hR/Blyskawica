@@ -6,10 +6,10 @@ addressing the issue of mixed time representations throughout the codebase.
 """
 
 import time
-from dataclasses import dataclass
-from typing import Any
-from enum import Enum
 from collections import deque
+from dataclasses import dataclass
+from enum import Enum
+from typing import Any
 
 
 class ProcessingLane(Enum):
@@ -22,7 +22,7 @@ class TimeConfig:
     simulation_time_scale: float = 1.0  # How fast simulation time progresses relative to real time
     circadian_cycle_hours: int = 24     # Length of circadian cycle in simulation hours
     enable_real_time_tracking: bool = True  # Whether to track real time for performance metrics
-    
+
     # Bi-dynamic Adaptation parameters
     fast_lane_multiplier: float = 100.0   # Scale multiplier when operating in FAST_AI lane
     slow_lane_multiplier: float = 1.0     # Scale multiplier for SLOW_HUMAN lane
@@ -39,7 +39,7 @@ class TimeManager:
     - Run simulations at different speeds
     - Have reproducible timing behavior  
     - Properly separate simulation logic from performance measurement
-    """
+    """  # noqa: W291, W293
 
     def __init__(self, config: TimeConfig | None = None):
         self.config = config or TimeConfig()
@@ -145,7 +145,7 @@ class TimeManager:
         # Advance simulation time based on configured scale
         # Adjust scale dynamically based on the active lane
         self.auto_adjust_lane()
-        
+
         steps_to_advance = max(1, int(tick_duration * self.config.simulation_time_scale))
         self.advance_simulation(steps_to_advance)
 

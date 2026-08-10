@@ -10,8 +10,9 @@ from __future__ import annotations
 
 import logging
 import traceback
+from collections.abc import Callable
 from datetime import datetime, timezone
-from typing import Any, Callable
+from typing import Any
 
 from fastapi import Request, Response
 from fastapi.responses import JSONResponse
@@ -28,25 +29,25 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
     - Error logging with request context
     - Safe error messages (no internal details leaked)
     - Fallback to blocking for safety-critical errors
-    """
-    
+    """  # noqa: W293
+
     def __init__(self, app, include_traceback: bool = False):
         """Initialize middleware.
         
         Args:
             app: ASGI application
             include_traceback: Whether to include traceback in responses (dev only)
-        """
+        """  # noqa: W293
         super().__init__(app)
         self.include_traceback = include_traceback
-    
+
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         """Process request with error handling."""
         try:
             return await call_next(request)
         except Exception as e:
             return await self._handle_error(request, e)
-    
+
     async def _handle_error(self, request: Request, error: Exception) -> JSONResponse:
         """Handle an unhandled exception.
         
@@ -56,9 +57,9 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
             
         Returns:
             Structured JSON error response
-        """
+        """  # noqa: W293
         request_id = getattr(request.state, "request_id", "unknown")
-        
+
         # Log the error with context
         logger.error(
             "Unhandled error request_id=%s path=%s error=%s",
@@ -67,11 +68,11 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
             str(error),
             exc_info=True,
         )
-        
+
         # Determine error type and status code
         error_type = type(error).__name__
         status_code = 500
-        
+
         # Safe error message (don't leak internals)
         safe_message = "An internal error occurred"
         if isinstance(error, ValueError):
@@ -83,7 +84,7 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
         elif isinstance(error, FileNotFoundError):
             safe_message = "Resource not found"
             status_code = 404
-        
+
         # Build error response
         error_response: dict[str, Any] = {
             "error": {
@@ -94,16 +95,16 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
             },
             "fundamental_law": "Law 23: Fail-Safe Design",
         }
-        
+
         # Add traceback in development mode
         if self.include_traceback:
             error_response["error"]["traceback"] = traceback.format_exc()
-        
+
         # Add safety-first decision for governance endpoints
         if "/evaluate" in request.url.path:
             error_response["decision"] = "BLOCK"
             error_response["reason"] = "Blocked for safety due to evaluation error"
-        
+
         return JSONResponse(
             status_code=status_code,
             content=error_response,
@@ -132,7 +133,7 @@ def create_error_response(
         
     Returns:
         Structured JSON error response
-    """
+    """  # noqa: W293
     content: dict[str, Any] = {
         "error": {
             "type": error_type,
@@ -141,10 +142,10 @@ def create_error_response(
             "timestamp": datetime.now(timezone.utc).isoformat(),
         },
     }
-    
+
     if details:
         content["error"]["details"] = details
-    
+
     return JSONResponse(
         status_code=status_code,
         content=content,

@@ -12,7 +12,7 @@ from typing import Any
 
 # Optional messaging dependencies
 try:
-    import aiokafka
+    import aiokafka  # noqa: F401
     from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
     from aiokafka.errors import KafkaError
     KAFKA_AVAILABLE = True
@@ -29,7 +29,7 @@ except ImportError:
 try:
     import aio_pika
     from aio_pika import DeliveryMode, Message, connect_robust
-    from aio_pika.abc import AbstractRobustChannel, AbstractRobustConnection
+    from aio_pika.abc import AbstractRobustChannel, AbstractRobustConnection  # noqa: F401
     RABBITMQ_AVAILABLE = True
 except ImportError:
     RABBITMQ_AVAILABLE = False

@@ -310,7 +310,7 @@ class SQLiteStore(BaseStore):
                    OR target_data LIKE ?
                    OR hunter_notes LIKE ?
                 ORDER BY timestamp_first_seen DESC
-            """,
+            """,  # noqa: W291
                 (search_query, search_query, search_query, search_query, search_query),
             )
 

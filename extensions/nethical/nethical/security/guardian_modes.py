@@ -4,14 +4,13 @@ Defines the 5 operational modes for the Adaptive Guardian:
 SPRINT, CRUISE, ALERT, DEFENSE, LOCKDOWN
 """
 
-from enum import Enum
 from dataclasses import dataclass
-from typing import Set
+from enum import Enum
 
 
 class GuardianMode(str, Enum):
     """Guardian operational modes with increasing security intensity."""
-    
+
     SPRINT = "SPRINT"      # 🏎️ Minimal overhead, clear track
     CRUISE = "CRUISE"      # 🚗 Normal operation, balanced
     ALERT = "ALERT"        # ⚠️ Suspicious activity detected
@@ -21,7 +20,7 @@ class GuardianMode(str, Enum):
 
 class TripwireSensitivity(str, Enum):
     """Tripwire sensitivity levels."""
-    
+
     CRITICAL = "CRITICAL"  # Only critical threats
     HIGH = "HIGH"          # High+ severity
     MEDIUM = "MEDIUM"      # Medium+ severity
@@ -32,7 +31,7 @@ class TripwireSensitivity(str, Enum):
 @dataclass
 class ModeConfig:
     """Configuration for a guardian mode."""
-    
+
     mode: GuardianMode
     overhead_ms: float          # Target overhead per request
     pulse_interval_s: int       # Background pulse check interval
@@ -124,15 +123,15 @@ def get_mode_for_threat_score(threat_score: float) -> GuardianMode:
         
     Returns:
         Appropriate GuardianMode for the threat level
-    """
+    """  # noqa: W293
     # Clamp score to valid range
     threat_score = max(0.0, min(1.0, threat_score))
-    
+
     # Find matching mode
     for mode, config in MODE_CONFIGS.items():
         if config.threat_score_min <= threat_score <= config.threat_score_max:
             return mode
-    
+
     # Default to LOCKDOWN if somehow outside range
     return GuardianMode.LOCKDOWN
 
@@ -145,7 +144,7 @@ def get_mode_config(mode: GuardianMode) -> ModeConfig:
         
     Returns:
         Configuration for the mode
-    """
+    """  # noqa: W293
     return MODE_CONFIGS[mode]
 
 
@@ -170,5 +169,5 @@ def severity_matches_sensitivity(
         
     Returns:
         True if severity should trigger alert at this sensitivity
-    """
+    """  # noqa: W293
     return severity.upper() in SEVERITY_LEVELS.get(sensitivity, set())

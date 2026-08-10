@@ -30,12 +30,11 @@ Design goals:
 - Clear API for dictionary inputs containing raw signals
 """
 
-from typing import Dict, Iterable, List, Optional, Tuple, Union
-
 import logging
+from collections.abc import Iterable
+
 import numpy as np
 from scipy import signal as sp_signal
-from scipy import stats as sp_stats
 
 # Constants
 DEFAULT_HR_INTERP_FS = 4.0  # Hz for RR->HR interpolation
@@ -43,7 +42,7 @@ DEFAULT_EDA_FS = 4.0
 DEFAULT_RESP_FS = 25.0  # respiratory signals often sampled higher; allow override
 
 # Names for the 24 output features (kept stable to remain compatible)
-FEATURE_NAMES: List[str] = [
+FEATURE_NAMES: list[str] = [
     "hr_mean_bpm",
     "rr_mean_ms",
     "sdnn_ms",
@@ -113,7 +112,7 @@ def _butter_bandpass(data: np.ndarray, low_hz: float, high_hz: float, fs: float,
     return sp_signal.filtfilt(b, a, data)
 
 
-def _poincare_sd1_sd2(rr_ms: np.ndarray) -> Tuple[float, float]:
+def _poincare_sd1_sd2(rr_ms: np.ndarray) -> tuple[float, float]:
     """Compute Poincaré SD1 and SD2 in ms."""
     rr = np.asarray(rr_ms, dtype=float)
     rr1 = rr[:-1]
@@ -149,7 +148,7 @@ class PhysioFeatureExtractor:
         self.extract_resp = extract_resp
         self.hr_interp_fs = float(hr_interp_fs)
 
-    def extract_features(self, physio_data: Union[np.ndarray, Dict[str, np.ndarray]]) -> np.ndarray:
+    def extract_features(self, physio_data: np.ndarray | dict[str, np.ndarray]) -> np.ndarray:
         """
         Master extraction function returning a fixed-length 24-D feature vector.
 
@@ -287,14 +286,14 @@ class PhysioFeatureExtractor:
             hf_mask = (freqs >= 0.15) & (freqs <= 0.4)
             lf_power = float(np.trapz(psd[lf_mask], freqs[lf_mask])) if np.any(lf_mask) else 0.0
             hf_power = float(np.trapz(psd[hf_mask], freqs[hf_mask])) if np.any(hf_mask) else 0.0
-            total_power = float(np.trapz(psd[(freqs >= 0.003) & (freqs <= 0.4)], freqs[(freqs >= 0.003) & (freqs <= 0.4)])) if np.any((freqs >= 0.003) & (freqs <= 0.4)) else (lf_power + hf_power)
+            total_power = float(np.trapz(psd[(freqs >= 0.003) & (freqs <= 0.4)], freqs[(freqs >= 0.003) & (freqs <= 0.4)])) if np.any((freqs >= 0.003) & (freqs <= 0.4)) else (lf_power + hf_power)  # noqa: F841
             lf_hf = lf_power / (hf_power + 1e-12)
             lf_norm = (lf_power / (lf_power + hf_power + 1e-12)) * 100.0
             hf_norm = (hf_power / (lf_power + hf_power + 1e-12)) * 100.0
             spec_entropy = _spectral_entropy(psd, freqs)
         except Exception as e:
             logger.debug("HRV frequency analysis skipped: %s", e)
-            lf_power = hf_power = lf_hf = lf_norm = hf_norm = spec_entropy = 0.0
+            lf_power = hf_power = lf_hf = lf_norm = hf_norm = spec_entropy = 0.0  # noqa: F841
 
         feats = np.array(
             [
@@ -442,7 +441,7 @@ class PhysioFeatureExtractor:
 
         return np.array([resp_rate, resp_depth, resp_irregularity, resp_power], dtype=float)
 
-    def _extract_raw_stats(self, raw: Optional[np.ndarray]) -> Dict[str, float]:
+    def _extract_raw_stats(self, raw: np.ndarray | None) -> dict[str, float]:
         """
         Compute generic statistics on raw channels (if provided).
         Returns values used in the final two slots: spectral_entropy and variance_sum.
@@ -494,7 +493,7 @@ class PhysioFeatureExtractor:
         return out
 
 
-def extract_physio_features_batch(physio_batch: Union[np.ndarray, Iterable[Union[np.ndarray, Dict[str, np.ndarray]]]], **kwargs) -> np.ndarray:
+def extract_physio_features_batch(physio_batch: np.ndarray | Iterable[np.ndarray | dict[str, np.ndarray]], **kwargs) -> np.ndarray:
     """
     Convenience function to extract features from a batch.
 
@@ -513,7 +512,7 @@ def extract_physio_features_batch(physio_batch: Union[np.ndarray, Iterable[Union
         return arr.astype(np.float32)
 
     # Otherwise iterate
-    feats_list: List[np.ndarray] = []
+    feats_list: list[np.ndarray] = []
     # Allow lists of dicts or arrays
     for item in physio_batch:
         feats = extractor.extract_features(item)
@@ -536,5 +535,5 @@ if __name__ == "__main__":
 
     extractor = PhysioFeatureExtractor()
     feats = extractor.extract_features({"rr": rr, "eda": eda, "eda_fs": 4.0, "resp": resp, "resp_fs": 25.0, "raw": np.vstack([eda, resp])})
-    for name, val in zip(FEATURE_NAMES, feats):
+    for name, val in zip(FEATURE_NAMES, feats):  # noqa: B905
         print(f"{name}: {val:.4f}")

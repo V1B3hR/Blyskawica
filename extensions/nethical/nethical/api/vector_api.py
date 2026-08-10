@@ -8,12 +8,13 @@ making it easy to use Nethical with vector-based governance and the 25 Fundament
 from __future__ import annotations
 
 import logging
-import yaml
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Any, Union
 from pathlib import Path
+from typing import Any
 
-from ..core import IntegratedGovernance, EmbeddingProvider
+import yaml
+
+from ..core import EmbeddingProvider, IntegratedGovernance
 
 logger = logging.getLogger(__name__)
 
@@ -27,12 +28,12 @@ class Agent:
         type: Type of agent (coding, chat, autonomous, etc.)
         capabilities: List of agent capabilities
         metadata: Additional agent metadata
-    """
+    """  # noqa: W293
     id: str
     type: str
-    capabilities: List[str]
-    metadata: Dict[str, Any] = None
-    
+    capabilities: list[str]
+    metadata: dict[str, Any] = None
+
     def __post_init__(self):
         if self.metadata is None:
             self.metadata = {}
@@ -43,20 +44,20 @@ class EvaluationResult:
     """Result of action evaluation.
     
     This provides a clean interface to evaluation results with easy attribute access.
-    """
+    """  # noqa: W293
     decision: str
-    laws_evaluated: List[int]
+    laws_evaluated: list[int]
     risk_score: float
     confidence: float
     reasoning: str
     embedding_trace_id: str
-    detected_primitives: List[str]
-    relevant_laws: List[Dict[str, Any]]
+    detected_primitives: list[str]
+    relevant_laws: list[dict[str, Any]]
     agent_id: str
     timestamp: str
-    
+
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "EvaluationResult":
+    def from_dict(cls, data: dict[str, Any]) -> EvaluationResult:
         """Create EvaluationResult from dictionary."""
         return cls(
             decision=data.get("decision", "ALLOW"),
@@ -88,15 +89,15 @@ class Nethical:
         ...     context={"purpose": "demo"}
         ... )
         >>> print(result.decision, result.laws_evaluated, result.risk_score)
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
-        config_path: Optional[str] = None,
+        config_path: str | None = None,
         storage_dir: str = "./nethical_data",
         enable_25_laws: bool = True,
         enable_vector_evaluation: bool = True,
-        embedding_provider: Optional[EmbeddingProvider] = None,
+        embedding_provider: EmbeddingProvider | None = None,
         similarity_threshold: float = 0.7,
         **kwargs
     ):
@@ -110,16 +111,16 @@ class Nethical:
             embedding_provider: Custom embedding provider (defaults to SimpleEmbeddingProvider)
             similarity_threshold: Similarity threshold for law matching
             **kwargs: Additional configuration passed to IntegratedGovernance
-        """
+        """  # noqa: W293
         self.config_path = config_path
         self.storage_dir = storage_dir
-        
+
         # Load config if provided
         config_params = self._load_config(config_path) if config_path else {}
-        
+
         # Merge with provided kwargs
         config_params.update(kwargs)
-        
+
         # Initialize integrated governance
         self.governance = IntegratedGovernance(
             storage_dir=storage_dir,
@@ -129,30 +130,30 @@ class Nethical:
             vector_similarity_threshold=similarity_threshold,
             **config_params
         )
-        
+
         # Track registered agents
-        self.agents: Dict[str, Agent] = {}
-        
+        self.agents: dict[str, Agent] = {}
+
         logger.info(
             f"Nethical initialized with 25 Laws: {enable_25_laws}, "
             f"Vector evaluation: {enable_vector_evaluation}"
         )
-    
-    def _load_config(self, config_path: str) -> Dict[str, Any]:
+
+    def _load_config(self, config_path: str) -> dict[str, Any]:
         """Load configuration from YAML file."""
         path = Path(config_path)
         if not path.exists():
             logger.warning(f"Config file not found: {config_path}")
             return {}
-        
+
         try:
-            with open(path, 'r') as f:
+            with open(path) as f:
                 config = yaml.safe_load(f)
                 return config or {}
         except Exception as e:
             logger.error(f"Failed to load config: {e}")
             return {}
-    
+
     def register_agent(self, agent: Agent) -> bool:
         """Register an agent with Nethical.
         
@@ -161,17 +162,17 @@ class Nethical:
             
         Returns:
             True if registration successful
-        """
+        """  # noqa: W293
         if agent.id in self.agents:
             logger.warning(f"Agent {agent.id} already registered, updating...")
-        
+
         self.agents[agent.id] = agent
         logger.info(
             f"Registered agent {agent.id} (type: {agent.type}, "
             f"capabilities: {', '.join(agent.capabilities)})"
         )
         return True
-    
+
     def unregister_agent(self, agent_id: str) -> bool:
         """Unregister an agent.
         
@@ -180,26 +181,26 @@ class Nethical:
             
         Returns:
             True if agent was unregistered
-        """
+        """  # noqa: W293
         if agent_id in self.agents:
             del self.agents[agent_id]
             logger.info(f"Unregistered agent {agent_id}")
             return True
         return False
-    
-    def get_agent(self, agent_id: str) -> Optional[Agent]:
+
+    def get_agent(self, agent_id: str) -> Agent | None:
         """Get registered agent by ID."""
         return self.agents.get(agent_id)
-    
-    def list_agents(self) -> List[Agent]:
+
+    def list_agents(self) -> list[Agent]:
         """List all registered agents."""
         return list(self.agents.values())
-    
+
     def evaluate(
         self,
         agent_id: str,
-        action: Union[str, Any],
-        context: Optional[Dict[str, Any]] = None
+        action: str | Any,
+        context: dict[str, Any] | None = None
     ) -> EvaluationResult:
         """Evaluate an agent action using vector-based governance.
         
@@ -219,22 +220,22 @@ class Nethical:
             ... )
             >>> if result.decision == "BLOCK":
             ...     print(f"Action blocked: {result.reasoning}")
-        """
+        """  # noqa: W293
         # Check if agent is registered
         if agent_id not in self.agents:
             logger.warning(f"Agent {agent_id} not registered, proceeding anyway...")
-        
+
         # Evaluate using governance system
         raw_result = self.governance.evaluate(
             agent_id=agent_id,
             action=action,
             context=context
         )
-        
+
         # Convert to EvaluationResult
         return EvaluationResult.from_dict(raw_result)
-    
-    def trace_embedding(self, embedding_trace_id: str) -> Optional[Dict[str, Any]]:
+
+    def trace_embedding(self, embedding_trace_id: str) -> dict[str, Any] | None:
         """Trace an embedding decision for audit/debugging.
         
         Args:
@@ -242,10 +243,10 @@ class Nethical:
             
         Returns:
             Trace information or None if not found
-        """
+        """  # noqa: W293
         return self.governance.trace_embedding(embedding_trace_id)
-    
-    def get_stats(self) -> Dict[str, Any]:
+
+    def get_stats(self) -> dict[str, Any]:
         """Get system statistics.
         
         Returns:
@@ -253,7 +254,7 @@ class Nethical:
             - agent_count: Number of registered agents
             - embedding_stats: Embedding engine statistics
             - governance_stats: Governance system statistics
-        """
+        """  # noqa: W293
         stats = {
             "agent_count": len(self.agents),
             "agents": [
@@ -261,25 +262,25 @@ class Nethical:
                 for a in self.agents.values()
             ]
         }
-        
+
         # Add embedding stats if available
         if self.governance.embedding_engine:
             stats["embedding_stats"] = self.governance.embedding_engine.get_stats()
-        
+
         # Add governance stats
         stats["governance_enabled"] = {
             "25_laws": self.governance.enable_25_laws,
             "vector_evaluation": self.governance.enable_vector_evaluation,
             "similarity_threshold": self.governance.vector_similarity_threshold
         }
-        
+
         return stats
 
 
 # Convenience function for quick setup
 def create_nethical(
     enable_25_laws: bool = True,
-    config_path: Optional[str] = None,
+    config_path: str | None = None,
     **kwargs
 ) -> Nethical:
     """Create a Nethical instance with sensible defaults.
@@ -291,7 +292,7 @@ def create_nethical(
         
     Returns:
         Configured Nethical instance
-    """
+    """  # noqa: W293
     return Nethical(
         enable_25_laws=enable_25_laws,
         enable_vector_evaluation=enable_25_laws,

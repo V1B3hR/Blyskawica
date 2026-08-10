@@ -1,9 +1,9 @@
 """DNS reconnaissance module for passive OSINT."""
 
+from dataclasses import dataclass
+
 import dns.resolver
 import dns.zone
-from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
@@ -22,7 +22,7 @@ class DNSRecon:
     # Common DNS record types to query
     RECORD_TYPES = ["A", "AAAA", "CNAME", "MX", "NS", "TXT", "SOA", "PTR"]
 
-    def __init__(self, nameserver: Optional[str] = None, timeout: int = 5):
+    def __init__(self, nameserver: str | None = None, timeout: int = 5):
         """Initialize DNS reconnaissance.
 
         Args:
@@ -73,7 +73,7 @@ class DNSRecon:
 
         return records
 
-    def enumerate_records(self, domain: str, record_types: Optional[list[str]] = None) -> dict[str, list[DNSRecord]]:
+    def enumerate_records(self, domain: str, record_types: list[str] | None = None) -> dict[str, list[DNSRecord]]:
         """Enumerate multiple DNS record types for a domain.
 
         Args:
@@ -131,7 +131,7 @@ class DNSRecon:
         txt_records = self.query_record(domain, "TXT")
         return [record.value.strip('"') for record in txt_records]
 
-    def reverse_dns_lookup(self, ip_address: str) -> Optional[str]:
+    def reverse_dns_lookup(self, ip_address: str) -> str | None:
         """Perform reverse DNS lookup for an IP address.
 
         Args:
@@ -151,7 +151,7 @@ class DNSRecon:
 
         return None
 
-    def check_spf_record(self, domain: str) -> Optional[str]:
+    def check_spf_record(self, domain: str) -> str | None:
         """Check for SPF record in TXT records.
 
         Args:
@@ -166,7 +166,7 @@ class DNSRecon:
                 return record
         return None
 
-    def check_dmarc_record(self, domain: str) -> Optional[str]:
+    def check_dmarc_record(self, domain: str) -> str | None:
         """Check for DMARC record.
 
         Args:

@@ -7,8 +7,8 @@ This module provides active scanning capabilities including:
 - Service enumeration
 """
 
-from .scanner import ActiveScanner, ScanProfile, ScanResult
 from .banner_grabber import BannerGrabber, BannerResult
+from .scanner import ActiveScanner, ScanProfile, ScanResult
 from .tls_fingerprinter import TLSFingerprinter, TLSInfo
 
 __all__ = [

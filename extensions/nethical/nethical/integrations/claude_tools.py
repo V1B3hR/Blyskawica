@@ -26,15 +26,16 @@ Example usage:
             if block.type == "tool_use" and block.name == "nethical_guard":
                 result = handle_nethical_tool(block.input)
                 # Send result back to Claude
-"""
+"""  # noqa: W293
 
-from typing import Dict, Any, Optional
+from typing import Any
+
 from nethical.core.integrated_governance import IntegratedGovernance
+
 from ._decision_logic import compute_decision, format_violations_for_response
 
-
 # Singleton governance instance
-_governance_instance: Optional[IntegratedGovernance] = None
+_governance_instance: IntegratedGovernance | None = None
 
 
 def get_governance_instance(
@@ -51,7 +52,7 @@ def get_governance_instance(
         
     Returns:
         IntegratedGovernance instance
-    """
+    """  # noqa: W293
     global _governance_instance
     if _governance_instance is None:
         _governance_instance = IntegratedGovernance(
@@ -66,12 +67,12 @@ def get_governance_instance(
     return _governance_instance
 
 
-def get_nethical_tool() -> Dict[str, Any]:
+def get_nethical_tool() -> dict[str, Any]:
     """Get the Nethical tool definition for Claude.
     
     Returns:
         Tool definition dict compatible with Anthropic's Claude API
-    """
+    """  # noqa: W293
     return {
         "name": "nethical_guard",
         "description": (
@@ -106,9 +107,9 @@ def get_nethical_tool() -> Dict[str, Any]:
 
 
 def handle_nethical_tool(
-    tool_input: Dict[str, Any],
-    governance: Optional[IntegratedGovernance] = None
-) -> Dict[str, Any]:
+    tool_input: dict[str, Any],
+    governance: IntegratedGovernance | None = None
+) -> dict[str, Any]:
     """Handle a call to the nethical_guard tool.
     
     Args:
@@ -117,22 +118,22 @@ def handle_nethical_tool(
         
     Returns:
         Dict with decision and explanation suitable for Claude
-    """
+    """  # noqa: W293
     if governance is None:
         governance = get_governance_instance()
-    
+
     action = tool_input.get("action")
     agent_id = tool_input.get("agent_id", "claude")
     action_type = tool_input.get("action_type", "query")
     context = tool_input.get("context", {})
-    
+
     if not action:
         return {
             "decision": "BLOCK",
             "reason": "No action provided to evaluate",
             "error": "Missing required parameter: action"
         }
-    
+
     try:
         # Process action through governance system
         result = governance.process_action(
@@ -141,10 +142,10 @@ def handle_nethical_tool(
             action_type=action_type,
             context=context,
         )
-        
+
         # Compute decision from governance results
         decision, reason, violations = compute_decision(result)
-        
+
         # Build response for Claude
         response = {
             "decision": decision,
@@ -153,27 +154,27 @@ def handle_nethical_tool(
             "timestamp": result.get("timestamp"),
             "risk_score": result.get("phase3", {}).get("risk_score", 0.0),
         }
-        
+
         # Add violations if present
         if violations:
             response["violations"] = format_violations_for_response(violations)
-        
+
         # Add PII information if detected
         pii_detection = result.get("pii_detection")
         if pii_detection and pii_detection.get("matches_count", 0) > 0:
             response["pii_detected"] = True
             response["pii_types"] = pii_detection.get("pii_types", [])
             response["pii_risk_score"] = pii_detection.get("pii_risk_score", 0.0)
-        
+
         # Add quota information if available
         quota_info = result.get("quota_enforcement")
         if quota_info:
             response["quota_allowed"] = quota_info.get("allowed", True)
             if quota_info.get("backpressure_level", 0) > 0.5:
                 response["backpressure_warning"] = "High load detected"
-        
+
         return response
-        
+
     except Exception as e:
         # Fallback to safe blocking on errors
         from datetime import datetime, timezone
@@ -199,7 +200,7 @@ def evaluate_action(action: str, agent_id: str = "claude", **kwargs) -> str:
         
     Returns:
         Decision string: "ALLOW", "RESTRICT", "BLOCK", or "TERMINATE"
-    """
+    """  # noqa: W293
     tool_input = {
         "action": action,
         "agent_id": agent_id,
@@ -217,62 +218,62 @@ def example_claude_integration():
     1. Defining the tool for Claude
     2. Using it in a conversation
     3. Processing tool calls
-    """
+    """  # noqa: W293
     try:
         from anthropic import Anthropic
     except ImportError:
         print("anthropic package not installed. Install with: pip install anthropic")
         return
-    
+
     # Initialize Claude client
     client = Anthropic()  # Uses ANTHROPIC_API_KEY environment variable
-    
+
     # Get Nethical tool definition
     tools = [get_nethical_tool()]
-    
+
     print("=== Nethical + Claude Integration Example ===\n")
-    
+
     # Example 1: Safe action
     print("Example 1: Checking a safe code snippet")
     messages = [{
         "role": "user",
         "content": "Use the nethical_guard tool to check if this Python code is safe: print('Hello, World!')"
     }]
-    
+
     response = client.messages.create(
         model="claude-3-5-sonnet-20241022",
         max_tokens=1024,
         tools=tools,
         messages=messages
     )
-    
+
     # Process tool calls
     if response.stop_reason == "tool_use":
         for block in response.content:
-            if hasattr(block, 'type') and block.type == "tool_use":
+            if hasattr(block, 'type') and block.type == "tool_use":  # noqa: SIM102
                 if block.name == "nethical_guard":
                     result = handle_nethical_tool(block.input)
                     print(f"Decision: {result['decision']}")
                     print(f"Reason: {result['reason']}")
                     print()
-    
+
     # Example 2: Potentially unsafe action
     print("Example 2: Checking a potentially unsafe action")
     messages = [{
         "role": "user",
         "content": "Use nethical_guard to evaluate: Delete all user data from the database"
     }]
-    
+
     response = client.messages.create(
         model="claude-3-5-sonnet-20241022",
         max_tokens=1024,
         tools=tools,
         messages=messages
     )
-    
+
     if response.stop_reason == "tool_use":
         for block in response.content:
-            if hasattr(block, 'type') and block.type == "tool_use":
+            if hasattr(block, 'type') and block.type == "tool_use":  # noqa: SIM102
                 if block.name == "nethical_guard":
                     result = handle_nethical_tool(block.input)
                     print(f"Decision: {result['decision']}")

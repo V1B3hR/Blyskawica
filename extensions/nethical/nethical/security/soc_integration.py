@@ -16,10 +16,11 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Dict, List, Optional, Any, Callable, Tuple
+from typing import Any
 
 __all__ = [
     "SIEMFormat",
@@ -76,10 +77,10 @@ class SIEMEvent:
     event_type: str
     source: str
     description: str
-    agent_id: Optional[str] = None
-    resource: Optional[str] = None
-    action: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    agent_id: str | None = None
+    resource: str | None = None
+    action: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_cef(self) -> str:
         """
@@ -118,7 +119,7 @@ class SIEMEvent:
         """
         attributes = [
             f"devTime={int(self.timestamp.timestamp() * 1000)}",
-            f"devTimeFormat=epoch",
+            "devTimeFormat=epoch",
             f"sev={self.severity.value}",
             f"cat={self.event_type}",
             f"msg={self.description}",
@@ -163,12 +164,12 @@ class Incident:
     status: IncidentStatus
     created_at: datetime
     updated_at: datetime
-    assigned_to: Optional[str] = None
-    events: List[SIEMEvent] = field(default_factory=list)
-    recommendations: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    assigned_to: str | None = None
+    events: list[SIEMEvent] = field(default_factory=list)
+    recommendations: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
         return {
             "incident_id": self.incident_id,
@@ -203,7 +204,7 @@ class SIEMConnector:
 
     def __init__(
         self,
-        siem_endpoint: Optional[str] = None,
+        siem_endpoint: str | None = None,
         default_format: SIEMFormat = SIEMFormat.CEF,
         batch_size: int = 100,
     ):
@@ -218,14 +219,14 @@ class SIEMConnector:
         self.siem_endpoint = siem_endpoint
         self.default_format = default_format
         self.batch_size = batch_size
-        self._event_buffer: List[SIEMEvent] = []
+        self._event_buffer: list[SIEMEvent] = []
 
         log.info(f"SIEM Connector initialized (format={default_format.value})")
 
     async def send_event(
         self,
         event: SIEMEvent,
-        format: Optional[SIEMFormat] = None,
+        format: SIEMFormat | None = None,
     ) -> bool:
         """
         Send single event to SIEM
@@ -261,8 +262,8 @@ class SIEMConnector:
 
     async def send_batch(
         self,
-        events: List[SIEMEvent],
-        format: Optional[SIEMFormat] = None,
+        events: list[SIEMEvent],
+        format: SIEMFormat | None = None,
     ) -> int:
         """
         Send batch of events to SIEM
@@ -323,7 +324,7 @@ class IncidentManager:
 
     def __init__(
         self,
-        ticketing_api_url: Optional[str] = None,
+        ticketing_api_url: str | None = None,
         auto_create_threshold: AlertSeverity = AlertSeverity.HIGH,
     ):
         """
@@ -335,7 +336,7 @@ class IncidentManager:
         """
         self.ticketing_api_url = ticketing_api_url
         self.auto_create_threshold = auto_create_threshold
-        self._incidents: Dict[str, Incident] = {}
+        self._incidents: dict[str, Incident] = {}
         self._incident_counter = 0
 
         log.info("Incident Manager initialized")
@@ -345,7 +346,7 @@ class IncidentManager:
         title: str,
         description: str,
         severity: AlertSeverity,
-        events: Optional[List[SIEMEvent]] = None,
+        events: list[SIEMEvent] | None = None,
         auto_assign: bool = True,
     ) -> Incident:
         """
@@ -397,10 +398,10 @@ class IncidentManager:
     async def update_incident(
         self,
         incident_id: str,
-        status: Optional[IncidentStatus] = None,
-        assigned_to: Optional[str] = None,
-        add_event: Optional[SIEMEvent] = None,
-    ) -> Optional[Incident]:
+        status: IncidentStatus | None = None,
+        assigned_to: str | None = None,
+        add_event: SIEMEvent | None = None,
+    ) -> Incident | None:
         """
         Update existing incident
 
@@ -461,7 +462,7 @@ class IncidentManager:
         """Get current on-call security analyst (stub)"""
         return "soc-team@example.gov"
 
-    def _generate_recommendations(self, severity: AlertSeverity) -> List[str]:
+    def _generate_recommendations(self, severity: AlertSeverity) -> list[str]:
         """Generate incident response recommendations"""
         recommendations = [
             "Review all related events and logs",
@@ -484,15 +485,15 @@ class IncidentManager:
         """Send incident to ticketing system (stub)"""
         log.info(f"Would send incident {incident.incident_id} to ticketing system")
 
-    def get_incident(self, incident_id: str) -> Optional[Incident]:
+    def get_incident(self, incident_id: str) -> Incident | None:
         """Get incident by ID"""
         return self._incidents.get(incident_id)
 
     def list_incidents(
         self,
-        status: Optional[IncidentStatus] = None,
-        severity: Optional[AlertSeverity] = None,
-    ) -> List[Incident]:
+        status: IncidentStatus | None = None,
+        severity: AlertSeverity | None = None,
+    ) -> list[Incident]:
         """List incidents with optional filters"""
         incidents = list(self._incidents.values())
 
@@ -523,11 +524,11 @@ class ThreatHuntingEngine:
     def __init__(self):
         """Initialize threat hunting engine"""
         self._query_templates = self._load_query_templates()
-        self._hunt_history: List[Dict[str, Any]] = []
+        self._hunt_history: list[dict[str, Any]] = []
 
         log.info("Threat Hunting Engine initialized")
 
-    def _load_query_templates(self) -> Dict[str, Dict[str, Any]]:
+    def _load_query_templates(self) -> dict[str, dict[str, Any]]:
         """Load threat hunting query templates"""
         return {
             "lateral_movement": {
@@ -575,9 +576,9 @@ class ThreatHuntingEngine:
     async def execute_hunt(
         self,
         hunt_type: str,
-        time_range: Optional[Tuple[datetime, datetime]] = None,
-        filters: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        time_range: tuple[datetime, datetime] | None = None,
+        filters: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
         Execute threat hunting query
 
@@ -620,10 +621,10 @@ class ThreatHuntingEngine:
 
     async def _search_for_indicators(
         self,
-        indicators: List[str],
-        time_range: Optional[Tuple[datetime, datetime]],
-        filters: Optional[Dict[str, Any]],
-    ) -> List[Dict[str, Any]]:
+        indicators: list[str],
+        time_range: tuple[datetime, datetime] | None,
+        filters: dict[str, Any] | None,
+    ) -> list[dict[str, Any]]:
         """Search for threat indicators (stub)"""
         # Stub: Return sample findings
         return [
@@ -634,11 +635,11 @@ class ThreatHuntingEngine:
             }
         ]
 
-    def get_hunt_history(self, limit: int = 10) -> List[Dict[str, Any]]:
+    def get_hunt_history(self, limit: int = 10) -> list[dict[str, Any]]:
         """Get recent hunt history"""
         return self._hunt_history[-limit:]
 
-    def list_hunt_types(self) -> List[Dict[str, str]]:
+    def list_hunt_types(self) -> list[dict[str, str]]:
         """List available hunt types"""
         return [
             {
@@ -664,15 +665,15 @@ class AlertingEngine:
 
     def __init__(self):
         """Initialize alerting engine"""
-        self._alert_channels: Dict[str, Callable] = {}
-        self._alert_history: List[Dict[str, Any]] = []
+        self._alert_channels: dict[str, Callable] = {}
+        self._alert_history: list[dict[str, Any]] = []
 
         log.info("Alerting Engine initialized")
 
     def register_channel(
         self,
         channel_name: str,
-        handler: Callable[[Dict[str, Any]], bool],
+        handler: Callable[[dict[str, Any]], bool],
     ) -> None:
         """
         Register alert channel
@@ -689,9 +690,9 @@ class AlertingEngine:
         title: str,
         message: str,
         severity: AlertSeverity,
-        channels: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, bool]:
+        channels: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> dict[str, bool]:
         """
         Send alert through specified channels
 
@@ -740,7 +741,7 @@ class AlertingEngine:
 
         return results
 
-    def get_alert_history(self, limit: int = 50) -> List[Dict[str, Any]]:
+    def get_alert_history(self, limit: int = 50) -> list[dict[str, Any]]:
         """Get recent alert history"""
         return self._alert_history[-limit:]
 
@@ -765,7 +766,7 @@ class ForensicCollector:
             storage_path: Path to store forensic data
         """
         self.storage_path = storage_path
-        self._collections: Dict[str, Dict[str, Any]] = {}
+        self._collections: dict[str, dict[str, Any]] = {}
 
         log.info(f"Forensic Collector initialized (storage={storage_path})")
 
@@ -774,8 +775,8 @@ class ForensicCollector:
         incident_id: str,
         collection_type: str,
         target: str,
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        metadata: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
         Collect forensic data
 
@@ -816,14 +817,14 @@ class ForensicCollector:
 
         return collection
 
-    def get_collection(self, collection_id: str) -> Optional[Dict[str, Any]]:
+    def get_collection(self, collection_id: str) -> dict[str, Any] | None:
         """Get forensic collection by ID"""
         return self._collections.get(collection_id)
 
     def list_collections(
         self,
-        incident_id: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        incident_id: str | None = None,
+    ) -> list[dict[str, Any]]:
         """List forensic collections"""
         collections = list(self._collections.values())
 
@@ -849,8 +850,8 @@ class SOCIntegrationHub:
 
     def __init__(
         self,
-        siem_endpoint: Optional[str] = None,
-        ticketing_api_url: Optional[str] = None,
+        siem_endpoint: str | None = None,
+        ticketing_api_url: str | None = None,
     ):
         """
         Initialize SOC integration hub
@@ -871,8 +872,8 @@ class SOCIntegrationHub:
         self,
         event: SIEMEvent,
         auto_incident: bool = True,
-        alert_channels: Optional[List[str]] = None,
-    ) -> Dict[str, Any]:
+        alert_channels: list[str] | None = None,
+    ) -> dict[str, Any]:
         """
         Process security event through SOC workflow
 
@@ -917,7 +918,7 @@ class SOCIntegrationHub:
 
         return result
 
-    async def get_soc_status(self) -> Dict[str, Any]:
+    async def get_soc_status(self) -> dict[str, Any]:
         """Get overall SOC integration status"""
         return {
             "status": "operational",

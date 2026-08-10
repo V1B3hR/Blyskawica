@@ -4,10 +4,9 @@ LlamaIndex integration with Nethical governance.
 Provides governed wrappers for LlamaIndex tools and query engines.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from .base import AgentFrameworkBase, GovernanceResult, GovernanceDecision
-
+from .base import AgentFrameworkBase
 
 # Check for LlamaIndex availability
 try:
@@ -36,8 +35,8 @@ class NethicalLlamaIndexTool:
         
         # Or use directly
         result = tool("Check if this action is safe: delete user data")
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
         storage_dir: str = "./nethical_data",
@@ -50,13 +49,13 @@ class NethicalLlamaIndexTool:
             storage_dir: Directory for Nethical data storage
             block_threshold: Risk threshold for blocking
             restrict_threshold: Risk threshold for restriction
-        """
+        """  # noqa: W293
         self.storage_dir = storage_dir
         self.block_threshold = block_threshold
         self.restrict_threshold = restrict_threshold
-        
+
         self._governance = None
-    
+
     @property
     def governance(self):
         """Get or create the IntegratedGovernance instance."""
@@ -64,13 +63,13 @@ class NethicalLlamaIndexTool:
             from nethical.core import IntegratedGovernance
             self._governance = IntegratedGovernance(storage_dir=self.storage_dir)
         return self._governance
-    
+
     @property
     def metadata(self):
         """Get tool metadata for LlamaIndex."""
         if not LLAMAINDEX_AVAILABLE:
             return None
-        
+
         return ToolMetadata(
             name="nethical_governance",
             description=(
@@ -86,7 +85,7 @@ class NethicalLlamaIndexTool:
                 "required": ["action"]
             }
         )
-    
+
     def __call__(self, action: str, action_type: str = "query"):
         """Evaluate an action through governance.
         
@@ -97,18 +96,18 @@ class NethicalLlamaIndexTool:
         Returns:
             ToolOutput with governance decision (if LlamaIndex available)
             or dict with result
-        """
+        """  # noqa: W293
         result = self.governance.process_action(
             action=action,
             agent_id="llamaindex-agent",
             action_type=action_type
         )
-        
+
         decision = self._compute_decision(result)
         risk_score = result.get("phase3", {}).get("risk_score", 0.0)
-        
+
         content = f"Decision: {decision} | Risk: {risk_score:.2f}"
-        
+
         if LLAMAINDEX_AVAILABLE and ToolOutput is not None:
             return ToolOutput(
                 content=content,
@@ -116,18 +115,18 @@ class NethicalLlamaIndexTool:
                 raw_input={"action": action, "action_type": action_type},
                 raw_output=result
             )
-        
+
         return {
             "decision": decision,
             "risk_score": risk_score,
             "content": content,
             "raw_output": result
         }
-    
-    def _compute_decision(self, result: Dict[str, Any]) -> str:
+
+    def _compute_decision(self, result: dict[str, Any]) -> str:
         """Compute decision from governance result."""
         risk = result.get("phase3", {}).get("risk_score", 0)
-        
+
         if risk > self.block_threshold:
             return "BLOCK"
         elif risk > self.restrict_threshold:
@@ -158,8 +157,8 @@ class NethicalQueryEngine:
         
         # Query with governance
         response = safe_engine.query("What is the company policy?")
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
         query_engine: Any,
@@ -176,15 +175,15 @@ class NethicalQueryEngine:
             check_response: Enable response governance checks
             block_threshold: Risk threshold for blocking
             storage_dir: Directory for Nethical data storage
-        """
+        """  # noqa: W293
         self.query_engine = query_engine
         self.check_query = check_query
         self.check_response = check_response
         self.block_threshold = block_threshold
         self.storage_dir = storage_dir
-        
+
         self._governance = None
-    
+
     @property
     def governance(self):
         """Get or create the IntegratedGovernance instance."""
@@ -192,7 +191,7 @@ class NethicalQueryEngine:
             from nethical.core import IntegratedGovernance
             self._governance = IntegratedGovernance(storage_dir=self.storage_dir)
         return self._governance
-    
+
     def query(self, query_str: str) -> Any:
         """Execute a query with governance checks.
         
@@ -201,7 +200,7 @@ class NethicalQueryEngine:
             
         Returns:
             Query response (possibly filtered)
-        """
+        """  # noqa: W293
         # Check query
         if self.check_query:
             query_result = self.governance.process_action(
@@ -209,12 +208,12 @@ class NethicalQueryEngine:
                 agent_id="llamaindex-query",
                 action_type="search_query"
             )
-            
+
             query_risk = query_result.get("phase3", {}).get("risk_score", 0.0)
-            
+
             if query_risk > self.block_threshold:
                 reason = query_result.get("reason", "High risk query")
-                
+
                 # Return blocked response
                 if LLAMAINDEX_AVAILABLE:
                     try:
@@ -226,27 +225,27 @@ class NethicalQueryEngine:
                         )
                     except ImportError:
                         pass
-                
+
                 return {"blocked": True, "reason": reason, "governance": query_result}
-        
+
         # Execute query
         response = self.query_engine.query(query_str)
-        
+
         # Check response
         if self.check_response:
             response_text = str(response)
-            
+
             response_result = self.governance.process_action(
                 action=response_text,
                 agent_id="llamaindex-query",
                 action_type="generated_content"
             )
-            
+
             response_risk = response_result.get("phase3", {}).get("risk_score", 0.0)
-            
+
             if response_risk > self.block_threshold:
                 reason = response_result.get("reason", "High risk response")
-                
+
                 # Modify response if possible
                 if hasattr(response, 'response'):
                     response.response = f"Response filtered: {reason}"
@@ -254,7 +253,7 @@ class NethicalQueryEngine:
                     if response.metadata is None:
                         response.metadata = {}
                     response.metadata["governance"] = response_result
-        
+
         return response
 
 
@@ -269,7 +268,7 @@ def create_safe_index(index: Any, **kwargs) -> NethicalQueryEngine:
         
     Returns:
         NethicalQueryEngine wrapping the index's query engine
-    """
+    """  # noqa: W293
     query_engine = index.as_query_engine()
     return NethicalQueryEngine(query_engine, **kwargs)
 
@@ -278,24 +277,24 @@ class LlamaIndexFramework(AgentFrameworkBase):
     """LlamaIndex framework integration with Nethical.
     
     Provides governance tools and utilities for LlamaIndex agents.
-    """
-    
+    """  # noqa: W293
+
     def __init__(self, **kwargs):
         """Initialize the LlamaIndex framework integration."""
         super().__init__(agent_id="llamaindex-framework", **kwargs)
-    
+
     def get_tool(self) -> NethicalLlamaIndexTool:
         """Get a LlamaIndex-compatible governance tool.
         
         Returns:
             NethicalLlamaIndexTool instance
-        """
+        """  # noqa: W293
         return NethicalLlamaIndexTool(
             storage_dir=self.storage_dir,
             block_threshold=self.block_threshold,
             restrict_threshold=self.restrict_threshold
         )
-    
+
     def wrap_query_engine(self, query_engine: Any, **kwargs) -> NethicalQueryEngine:
         """Wrap a query engine with governance.
         
@@ -305,7 +304,7 @@ class LlamaIndexFramework(AgentFrameworkBase):
             
         Returns:
             Governed query engine
-        """
+        """  # noqa: W293
         return NethicalQueryEngine(
             query_engine=query_engine,
             block_threshold=self.block_threshold,

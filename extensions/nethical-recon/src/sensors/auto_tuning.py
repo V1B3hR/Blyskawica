@@ -5,8 +5,8 @@ Automatically adjusts detection thresholds based on baseline behavior
 
 import logging
 from datetime import datetime, timedelta
-from typing import Any
 from statistics import mean, stdev
+from typing import Any
 
 
 class BaselineProfile:

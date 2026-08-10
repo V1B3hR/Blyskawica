@@ -4,11 +4,11 @@ Anchors 10 languages into a unified neuromorphic semantic space using OPUS-100.
 Languages: EN, PL, DE, FR, ES, ZH, IT, AR, UR, FA.
 """
 
+
 import torch
 from datasets import load_dataset
-from transformers import AutoTokenizer, AutoModel
-import numpy as np
-from pathlib import Path
+from transformers import AutoModel, AutoTokenizer
+
 
 class MultilingualHub:
     """
@@ -23,13 +23,13 @@ class MultilingualHub:
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
         self.model = AutoModel.from_pretrained(self.model_name).to(device)
         self.target_langs = ['pl', 'de', 'fr', 'es', 'zh', 'it', 'ar', 'ur', 'fa']
-        
+
     def harvest_anchors(self, samples_per_lang=5):
         """Fetches parallel sentences from OPUS-100 and creates semantic spikes."""
         anchors = {}
-        
+
         print(f"[MULTILINGUAL] Harvesting Anchors for {len(self.target_langs)} languages...")
-        
+
         for lang in self.target_langs:
             try:
                 print(f"- Fetching en-{lang} pairs...")
@@ -44,7 +44,7 @@ class MultilingualHub:
                 anchors[lang] = pairs
             except Exception as e:
                 print(f"  ! Error harvesting {lang}: {e}")
-                
+
         return anchors
 
     def encode_to_spikes(self, text):
@@ -54,7 +54,7 @@ class MultilingualHub:
             outputs = self.model(**inputs)
             # Use mean pooling for a single semantic vector
             embeddings = outputs.last_hidden_state.mean(dim=1)
-        
+
         # Normalize to 0-1 for spike rate mapping
         norm_emb = (embeddings - embeddings.min()) / (embeddings.max() - embeddings.min() + 1e-9)
         return norm_emb
@@ -62,7 +62,7 @@ class MultilingualHub:
 if __name__ == "__main__":
     hub = MultilingualHub()
     anchors = hub.harvest_anchors(samples_per_lang=2)
-    
+
     print("\n[STATUS] Anchoring successful. Example Concept Map:")
     for lang, pairs in anchors.items():
         if pairs:

@@ -5,7 +5,7 @@ Stream 2: Cognitive Physics (PINN & Energy Management - Metabolism) Benchmark Sc
 Ingests simulated CPU sensor & energy telemetry streams modeling UCI sensor and CommonCrawl physics.
 Evaluates thermodynamic homeostasis, PINN Fourier heat loss, Dopamine energy throttling, 
 and Geometric-Harmonic-Symmetry cymatics.
-"""
+"""  # noqa: W291
 
 import json
 import logging
@@ -20,16 +20,18 @@ logger = logging.getLogger("physics_stream_benchmark")
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import NeuromodulationState
-from adaptiveneuralnetwork.cognitive_tools.physics_stream_pipeline import (
-    CognitivePhysicsEngine, 
-    TelemetrySensorSample
+from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import (  # noqa: E402
+    NeuromodulationState,  # noqa: E402
+)
+from adaptiveneuralnetwork.cognitive_tools.physics_stream_pipeline import (  # noqa: E402
+    CognitivePhysicsEngine,
+    TelemetrySensorSample,
 )
 
 
 def generate_synthetic_telemetry(
-    dataset_name: str, 
-    num_samples: int = 50, 
+    dataset_name: str,
+    num_samples: int = 50,
     intensity: str = "normal"
 ) -> list[TelemetrySensorSample]:
     """Generates synthetic telemetry stream modeling UCI CPU sensor data."""
@@ -72,7 +74,7 @@ def run_benchmark():
 
     for ds_name in datasets:
         logger.info(f"Ingesting physics telemetry stream for dataset '{ds_name}'...")
-        
+
         # 1. Normal compute baseline (50 samples)
         normal_samples = generate_synthetic_telemetry(ds_name, num_samples=50, intensity="normal")
         _, normal_metrics = engine.step_metabolism(normal_samples)

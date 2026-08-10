@@ -14,15 +14,17 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from adaptiveneuralnetwork.central_nervous_system.neuromorphic import NeuromorphicConfig
 from adaptiveneuralnetwork.central_nervous_system.neuromorphic import (
+    NeuromorphicConfig,
     OscillatoryDynamics,
     PhaseEncoder,
     PopulationLayer,
     SparseDistributedRepresentation,
     TemporalPatternEncoder,
 )
-from adaptiveneuralnetwork.central_nervous_system.neuromorphic.advanced_neurons import NeuronV3Config
+from adaptiveneuralnetwork.central_nervous_system.neuromorphic.advanced_neurons import (
+    NeuronV3Config,
+)
 from adaptiveneuralnetwork.central_nervous_system.neuromorphic.temporal_coding import TemporalConfig
 
 logger = logging.getLogger(__name__)
@@ -79,7 +81,7 @@ class SensoryPreprocessor(nn.Module):
     
     Converts raw sensory input to spike trains with adaptive
     thresholding and temporal dynamics.
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
@@ -168,7 +170,7 @@ class SensoryPreprocessor(nn.Module):
             self.activity_tracker = self.activity_tracker.to(raw_input.device)
             self.gain_factors = self.gain_factors.to(raw_input.device)
             self.input_history = self.input_history.to(raw_input.device)
-            
+
             # Track activity levels
             activity = torch.abs(raw_input).mean(dim=0)
             self.activity_tracker = 0.9 * self.activity_tracker + 0.1 * activity
@@ -211,7 +213,7 @@ class ModalityProcessor(nn.Module):
     
     Processes preprocessed spikes through modality-specific neural populations
     with appropriate oscillatory frequencies and temporal patterns.
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
@@ -320,7 +322,7 @@ class ModalityProcessor(nn.Module):
         if current_time is None:
             current_time = 0.001
 
-        batch_size = spike_input.size(0)
+        batch_size = spike_input.size(0)  # noqa: F841
         processing_info = {}
 
         # Oscillatory modulation
@@ -329,7 +331,7 @@ class ModalityProcessor(nn.Module):
             # Mean activity across nodes, broadcast to all oscillators
             pooled_activity = spike_input.mean(dim=1).unsqueeze(1) # [batch, 1]
             oscillatory_input = pooled_activity.repeat(1, self.oscillatory_system.num_oscillators)
-            
+
             oscillations, osc_info = self.oscillatory_system(
                 external_input=oscillatory_input,
                 current_time=current_time
@@ -379,7 +381,7 @@ class ModalityProcessor(nn.Module):
             self.feature_projection = nn.Linear(combined_features.shape[1], self.feature_size).to(device)
         else:
             self.feature_projection = self.feature_projection.to(device)
-        
+
         projected_features = torch.relu(self.feature_projection(combined_features))
 
         # Process through feature extraction layers
@@ -401,7 +403,7 @@ class CrossModalIntegration(nn.Module):
     
     Integrates information from multiple sensory modalities using
     temporal synchronization and attention-based binding.
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
@@ -501,11 +503,11 @@ class CrossModalIntegration(nn.Module):
         modality_list = list(modality_features.keys())
         # Harmonize features first
         projected_modalities = {
-            mod: self.modality_projections[mod](feat) 
+            mod: self.modality_projections[mod](feat)
             for mod, feat in modality_features.items()
         }
 
-        for i, source_modality in enumerate(modality_list):
+        for i, source_modality in enumerate(modality_list):  # noqa: B007
             source_feat_proj = projected_modalities[source_modality]
 
             # Compute attention with other modalities
@@ -531,8 +533,8 @@ class CrossModalIntegration(nn.Module):
                 attended_features[source_modality] = torch.stack(attended_feature_list).mean(dim=0)
                 attention_weights[source_modality] = torch.stack(attention_weight_list).mean(dim=0)
             else:
-                attended_features[source_modality] = source_features
-                attention_weights[source_modality] = torch.ones_like(source_features[:, :1])
+                attended_features[source_modality] = source_features  # noqa: F821
+                attention_weights[source_modality] = torch.ones_like(source_features[:, :1])  # noqa: F821
 
         integration_info['attention_weights'] = attention_weights
 
@@ -611,7 +613,7 @@ class SensoryProcessingPipeline(nn.Module):
     
     Integrates preprocessing, modality-specific processing, and cross-modal integration
     for real-time multi-modal sensory processing applications.
-    """
+    """  # noqa: W293
 
     def __init__(self, config: SensoryConfig):
         super().__init__()

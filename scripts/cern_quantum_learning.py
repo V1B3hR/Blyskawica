@@ -4,13 +4,12 @@ Part of the Błyskawica physics engine for subatomic particle analysis (LHC Gean
 and fusion reactor plasma stability predictions.
 """
 
-import sys
-import os
 import math
 import random
-import time
-import numpy as np
+import sys
 from datetime import datetime
+
+import numpy as np
 
 
 class SubatomicCollisionSimulator:
@@ -38,22 +37,22 @@ class SubatomicCollisionSimulator:
         """
         if momentum_gev <= 0:
             return 0.0
-            
+
         energy = math.sqrt(momentum_gev**2 + mass_gev**2)
         beta = momentum_gev / energy
         if beta >= 1.0 or beta <= 1e-4:
             return 0.0
-            
+
         gamma = 1.0 / math.sqrt(1.0 - beta**2)
-        
+
         # Maximum energy transfer in single collision
         t_max = (2 * self.m_electron * (beta * gamma)**2) / (1.0 + 2 * gamma * (self.m_electron / mass_gev) + (self.m_electron / mass_gev)**2)
-        
+
         # Bethe-Bloch formula term (Silicon Z/A = 14/28.08 = 0.498)
         Z_over_A = 0.498
         ln_term = 0.5 * math.log((2 * self.m_electron * (beta * gamma)**2 * t_max) / (self.I_silicon**2))
         dedx = self.rho_silicon * self.K_bb * Z_over_A * (1.0 / beta**2) * (ln_term - beta**2)
-        
+
         # Energy loss in GeV
         energy_loss = dedx * thickness_cm
         return float(max(0.0, energy_loss))
@@ -77,7 +76,7 @@ class SubatomicCollisionSimulator:
 
         # Decay in rest frame: equal and opposite momentum
         p_star = 0.5 * math.sqrt(max(0.0, true_mass**2 - 4 * m_muon**2))
-        
+
         # Isotropic decay angles
         theta = math.acos(random.uniform(-1, 1))
         phi = random.uniform(0, 2 * math.pi)
@@ -86,7 +85,7 @@ class SubatomicCollisionSimulator:
         p1_x = p_star * math.sin(theta) * math.cos(phi)
         p1_y = p_star * math.sin(theta) * math.sin(phi)
         p1_z = p_star * math.cos(theta)
-        
+
         # Boost to laboratory frame (assume resonance has random forward momentum p_z)
         resonance_pz = random.normalvariate(0.0, 15.0)
         resonance_e = math.sqrt(resonance_pz**2 + true_mass**2)
@@ -95,11 +94,11 @@ class SubatomicCollisionSimulator:
 
         # Relativistic boost of 4-vectors to Lab Frame
         e1_rest = math.sqrt(p_star**2 + m_muon**2)
-        e1_lab = gamma_boost * (e1_rest + beta_z * p1_z)
+        e1_lab = gamma_boost * (e1_rest + beta_z * p1_z)  # noqa: F841
         p1_z_lab = gamma_boost * (p1_z + beta_z * e1_rest)
 
         e2_rest = e1_rest
-        e2_lab = gamma_boost * (e2_rest - beta_z * p1_z)
+        e2_lab = gamma_boost * (e2_rest - beta_z * p1_z)  # noqa: F841
         p2_z_lab = gamma_boost * (-p1_z + beta_z * e2_rest)
 
         p1_x_lab, p1_y_lab = p1_x, p1_y
@@ -135,7 +134,7 @@ class SubatomicCollisionSimulator:
         total_px = px1_recon + px2_recon
         total_py = py1_recon + py2_recon
         total_pz = p1_z_lab + p2_z_lab
-        
+
         recon_mass = math.sqrt(max(0.0, total_e**2 - (total_px**2 + total_py**2 + total_pz**2)))
 
         return {
@@ -215,7 +214,7 @@ class TokamakMHDSolver:
         d B_theta / dt = d/dr [ (eta / mu0) * (1/r) * d/dr (r * B_theta) ]
         """
         new_B_theta = self.B_theta.copy()
-        
+
         for i in range(1, self.N - 1):
             rB_i = self.r[i] * self.B_theta[i]
             rB_ip1 = self.r[i+1] * self.B_theta[i+1]
@@ -232,7 +231,7 @@ class TokamakMHDSolver:
 
         new_B_theta[0] = 0.0
         new_B_theta[-1] = self.B_theta[-2]
-        
+
         self.B_theta = np.clip(new_B_theta, 0.0, 5.0)
 
         # Recalculate current density J from B_theta
@@ -250,20 +249,20 @@ class TokamakMHDSolver:
 
         delta_prime = self.delta_prime_0 * (1.0 - self.w / self.w_sat)
         dw_dt = (eta_s / self.mu0) * delta_prime
-        
+
         self.w = max(0.001, self.w + dw_dt * dt)
         return float(self.w)
 
     def check_disruption(self) -> tuple[bool, str]:
         """Checks if plasma stability limits are exceeded (Major Disruption trigger)."""
         q = self.compute_safety_factor()
-        
+
         if self.w > 0.30:
             return True, f"Major Disruption! Magnetic island (w={self.w:.3f}) exceeded safety fraction 0.30."
-            
+
         if q[0] < 0.90:
             return True, f"Major Disruption! Central safety factor q(0)={q[0]:.3f} fell below safety limit."
-            
+
         return False, "Plasma columns are stable within neoclassical limits."
 
 
@@ -272,18 +271,18 @@ def simulate_learning(duration_minutes=60, fast_mode=False):
     Subatomic Physics Ingestion & Tokamak MHD Solver main runner.
     """
     print(f"[{datetime.now()}] Blyskawica: Inicjalizacja Fazy XIV - FIZYKA JADROWA I PLAZMA...")
-    
+
     print(f"[{datetime.now()}] Inicjacja symulatora zderzen subatomowych (Geant4 tracker)...")
     collision_sim = SubatomicCollisionSimulator(magnetic_field_tesla=3.8)
-    
+
     num_events = 50 if fast_mode else 1000
     z_masses = []
     higgs_masses = []
-    
+
     for _ in range(num_events):
         ev_z = collision_sim.run_collision_event("Z")
         z_masses.append(ev_z["reconstructed_mass"])
-        
+
         ev_h = collision_sim.run_collision_event("Higgs")
         higgs_masses.append(ev_h["reconstructed_mass"])
 
@@ -293,33 +292,33 @@ def simulate_learning(duration_minutes=60, fast_mode=False):
 
     print(f"\n[{datetime.now()}] Inicjalizacja silnika MHD (Tokamak Plasma Columns)...")
     tokamak = TokamakMHDSolver(num_grid_points=50, B_toroidal=5.3)
-    
+
     steps = 100 if fast_mode else 500
     disrupted = False
     disruption_reason = ""
-    
+
     dt_step = 0.01
-    for step in range(steps):
+    for step in range(steps):  # noqa: B007
         tokamak.step_diffusion(dt_step)
-        island_size = tokamak.step_rutherford_growth(dt_step)
-        
+        island_size = tokamak.step_rutherford_growth(dt_step)  # noqa: F841
+
         is_disrupted, reason = tokamak.check_disruption()
         if is_disrupted:
             disrupted = True
             disruption_reason = reason
             break
-            
+
     print(f"[{datetime.now()}] Symulacja MHD Tokamaka ukonczona w {step+1} krokach.")
     q_profile = tokamak.compute_safety_factor()
     print(f"    - Profil wspolczynnika q: q(0)={q_profile[0]:.2f} | q(edge)={q_profile[-1]:.2f}")
     print(f"    - Koncowy rozmiar wyspy magnetycznej w surface q=2: {tokamak.w*100:.2f}% promienia")
-    
+
     if disrupted:
         print("WYKRYTO ZERWANIE PLAZMY (DISRUPTION)!")
         print(f"    - Powod: {disruption_reason}")
     else:
         print("Plazma stabilna. Konfiguracja magnetyczna zabezpieczona.")
-        
+
     print(f"\n[{datetime.now()}] Ingestia fizyki subatomowej i stabilnosci fuzji zakonczona pomyslnie.")
 
 
@@ -331,6 +330,6 @@ if __name__ == "__main__":
             sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
         except AttributeError:
             pass
-            
+
     fast = "--fast" in sys.argv
     simulate_learning(fast_mode=fast)

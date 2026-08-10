@@ -6,7 +6,6 @@ Detects multi-stage attack patterns by correlating events from multiple sensors
 import logging
 from datetime import datetime, timedelta
 from typing import Any
-from collections import defaultdict
 
 from .base import SensorAlert
 
@@ -163,7 +162,7 @@ class CorrelationEngine:
 
     def _check_patterns(self):
         """Check if any patterns are matched in recent alerts"""
-        for pattern_name, pattern in self.patterns.items():
+        for pattern_name, pattern in self.patterns.items():  # noqa: B007
             self._check_pattern(pattern)
 
     def _check_pattern(self, pattern: AttackPattern):

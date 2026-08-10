@@ -1,13 +1,18 @@
-import unittest
+import json
 import math
 import os
-import json
-import torch
-import torch.nn as nn
-from adaptiveneuralnetwork.central_nervous_system.neuromorphic.network_topology import HierarchicalNetwork, TopologyConfig
+import unittest
+
+from adaptiveneuralnetwork.central_nervous_system.neuromorphic.advanced_neurons import (
+    NeuronV3Config,
+)
 from adaptiveneuralnetwork.central_nervous_system.neuromorphic.config import NeuromorphicConfig
-from adaptiveneuralnetwork.central_nervous_system.neuromorphic.advanced_neurons import NeuronV3Config
 from adaptiveneuralnetwork.central_nervous_system.neuromorphic.lava_compiler import LavaCompiler
+from adaptiveneuralnetwork.central_nervous_system.neuromorphic.network_topology import (
+    HierarchicalNetwork,
+    TopologyConfig,
+)
+
 
 class TestNeuromorphicLava(unittest.TestCase):
     def setUp(self):
@@ -47,7 +52,7 @@ class TestNeuromorphicLava(unittest.TestCase):
         expected = 1.0 - math.exp(-dt / tau)
         result = self.compiler.float_to_lava_decay(tau, dt)
         self.assertAlmostEqual(result, expected, places=6)
-        
+
         # Test boundary case
         self.assertEqual(self.compiler.float_to_lava_decay(0.0), 1.0)
         self.assertEqual(self.compiler.float_to_lava_decay(-5.0), 1.0)
@@ -65,16 +70,16 @@ class TestNeuromorphicLava(unittest.TestCase):
     def test_compile_to_json(self):
         """Tests that compiling HierarchicalNetwork outputs correct JSON schema."""
         lava_graph = self.compiler.compile_to_json(self.network, self.test_json_path)
-        
+
         # Assert keys
         self.assertIn("compiler", lava_graph)
         self.assertIn("processes", lava_graph)
         self.assertIn("connections", lava_graph)
-        
+
         # Assert processes correspond to layers
         processes = lava_graph["processes"]
         self.assertEqual(len(processes), 2)
-        
+
         # Check first layer
         lif_0 = processes[0]
         self.assertEqual(lif_0["id"], "lif_0")
@@ -82,11 +87,11 @@ class TestNeuromorphicLava(unittest.TestCase):
         self.assertEqual(lif_0["vth"], 1.2)
         self.assertAlmostEqual(lif_0["du"], 1.0 - math.exp(-0.001/0.005), places=6)
         self.assertAlmostEqual(lif_0["dv"], 1.0 - math.exp(-0.001/0.01), places=6)
-        
+
         # Assert connections correspond to feedforward synapses
         connections = lava_graph["connections"]
         self.assertEqual(len(connections), 2)  # Feedforward + Feedback
-        
+
         # Check feedforward connection
         ff_conn = connections[0]
         self.assertEqual(ff_conn["id"], "dense_ff_0")
@@ -94,10 +99,10 @@ class TestNeuromorphicLava(unittest.TestCase):
         self.assertEqual(ff_conn["target"], "lif_1")
         # Transposed weights: target (post) size is 4, source (pre) size is 8
         self.assertEqual(ff_conn["shape"], [4, 8])
-        
+
         # Check file was written
         self.assertTrue(os.path.exists(self.test_json_path))
-        with open(self.test_json_path, 'r', encoding='utf-8') as f:
+        with open(self.test_json_path, encoding='utf-8') as f:
             data = json.load(f)
         self.assertEqual(data["compiler"], "Blyskawica LavaCompiler V1")
 
@@ -109,7 +114,7 @@ class TestNeuromorphicLava(unittest.TestCase):
         self.assertIn("from lava.proc.dense.process import Dense", script_str)
         self.assertIn("lif_0 = LIF", script_str)
         self.assertIn("dense_ff_0 = Dense", script_str)
-        
+
         # Verify script compiles syntactically
         try:
             compile(script_str, "<string>", "exec")

@@ -19,7 +19,7 @@ def make_loader() -> Callable:
     
     Returns:
         Function that creates DataLoader with synthetic data
-    """
+    """  # noqa: W293
     def _make_loader(
         n_samples: int = 96,
         in_dim: int = 32,
@@ -39,7 +39,7 @@ def make_loader() -> Callable:
             
         Returns:
             DataLoader with synthetic data
-        """
+        """  # noqa: W293
         # Use manual seed for reproducibility
         g = torch.Generator().manual_seed(seed)
 
@@ -65,7 +65,7 @@ def synthetic_train_val_loaders(make_loader) -> tuple:
     
     Returns:
         Tuple of (train_loader, val_loader)
-    """
+    """  # noqa: W293
     train_loader = make_loader(n_samples=128, seed=42)
     val_loader = make_loader(n_samples=32, seed=123)  # Different seed for val
     return train_loader, val_loader
@@ -78,5 +78,5 @@ def random_labels_loader(make_loader) -> DataLoader:
     
     Returns:
         DataLoader with random labels that should yield ~chance performance
-    """
+    """  # noqa: W293
     return make_loader(n_samples=96, seed=999)  # Different seed for random behavior

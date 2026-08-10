@@ -10,21 +10,21 @@ Phase: 5 - Detection Omniscience
 Status: Active
 """
 
-from .threat_feed_integration import (
-    ThreatFeedIntegrator,
-    ThreatSource,
-    ThreatIntelligence,
-    ThreatSeverity,
-)
 from .predictive_modeling import (
-    PredictiveModeler,
     AttackPrediction,
+    PredictiveModeler,
     ThreatEvolutionModel,
 )
 from .proactive_hardening import (
-    ProactiveHardener,
     HardeningAction,
     HardeningPriority,
+    ProactiveHardener,
+)
+from .threat_feed_integration import (
+    ThreatFeedIntegrator,
+    ThreatIntelligence,
+    ThreatSeverity,
+    ThreatSource,
 )
 
 __all__ = [

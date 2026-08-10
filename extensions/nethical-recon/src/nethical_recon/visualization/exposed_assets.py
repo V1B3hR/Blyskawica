@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 
 class ExposureLevel(Enum):
@@ -23,7 +23,7 @@ class ExposedAsset:
     asset_id: str
     host: str
     port: int
-    service: Optional[str]
+    service: str | None
     exposure_level: ExposureLevel
     reasons: list[str] = field(default_factory=list)
     recommendations: list[str] = field(default_factory=list)
@@ -67,7 +67,7 @@ class ExposedAssetDetector:
         """Initialize exposed asset detector."""
         pass
 
-    def analyze_asset(self, asset: Any) -> Optional[ExposedAsset]:
+    def analyze_asset(self, asset: Any) -> ExposedAsset | None:
         """Analyze an asset for exposure.
 
         Args:

@@ -18,8 +18,12 @@ logger = logging.getLogger("holo_swarm_benchmark")
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import NeuromodulationState
-from adaptiveneuralnetwork.central_nervous_system.holo_swarm_network import HolographicSwarmEngine
+from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import (  # noqa: E402
+    NeuromodulationState,  # noqa: E402
+)
+from adaptiveneuralnetwork.central_nervous_system.holo_swarm_network import (  # noqa: E402
+    HolographicSwarmEngine,  # noqa: E402
+)
 
 
 def run_holo_swarm_benchmark():

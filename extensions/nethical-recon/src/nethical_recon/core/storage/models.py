@@ -43,7 +43,7 @@ class TargetModel(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
-    jobs: Mapped[list["ScanJobModel"]] = relationship("ScanJobModel", back_populates="target")
+    jobs: Mapped[list[ScanJobModel]] = relationship("ScanJobModel", back_populates="target")
 
 
 class ScanJobModel(Base):
@@ -65,9 +65,9 @@ class ScanJobModel(Base):
     created_by: Mapped[str] = mapped_column(String(100), default="system")
 
     # Relationships
-    target: Mapped["TargetModel"] = relationship("TargetModel", back_populates="jobs")
-    tool_runs: Mapped[list["ToolRunModel"]] = relationship("ToolRunModel", back_populates="job")
-    assets: Mapped[list["AssetModel"]] = relationship("AssetModel", back_populates="job")
+    target: Mapped[TargetModel] = relationship("TargetModel", back_populates="jobs")
+    tool_runs: Mapped[list[ToolRunModel]] = relationship("ToolRunModel", back_populates="job")
+    assets: Mapped[list[AssetModel]] = relationship("AssetModel", back_populates="job")
 
 
 class ToolRunModel(Base):
@@ -90,9 +90,9 @@ class ToolRunModel(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     # Relationships
-    job: Mapped["ScanJobModel"] = relationship("ScanJobModel", back_populates="tool_runs")
-    evidence: Mapped[list["EvidenceModel"]] = relationship("EvidenceModel", back_populates="tool_run")
-    findings: Mapped[list["FindingModel"]] = relationship("FindingModel", back_populates="tool_run")
+    job: Mapped[ScanJobModel] = relationship("ScanJobModel", back_populates="tool_runs")
+    evidence: Mapped[list[EvidenceModel]] = relationship("EvidenceModel", back_populates="tool_run")
+    findings: Mapped[list[FindingModel]] = relationship("FindingModel", back_populates="tool_run")
 
 
 class EvidenceModel(Base):
@@ -114,7 +114,7 @@ class EvidenceModel(Base):
     timestamp: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     # Relationships
-    tool_run: Mapped["ToolRunModel"] = relationship("ToolRunModel", back_populates="evidence")
+    tool_run: Mapped[ToolRunModel] = relationship("ToolRunModel", back_populates="evidence")
 
 
 class FindingModel(Base):
@@ -143,7 +143,7 @@ class FindingModel(Base):
     discovered_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     # Relationships
-    tool_run: Mapped["ToolRunModel"] = relationship("ToolRunModel", back_populates="findings")
+    tool_run: Mapped[ToolRunModel] = relationship("ToolRunModel", back_populates="findings")
 
 
 class AssetModel(Base):
@@ -173,7 +173,7 @@ class AssetModel(Base):
     os_version: Mapped[str | None] = mapped_column(String(100))
 
     # Relationships
-    job: Mapped["ScanJobModel"] = relationship("ScanJobModel", back_populates="assets")
+    job: Mapped[ScanJobModel] = relationship("ScanJobModel", back_populates="assets")
 
 
 class IOCModel(Base):

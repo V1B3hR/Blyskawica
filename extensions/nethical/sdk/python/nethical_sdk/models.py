@@ -7,22 +7,22 @@ type-safe access to governance data.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass
 class Violation:
     """A detected policy or law violation."""
-    
+
     id: str
     type: str
     severity: str
     description: str
-    law_reference: Optional[str] = None
+    law_reference: str | None = None
     evidence: dict[str, Any] = field(default_factory=dict)
-    
+
     @classmethod
-    def from_dict(cls, data: dict) -> "Violation":
+    def from_dict(cls, data: dict) -> Violation:
         """Create from dictionary."""
         return cls(
             id=data.get("id", ""),
@@ -37,12 +37,12 @@ class Violation:
 @dataclass
 class EvaluateRequest:
     """Request to evaluate an action."""
-    
+
     action: str
     agent_id: str = "unknown"
     action_type: str = "query"
-    context: Optional[dict[str, Any]] = None
-    stated_intent: Optional[str] = None
+    context: dict[str, Any] | None = None
+    stated_intent: str | None = None
     priority: str = "normal"
     require_explanation: bool = False
 
@@ -50,7 +50,7 @@ class EvaluateRequest:
 @dataclass
 class EvaluateResponse:
     """Response from action evaluation."""
-    
+
     decision: str
     decision_id: str
     reason: str
@@ -60,13 +60,13 @@ class EvaluateResponse:
     risk_score: float = 0.0
     confidence: float = 1.0
     violations: list[Violation] = field(default_factory=list)
-    explanation: Optional[dict[str, Any]] = None
-    audit_id: Optional[str] = None
+    explanation: dict[str, Any] | None = None
+    audit_id: str | None = None
     cache_hit: bool = False
     fundamental_laws_checked: list[int] = field(default_factory=list)
-    
+
     @classmethod
-    def from_dict(cls, data: dict) -> "EvaluateResponse":
+    def from_dict(cls, data: dict) -> EvaluateResponse:
         """Create from dictionary."""
         violations = [
             Violation.from_dict(v) for v in data.get("violations", [])
@@ -86,11 +86,11 @@ class EvaluateResponse:
             cache_hit=data.get("cache_hit", False),
             fundamental_laws_checked=data.get("fundamental_laws_checked", []),
         )
-    
+
     def is_allowed(self) -> bool:
         """Check if the action is allowed."""
         return self.decision == "ALLOW"
-    
+
     def is_blocked(self) -> bool:
         """Check if the action is blocked."""
         return self.decision in ("BLOCK", "TERMINATE")
@@ -99,7 +99,7 @@ class EvaluateResponse:
 @dataclass
 class Decision:
     """A governance decision record."""
-    
+
     decision_id: str
     decision: str
     agent_id: str
@@ -112,10 +112,10 @@ class Decision:
     fundamental_laws: list[int] = field(default_factory=list)
     timestamp: str = ""
     latency_ms: int = 0
-    audit_id: Optional[str] = None
-    
+    audit_id: str | None = None
+
     @classmethod
-    def from_dict(cls, data: dict) -> "Decision":
+    def from_dict(cls, data: dict) -> Decision:
         """Create from dictionary."""
         violations = [
             Violation.from_dict(v) for v in data.get("violations", [])
@@ -140,15 +140,15 @@ class Decision:
 @dataclass
 class PolicyRule:
     """A rule within a policy."""
-    
+
     id: str
     condition: str
     action: str
     priority: int = 0
-    description: Optional[str] = None
-    
+    description: str | None = None
+
     @classmethod
-    def from_dict(cls, data: dict) -> "PolicyRule":
+    def from_dict(cls, data: dict) -> PolicyRule:
         """Create from dictionary."""
         return cls(
             id=data.get("id", ""),
@@ -162,7 +162,7 @@ class PolicyRule:
 @dataclass
 class Policy:
     """A governance policy."""
-    
+
     policy_id: str
     name: str
     description: str
@@ -173,11 +173,11 @@ class Policy:
     fundamental_laws: list[int] = field(default_factory=list)
     created_at: str = ""
     updated_at: str = ""
-    created_by: Optional[str] = None
-    metadata: Optional[dict[str, Any]] = None
-    
+    created_by: str | None = None
+    metadata: dict[str, Any] | None = None
+
     @classmethod
-    def from_dict(cls, data: dict) -> "Policy":
+    def from_dict(cls, data: dict) -> Policy:
         """Create from dictionary."""
         rules = [PolicyRule.from_dict(r) for r in data.get("rules", [])]
         return cls(
@@ -199,15 +199,15 @@ class Policy:
 @dataclass
 class FairnessMetric:
     """A fairness metric."""
-    
+
     metric_name: str
     value: float
     threshold: float
     status: str
     description: str
-    
+
     @classmethod
-    def from_dict(cls, data: dict) -> "FairnessMetric":
+    def from_dict(cls, data: dict) -> FairnessMetric:
         """Create from dictionary."""
         return cls(
             metric_name=data.get("metric_name", ""),
@@ -221,7 +221,7 @@ class FairnessMetric:
 @dataclass
 class GroupFairness:
     """Fairness metrics for a group."""
-    
+
     group_id: str
     group_name: str
     sample_size: int
@@ -230,9 +230,9 @@ class GroupFairness:
     block_rate: float
     avg_risk_score: float
     disparity_index: float
-    
+
     @classmethod
-    def from_dict(cls, data: dict) -> "GroupFairness":
+    def from_dict(cls, data: dict) -> GroupFairness:
         """Create from dictionary."""
         return cls(
             group_id=data.get("group_id", ""),
@@ -249,7 +249,7 @@ class GroupFairness:
 @dataclass
 class FairnessReport:
     """A fairness report."""
-    
+
     report_id: str
     overall_fairness_score: float
     metrics: list[FairnessMetric] = field(default_factory=list)
@@ -259,9 +259,9 @@ class FairnessReport:
     timestamp: str = ""
     period_start: str = ""
     period_end: str = ""
-    
+
     @classmethod
-    def from_dict(cls, data: dict) -> "FairnessReport":
+    def from_dict(cls, data: dict) -> FairnessReport:
         """Create from dictionary."""
         metrics = [FairnessMetric.from_dict(m) for m in data.get("metrics", [])]
         groups = [GroupFairness.from_dict(g) for g in data.get("groups", [])]
@@ -281,25 +281,25 @@ class FairnessReport:
 @dataclass
 class Appeal:
     """An appeal record."""
-    
+
     appeal_id: str
     decision_id: str
     appellant_id: str
     reason: str
     status: str
-    evidence: Optional[dict[str, Any]] = None
+    evidence: dict[str, Any] | None = None
     requested_outcome: str = "reconsider"
     priority: str = "normal"
-    resolution: Optional[str] = None
-    resolution_reason: Optional[str] = None
-    reviewer_id: Optional[str] = None
+    resolution: str | None = None
+    resolution_reason: str | None = None
+    reviewer_id: str | None = None
     fundamental_laws: list[int] = field(default_factory=lambda: [7, 14, 19])
     created_at: str = ""
     updated_at: str = ""
-    resolved_at: Optional[str] = None
-    
+    resolved_at: str | None = None
+
     @classmethod
-    def from_dict(cls, data: dict) -> "Appeal":
+    def from_dict(cls, data: dict) -> Appeal:
         """Create from dictionary."""
         return cls(
             appeal_id=data.get("appeal_id", ""),
@@ -323,24 +323,24 @@ class Appeal:
 @dataclass
 class AuditRecord:
     """An audit record."""
-    
+
     audit_id: str
     event_type: str
     entity_id: str
     entity_type: str
     action: str
     outcome: str
-    agent_id: Optional[str] = None
-    risk_score: Optional[float] = None
+    agent_id: str | None = None
+    risk_score: float | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
-    merkle_hash: Optional[str] = None
-    previous_hash: Optional[str] = None
+    merkle_hash: str | None = None
+    previous_hash: str | None = None
     fundamental_laws: list[int] = field(default_factory=lambda: [15])
     timestamp: str = ""
     verified: bool = True
-    
+
     @classmethod
-    def from_dict(cls, data: dict) -> "AuditRecord":
+    def from_dict(cls, data: dict) -> AuditRecord:
         """Create from dictionary."""
         return cls(
             audit_id=data.get("audit_id", ""),

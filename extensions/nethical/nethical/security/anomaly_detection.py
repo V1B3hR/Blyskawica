@@ -18,7 +18,7 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Dict, List, Optional, Any
+from typing import Any
 
 __all__ = [
     "AnomalyType",
@@ -53,8 +53,8 @@ class AnomalyDetectionResult:
     anomaly_type: AnomalyType
     confidence_score: float  # 0.0 to 1.0
     severity: str  # low, medium, high, critical
-    details: Dict[str, Any] = field(default_factory=dict)
-    recommendations: List[str] = field(default_factory=list)
+    details: dict[str, Any] = field(default_factory=dict)
+    recommendations: list[str] = field(default_factory=list)
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     def is_critical(self) -> bool:
@@ -91,14 +91,14 @@ class LSTMSequenceDetector:
         self.threshold = threshold
         self.training_mode = training_mode
         self._model = None  # Placeholder for LSTM model
-        self._sequence_buffer: Dict[str, List[Dict[str, Any]]] = {}
+        self._sequence_buffer: dict[str, list[dict[str, Any]]] = {}
 
         log.info(f"LSTM Sequence Detector initialized (training_mode={training_mode})")
 
     async def analyze_sequence(
         self,
         agent_id: str,
-        event: Dict[str, Any],
+        event: dict[str, Any],
     ) -> AnomalyDetectionResult:
         """
         Analyze event sequence for anomalies
@@ -161,7 +161,7 @@ class LSTMSequenceDetector:
 
     async def _compute_sequence_anomaly(
         self,
-        sequence: List[Dict[str, Any]],
+        sequence: list[dict[str, Any]],
     ) -> float:
         """
         Compute anomaly score for sequence
@@ -207,7 +207,7 @@ class LSTMSequenceDetector:
         else:
             return "low"
 
-    async def train_on_data(self, training_data: List[Dict[str, Any]]) -> Dict[str, Any]:
+    async def train_on_data(self, training_data: list[dict[str, Any]]) -> dict[str, Any]:
         """
         Train LSTM model on historical data
 
@@ -257,15 +257,15 @@ class TransformerContextAnalyzer:
         self.context_window = context_window
         self.attention_heads = attention_heads
         self.threshold = threshold
-        self._context_history: Dict[str, List[Dict[str, Any]]] = {}
+        self._context_history: dict[str, list[dict[str, Any]]] = {}
 
         log.info("Transformer Context Analyzer initialized")
 
     async def analyze_context(
         self,
         agent_id: str,
-        event: Dict[str, Any],
-        context: Optional[Dict[str, Any]] = None,
+        event: dict[str, Any],
+        context: dict[str, Any] | None = None,
     ) -> AnomalyDetectionResult:
         """
         Analyze event in context using transformer model
@@ -330,8 +330,8 @@ class TransformerContextAnalyzer:
     async def _compute_context_anomaly(
         self,
         agent_id: str,
-        event: Dict[str, Any],
-        history: List[Dict[str, Any]],
+        event: dict[str, Any],
+        history: list[dict[str, Any]],
     ) -> float:
         """
         Compute contextual anomaly score
@@ -358,7 +358,7 @@ class TransformerContextAnalyzer:
 
         # Check for resource access pattern anomaly
         resource = event.get("resource", "")
-        recent_resources = set(h.get("resource", "") for h in history[-10:])
+        recent_resources = set(h.get("resource", "") for h in history[-10:])  # noqa: C401
 
         if resource and resource not in recent_resources:
             anomaly_score += 0.3
@@ -382,9 +382,9 @@ class GraphRelationshipAnalyzer:
 
     def __init__(
         self,
-        neo4j_uri: Optional[str] = None,
-        neo4j_user: Optional[str] = None,
-        neo4j_password: Optional[str] = None,
+        neo4j_uri: str | None = None,
+        neo4j_user: str | None = None,
+        neo4j_password: str | None = None,
     ):
         """
         Initialize graph relationship analyzer
@@ -396,7 +396,7 @@ class GraphRelationshipAnalyzer:
         """
         self.neo4j_uri = neo4j_uri
         self.neo4j_user = neo4j_user
-        self._graph_data: Dict[str, Dict[str, List[str]]] = {}
+        self._graph_data: dict[str, dict[str, list[str]]] = {}
 
         log.info("Graph Relationship Analyzer initialized (stub mode)")
 
@@ -494,14 +494,14 @@ class InsiderThreatDetector:
             sensitivity: Detection sensitivity (0-1)
         """
         self.sensitivity = sensitivity
-        self._user_baselines: Dict[str, Dict[str, Any]] = {}
+        self._user_baselines: dict[str, dict[str, Any]] = {}
 
         log.info("Insider Threat Detector initialized")
 
     async def detect_insider_threat(
         self,
         user_id: str,
-        event: Dict[str, Any],
+        event: dict[str, Any],
     ) -> AnomalyDetectionResult:
         """
         Detect insider threat patterns
@@ -552,7 +552,7 @@ class InsiderThreatDetector:
     async def _compute_threat_score(
         self,
         user_id: str,
-        event: Dict[str, Any],
+        event: dict[str, Any],
     ) -> float:
         """Compute insider threat score"""
         score = 0.0
@@ -575,8 +575,8 @@ class InsiderThreatDetector:
     def _get_threat_indicators(
         self,
         user_id: str,
-        event: Dict[str, Any],
-    ) -> List[str]:
+        event: dict[str, Any],
+    ) -> list[str]:
         """Get list of threat indicators"""
         indicators = []
 
@@ -608,11 +608,11 @@ class APTBehavioralDetector:
     def __init__(self):
         """Initialize APT behavioral detector"""
         self._apt_signatures = self._load_apt_signatures()
-        self._campaign_tracking: Dict[str, List[Dict[str, Any]]] = {}
+        self._campaign_tracking: dict[str, list[dict[str, Any]]] = {}
 
         log.info("APT Behavioral Detector initialized")
 
-    def _load_apt_signatures(self) -> Dict[str, Dict[str, Any]]:
+    def _load_apt_signatures(self) -> dict[str, dict[str, Any]]:
         """Load known APT behavioral signatures"""
         return {
             "reconnaissance": {
@@ -640,7 +640,7 @@ class APTBehavioralDetector:
     async def detect_apt_behavior(
         self,
         agent_id: str,
-        event: Dict[str, Any],
+        event: dict[str, Any],
     ) -> AnomalyDetectionResult:
         """
         Detect APT behavioral patterns
@@ -688,26 +688,26 @@ class APTBehavioralDetector:
 
         return result
 
-    async def _compute_apt_score(self, agent_id: str, event: Dict[str, Any]) -> float:
+    async def _compute_apt_score(self, agent_id: str, event: dict[str, Any]) -> float:
         """Compute APT likelihood score"""
         score = 0.0
 
         event_type = event.get("type", "")
 
-        for signature_name, signature in self._apt_signatures.items():
+        for signature_name, signature in self._apt_signatures.items():  # noqa: B007, PERF102
             for pattern in signature["patterns"]:
                 if pattern in event_type.lower():
                     score += signature["weight"]
 
         # Check for multi-stage attack
         if len(self._campaign_tracking[agent_id]) > 5:
-            unique_stages = set(e.get("type", "") for e in self._campaign_tracking[agent_id])
+            unique_stages = set(e.get("type", "") for e in self._campaign_tracking[agent_id])  # noqa: C401
             if len(unique_stages) > 3:
                 score += 0.3
 
         return min(score, 1.0)
 
-    def _get_matched_signatures(self, event: Dict[str, Any]) -> List[str]:
+    def _get_matched_signatures(self, event: dict[str, Any]) -> list[str]:
         """Get list of matched APT signatures"""
         matched = []
         event_type = event.get("type", "")
@@ -764,9 +764,9 @@ class AdvancedAnomalyDetectionEngine:
     async def detect_anomalies(
         self,
         agent_id: str,
-        event: Dict[str, Any],
-        context: Optional[Dict[str, Any]] = None,
-    ) -> List[AnomalyDetectionResult]:
+        event: dict[str, Any],
+        context: dict[str, Any] | None = None,
+    ) -> list[AnomalyDetectionResult]:
         """
         Detect anomalies using all enabled detectors
 
@@ -816,7 +816,7 @@ class AdvancedAnomalyDetectionEngine:
 
         return results
 
-    async def get_detection_summary(self) -> Dict[str, Any]:
+    async def get_detection_summary(self) -> dict[str, Any]:
         """Get summary of detection capabilities and statistics"""
         return {
             "detectors_enabled": {

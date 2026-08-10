@@ -42,8 +42,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Tuple
-
+from typing import Any
 
 # Structured logger
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
@@ -91,24 +90,24 @@ class LoadGenerator:
         duration: int,
         cohort: str,
         storage_dir: str,
-        region_id: Optional[str],
-        logical_domain: Optional[str],
+        region_id: str | None,
+        logical_domain: str | None,
         # Feature flags
         enable_shadow: bool,
         enable_ml_blend: bool,
         enable_anomaly: bool,
         enable_merkle: bool,
         enable_quota: bool,
-        privacy_mode: Optional[str],
+        privacy_mode: str | None,
         redaction_policy: str,
         requests_per_second: float,
         # Hardening and control
         include_pii_test: bool = False,
         include_error_details: bool = False,
         stagger_ms: int = 0,
-        rng_seed: Optional[int] = None,
-        max_workers: Optional[int] = None,
-        stop_event: Optional[threading.Event] = None,
+        rng_seed: int | None = None,
+        max_workers: int | None = None,
+        stop_event: threading.Event | None = None,
     ):
         """Initialize load generator."""
         # Validation
@@ -156,7 +155,7 @@ class LoadGenerator:
         )
 
         # Results storage
-        self.results: List[Dict[str, Any]] = []
+        self.results: list[dict[str, Any]] = []
 
     def _action_text(self, action_num: int) -> str:
         """Build action text; optionally include synthetic PII for redaction tests."""
@@ -173,13 +172,13 @@ class LoadGenerator:
             text += " Contact: test.user+load@example.invalid"
         return text
 
-    def _violations_for(self, action_num: int) -> Tuple[bool, Optional[str], Optional[str]]:
+    def _violations_for(self, action_num: int) -> tuple[bool, str | None, str | None]:
         violation_detected = action_num % 10 == 0
         violation_type = "safety" if violation_detected else None
         violation_severity = "medium" if violation_detected else None
         return violation_detected, violation_type, violation_severity
 
-    def generate_action(self, agent_id: str, action_num: int) -> Dict[str, Any]:
+    def generate_action(self, agent_id: str, action_num: int) -> dict[str, Any]:
         """Generate a single action and return result record."""
         t_start = time.perf_counter()
         action_id = f"{agent_id}_action_{action_num}"
@@ -191,7 +190,7 @@ class LoadGenerator:
         ml_score = 0.3 if violation_detected else 0.1
         rule_risk_score = 0.5 if violation_detected else 0.2
 
-        error: Optional[str] = None
+        error: str | None = None
         status = "success"
         try:
             _result = self.gov.process_action(  # noqa: F841
@@ -232,7 +231,7 @@ class LoadGenerator:
         start_time: float,
         interval_s: float,
         agent_stagger_s: float,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Run workload for a single agent with rate pacing.
 
         Pacing model:
@@ -243,7 +242,7 @@ class LoadGenerator:
         if actions_for_agent <= 0:
             return []
 
-        results: List[Dict[str, Any]] = []
+        results: list[dict[str, Any]] = []
         # Initial agent-specific stagger
         first_fire = start_time + agent_stagger_s
 
@@ -268,7 +267,7 @@ class LoadGenerator:
                 log.error("Unhandled agent workload error: %s", e)
         return results
 
-    def _distribute_actions(self, total_actions: int) -> List[int]:
+    def _distribute_actions(self, total_actions: int) -> list[int]:
         """Distribute total actions across agents as evenly as possible."""
         base = total_actions // self.agents
         rem = total_actions % self.agents
@@ -276,7 +275,7 @@ class LoadGenerator:
         plan = [base + 1 if i < rem else base for i in range(self.agents)]
         return plan
 
-    def run(self) -> Dict[str, Any]:
+    def run(self) -> dict[str, Any]:
         """Run the load test and return summary statistics."""
         log.info(
             "Starting load test: agents=%d target_rps=%.2f duration=%ds cohort=%s storage=%s",
@@ -298,7 +297,7 @@ class LoadGenerator:
         # Agent staggering in seconds
         agent_stagger_s_base = self.stagger_ms / 1000.0
 
-        all_results: List[Dict[str, Any]] = []
+        all_results: list[dict[str, Any]] = []
 
         max_workers = min(self.max_workers, self.agents)
         log.info("Thread pool: max_workers=%d (cpu=%s)", max_workers, os.cpu_count())
@@ -327,7 +326,7 @@ class LoadGenerator:
                     completed += 1
                     if completed % max(1, self.agents // 10) == 0:
                         log.info("Progress: %d/%d agents completed", completed, self.agents)
-                except Exception as e:
+                except Exception as e:  # noqa: PERF203
                     log.error("Error in agent workload future: %s", e)
 
         elapsed = max(1e-6, time.perf_counter() - global_start)  # Avoid div-by-zero
@@ -338,7 +337,7 @@ class LoadGenerator:
 
         return stats
 
-    def _calculate_stats(self, elapsed: float) -> Dict[str, Any]:
+    def _calculate_stats(self, elapsed: float) -> dict[str, Any]:
         """Calculate summary statistics."""
         if not self.results:
             return {"error": "No results collected", "elapsed": elapsed}
@@ -350,7 +349,7 @@ class LoadGenerator:
         errors = sum(1 for r in self.results if r["status"] == "error")
         violations = sum(1 for r in self.results if bool(r.get("violation_detected", False)))
 
-        def percentile(data: List[float], p: float) -> float:
+        def percentile(data: list[float], p: float) -> float:
             if not data:
                 return 0.0
             k = (len(data) - 1) * p
@@ -412,11 +411,11 @@ def _install_signal_handlers(stop_event: threading.Event):
         stop_event.set()
 
     # Register for SIGINT/SIGTERM
-    try:
+    try:  # noqa: SIM105
         signal.signal(signal.SIGINT, _handler)
     except Exception:
         pass
-    try:
+    try:  # noqa: SIM105
         signal.signal(signal.SIGTERM, _handler)
     except Exception:
         pass

@@ -5,12 +5,11 @@ This module provides common functionality used across all advanced demo scripts,
 including formatting, error handling, and progress reporting.
 """
 
-import sys
-import traceback
-from typing import Any, Callable, Dict, List, Optional
-from datetime import datetime
 import logging
-
+import traceback
+from collections.abc import Callable
+from datetime import datetime
+from typing import Any
 
 # Configure logging
 logging.basicConfig(
@@ -39,7 +38,7 @@ def print_header(title: str, width: int = 70) -> None:
     Args:
         title: The title to display
         width: Width of the header line
-    """
+    """  # noqa: W293
     print(f"\n{Colors.BOLD}{'=' * width}{Colors.ENDC}")
     print(f"{Colors.BOLD}{Colors.CYAN}{title.center(width)}{Colors.ENDC}")
     print(f"{Colors.BOLD}{'=' * width}{Colors.ENDC}\n")
@@ -52,7 +51,7 @@ def print_section(title: str, level: int = 1) -> None:
     Args:
         title: Section title
         level: Section level (1 for main sections, 2 for subsections)
-    """
+    """  # noqa: W293
     if level == 1:
         print(f"\n{Colors.BOLD}{Colors.BLUE}{'=' * 70}{Colors.ENDC}")
         print(f"{Colors.BOLD}{Colors.BLUE}{title}{Colors.ENDC}")
@@ -91,7 +90,7 @@ def print_metric(name: str, value: Any, unit: str = "", indent: int = 1) -> None
         value: Metric value
         unit: Optional unit string
         indent: Indentation level
-    """
+    """  # noqa: W293
     prefix = "  " * indent
     if isinstance(value, float):
         if unit == "%":
@@ -102,7 +101,7 @@ def print_metric(name: str, value: Any, unit: str = "", indent: int = 1) -> None
         print(f"{prefix}{name}: {value}{unit}")
 
 
-def print_dict(data: Dict[str, Any], title: Optional[str] = None, indent: int = 1) -> None:
+def print_dict(data: dict[str, Any], title: str | None = None, indent: int = 1) -> None:
     """
     Print a dictionary in a formatted way.
     
@@ -110,10 +109,10 @@ def print_dict(data: Dict[str, Any], title: Optional[str] = None, indent: int = 
         data: Dictionary to print
         title: Optional title
         indent: Indentation level
-    """
+    """  # noqa: W293
     if title:
         print_info(f"\n{Colors.BOLD}{title}:{Colors.ENDC}", indent - 1)
-    
+
     for key, value in data.items():
         if isinstance(value, dict):
             print_info(f"{key}:", indent)
@@ -124,7 +123,7 @@ def print_dict(data: Dict[str, Any], title: Optional[str] = None, indent: int = 
             print_info(f"{key}: {value}", indent)
 
 
-def safe_import(module_name: str, class_name: Optional[str] = None) -> Optional[Any]:
+def safe_import(module_name: str, class_name: str | None = None) -> Any | None:
     """
     Safely import a module or class with error handling.
     
@@ -134,7 +133,7 @@ def safe_import(module_name: str, class_name: Optional[str] = None) -> Optional[
         
     Returns:
         The imported module or class, or None if import fails
-    """
+    """  # noqa: W293
     try:
         if class_name:
             module = __import__(module_name, fromlist=[class_name])
@@ -146,7 +145,7 @@ def safe_import(module_name: str, class_name: Optional[str] = None) -> Optional[
         return None
 
 
-def check_dependencies(required_modules: List[str]) -> Dict[str, bool]:
+def check_dependencies(required_modules: list[str]) -> dict[str, bool]:
     """
     Check if required modules are available.
     
@@ -155,13 +154,13 @@ def check_dependencies(required_modules: List[str]) -> Dict[str, bool]:
         
     Returns:
         Dictionary mapping module names to availability status
-    """
+    """  # noqa: W293
     results = {}
     for module in required_modules:
         try:
             __import__(module)
             results[module] = True
-        except ImportError:
+        except ImportError:  # noqa: PERF203
             results[module] = False
     return results
 
@@ -173,7 +172,7 @@ def handle_demo_error(error: Exception, demo_name: str) -> None:
     Args:
         error: The exception that was raised
         demo_name: Name of the demo that failed
-    """
+    """  # noqa: W293
     print_error(f"Error in {demo_name}: {str(error)}")
     print_info("\nError details:", 0)
     print_info(traceback.format_exc(), 1)
@@ -194,7 +193,7 @@ def run_demo_safely(
         
     Returns:
         True if the demo succeeded, False otherwise
-    """
+    """  # noqa: W293
     try:
         demo_func()
         return True
@@ -205,24 +204,24 @@ def run_demo_safely(
         return False
 
 
-def print_demo_summary(demos: List[Dict[str, Any]]) -> None:
+def print_demo_summary(demos: list[dict[str, Any]]) -> None:
     """
     Print a summary of demo results.
     
     Args:
         demos: List of demo results with 'name' and 'success' keys
-    """
+    """  # noqa: W293
     print_section("Demo Summary", level=1)
-    
+
     total = len(demos)
     successful = sum(1 for d in demos if d.get('success', False))
     failed = total - successful
-    
+
     print_info(f"Total demos: {total}")
     print_success(f"Successful: {successful}")
     if failed > 0:
         print_error(f"Failed: {failed}")
-    
+
     if failed > 0:
         print_info("\nFailed demos:")
         for demo in demos:
@@ -239,7 +238,7 @@ def confirm_continue(message: str = "Press Enter to continue...") -> bool:
         
     Returns:
         True if user confirms, False otherwise
-    """
+    """  # noqa: W293
     try:
         input(f"\n{message}")
         return True
@@ -262,7 +261,7 @@ def format_duration(seconds: float) -> str:
         
     Returns:
         Formatted duration string
-    """
+    """  # noqa: W293
     if seconds < 1:
         return f"{seconds * 1000:.2f}ms"
     elif seconds < 60:
@@ -273,14 +272,14 @@ def format_duration(seconds: float) -> str:
         return f"{minutes}m {secs:.2f}s"
 
 
-def print_feature_not_implemented(feature_name: str, coming_in: Optional[str] = None) -> None:
+def print_feature_not_implemented(feature_name: str, coming_in: str | None = None) -> None:
     """
     Print a message indicating that a feature is not yet implemented.
     
     Args:
         feature_name: Name of the feature
         coming_in: Optional version/phase where feature will be available
-    """
+    """  # noqa: W293
     msg = f"Feature '{feature_name}' is not yet implemented"
     if coming_in:
         msg += f" (coming in {coming_in})"
@@ -288,7 +287,7 @@ def print_feature_not_implemented(feature_name: str, coming_in: Optional[str] = 
     print_info("This is a demonstration of planned functionality", 1)
 
 
-def create_mock_result(result_type: str = "success", **kwargs) -> Dict[str, Any]:
+def create_mock_result(result_type: str = "success", **kwargs) -> dict[str, Any]:
     """
     Create a mock result for demonstration purposes.
     
@@ -298,7 +297,7 @@ def create_mock_result(result_type: str = "success", **kwargs) -> Dict[str, Any]
         
     Returns:
         Mock result dictionary
-    """
+    """  # noqa: W293
     result = {
         "status": result_type,
         "timestamp": get_timestamp(),
@@ -308,27 +307,27 @@ def create_mock_result(result_type: str = "success", **kwargs) -> Dict[str, Any]
     return result
 
 
-def print_next_steps(steps: List[str], title: str = "Next Steps") -> None:
+def print_next_steps(steps: list[str], title: str = "Next Steps") -> None:
     """
     Print a list of next steps.
     
     Args:
         steps: List of next step descriptions
         title: Title for the next steps section
-    """
+    """  # noqa: W293
     print_section(title, level=2)
     for i, step in enumerate(steps, 1):
         print_info(f"{i}. {step}", 0)
 
 
-def print_key_features(features: List[str], title: str = "Key Features") -> None:
+def print_key_features(features: list[str], title: str = "Key Features") -> None:
     """
     Print a list of key features.
     
     Args:
         features: List of feature descriptions
         title: Title for the features section
-    """
+    """  # noqa: W293
     print_section(title, level=2)
     for feature in features:
         print_success(feature)

@@ -109,7 +109,7 @@ class IPBlockerNanobot(BaseNanobot):
 
         # Validate IP
         try:
-            ip_obj = ipaddress.ip_address(ip)
+            ip_obj = ipaddress.ip_address(ip)  # noqa: F841
         except ValueError:
             return ActionResult(
                 action_type=ActionType.BLOCK_IP,

@@ -20,13 +20,13 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from .governance import (
-    AgentAction,
     ActionType,
-    PersistenceManager,
+    AgentAction,
     Decision,
+    PersistenceManager,
 )
 
 
@@ -36,7 +36,7 @@ class ReplayResult:
 
     action_id: str
     agent_id: str
-    original_decision: Optional[str]
+    original_decision: str | None
     new_decision: str
     confidence: float
     reasoning: str
@@ -44,7 +44,7 @@ class ReplayResult:
     timestamp: str
     policy_name: str
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "action_id": self.action_id,
             "agent_id": self.agent_id,
@@ -70,10 +70,10 @@ class PolicyComparison:
     more_restrictive: int  # Candidate blocked/warned more
     less_restrictive: int  # Candidate allowed more
     execution_time_ms: float
-    decision_breakdown: Dict[str, Dict[str, int]]  # policy -> decision -> count
-    changed_actions: List[Dict[str, Any]]  # Actions where decision changed
+    decision_breakdown: dict[str, dict[str, int]]  # policy -> decision -> count
+    changed_actions: list[dict[str, Any]]  # Actions where decision changed
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "baseline_policy": self.baseline_policy,
             "candidate_policy": self.candidate_policy,
@@ -132,9 +132,9 @@ class ActionReplayer:
         self.persistence = PersistenceManager(self.db_path, retention_days=365)
 
         # Time-travel state
-        self.current_timestamp: Optional[str] = None
-        self.start_timestamp: Optional[str] = None
-        self.end_timestamp: Optional[str] = None
+        self.current_timestamp: str | None = None
+        self.start_timestamp: str | None = None
+        self.end_timestamp: str | None = None
 
         # Cache for governance system (lazy loaded)
         self._governance_system = None
@@ -176,8 +176,8 @@ class ActionReplayer:
         self.end_timestamp = end_time
 
     def get_actions(
-        self, agent_ids: Optional[List[str]] = None, limit: Optional[int] = None, offset: int = 0
-    ) -> List[Dict[str, Any]]:
+        self, agent_ids: list[str] | None = None, limit: int | None = None, offset: int = 0
+    ) -> list[dict[str, Any]]:
         """
         Retrieve actions for replay based on current time settings.
 
@@ -197,7 +197,7 @@ class ActionReplayer:
             offset=offset,
         )
 
-    def count_actions(self, agent_ids: Optional[List[str]] = None) -> int:
+    def count_actions(self, agent_ids: list[str] | None = None) -> int:
         """
         Count actions in current time range.
 
@@ -211,7 +211,7 @@ class ActionReplayer:
             start_time=self.start_timestamp, end_time=self.end_timestamp, agent_ids=agent_ids
         )
 
-    def _reconstruct_action(self, action_data: Dict[str, Any]) -> AgentAction:
+    def _reconstruct_action(self, action_data: dict[str, Any]) -> AgentAction:
         """Reconstruct AgentAction from stored data."""
         return AgentAction(
             action_id=action_data["action_id"],
@@ -229,10 +229,10 @@ class ActionReplayer:
     def replay_with_policy(
         self,
         new_policy: str,
-        agent_ids: Optional[List[str]] = None,
-        limit: Optional[int] = None,
-        governance_system: Optional[Any] = None,
-    ) -> List[ReplayResult]:
+        agent_ids: list[str] | None = None,
+        limit: int | None = None,
+        governance_system: Any | None = None,
+    ) -> list[ReplayResult]:
         """
         Replay historical actions with a new policy.
 
@@ -286,8 +286,8 @@ class ActionReplayer:
         return results
 
     def _simulate_policy_check(
-        self, action_data: Dict[str, Any], policy_name: str, governance_system: Optional[Any] = None
-    ) -> Tuple[str, float, str, int]:
+        self, action_data: dict[str, Any], policy_name: str, governance_system: Any | None = None
+    ) -> tuple[str, float, str, int]:
         """
         Simulate policy check for an action.
 
@@ -296,7 +296,7 @@ class ActionReplayer:
         """
         # If governance system is provided, use it for actual processing
         if governance_system:
-            try:
+            try:  # noqa: SIM105
                 self._reconstruct_action(action_data)
                 # Process with governance system (this would need policy swapping)
                 # For now, return simulated results
@@ -352,8 +352,8 @@ class ActionReplayer:
         self,
         baseline_policy: str,
         candidate_policy: str,
-        agent_ids: Optional[List[str]] = None,
-        limit: Optional[int] = None,
+        agent_ids: list[str] | None = None,
+        limit: int | None = None,
     ) -> PolicyComparison:
         """
         Compare outcomes between two policies on historical data.
@@ -480,7 +480,7 @@ class ActionReplayer:
             changed_actions=changed_actions,
         )
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """
         Get statistics about stored actions.
 

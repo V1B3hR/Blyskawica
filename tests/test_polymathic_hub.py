@@ -1,6 +1,8 @@
 import unittest
-from adaptiveneuralnetwork.cognitive_tools.polymathic_hub import PolymathicHub
+
 from adaptiveneuralnetwork.central_nervous_system.alive_node import AliveLoopNode, SocialSignal
+from adaptiveneuralnetwork.cognitive_tools.polymathic_hub import PolymathicHub
+
 
 class TestPolymathicHub(unittest.TestCase):
     def setUp(self):
@@ -25,7 +27,7 @@ class TestPolymathicHub(unittest.TestCase):
         # Ensure node responds properly via hub without sharing a normal memory
         signal = SocialSignal(content="check the quantum gravity variance", signal_type="query", urgency=0.5, source_id=2, requires_response=True)
         self.node.energy = 50.0  # Ensure enough energy
-        
+
         response_signal = self.node._process_query_signal(signal)
         self.assertIsNotNone(response_signal)
         self.assertEqual(response_signal.signal_type, "memory")  # Dispatched as a memory response

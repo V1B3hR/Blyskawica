@@ -8,7 +8,7 @@ Aligns risk scoring with CISA framework.
 import logging
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +66,7 @@ class CISAMapping:
     cisa_category: CISACategory
     cisa_severity: CISASeverityLevel
     cisa_recommendation: str
-    sector: Optional[CriticalInfrastructureSector] = None
+    sector: CriticalInfrastructureSector | None = None
 
 
 class CISACategoryMapper:

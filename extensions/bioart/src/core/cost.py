@@ -4,14 +4,12 @@ Cost tracking and budget management for Bioart operations.
 Implements M2 requirement: "Instrument cost/time per iteration; budgets; anomaly alerts"
 """
 
-import time
 import threading
-from typing import Dict, List, Optional, Any, Callable
+import time
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from typing import Any, Callable, Dict, List, Optional
 
-from . import get_logger, get_config
-
+from . import get_config, get_logger
 
 logger = get_logger("cost")
 
@@ -275,7 +273,7 @@ class CostTracker:
                 stats["total_duration"] += op.duration_seconds
 
             # Calculate averages per operation
-            for name, stats in by_operation.items():
+            for name, stats in by_operation.items():  # noqa: B007
                 stats["avg_cost"] = stats["total_cost"] / stats["count"]
                 stats["avg_duration"] = stats["total_duration"] / stats["count"]
 

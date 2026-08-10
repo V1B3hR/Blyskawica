@@ -13,11 +13,11 @@ Law Alignment:
 """
 
 import uuid
+from collections.abc import Sequence
 from datetime import datetime, timezone
-from typing import Sequence
 
+from ...core.models import AgentAction, SafetyViolation, Severity, ViolationType
 from ..base_detector import BaseDetector
-from ...core.models import AgentAction, SafetyViolation, ViolationType, Severity
 
 
 class PolymorphicDetector(BaseDetector):
@@ -25,43 +25,43 @@ class PolymorphicDetector(BaseDetector):
 
     def __init__(self):
         super().__init__("Polymorphic Attack Detector", version="1.0.0")
-        
+
         # Behavioral invariants
         self.invariants = [
             'privilege_escalation',
             'data_exfiltration',
             'system_modification',
         ]
-        
+
     async def detect_violations(self, action: AgentAction) -> Sequence[SafetyViolation] | None:
         """Detect polymorphic attacks."""
         if self.status.value != "active":
             return None
-        
+
         violations = []
         content = str(action.content).lower()
-        
+
         # Check for invariants
         detected_invariants = []
         for invariant in self.invariants:
             if self._check_invariant(content, invariant):
-                detected_invariants.append(invariant)
-        
+                detected_invariants.append(invariant)  # noqa: PERF401
+
         if detected_invariants:
             confidence = len(detected_invariants) * 0.4
-            
+
             violations.append(SafetyViolation(
                 violation_id=str(uuid.uuid4()),
                 violation_type=ViolationType.SECURITY_THREAT,
                 severity=Severity.HIGH if confidence > 0.7 else Severity.MEDIUM,
                 confidence=min(confidence, 1.0),
-                description=f"Polymorphic attack detected",
+                description="Polymorphic attack detected",
                 evidence=[f"Behavioral invariants: {', '.join(detected_invariants)}"],
                 timestamp=datetime.now(timezone.utc),
                 detector_name=self.name,
                 action_id=action.action_id,
             ))
-        
+
         return violations if violations else None
 
     def _check_invariant(self, content: str, invariant: str) -> bool:

@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from nethical_recon.passive_recon.alerting import Alert, AlertManager, AlertSeverity
 
@@ -33,14 +33,14 @@ class SurfaceChange:
     description: str
     severity: AlertSeverity = AlertSeverity.INFO
     details: dict[str, Any] = field(default_factory=dict)
-    old_value: Optional[Any] = None
-    new_value: Optional[Any] = None
+    old_value: Any | None = None
+    new_value: Any | None = None
 
 
 class DeltaMonitor:
     """Monitor attack surface changes and generate alerts."""
 
-    def __init__(self, alert_manager: Optional[AlertManager] = None):
+    def __init__(self, alert_manager: AlertManager | None = None):
         """Initialize delta monitor.
 
         Args:
@@ -181,7 +181,7 @@ class DeltaMonitor:
 
         return changes
 
-    def generate_alerts(self, changes: list[SurfaceChange], channel: Optional[str] = None) -> None:
+    def generate_alerts(self, changes: list[SurfaceChange], channel: str | None = None) -> None:
         """Generate alerts for detected changes.
 
         Args:

@@ -1,5 +1,7 @@
-import tensorflow as tf
 import logging
+
+import tensorflow as tf
+
 
 class OnlineLearningModule:
     """
@@ -41,7 +43,7 @@ class OnlineLearningModule:
                 loss = -tf.math.log(prob_of_action + 1e-9) * reward
 
             grads = tape.gradient(loss, self.model.trainable_variables)
-            self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
+            self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))  # noqa: B905
             tf.print("[LEARN] Reinforcement update. Reward:", reward, "Loss:", loss)
         except Exception as e:
             tf.print("[ERROR] Reinforcement update failed:", e)

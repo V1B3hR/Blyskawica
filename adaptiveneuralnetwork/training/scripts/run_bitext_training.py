@@ -10,12 +10,13 @@ import argparse
 import json
 import logging
 import sys
-sys.stdout.reconfigure(encoding='utf-8')
-import time
-from pathlib import Path
-from typing import Any
 
-import numpy as np
+sys.stdout.reconfigure(encoding='utf-8')
+import time  # noqa: E402
+from pathlib import Path  # noqa: E402
+from typing import Any  # noqa: E402
+
+import numpy as np  # noqa: E402
 
 # Set up logging
 logging.basicConfig(
@@ -45,25 +46,25 @@ def check_dependencies() -> dict[str, bool]:
     deps = {}
 
     try:
-        import pandas
+        import pandas  # noqa: F401
         deps['pandas'] = True
     except ImportError:
         deps['pandas'] = False
 
     try:
-        import sklearn
+        import sklearn  # noqa: F401
         deps['sklearn'] = True
     except ImportError:
         deps['sklearn'] = False
 
     try:
-        import kagglehub
+        import kagglehub  # noqa: F401
         deps['kagglehub'] = True
     except ImportError:
         deps['kagglehub'] = False
 
     try:
-        import matplotlib
+        import matplotlib  # noqa: F401
         deps['matplotlib'] = True
     except ImportError:
         deps['matplotlib'] = False

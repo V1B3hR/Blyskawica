@@ -9,9 +9,9 @@ Key improvements:
 - get_feature_names helper for interpretability
 - Safe PSD/spectral entropy handling and input validation
 """
-from typing import Dict, List, Optional, Tuple, Sequence, Union
-
 import logging
+from collections.abc import Sequence
+
 import numpy as np
 from scipy import signal as sp_signal
 from scipy.stats import entropy
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class EEGFeatureExtractor:
-    DEFAULT_BANDS: Dict[str, Tuple[float, float]] = {
+    DEFAULT_BANDS: dict[str, tuple[float, float]] = {
         'delta': (0.5, 4),
         'theta': (4, 8),
         'alpha': (8, 13),
@@ -32,13 +32,13 @@ class EEGFeatureExtractor:
                  sampling_rate: int = 250,
                  extract_asymmetry: bool = True,
                  extract_connectivity: bool = False,
-                 channel_pairs_for_asymmetry: Optional[List[Tuple[Union[int, str], Union[int, str]]]] = None,
-                 channel_names: Optional[Sequence[str]] = None,
-                 bands: Optional[Dict[str, Tuple[float, float]]] = None,
+                 channel_pairs_for_asymmetry: list[tuple[int | str, int | str]] | None = None,
+                 channel_names: Sequence[str] | None = None,
+                 bands: dict[str, tuple[float, float]] | None = None,
                  do_preproc: bool = False,
                  bp_low: float = 0.5,
                  bp_high: float = 45.0,
-                 notch_freqs: Optional[Sequence[float]] = None):
+                 notch_freqs: Sequence[float] | None = None):
         """
         Args:
             sampling_rate: sampling frequency in Hz
@@ -239,7 +239,7 @@ class EEGFeatureExtractor:
         return np.array([np.nanmean(vals), np.nanstd(vals), np.nanmax(vals), np.nanmin(vals)])
 
     # Helpers
-    def _resolve_channel_index(self, ch: Union[int, str], n_channels: int) -> Optional[int]:
+    def _resolve_channel_index(self, ch: int | str, n_channels: int) -> int | None:
         """Resolve either int index or channel-name to index."""
         if isinstance(ch, int):
             if 0 <= ch < n_channels:
@@ -292,7 +292,7 @@ class EEGFeatureExtractor:
             dim += 4
         return dim
 
-    def get_feature_names(self, n_channels: int) -> List[str]:
+    def get_feature_names(self, n_channels: int) -> list[str]:
         """
         Produce human-readable feature names matching extract_features order.
         Use channel_names if provided.

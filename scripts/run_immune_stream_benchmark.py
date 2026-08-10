@@ -5,7 +5,7 @@ Stream 1: Neuro-Immunological (Wolf Teeth & Immune System) Benchmark Script
 Ingests simulated network traffic streams modeling CICIDS2017, UNSW-NB15, and TON_IoT datasets.
 Tests Cortisol surge mapping, high-frequency cymatic dissonance detection, and automated 
 Wolf Teeth threat quarantine.
-"""
+"""  # noqa: W291
 
 import json
 import logging
@@ -13,7 +13,6 @@ import random
 import sys
 import time
 from pathlib import Path
-import torch
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -21,10 +20,12 @@ logger = logging.getLogger("immune_stream_benchmark")
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import NeuromodulationState
-from adaptiveneuralnetwork.immune_system.immune_stream_pipeline import (
-    NeuroImmunologicalEngine, 
-    NetworkFlowSample
+from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import (  # noqa: E402
+    NeuromodulationState,  # noqa: E402
+)
+from adaptiveneuralnetwork.immune_system.immune_stream_pipeline import (  # noqa: E402
+    NetworkFlowSample,
+    NeuroImmunologicalEngine,
 )
 
 
@@ -80,7 +81,7 @@ def run_benchmark():
 
     for ds_name in datasets:
         logger.info(f"Ingesting time-series stream for dataset '{ds_name}'...")
-        
+
         # 1. Normal traffic baseline phase (50 samples, 0% anomaly)
         normal_samples = generate_synthetic_flow_stream(ds_name, num_samples=50, anomaly_rate=0.0)
         _, normal_metrics = engine.process_flow_stream(normal_samples)

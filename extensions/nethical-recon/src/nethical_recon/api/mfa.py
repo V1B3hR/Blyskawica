@@ -2,11 +2,9 @@
 
 import io
 import secrets
-from typing import Any
 
 import pyotp
 import qrcode
-from PIL import Image
 
 
 class MFAManager:

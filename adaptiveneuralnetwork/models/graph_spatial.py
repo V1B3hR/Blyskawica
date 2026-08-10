@@ -15,9 +15,10 @@ import torch.nn.functional as F
 from torch_geometric.data import Data
 from torch_geometric.nn import MessagePassing
 
+from adaptiveneuralnetwork.central_nervous_system.phases import PhaseScheduler
+
 from ..api.config import AdaptiveConfig
 from ..api.model import AdaptiveModel
-from adaptiveneuralnetwork.central_nervous_system.phases import PhaseScheduler
 
 
 class SpatialRelationType(Enum):
@@ -113,7 +114,7 @@ class AdaptiveMessagePassing(MessagePassing):
         phases = self.phase_scheduler.node_phases
 
         # Create phase embeddings
-        phase_emb = F.one_hot(phases, num_classes=4).float()  # 4 basic phases
+        phase_emb = F.one_hot(phases, num_classes=4).float()  # 4 basic phases  # noqa: F841
 
         # Apply attention based on phases
         # Nodes in similar phases should attend more to each other
@@ -178,7 +179,7 @@ class SpatialReasoningLayer(nn.Module):
             
         Returns:
             Enhanced node features with spatial reasoning
-        """
+        """  # noqa: W293
         # Encode spatial positions
         pos_encoding = self.position_encoder(positions)
 
@@ -212,8 +213,8 @@ class SpatialReasoningLayer(nn.Module):
         Returns:
             edge_index: Edge connectivity [2, num_edges]
             edge_relations: Relation types [num_edges]
-        """
-        num_nodes = positions.shape[0]
+        """  # noqa: W293
+        num_nodes = positions.shape[0]  # noqa: F841
 
         # Compute pairwise distances
         distances = torch.cdist(positions, positions)
@@ -239,8 +240,8 @@ class SpatialReasoningLayer(nn.Module):
         source_nodes, target_nodes = edge_index
 
         # Get positions of connected nodes
-        source_pos = positions[source_nodes]
-        target_pos = positions[target_nodes]
+        source_pos = positions[source_nodes]  # noqa: F841
+        target_pos = positions[target_nodes]  # noqa: F841
 
         # Compute relation features
         edge_distances = distances[source_nodes, target_nodes]
@@ -332,7 +333,7 @@ class GraphSpatialIntegration(nn.Module):
             
         Returns:
             Enhanced output and reasoning information
-        """
+        """  # noqa: W293
         batch_size = x.shape[0]
 
         # Get standard adaptive model output
@@ -510,7 +511,7 @@ def create_graph_spatial_model(
         
     Returns:
         Integrated model with graph and spatial capabilities
-    """
+    """  # noqa: W293
     # Create base adaptive model
     adaptive_model = AdaptiveModel(adaptive_config)
 

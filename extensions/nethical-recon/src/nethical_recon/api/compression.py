@@ -2,8 +2,8 @@
 Request/Response Compression
 """
 
-import logging
 import gzip
+import logging
 
 
 class CompressionMiddleware:

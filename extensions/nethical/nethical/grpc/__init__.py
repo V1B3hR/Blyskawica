@@ -11,8 +11,8 @@ Features:
 All implementations adhere to the 25 Fundamental Laws.
 """
 
-from .server import GovernanceServicer, create_grpc_server
 from .client import NethicalGRPCClient
+from .server import GovernanceServicer, create_grpc_server
 
 __all__ = [
     "GovernanceServicer",

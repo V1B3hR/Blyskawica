@@ -1,7 +1,9 @@
 import logging
+
 import torch
-from adaptiveneuralnetwork.cognitive_tools.polymathic_hub import PolymathicHub
+
 from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import CognitiveHygieneProtocol
+from adaptiveneuralnetwork.cognitive_tools.polymathic_hub import PolymathicHub
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -22,15 +24,15 @@ class DeepStrategicExperiment:
         print("\n" + "="*80)
         print(" BLYSKAWICA MORNING PROTOCOL: STRATEGIC WAKE-UP")
         print("="*80)
-        
+
         # Simulate recovery from hibernation
         print("[WAKE-UP] Running post-sleep Virtual Shower...")
         self.hygiene.post_sleep_routine(self) # Passing self as trainer mock
-        
+
         print("[WAKE-UP] Learning Rate Warm-up (Simulating 500 steps)...")
-        for i in range(5):
+        for i in range(5):  # noqa: B007
             self.hygiene.step_warmup(self)
-        
+
         print("[STATUS] Blyskawica is wide awake. Strategic channels OPEN.")
 
     def run_strategic_audit(self):
@@ -70,10 +72,10 @@ class DeepStrategicExperiment:
 
 if __name__ == "__main__":
     # Ensure current dir is in path
-    import sys
     import os
+    import sys
     sys.path.insert(0, os.getcwd())
-    
+
     experiment = DeepStrategicExperiment()
     experiment.morning_warm_up()
     experiment.run_strategic_audit()

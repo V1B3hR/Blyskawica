@@ -138,7 +138,7 @@ class FfufAdapter(ToolPlugin):
 
     def _assess_finding_severity(self, url: str, status: int, path: str) -> Severity:
         """Assess severity of discovered content."""
-        url_lower = url.lower()
+        url_lower = url.lower()  # noqa: F841
         path_lower = path.lower()
 
         # Critical paths

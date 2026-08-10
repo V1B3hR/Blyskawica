@@ -15,10 +15,16 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from adaptiveneuralnetwork.central_nervous_system.neuromorphic import NeuromorphicConfig
-from adaptiveneuralnetwork.central_nervous_system.neuromorphic import HierarchicalNetwork
-from adaptiveneuralnetwork.central_nervous_system.neuromorphic.advanced_neurons import NeuronV3Config
-from adaptiveneuralnetwork.central_nervous_system.neuromorphic.network_topology import TopologyConfig
+from adaptiveneuralnetwork.central_nervous_system.neuromorphic import (
+    HierarchicalNetwork,
+    NeuromorphicConfig,
+)
+from adaptiveneuralnetwork.central_nervous_system.neuromorphic.advanced_neurons import (
+    NeuronV3Config,
+)
+from adaptiveneuralnetwork.central_nervous_system.neuromorphic.network_topology import (
+    TopologyConfig,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -471,7 +477,7 @@ class VisionLanguageModel(nn.Module):
                     images = images.view(-1, 1, side, side)
                 else:
                     # Generic padding
-                    images = images.unsqueeze(1).unsqueeze(2) 
+                    images = images.unsqueeze(1).unsqueeze(2)
 
         if images.size(1) == 1:
             images = images.repeat(1, 3, 1, 1)
@@ -585,12 +591,12 @@ class VisualReasoningHead(nn.Module):
     def forward(self, fused_features: torch.Tensor, vision_features: torch.Tensor, language_features: torch.Tensor) -> torch.Tensor:
         # Multi-step reasoning with structural armor
         reasoning_state = fused_features
-        f_dim = self.config.fusion_dim
+        f_dim = self.config.fusion_dim  # noqa: F841
 
         for layer in self.reasoning_layers:
             # Armor reasoning_state before residual addition
             res = layer(reasoning_state)
-            # If reasoning_state was padded by monkey-patching in Linear, 
+            # If reasoning_state was padded by monkey-patching in Linear,
             # we must ensure residual source also matches
             if reasoning_state.size(-1) != res.size(-1):
                 if reasoning_state.size(-1) < res.size(-1):
@@ -637,7 +643,7 @@ class VisualDialogHead(nn.Module):
 
     def forward(self, fused_features: torch.Tensor, vision_features: torch.Tensor, language_features: torch.Tensor) -> torch.Tensor:
         # Generate dialog response
-        batch_size = fused_features.size(0)
+        batch_size = fused_features.size(0)  # noqa: F841
         hidden = fused_features.unsqueeze(0).repeat(2, 1, 1)  # 2 layers
 
         # Simple response generation (would need proper dialog history)
@@ -667,7 +673,7 @@ class SceneGraphHead(nn.Module):
 
         # Pairwise relationships (simplified)
         batch_size = fused_features.size(0)
-        feature_dim = fused_features.size(-1)
+        feature_dim = fused_features.size(-1)  # noqa: F841
 
         # Create pairwise combinations
         features_expanded = fused_features.unsqueeze(1).expand(-1, batch_size, -1)
@@ -772,8 +778,8 @@ class VideoTextAudioMultimodalHead(nn.Module):
             
         Returns:
             Dictionary with multimodal fusion results
-        """
-        B = video_features.shape[0]
+        """  # noqa: W291, W293
+        B = video_features.shape[0]  # noqa: F841
 
         # Process video temporally
         video_temporal, _ = self.video_temporal_encoder(video_features)
@@ -788,7 +794,7 @@ class VideoTextAudioMultimodalHead(nn.Module):
         # Global pooling for different modalities
         video_global = video_temporal.mean(dim=1, keepdim=True)  # (B, 1, fusion_dim)
         text_global = text_features.mean(dim=1, keepdim=True)    # (B, 1, fusion_dim)
-        audio_global = audio_encoded.mean(dim=1, keepdim=True)   # (B, 1, fusion_dim)
+        audio_global = audio_encoded.mean(dim=1, keepdim=True)   # (B, 1, fusion_dim)  # noqa: F841
 
         # Cross-modal attention
         video_text_attended, vt_attention = self.video_text_attention(
@@ -892,7 +898,7 @@ class AdvancedActionRecognitionHead(nn.Module):
             
         Returns:
             Dictionary with action recognition results
-        """
+        """  # noqa: W293
         B, T, D = video_features.shape
 
         # LSTM temporal modeling

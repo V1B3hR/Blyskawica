@@ -7,6 +7,7 @@ Działa w tle jako pętla asyncio, aktualizując kontekst bez narzutu na CPU.
 import asyncio
 import logging
 from datetime import datetime
+
 from blyskawica_app.backend.win11_controller import Win11Controller
 
 logger = logging.getLogger("LiveMonitor")
@@ -50,20 +51,20 @@ class LiveMonitor:
         while self._running:
             try:
                 info = self.controller.get_active_window_info()
-                
+
                 # Zapisz tylko jeśli nastąpiła zmiana okna lub procesu (optymalizacja)
-                if (info["title"] != self.active_context["title"] or 
+                if (info["title"] != self.active_context["title"] or
                         info["pid"] != self.active_context["pid"]):
-                    
+
                     self.active_context = info
                     self.active_context["last_updated"] = datetime.now().isoformat()
-                    
+
                     logger.debug(
                         f"[LiveMonitor] Zmiana okna: {info['title']} ({info['process_name']})"
                     )
             except Exception as e:
                 logger.error(f"[LiveMonitor] Błąd w pętli monitora: {e}")
-                
+
             await asyncio.sleep(self.check_interval)
 
     def get_context_prompt_override(self) -> str:
@@ -73,10 +74,10 @@ class LiveMonitor:
         """
         title = self.active_context.get("title", "Nieznane okno")
         proc = self.active_context.get("process_name", "nieznany proces")
-        
+
         if proc == "unknown" or title == "Brak aktywnego okna":
             return ""
-            
+
         return (
             f"\n[Kontekst Windows 11 LIVE - {datetime.now().strftime('%H:%M:%S')}]: "
             f"Użytkownik ma obecnie otwarte okno o tytule: \"{title}\" (aplikacja: {proc}). "

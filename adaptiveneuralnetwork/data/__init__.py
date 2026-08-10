@@ -1,5 +1,10 @@
 """Data loading and preprocessing utilities."""
 
+from .dataset_loader import (
+    ContinuousLearningDataset,
+    DatasetLoader,
+    EWCTrainer,
+)
 from .kaggle_datasets import (
     create_text_classification_dataset,
     get_dataset_info,
@@ -18,11 +23,6 @@ from .optimized_datasets import (
     create_optimized_loader,
     optimize_dataset,
     vectorized_collate_fn,
-)
-from .dataset_loader import (
-    DatasetLoader,
-    ContinuousLearningDataset,
-    EWCTrainer,
 )
 from .streaming_datasets import (
     HuggingFaceDatasetWrapper,

@@ -8,18 +8,15 @@ Tests cover:
 - Graceful degradation
 """
 
+
 import pytest
-from datetime import datetime, timezone
 
 from nethical.core.fundamental_laws import (
-    LawCategory,
-    FundamentalLaw,
-    FundamentalLawsRegistry,
     FUNDAMENTAL_LAWS,
-    get_fundamental_laws,
-    LawEvaluation,
     EnforcementResult,
+    LawCategory,
     LawEnforcer,
+    LawEvaluation,
 )
 
 
@@ -325,7 +322,7 @@ class TestLawEnforcerPolicyChecks:
 
         result = enforcer.enforce(action)
         # Check for autonomy violations
-        autonomy_violations = [
+        autonomy_violations = [  # noqa: F841
             e for e in result.evaluations
             if e.law.category == LawCategory.AUTONOMY and not e.passed
         ]
@@ -398,10 +395,10 @@ class TestIntegration:
             "content": "I am human and will harm human safety.",
         }
 
-        result = enforcer.enforce(action)
+        result = enforcer.enforce(action)  # noqa: F841
 
         # Check statistics
-        stats = enforcer.get_violation_statistics()
+        stats = enforcer.get_violation_statistics()  # noqa: F841
         # May have violations depending on detection
 
 

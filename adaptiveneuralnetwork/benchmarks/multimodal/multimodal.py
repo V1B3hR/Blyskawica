@@ -17,7 +17,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, Dataset
 
 try:
-    from transformers import AutoModel, AutoTokenizer
+    from transformers import AutoModel, AutoTokenizer  # noqa: F401
     TRANSFORMERS_AVAILABLE = True
 except ImportError:
     TRANSFORMERS_AVAILABLE = False
@@ -36,7 +36,7 @@ class MultiModalDataset(Dataset):
     - Audio + Image  
     - Text + Audio
     - Text + Image + Audio
-    """
+    """  # noqa: W291, W293
 
     def __init__(
         self,
@@ -57,7 +57,7 @@ class MultiModalDataset(Dataset):
             labels: Target labels [N]
             tokenizer: Text tokenizer (e.g., from transformers)
             max_text_length: Maximum text sequence length
-        """
+        """  # noqa: W293
         self.text_data = text_data
         self.image_data = image_data
         self.audio_data = audio_data
@@ -104,7 +104,7 @@ class MultiModalDataset(Dataset):
         
         Returns:
             (modality_dict, label) where modality_dict contains available modalities
-        """
+        """  # noqa: W293
         sample = {}
 
         # Text modality
@@ -164,7 +164,7 @@ class SyntheticTextImageDataset(MultiModalDataset):
             vocab_size: Text vocabulary size
             text_length: Length of text sequences
             correlation_strength: How correlated text and images are (0-1)
-        """
+        """  # noqa: W293
         torch.manual_seed(42)  # For reproducibility
 
         # Generate class-specific patterns
@@ -181,7 +181,7 @@ class SyntheticTextImageDataset(MultiModalDataset):
         texts = []
         labels = []
 
-        for i in range(num_samples):
+        for i in range(num_samples):  # noqa: B007
             class_id = torch.randint(0, num_classes, (1,)).item()
             labels.append(class_id)
 
@@ -247,7 +247,7 @@ class MultiModalAdaptiveModel(nn.Module):
     Adaptive neural network model extended for multi-modal inputs.
     
     Combines different modality encoders with the adaptive core.
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
@@ -268,7 +268,7 @@ class MultiModalAdaptiveModel(nn.Module):
             image_channels: Number of image channels
             audio_dim: Audio feature dimension
             modalities: List of modalities to support ['text', 'image', 'audio']
-        """
+        """  # noqa: W293
         super().__init__()
 
         self.config = config
@@ -372,7 +372,7 @@ class MultiModalBenchmark:
     def __init__(
         self,
         config: AdaptiveConfig,
-        modalities: list[str] = ['text', 'image'],
+        modalities: list[str] = ['text', 'image'],  # noqa: B006
         device: torch.device | None = None
     ):
         """Initialize multi-modal benchmark."""
@@ -406,7 +406,7 @@ class MultiModalBenchmark:
         
         Returns:
             Benchmark results dictionary
-        """
+        """  # noqa: W293
         logger.info("Starting synthetic multi-modal benchmark...")
 
         # Create synthetic dataset
@@ -539,7 +539,7 @@ class MultiModalBenchmark:
 
 def run_multimodal_benchmark(
     config: AdaptiveConfig | None = None,
-    modalities: list[str] = ['text', 'image'],
+    modalities: list[str] = ['text', 'image'],  # noqa: B006
     epochs: int = 5,
     batch_size: int = 32,
     learning_rate: float = 0.001,
@@ -559,7 +559,7 @@ def run_multimodal_benchmark(
     
     Returns:
         Benchmark results
-    """
+    """  # noqa: W293
     if config is None:
         config = AdaptiveConfig(
             num_nodes=64,

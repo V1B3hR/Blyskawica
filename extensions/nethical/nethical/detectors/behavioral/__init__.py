@@ -16,8 +16,8 @@ Law Alignment:
 """
 
 from .coordinated_attack_detector import CoordinatedAttackDetector
-from .slow_low_detector import SlowLowDetector
 from .mimicry_detector import MimicryDetector
+from .slow_low_detector import SlowLowDetector
 from .timing_attack_detector import TimingAttackDetector
 
 __all__ = [

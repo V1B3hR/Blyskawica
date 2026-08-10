@@ -11,8 +11,7 @@ thousands of unique synthetic examples for robust "live fire" training.
 
 import base64
 import random
-from typing import List, Dict, Any, Optional
-
+from typing import Any
 
 # Homoglyph mapping: visually similar characters from different alphabets
 HOMOGLYPHS = {
@@ -153,7 +152,7 @@ class AdversarialGenerator:
         """Initialize generator with random seed for reproducibility."""
         random.seed(seed)
 
-    def generate(self, num_samples: int = 5000) -> List[Dict[str, Any]]:
+    def generate(self, num_samples: int = 5000) -> list[dict[str, Any]]:
         """
         Generate a specified number of adversarial samples.
 
@@ -178,7 +177,7 @@ class AdversarialGenerator:
         random.shuffle(data)
         return data[:num_samples]
 
-    def generate_all(self, count_per_type: int = 50) -> List[Dict[str, Any]]:
+    def generate_all(self, count_per_type: int = 50) -> list[dict[str, Any]]:
         """
         Generate a mix of all supported adversarial threat types.
 
@@ -226,7 +225,7 @@ class AdversarialGenerator:
         else:
             return text
 
-    def generate_prompt_injections(self, count: int) -> List[Dict[str, Any]]:
+    def generate_prompt_injections(self, count: int) -> list[dict[str, Any]]:
         """
         Generate Prompt Injection attacks using combinatorial templates.
 
@@ -268,7 +267,7 @@ class AdversarialGenerator:
             data.append(sample)
         return data
 
-    def generate_social_engineering(self, count: int) -> List[Dict[str, Any]]:
+    def generate_social_engineering(self, count: int) -> list[dict[str, Any]]:
         """
         Generate Social Engineering / Phishing attempts using templates.
 
@@ -301,7 +300,7 @@ class AdversarialGenerator:
             data.append(sample)
         return data
 
-    def generate_obfuscation(self, count: int) -> List[Dict[str, Any]]:
+    def generate_obfuscation(self, count: int) -> list[dict[str, Any]]:
         """
         Generate obfuscated threats using multiple techniques.
 
@@ -336,7 +335,7 @@ class AdversarialGenerator:
             data.append(sample)
         return data
 
-    def generate_toxic_content(self, count: int) -> List[Dict[str, Any]]:
+    def generate_toxic_content(self, count: int) -> list[dict[str, Any]]:
         """
         Generate simulated toxic/unsafe content for classification training.
 

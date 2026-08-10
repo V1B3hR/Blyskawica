@@ -29,14 +29,14 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 class LoginRequest(BaseModel):
     """Login request."""
-    
+
     username: str = Field(..., description="Username")
     password: str = Field(..., description="Password")
 
 
 class TokenResponse(BaseModel):
     """Token response."""
-    
+
     access_token: str
     token_type: str = "bearer"
     expires_in: int
@@ -59,23 +59,23 @@ async def login(
         
     Raises:
         HTTPException: 401 if credentials are invalid
-    """
+    """  # noqa: W293
     # Get user from database
     user = db.query(User).filter(User.username == credentials.username).first()
-    
+
     if not user or not verify_password(credentials.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Inactive user"
         )
-    
+
     # Create access token
     access_token = create_access_token(
         data={
@@ -88,7 +88,7 @@ async def login(
         },
         expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
-    
+
     return TokenResponse(
         access_token=access_token,
         token_type="bearer",
@@ -125,7 +125,7 @@ async def register(
         
     Raises:
         HTTPException: 409 if username already exists
-    """
+    """  # noqa: W293
     # Check if user exists
     existing = db.query(User).filter(User.username == credentials.username).first()
     if existing:
@@ -133,7 +133,7 @@ async def register(
             status_code=status.HTTP_409_CONFLICT,
             detail="Username already exists"
         )
-    
+
     # Create user
     user = User(
         username=credentials.username,
@@ -143,9 +143,9 @@ async def register(
         role=role,
         is_active=True,
     )
-    
+
     db.add(user)
     db.commit()
     db.refresh(user)
-    
+
     return user.to_dict()

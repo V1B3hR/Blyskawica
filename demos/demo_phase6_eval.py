@@ -16,23 +16,23 @@ from torch.utils.data import DataLoader, TensorDataset
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent))
 
+import json
+
+from adaptiveneuralnetwork.eval.comparison import MetricsComparator
+from adaptiveneuralnetwork.eval.drift_detection import detect_drift
 from adaptiveneuralnetwork.eval.metrics import compute_metrics
 from adaptiveneuralnetwork.eval.microbenchmark import run_microbenchmark
-from adaptiveneuralnetwork.eval.drift_detection import detect_drift
-from adaptiveneuralnetwork.eval.comparison import MetricsComparator
-import json
-from datetime import datetime
 
 
 class DemoModel(nn.Module):
     """Demo model for testing."""
-    
+
     def __init__(self):
         super().__init__()
         self.fc1 = nn.Linear(10, 50)
         self.fc2 = nn.Linear(50, 2)
         self.relu = nn.ReLU()
-    
+
     def forward(self, x):
         x = self.relu(self.fc1(x))
         return self.fc2(x)
@@ -51,12 +51,12 @@ def demo_standard_metrics():
     print("=" * 80)
     print("DEMO 1: Standard Metrics Computation")
     print("=" * 80)
-    
+
     model = DemoModel()
     data_loader = create_demo_data()
     device = torch.device("cpu")
     loss_fn = nn.CrossEntropyLoss()
-    
+
     metrics = compute_metrics(
         model=model,
         data_loader=data_loader,
@@ -64,8 +64,8 @@ def demo_standard_metrics():
         loss_fn=loss_fn,
         compute_detailed=True,
     )
-    
-    print(f"\nResults:")
+
+    print("\nResults:")
     print(f"  ✓ Accuracy:    {metrics.accuracy:.2f}%")
     print(f"  ✓ Loss:        {metrics.loss:.4f}")
     print(f"  ✓ Precision:   {metrics.precision:.4f}")
@@ -81,11 +81,11 @@ def demo_microbenchmarks():
     print("\n" + "=" * 80)
     print("DEMO 2: Microbenchmarking")
     print("=" * 80)
-    
+
     model = DemoModel()
     data_loader = create_demo_data()
     device = torch.device("cpu")
-    
+
     print("\nRunning microbenchmarks (100 iterations)...")
     results = run_microbenchmark(
         model=model,
@@ -94,30 +94,30 @@ def demo_microbenchmarks():
         num_iterations=100,
         warmup_iterations=10,
     )
-    
-    print(f"\nForward Pass Latency:")
+
+    print("\nForward Pass Latency:")
     print(f"  Mean:   {results.forward_latency_mean:.3f} ms")
     print(f"  Std:    {results.forward_latency_std:.3f} ms")
     print(f"  Min:    {results.forward_latency_min:.3f} ms")
     print(f"  Max:    {results.forward_latency_max:.3f} ms")
-    
+
     # Calculate reproducibility variance
     if results.forward_latency_mean > 0:
         variance_pct = 100.0 * results.forward_latency_std / results.forward_latency_mean
         print(f"  Variance: {variance_pct:.2f}%", end="")
-        
+
         if variance_pct < 5.0:
             print(" ✓ Excellent reproducibility!")
         elif variance_pct < 10.0:
             print(" ✓ Good reproducibility")
         else:
             print(" ⚠️  High variance")
-    
-    print(f"\nThroughput:")
+
+    print("\nThroughput:")
     print(f"  Data loader: {results.data_loader_throughput:.2f} samples/sec")
     print(f"  Batches:     {results.batches_per_second:.2f} batches/sec")
-    
-    print(f"\nMemory Usage:")
+
+    print("\nMemory Usage:")
     print(f"  Peak CPU:  {results.peak_cpu_memory_mb:.2f} MB")
     print(f"  Peak GPU:  {results.peak_gpu_memory_mb:.2f} MB")
 
@@ -127,11 +127,11 @@ def demo_drift_detection():
     print("\n" + "=" * 80)
     print("DEMO 3: Drift Detection")
     print("=" * 80)
-    
+
     # Create temporary history directory
     with tempfile.TemporaryDirectory() as tmpdir:
         history_path = Path(tmpdir)
-        
+
         # Create mock historical data
         print("\nCreating mock historical benchmark data...")
         for i in range(5):
@@ -145,9 +145,9 @@ def demo_drift_detection():
                         "latency_ms": 10.0 + i * 0.1, # Gradually increasing
                     }
                 }, f)
-        
-        print(f"  Created 5 historical runs")
-        
+
+        print("  Created 5 historical runs")
+
         # Test with stable values
         print("\nTest 1: Stable metrics (within normal range)")
         stable_metrics = {
@@ -155,7 +155,7 @@ def demo_drift_detection():
             "loss": 0.43,
             "latency_ms": 10.5,
         }
-        
+
         drift_results = detect_drift(
             current_metrics=stable_metrics,
             history_path=history_path,
@@ -167,11 +167,11 @@ def demo_drift_detection():
                 "latency_ms": False,
             },
         )
-        
+
         for result in drift_results:
             status = "✓" if not result.drift_detected else "⚠️"
             print(f"  {status} {result.metric_name}: {result.drift_direction}")
-        
+
         # Test with drift
         print("\nTest 2: Degraded accuracy (drift detected)")
         degraded_metrics = {
@@ -179,7 +179,7 @@ def demo_drift_detection():
             "loss": 0.42,
             "latency_ms": 10.4,
         }
-        
+
         drift_results = detect_drift(
             current_metrics=degraded_metrics,
             history_path=history_path,
@@ -191,7 +191,7 @@ def demo_drift_detection():
                 "latency_ms": False,
             },
         )
-        
+
         for result in drift_results:
             if result.drift_detected:
                 status = "⚠️"
@@ -209,14 +209,14 @@ def demo_metrics_comparison():
     print("\n" + "=" * 80)
     print("DEMO 4: Metrics Comparison")
     print("=" * 80)
-    
+
     # Create temporary history directory
     with tempfile.TemporaryDirectory() as tmpdir:
         history_path = Path(tmpdir)
-        
+
         # Create two runs to compare
         print("\nCreating two benchmark runs to compare...")
-        
+
         run1_file = history_path / "run_1.json"
         with open(run1_file, "w") as f:
             json.dump({
@@ -228,7 +228,7 @@ def demo_metrics_comparison():
                     "throughput": 1000.0,
                 }
             }, f)
-        
+
         run2_file = history_path / "run_2.json"
         with open(run2_file, "w") as f:
             json.dump({
@@ -240,36 +240,36 @@ def demo_metrics_comparison():
                     "throughput": 950.0, # Degraded
                 }
             }, f)
-        
+
         print("  Created 2 runs for comparison")
-        
+
         # Compare runs
         comparator = MetricsComparator(history_path)
         runs = comparator.get_latest_runs(2)
-        
+
         metric_directions = {
             "metrics.accuracy": True,
             "metrics.loss": False,
             "metrics.latency_ms": False,
             "metrics.throughput": True,
         }
-        
+
         comparisons = comparator.compare_runs(
             current_run=runs[-1],
             previous_run=runs[-2],
             metric_directions=metric_directions,
         )
-        
+
         print("\nComparison Results:")
         for comp in comparisons:
             status = "↑" if comp.is_improvement else "↓"
             symbol = "✓" if comp.is_improvement else "✗"
-            
+
             print(f"\n  {symbol} {comp.metric_name}:")
             print(f"      Previous: {comp.previous_value:.2f}")
             print(f"      Current:  {comp.current_value:.2f}")
             print(f"      Change:   {status} {abs(comp.change_percentage):.2f}%")
-        
+
         # Generate report
         print("\n" + "-" * 80)
         print("Full Comparison Report:")
@@ -284,13 +284,13 @@ def main():
     print("╔" + "═" * 78 + "╗")
     print("║" + " " * 20 + "PHASE 6 EVALUATION LAYER DEMO" + " " * 28 + "║")
     print("╚" + "═" * 78 + "╝")
-    
+
     try:
         demo_standard_metrics()
         demo_microbenchmarks()
         demo_drift_detection()
         demo_metrics_comparison()
-        
+
         print("\n" + "=" * 80)
         print("ALL DEMOS COMPLETED SUCCESSFULLY ✓")
         print("=" * 80)
@@ -304,7 +304,7 @@ def main():
         print("  ✓ Benchmark automation: 100% success rate")
         print("  ✓ One-command evaluation: Available via eval/run_eval.py")
         print("\n" + "=" * 80)
-        
+
         return 0
     except Exception as e:
         print(f"\n✗ Demo failed: {e}", file=sys.stderr)

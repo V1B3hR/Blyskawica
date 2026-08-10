@@ -13,14 +13,15 @@ Usage:
     app = create_v1_app()
     # Or mount as a sub-application:
     main_app.mount("/api/v1", create_v1_app())
-"""
+"""  # noqa: W291, W293
 
 from __future__ import annotations
 
 import time
 import uuid
+from collections.abc import Callable
 from datetime import datetime, timezone
-from typing import Any, Callable
+from typing import Any
 
 from fastapi import APIRouter, FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -39,8 +40,8 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
     - Request ID propagation
     - Latency tracking
     - Standard response headers
-    """
-    
+    """  # noqa: W293
+
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         """Process request with context tracking."""
         # Generate or extract request ID
@@ -49,21 +50,21 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
             request.headers.get("X-Correlation-ID") or
             str(uuid.uuid4())
         )
-        
+
         # Store in request state for downstream access
         request.state.request_id = request_id
         request.state.start_time = time.perf_counter()
-        
+
         # Process request
         response = await call_next(request)
-        
+
         # Add response headers
         latency_ms = int((time.perf_counter() - request.state.start_time) * 1000)
-        
+
         response.headers["X-Request-ID"] = request_id
         response.headers["X-Nethical-Latency-Ms"] = str(latency_ms)
         response.headers["X-API-Version"] = API_VERSION
-        
+
         return response
 
 
@@ -72,7 +73,7 @@ def create_v1_app() -> FastAPI:
     
     Returns:
         FastAPI: Configured v1 API application
-    """
+    """  # noqa: W293
     app = FastAPI(
         title="Nethical Governance API v1",
         description=(
@@ -98,10 +99,10 @@ def create_v1_app() -> FastAPI:
         redoc_url="/redoc",
         openapi_url="/openapi.json",
     )
-    
+
     # Add middleware
     app.add_middleware(RequestContextMiddleware)
-    
+
     # CORS configuration
     # In production, replace "*" with specific allowed origins
     app.add_middleware(
@@ -111,14 +112,14 @@ def create_v1_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    
+
     # Include routers
     app.include_router(auth.router)
     app.include_router(agents.router)
     app.include_router(policies.router)
     app.include_router(audit.router)
     app.include_router(realtime.router)
-    
+
     @app.get("/", tags=["Root"])
     async def root() -> dict[str, Any]:
         """API root with version and endpoint information."""
@@ -161,7 +162,7 @@ def create_v1_app() -> FastAPI:
             "roles": ["admin", "auditor", "operator"],
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
-    
+
     @app.get("/health", tags=["Health"])
     async def health() -> dict[str, Any]:
         """Health check endpoint."""
@@ -170,7 +171,7 @@ def create_v1_app() -> FastAPI:
             "version": API_VERSION,
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
-    
+
     return app
 
 

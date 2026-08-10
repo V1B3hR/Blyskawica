@@ -11,10 +11,11 @@ Provides intelligent handling of variable satellite latencies including:
 import asyncio
 import logging
 import statistics
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +61,7 @@ class BatchRequest:
     priority: RequestPriority
     timeout_ms: float
     created_at: datetime
-    callback: Optional[Callable] = None
+    callback: Callable | None = None
 
 
 @dataclass
@@ -92,7 +93,7 @@ class LatencyOptimizerConfig:
     max_measurements: int = 1000
 
     # Priority settings
-    priority_timeout_multipliers: Dict[RequestPriority, float] = field(
+    priority_timeout_multipliers: dict[RequestPriority, float] = field(
         default_factory=lambda: {
             RequestPriority.LOW: 3.0,
             RequestPriority.NORMAL: 2.0,
@@ -110,7 +111,7 @@ class LatencyOptimizer:
     through adaptive timeouts, request prioritization, and batching.
     """
 
-    def __init__(self, config: Optional[LatencyOptimizerConfig] = None):
+    def __init__(self, config: LatencyOptimizerConfig | None = None):
         """
         Initialize latency optimizer.
 
@@ -120,20 +121,20 @@ class LatencyOptimizer:
         self.config = config or LatencyOptimizerConfig()
 
         # Latency measurements
-        self._measurements: List[LatencyMeasurement] = []
+        self._measurements: list[LatencyMeasurement] = []
         self._current_profile = LatencyProfile.GOOD
 
         # Request batching
-        self._batch_queue: List[BatchRequest] = []
+        self._batch_queue: list[BatchRequest] = []
         self._batch_lock = asyncio.Lock()
-        self._batch_task: Optional[asyncio.Task] = None
+        self._batch_task: asyncio.Task | None = None
 
         # Prediction model
         self._predicted_latency_ms: float = 50.0
         self._latency_trend: float = 0.0  # Positive = increasing, negative = decreasing
 
         # Callbacks
-        self._callbacks: Dict[str, List[Callable]] = {
+        self._callbacks: dict[str, list[Callable]] = {
             "on_profile_change": [],
             "on_batch_ready": [],
         }
@@ -304,7 +305,7 @@ class LatencyOptimizer:
         request_id: str,
         data: bytes,
         priority: RequestPriority = RequestPriority.NORMAL,
-        callback: Optional[Callable] = None,
+        callback: Callable | None = None,
     ) -> bool:
         """
         Queue a request for batch processing.
@@ -362,7 +363,7 @@ class LatencyOptimizer:
         # Check batch window
         oldest = min(r.created_at for r in self._batch_queue)
         age_ms = (datetime.utcnow() - oldest).total_seconds() * 1000
-        if age_ms >= self.config.batch_window_ms:
+        if age_ms >= self.config.batch_window_ms:  # noqa: SIM103
             return True
 
         return False
@@ -409,7 +410,7 @@ class LatencyOptimizer:
 
         return False
 
-    def get_optimization_recommendations(self) -> Dict[str, Any]:
+    def get_optimization_recommendations(self) -> dict[str, Any]:
         """
         Get optimization recommendations based on current conditions.
 
@@ -441,7 +442,7 @@ class LatencyOptimizer:
             "batch_queue_size": len(self._batch_queue),
         }
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """
         Get latency statistics.
 

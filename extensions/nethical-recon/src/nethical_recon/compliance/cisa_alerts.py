@@ -9,9 +9,7 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional
-
-import requests
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -109,7 +107,7 @@ class CISAAlertFeedClient:
 
         return alerts
 
-    def get_alert_by_id(self, alert_id: str) -> Optional[CISAAlert]:
+    def get_alert_by_id(self, alert_id: str) -> CISAAlert | None:
         """
         Get specific alert by ID.
 
@@ -172,7 +170,7 @@ class CISAShieldsUpMonitor:
         """Initialize Shields Up monitor."""
         self._current_status = ShieldsUpStatus.NORMAL
         self._active_directives: list[str] = []
-        self._status_updated: Optional[datetime] = None
+        self._status_updated: datetime | None = None
 
     def get_current_status(self) -> dict[str, Any]:
         """
@@ -207,7 +205,7 @@ class CISAShieldsUpMonitor:
 
         return self._current_status
 
-    def update_status(self, status: ShieldsUpStatus, directives: Optional[list[str]] = None):
+    def update_status(self, status: ShieldsUpStatus, directives: list[str] | None = None):
         """
         Update Shields Up status.
 

@@ -1,8 +1,8 @@
 import logging
-import torch
-import onnx
-from typing import Dict, Any, Optional
 import os
+
+import onnx
+import torch
 
 logger = logging.getLogger(__name__)
 
@@ -23,8 +23,8 @@ class ONNXBridge:
 
     def _ensure_cryptographic_keys(self):
         """Generates RSA private/public keys if they do not exist."""
-        from cryptography.hazmat.primitives.asymmetric import rsa
         from cryptography.hazmat.primitives import serialization
+        from cryptography.hazmat.primitives.asymmetric import rsa
 
         if not os.path.exists(self.private_key_path) or not os.path.exists(self.public_key_path):
             logger.info("Generating new cryptographic key pair for model crystallization...")
@@ -52,7 +52,7 @@ class ONNXBridge:
                 )
             logger.info("Key pair generated successfully.")
 
-    def sign_crystallized_core(self, onnx_path: str) -> Optional[str]:
+    def sign_crystallized_core(self, onnx_path: str) -> str | None:
         """Signs the ONNX model file and outputs a detached signature file (.sig)."""
         from cryptography.hazmat.primitives import hashes
         from cryptography.hazmat.primitives.asymmetric import padding
@@ -123,9 +123,9 @@ class ONNXBridge:
             logger.error(f"Cryptographic signature verification failed: {str(e)}")
             return False
 
-    def export_crystallized_core(self, 
-                                 model: torch.nn.Module, 
-                                 input_sample: torch.Tensor, 
+    def export_crystallized_core(self,
+                                 model: torch.nn.Module,
+                                 input_sample: torch.Tensor,
                                  model_name: str = "blyskawica_core"):
         """
         Exports a frozen version of the model to ONNX.
@@ -133,10 +133,10 @@ class ONNXBridge:
         """
         export_path = os.path.join(self.output_dir, f"{model_name}.onnx")
         logger.info(f"Crystallizing Core: Exporting to {export_path}")
-        
+
         # Ensure model is in eval mode
         model.eval()
-        
+
         try:
             torch.onnx.export(
                 model,

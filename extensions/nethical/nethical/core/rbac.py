@@ -11,11 +11,12 @@ This module provides a comprehensive RBAC system with:
 from __future__ import annotations
 
 import logging
-from enum import Enum
-from typing import Dict, Set, List, Optional, Callable, Any
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from enum import Enum
 from functools import wraps
+from typing import Any
 
 __all__ = [
     "Role",
@@ -74,8 +75,8 @@ class AccessDecision:
     allowed: bool
     user_id: str
     role: Role
-    required_role: Optional[Role] = None
-    required_permission: Optional[Permission] = None
+    required_role: Role | None = None
+    required_permission: Permission | None = None
     reason: str = ""
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -96,7 +97,7 @@ class RBACManager:
     """
 
     # Role hierarchy: higher roles inherit permissions from lower roles
-    ROLE_HIERARCHY: Dict[Role, int] = {
+    ROLE_HIERARCHY: dict[Role, int] = {
         Role.VIEWER: 0,
         Role.AUDITOR: 1,
         Role.OPERATOR: 2,
@@ -104,7 +105,7 @@ class RBACManager:
     }
 
     # Role to permissions mapping
-    ROLE_PERMISSIONS: Dict[Role, Set[Permission]] = {
+    ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
         Role.VIEWER: {
             Permission.READ_POLICIES,
             Permission.READ_ACTIONS,
@@ -145,17 +146,17 @@ class RBACManager:
         },
     }
 
-    def __init__(self, audit_logger: Optional[Callable[[AccessDecision], None]] = None):
+    def __init__(self, audit_logger: Callable[[AccessDecision], None] | None = None):
         """
         Initialize RBAC Manager
 
         Args:
             audit_logger: Optional callback for logging access decisions
         """
-        self.user_roles: Dict[str, Role] = {}
-        self.user_custom_permissions: Dict[str, Set[Permission]] = {}
+        self.user_roles: dict[str, Role] = {}
+        self.user_custom_permissions: dict[str, set[Permission]] = {}
         self.audit_logger = audit_logger or self._default_audit_logger
-        self.access_history: List[AccessDecision] = []
+        self.access_history: list[AccessDecision] = []
 
     def _default_audit_logger(self, decision: AccessDecision) -> None:
         """Default audit logger that logs to standard logging"""
@@ -181,7 +182,7 @@ class RBACManager:
             role = self.user_roles.pop(user_id)
             log.info(f"Revoked role {role} from user {user_id}")
 
-    def get_role(self, user_id: str) -> Optional[Role]:
+    def get_role(self, user_id: str) -> Role | None:
         """Get a user's role"""
         return self.user_roles.get(user_id)
 
@@ -198,7 +199,7 @@ class RBACManager:
             self.user_custom_permissions[user_id].discard(permission)
             log.info(f"Revoked permission {permission} from user {user_id}")
 
-    def get_user_permissions(self, user_id: str) -> Set[Permission]:
+    def get_user_permissions(self, user_id: str) -> set[Permission]:
         """Get all permissions for a user (role-based + custom)"""
         role = self.get_role(user_id)
         permissions = set()
@@ -252,7 +253,7 @@ class RBACManager:
                 user_id=user_id,
                 role=Role.VIEWER,  # Default
                 required_role=required_role,
-                reason=f"User has no assigned role",
+                reason="User has no assigned role",
             )
         elif self.has_role(user_id, required_role):
             decision = AccessDecision(
@@ -304,7 +305,7 @@ class RBACManager:
                 user_id=user_id,
                 role=Role.VIEWER,  # Default
                 required_permission=permission,
-                reason=f"User has no assigned role",
+                reason="User has no assigned role",
             )
         elif self.has_permission(user_id, permission):
             decision = AccessDecision(
@@ -332,15 +333,15 @@ class RBACManager:
         return decision
 
     def get_access_history(
-        self, user_id: Optional[str] = None, limit: int = 100
-    ) -> List[AccessDecision]:
+        self, user_id: str | None = None, limit: int = 100
+    ) -> list[AccessDecision]:
         """Get access history, optionally filtered by user"""
         history = self.access_history
         if user_id:
             history = [d for d in history if d.user_id == user_id]
         return history[-limit:]
 
-    def list_users(self) -> Dict[str, Dict[str, Any]]:
+    def list_users(self) -> dict[str, dict[str, Any]]:
         """List all users with their roles and permissions"""
         users = {}
         for user_id, role in self.user_roles.items():
@@ -355,7 +356,7 @@ class RBACManager:
 
 
 # Global RBAC manager instance
-_rbac_manager: Optional[RBACManager] = None
+_rbac_manager: RBACManager | None = None
 
 
 def get_rbac_manager() -> RBACManager:

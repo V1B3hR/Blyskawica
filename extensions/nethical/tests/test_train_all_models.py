@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Test training all model types with train_any_model.py."""
 import json
-import tempfile
 import subprocess
-from pathlib import Path
 import sys
+import tempfile
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -14,15 +14,15 @@ def test_train_all_model_types():
     print("\n" + "=" * 70)
     print("  Test: train_any_model.py with --model-type all")
     print("=" * 70)
-    
+
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir_path = Path(tmpdir)
         audit_path = tmpdir_path / "test_audit_logs"
         models_dir = tmpdir_path / "models"
-        
+
         # Run training for all model types
         script_path = Path(__file__).parent.parent / "training" / "train_any_model.py"
-        
+
         cmd = [
             sys.executable,
             str(script_path),
@@ -34,16 +34,16 @@ def test_train_all_model_types():
             "--audit-path", str(audit_path),
             "--models-dir", str(models_dir)
         ]
-        
+
         print(f"\nRunning: {' '.join(cmd)}")
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
-        
+
         combined_output = result.stdout + result.stderr
-        
+
         # Print summary lines
         print("\nOutput Summary:")
         summary_keywords = [
-            'Training all model types', 'Training model', 
+            'Training all model types', 'Training model',
             'TRAINING SUMMARY', 'Total models', 'Successful',
             'Promoted', 'Failed', 'heuristic:', 'logistic:',
             'simple_transformer:', 'anomaly:', 'correlation:'
@@ -51,47 +51,47 @@ def test_train_all_model_types():
         for line in combined_output.split('\n'):
             if any(x in line for x in summary_keywords):
                 print(line)
-        
+
         # Check that training succeeded
         assert result.returncode == 0, f"Training failed with return code {result.returncode}"
         print("\n✓ Training completed successfully")
-        
+
         # Check that all model types were mentioned
         expected_types = ['heuristic', 'logistic', 'simple_transformer', 'anomaly', 'correlation']
         for model_type in expected_types:
             assert model_type in combined_output, f"Model type {model_type} not found in output"
         print(f"✓ All {len(expected_types)} model types were trained")
-        
+
         # Check for "Training all model types" message
         assert "Training all model types" in combined_output, "Missing 'Training all model types' message"
         print("✓ Training all model types message found")
-        
+
         # Check training summary
         assert "TRAINING SUMMARY" in combined_output, "Missing training summary"
         assert "Total models trained: 5" in combined_output, "Wrong total models count in summary"
         print("✓ Training summary shows 5 models trained")
-        
+
         # Check audit summary
         summary_file = audit_path / "training_summary.json"
         assert summary_file.exists(), "Training summary not created"
-        
+
         with open(summary_file) as f:
             summary = json.load(f)
-        
+
         print("\nAudit Summary:")
         print(f"  Total models: {summary.get('total_models')}")
         print(f"  Successful: {summary.get('successful')}")
         print(f"  Promoted: {summary.get('promoted')}")
-        
+
         assert summary['total_models'] == 5, f"Expected 5 models, got {summary['total_models']}"
         assert summary['model_types'] == expected_types, f"Model types mismatch: {summary['model_types']}"
         assert summary['successful'] >= 5, f"Expected all 5 models to succeed, got {summary['successful']}"
         print("✓ Audit summary verified")
-        
+
         # Check results for each model
         assert 'results' in summary, "Results not in summary"
         assert len(summary['results']) == 5, f"Expected 5 results, got {len(summary['results'])}"
-        
+
         for result_item in summary['results']:
             model_type = result_item['model_type']
             assert model_type in expected_types, f"Unexpected model type: {model_type}"
@@ -100,7 +100,7 @@ def test_train_all_model_types():
             accuracy = result_item['metrics'].get('accuracy')
             accuracy_str = f"{accuracy:.4f}" if accuracy is not None else "N/A"
             print(f"✓ {model_type}: success={result_item['success']}, accuracy={accuracy_str}")
-        
+
         print("\n" + "=" * 70)
         print("  ✅ ALL TESTS PASSED")
         print("=" * 70)
@@ -111,16 +111,16 @@ def test_train_all_model_types_with_full_options():
     print("\n" + "=" * 70)
     print("  Test: train_any_model.py with --model-type all (full options)")
     print("=" * 70)
-    
+
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir_path = Path(tmpdir)
         audit_path = tmpdir_path / "audit_logs"
         drift_path = tmpdir_path / "drift_reports"
         models_dir = tmpdir_path / "models"
-        
+
         # Run training with all options from problem statement
         script_path = Path(__file__).parent.parent / "training" / "train_any_model.py"
-        
+
         cmd = [
             sys.executable,
             str(script_path),
@@ -137,47 +137,47 @@ def test_train_all_model_types_with_full_options():
             "--drift-report-dir", str(drift_path),
             "--models-dir", str(models_dir)
         ]
-        
+
         print(f"\nRunning: {' '.join(cmd)}")
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
-        
+
         combined_output = result.stdout + result.stderr
-        
+
         # Check that training succeeded
         assert result.returncode == 0, f"Training failed with return code {result.returncode}"
         print("✓ Training completed successfully")
-        
+
         # Check that all integrations were enabled
         assert "Merkle audit logging enabled" in combined_output, "Audit logging not enabled"
         print("✓ Audit logging enabled")
-        
+
         assert "Governance validation enabled" in combined_output, "Governance not enabled"
         print("✓ Governance enabled")
-        
+
         assert "Ethical drift tracking enabled" in combined_output, "Drift tracking not enabled"
         print("✓ Drift tracking enabled")
-        
+
         # Check all model types were trained
         assert "Total models trained: 5" in combined_output, "Not all models were trained"
         print("✓ All 5 model types trained")
-        
+
         # Check drift report
         assert "Drift Report ID:" in combined_output, "Drift report not generated"
         drift_files = list(drift_path.glob("drift_*.json"))
         assert len(drift_files) > 0, "No drift report files created"
         print(f"✓ Drift report generated: {drift_files[0].name}")
-        
+
         # Check audit summary
         summary_file = audit_path / "training_summary.json"
         assert summary_file.exists(), "Audit summary not created"
-        
+
         with open(summary_file) as f:
             summary = json.load(f)
-        
+
         assert 'governance' in summary, "Governance section missing from audit"
         assert summary['governance']['enabled'] is True, "Governance not marked as enabled"
         print("✓ Governance metrics saved to audit summary")
-        
+
         print("\n" + "=" * 70)
         print("  ✅ ALL TESTS PASSED")
         print("=" * 70)

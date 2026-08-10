@@ -12,18 +12,18 @@ Demonstrates the usage of new ROADMAP5 Section II features:
 from nethical_recon.attack_surface import (
     AttackSurfaceMapper,
     BaselineManager,
-    TechnologyFingerprinter,
-    ServiceDetector,
     CMSDetector,
+    ServiceDetector,
+    TechnologyFingerprinter,
 )
 from nethical_recon.enrichment import (
-    ThreatEnricher,
     AbuseIPDBProvider,
-    OTXProvider,
     GreyNoiseProvider,
-    VirusTotalProvider,
-    RiskScorer,
+    OTXProvider,
     PluginRegistry,
+    RiskScorer,
+    ThreatEnricher,
+    VirusTotalProvider,
 )
 
 
@@ -33,7 +33,7 @@ def example_technology_fingerprinting():
     print("Example 1: Technology Fingerprinting")
     print("=" * 80)
 
-    fingerprinter = TechnologyFingerprinter()
+    fingerprinter = TechnologyFingerprinter()  # noqa: F841
 
     # Fingerprint a website (would need actual URL in production)
     # results = fingerprinter.fingerprint("https://example.com")
@@ -68,7 +68,7 @@ def example_cms_detection():
     print("Example 3: CMS Detection")
     print("=" * 80)
 
-    detector = CMSDetector()
+    detector = CMSDetector()  # noqa: F841
 
     # Detect CMS (would need actual URL in production)
     # cms_result = detector.detect_cms("https://example.com")
@@ -86,7 +86,7 @@ def example_attack_surface_mapping():
     print("Example 4: Attack Surface Mapping")
     print("=" * 80)
 
-    mapper = AttackSurfaceMapper()
+    mapper = AttackSurfaceMapper()  # noqa: F841
 
     # Map attack surface (would need actual target in production)
     # snapshot = mapper.map_surface("https://example.com", ports=[80, 443, 22])
@@ -112,7 +112,7 @@ def example_baseline_management():
     print("Example 5: Baseline Management")
     print("=" * 80)
 
-    manager = BaselineManager(storage_path="/tmp/example_baselines")
+    manager = BaselineManager(storage_path="/tmp/example_baselines")  # noqa: F841
 
     # In production, you would:
     # 1. Create initial baseline
@@ -169,7 +169,7 @@ def example_batch_enrichment():
     enricher.add_provider(AbuseIPDBProvider())
     enricher.add_provider(OTXProvider())
 
-    indicators = [
+    indicators = [  # noqa: F841
         ("8.8.8.8", "ip"),
         ("1.1.1.1", "ip"),
         ("example.com", "domain"),
@@ -191,9 +191,9 @@ def example_risk_scoring():
     print("Example 8: Risk Scoring")
     print("=" * 80)
 
-    scorer = RiskScorer()
+    scorer = RiskScorer()  # noqa: F841
 
-    asset = {
+    asset = {  # noqa: F841
         "asset_id": "db_server_1",
         "asset_type": "service",
         "host": "db.example.com",
@@ -202,7 +202,7 @@ def example_risk_scoring():
         "technologies": [{"name": "MySQL", "category": "database", "version": None}],
     }
 
-    enrichment_data = {
+    enrichment_data = {  # noqa: F841
         "aggregated_threat_level": "medium",
         "aggregated_confidence": 0.7,
         "sources": ["AbuseIPDB"],
@@ -235,7 +235,7 @@ def example_plugin_system():
     print("Example 9: Custom Threat Feed Plugin")
     print("=" * 80)
 
-    registry = PluginRegistry()
+    registry = PluginRegistry()  # noqa: F841
 
     # In production, you would create a custom plugin:
     # class MyThreatFeedPlugin(EnrichmentPlugin):

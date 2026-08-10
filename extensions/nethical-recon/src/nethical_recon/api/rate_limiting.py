@@ -3,9 +3,8 @@ Rate Limiting Middleware (slowapi + Redis)
 """
 
 import logging
-from typing import Any
-from datetime import datetime, timedelta
 from collections import defaultdict
+from datetime import datetime, timedelta
 
 
 class RateLimiter:

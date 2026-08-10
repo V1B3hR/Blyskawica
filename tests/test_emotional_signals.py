@@ -548,7 +548,7 @@ class TestEmotionalSignalsIntegration(unittest.TestCase):
         self.assertEqual(len(status["nodes"]), len(self.nodes))
 
         # Verify individual node data includes emotional information
-        for node_id, node_status in status["nodes"].items():
+        for node_id, node_status in status["nodes"].items():  # noqa: B007
             self.assertIn("anxiety_level", node_status)
             self.assertIn("calm_level", node_status)
             self.assertIn("trust_network_size", node_status)
@@ -649,7 +649,7 @@ class TestExtendedEmotionalStates(unittest.TestCase):
 
         # Test prediction
         predicted_joy = self.node.predict_emotional_state('joy', 3)
-        predicted_grief = self.node.predict_emotional_state('grief', 3)
+        predicted_grief = self.node.predict_emotional_state('grief', 3)  # noqa: F841
 
         # Joy should be predicted to continue increasing
         self.assertGreater(predicted_joy, self.node.joy)
@@ -665,12 +665,12 @@ class TestExtendedEmotionalStates(unittest.TestCase):
     def test_emotional_trends_analysis(self):
         """Test trend analysis for all emotional states"""
         # Create increasing joy trend
-        for i in range(3):
+        for i in range(3):  # noqa: B007
             self.node.update_joy(0.8)
 
         # Create decreasing sadness trend
         self.node.sadness = 3.0
-        for i in range(3):
+        for i in range(3):  # noqa: B007
             self.node.update_sadness(-0.5)
 
         trends = self.node.get_emotional_trends()
@@ -696,7 +696,7 @@ class TestExtendedEmotionalStates(unittest.TestCase):
         self.node.grief = 4.0   # High grief
 
         # Add some history to enable prediction
-        for i in range(3):
+        for i in range(3):  # noqa: B007
             self.node.update_anxiety(0.5)  # Increasing anxiety
 
         assessment = self.node.assess_intervention_need()
@@ -716,7 +716,7 @@ class TestExtendedEmotionalStates(unittest.TestCase):
         happy_node = AliveLoopNode(position=(0, 0), velocity=(0, 0), node_id=3)
         happy_node.joy = 2.5  # Start lower to allow for more increase
         happy_node.calm = 3.5
-        for i in range(4):
+        for i in range(4):  # noqa: B007
             happy_node.update_joy(0.5)  # Larger increases to ensure trend is detected
 
         happy_assessment = happy_node.assess_intervention_need()
@@ -773,7 +773,7 @@ class TestExtendedEmotionalStates(unittest.TestCase):
     def test_enhanced_joy_sharing_effects(self):
         """Test enhanced joy sharing with new emotional states"""
         # Create nodes
-        joy_sender = AliveLoopNode(position=(0, 0), velocity=(0, 0), node_id=1)
+        joy_sender = AliveLoopNode(position=(0, 0), velocity=(0, 0), node_id=1)  # noqa: F841
         joy_receiver = AliveLoopNode(position=(1, 1), velocity=(0, 0), node_id=2)
 
         # Set receiver in need of joy (high sadness/grief)

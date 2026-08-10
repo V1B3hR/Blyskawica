@@ -26,19 +26,19 @@ Usage:
     connector.upsert([
         {"id": "vec1", "values": [0.1, 0.2, ...], "metadata": {"text": "sample"}}
     ])
-"""
+"""  # noqa: W293
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from .base import VectorStoreProvider, VectorSearchResult
+from .base import VectorSearchResult, VectorStoreProvider
 
 logger = logging.getLogger(__name__)
 
 # Check if Chroma is available
 try:
     import chromadb
-    from chromadb.config import Settings
+    from chromadb.config import Settings  # noqa: F401
     CHROMA_AVAILABLE = True
 except ImportError:
     CHROMA_AVAILABLE = False
@@ -54,14 +54,14 @@ class ChromaConnector(VectorStoreProvider):
     - PII detection and redaction on query results
     - Audit logging for all operations
     - Embedding function integration
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
         collection_name: str = "nethical_collection",
-        persist_directory: Optional[str] = None,
-        host: Optional[str] = None,
-        port: Optional[int] = None,
+        persist_directory: str | None = None,
+        host: str | None = None,
+        port: int | None = None,
         enable_governance: bool = True,
         enable_pii_detection: bool = True,
         enable_audit_logging: bool = True,
@@ -80,22 +80,22 @@ class ChromaConnector(VectorStoreProvider):
         Raises:
             ImportError: If chromadb is not installed
             ConnectionError: If cannot connect to Chroma
-        """
+        """  # noqa: W293
         super().__init__(enable_governance, enable_pii_detection, enable_audit_logging)
-        
+
         if not CHROMA_AVAILABLE:
             raise ImportError("ChromaDB not installed. Install with: pip install chromadb>=0.4.0")
-        
+
         self.collection_name = collection_name
         self.persist_directory = persist_directory
         self.host = host
         self.port = port
         self._client = None
         self._collection = None
-        
+
         # Initialize Chroma
         self._init_chroma()
-    
+
     def _init_chroma(self):
         """Initialize Chroma client and collection."""
         try:
@@ -115,7 +115,7 @@ class ChromaConnector(VectorStoreProvider):
                 else:
                     self._client = chromadb.Client()
                     logger.info("Using Chroma in-memory mode")
-            
+
             # Get or create collection
             self._collection = self._client.get_or_create_collection(
                 name=self.collection_name
@@ -124,10 +124,10 @@ class ChromaConnector(VectorStoreProvider):
         except Exception as e:
             logger.error(f"Failed to initialize Chroma: {e}")
             raise
-    
+
     def upsert(
         self,
-        vectors: List[Dict[str, Any]],
+        vectors: list[dict[str, Any]],
         namespace: str = "",
     ) -> int:
         """Upsert vectors with governance checks on metadata.
@@ -146,10 +146,10 @@ class ChromaConnector(VectorStoreProvider):
         Raises:
             ValueError: If governance check fails
             ConnectionError: If Chroma connection fails
-        """
+        """  # noqa: W293
         if not self._collection:
             raise ConnectionError("Chroma collection not initialized")
-        
+
         # Check governance on metadata
         if self.enable_governance:
             for vec in vectors:
@@ -160,14 +160,14 @@ class ChromaConnector(VectorStoreProvider):
                         f"Governance check failed for vector {vec.get('id')}: "
                         f"{check_result.get('reason')}"
                     )
-        
+
         try:
             # Prepare data for Chroma
             ids = [vec["id"] for vec in vectors]
             embeddings = [vec["values"] for vec in vectors]
             metadatas = [vec.get("metadata", {}) for vec in vectors]
             documents = [vec.get("document", "") for vec in vectors]
-            
+
             # Upsert to Chroma
             self._collection.upsert(
                 ids=ids,
@@ -175,27 +175,27 @@ class ChromaConnector(VectorStoreProvider):
                 metadatas=metadatas if any(metadatas) else None,
                 documents=documents if any(documents) else None,
             )
-            
+
             # Audit log
             self._audit_log("upsert", {
                 "namespace": namespace,
                 "count": len(vectors),
                 "collection": self.collection_name,
             })
-            
+
             return len(vectors)
         except Exception as e:
             logger.error(f"Chroma upsert failed: {e}")
-            raise ConnectionError(f"Failed to upsert vectors: {e}")
-    
+            raise ConnectionError(f"Failed to upsert vectors: {e}")  # noqa: B904
+
     def query(
         self,
-        vector: List[float],
+        vector: list[float],
         top_k: int = 10,
-        filter: Optional[Dict[str, Any]] = None,
+        filter: dict[str, Any] | None = None,
         namespace: str = "",
         include_documents: bool = True,
-    ) -> List[VectorSearchResult]:
+    ) -> list[VectorSearchResult]:
         """Query vectors with PII redaction on results.
         
         Args:
@@ -210,10 +210,10 @@ class ChromaConnector(VectorStoreProvider):
             
         Raises:
             ConnectionError: If Chroma connection fails
-        """
+        """  # noqa: W293
         if not self._collection:
             raise ConnectionError("Chroma collection not initialized")
-        
+
         try:
             # Query Chroma
             results_dict = self._collection.query(
@@ -222,7 +222,7 @@ class ChromaConnector(VectorStoreProvider):
                 where=filter,
                 include=["metadatas", "documents", "distances", "embeddings"] if include_documents else ["metadatas", "distances"],
             )
-            
+
             # Convert to VectorSearchResult with PII redaction
             results = []
             ids = results_dict.get("ids", [[]])[0]
@@ -230,31 +230,31 @@ class ChromaConnector(VectorStoreProvider):
             metadatas = results_dict.get("metadatas", [[]])[0]
             documents = results_dict.get("documents", [[]])[0] if include_documents else []
             embeddings = results_dict.get("embeddings", [[]])[0] if "embeddings" in results_dict else []
-            
+
             for i, vec_id in enumerate(ids):
                 distance = distances[i] if i < len(distances) else 1.0
                 score = 1.0 / (1.0 + distance)  # Convert distance to similarity score
                 metadata = metadatas[i] if i < len(metadatas) else {}
                 document = documents[i] if i < len(documents) else ""
                 embedding = embeddings[i] if i < len(embeddings) else None
-                
+
                 # Redact PII from metadata and document
                 if self.enable_pii_detection:
                     if metadata:
                         pii_result = self._detect_pii(metadata)
                         if pii_result["has_pii"]:
                             logger.info(f"PII detected in vector {vec_id} metadata, redacting")
-                    
+
                     if document:
                         doc_pii_result = self._detect_pii(document)
                         if doc_pii_result["has_pii"]:
                             logger.info(f"PII detected in vector {vec_id} document, redacting")
                             document = doc_pii_result["redacted_text"]
-                
+
                 # Add document to metadata if present
                 if document:
                     metadata["_document"] = document
-                
+
                 result = VectorSearchResult(
                     id=vec_id,
                     score=score,
@@ -263,7 +263,7 @@ class ChromaConnector(VectorStoreProvider):
                     payload={},
                 )
                 results.append(result)
-            
+
             # Audit log
             self._audit_log("query", {
                 "namespace": namespace,
@@ -271,15 +271,15 @@ class ChromaConnector(VectorStoreProvider):
                 "results_count": len(results),
                 "collection": self.collection_name,
             })
-            
+
             return results
         except Exception as e:
             logger.error(f"Chroma query failed: {e}")
-            raise ConnectionError(f"Failed to query vectors: {e}")
-    
+            raise ConnectionError(f"Failed to query vectors: {e}")  # noqa: B904
+
     def delete(
         self,
-        ids: List[str],
+        ids: list[str],
         namespace: str = "",
     ) -> int:
         """Delete vectors with audit logging.
@@ -293,14 +293,14 @@ class ChromaConnector(VectorStoreProvider):
             
         Raises:
             ConnectionError: If Chroma connection fails
-        """
+        """  # noqa: W293
         if not self._collection:
             raise ConnectionError("Chroma collection not initialized")
-        
+
         try:
             # Delete from Chroma
             self._collection.delete(ids=ids)
-            
+
             # Audit log
             self._audit_log("delete", {
                 "namespace": namespace,
@@ -308,25 +308,25 @@ class ChromaConnector(VectorStoreProvider):
                 "ids": ids[:10],  # Log first 10 IDs
                 "collection": self.collection_name,
             })
-            
+
             return len(ids)
         except Exception as e:
             logger.error(f"Chroma delete failed: {e}")
-            raise ConnectionError(f"Failed to delete vectors: {e}")
-    
-    def health_check(self) -> Dict[str, Any]:
+            raise ConnectionError(f"Failed to delete vectors: {e}")  # noqa: B904
+
+    def health_check(self) -> dict[str, Any]:
         """Check health of Chroma connection.
         
         Returns:
             Health check result with status and details
-        """
+        """  # noqa: W293
         base_health = super().health_check()
-        
+
         try:
             if self._collection:
                 # Get collection info
                 count = self._collection.count()
-                
+
                 base_health.update({
                     "status": "healthy",
                     "collection": self.collection_name,
@@ -343,5 +343,5 @@ class ChromaConnector(VectorStoreProvider):
                 "status": "error",
                 "error": str(e),
             })
-        
+
         return base_health

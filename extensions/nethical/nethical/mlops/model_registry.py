@@ -31,19 +31,20 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import os
+import platform
+import re
 import shutil
+import sys
 import tempfile
 import threading
-from dataclasses import dataclass, field, asdict
+from collections.abc import Callable, Iterable
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
-import logging
-import re
-import sys
-import platform
+from typing import Any
 
 # -----------------------------------------------------------------------------
 # Logging Configuration (can be overridden by application)
@@ -110,15 +111,15 @@ class ValidationError(ModelRegistryError):
 class ModelMetrics:
     """Model performance metrics (extend as needed)."""
 
-    accuracy: Optional[float] = None
-    precision: Optional[float] = None
-    recall: Optional[float] = None
-    f1_score: Optional[float] = None
-    auc_roc: Optional[float] = None
-    loss: Optional[float] = None
-    custom_metrics: Dict[str, float] = field(default_factory=dict)
+    accuracy: float | None = None
+    precision: float | None = None
+    recall: float | None = None
+    f1_score: float | None = None
+    auc_roc: float | None = None
+    loss: float | None = None
+    custom_metrics: dict[str, float] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "accuracy": self.accuracy,
             "precision": self.precision,
@@ -145,8 +146,8 @@ class ArtifactInfo:
     is_dir: bool
     file_count: int
     size_bytes: int
-    hash: Optional[str] = None  # Combined hash if directory or file
-    file_hashes: Dict[str, str] = field(default_factory=dict)  # relative path -> hash
+    hash: str | None = None  # Combined hash if directory or file
+    file_hashes: dict[str, str] = field(default_factory=dict)  # relative path -> hash
 
 
 @dataclass
@@ -159,28 +160,28 @@ class ModelVersion:
     stage: ModelStage
     status: ModelStatus = ModelStatus.ACTIVE
     created_at: datetime = field(default_factory=datetime.utcnow)
-    created_by: Optional[str] = None
-    description: Optional[str] = None
-    tags: List[str] = field(default_factory=list)
-    metrics: Optional[ModelMetrics] = None
-    hyperparameters: Dict[str, Any] = field(default_factory=dict)
-    training_dataset: Optional[str] = None
-    framework: Optional[str] = None
-    framework_version: Optional[str] = None
-    parent_version: Optional[str] = None
-    children: List[str] = field(default_factory=list)  # list of version_ids referencing descendants
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    artifact: Optional[ArtifactInfo] = None
-    environment: Dict[str, Any] = field(default_factory=dict)
-    model_signature: Optional[Dict[str, Any]] = None  # e.g., input/output schema
-    deprecated_at: Optional[datetime] = None
-    rollback_source: Optional[str] = None  # version_id we rolled back from if applicable
+    created_by: str | None = None
+    description: str | None = None
+    tags: list[str] = field(default_factory=list)
+    metrics: ModelMetrics | None = None
+    hyperparameters: dict[str, Any] = field(default_factory=dict)
+    training_dataset: str | None = None
+    framework: str | None = None
+    framework_version: str | None = None
+    parent_version: str | None = None
+    children: list[str] = field(default_factory=list)  # list of version_ids referencing descendants
+    metadata: dict[str, Any] = field(default_factory=dict)
+    artifact: ArtifactInfo | None = None
+    environment: dict[str, Any] = field(default_factory=dict)
+    model_signature: dict[str, Any] | None = None  # e.g., input/output schema
+    deprecated_at: datetime | None = None
+    rollback_source: str | None = None  # version_id we rolled back from if applicable
 
     @property
     def version_id(self) -> str:
         return f"{self.name}:{self.version}"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "name": self.name,
             "version": self.version,
@@ -208,7 +209,7 @@ class ModelVersion:
         }
 
     @staticmethod
-    def from_dict(data: Dict[str, Any]) -> "ModelVersion":
+    def from_dict(data: dict[str, Any]) -> ModelVersion:
         metrics = data.get("metrics")
         mv_metrics = ModelMetrics(**metrics) if metrics else None
         artifact_data = data.get("artifact")
@@ -267,8 +268,8 @@ def compute_file_hash(path: Path, block_size: int = 65536) -> str:
     return h.hexdigest()
 
 
-def compute_directory_hash(dir_path: Path) -> Tuple[str, Dict[str, str], int, int]:
-    file_hashes: Dict[str, str] = {}
+def compute_directory_hash(dir_path: Path) -> tuple[str, dict[str, str], int, int]:
+    file_hashes: dict[str, str] = {}
     total_size = 0
     count = 0
     h = hashlib.sha256()
@@ -295,7 +296,7 @@ class ModelRegistry:
     concurrent writes to same model version (callers must coordinate).
     """
 
-    DEFAULT_STAGE_TRANSITIONS: Dict[ModelStage, Tuple[ModelStage, ...]] = {
+    DEFAULT_STAGE_TRANSITIONS: dict[ModelStage, tuple[ModelStage, ...]] = {
         ModelStage.DEVELOPMENT: (ModelStage.STAGING, ModelStage.ARCHIVED),
         ModelStage.STAGING: (ModelStage.PRODUCTION, ModelStage.ARCHIVED),
         ModelStage.PRODUCTION: (ModelStage.ARCHIVED,),
@@ -304,7 +305,7 @@ class ModelRegistry:
 
     def __init__(
         self,
-        registry_dir: Union[str, Path] = "models",
+        registry_dir: str | Path = "models",
         enforce_transitions: bool = True,
         auto_semver: bool = True,
         capture_environment: bool = True,
@@ -328,9 +329,9 @@ class ModelRegistry:
         ]:
             d.mkdir(parents=True, exist_ok=True)
 
-        self.models: Dict[str, ModelVersion] = {}
+        self.models: dict[str, ModelVersion] = {}
         self._lock = threading.RLock()
-        self._callbacks: Dict[str, List[Callable[[ModelVersion], None]]] = {}
+        self._callbacks: dict[str, list[Callable[[ModelVersion], None]]] = {}
         self.enforce_transitions = enforce_transitions
         self.auto_semver = auto_semver
         self.capture_environment = capture_environment
@@ -351,7 +352,7 @@ class ModelRegistry:
         for fn in self._callbacks.get(event, []):
             try:
                 fn(model)
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 logger.exception("Callback error for event '%s': %s", event, e)
 
     # ------------------------------------------------------------------
@@ -360,20 +361,20 @@ class ModelRegistry:
     def register_model(
         self,
         name: str,
-        version: Optional[str],
-        model_path: Union[str, Path],
+        version: str | None,
+        model_path: str | Path,
         stage: ModelStage = ModelStage.DEVELOPMENT,
-        metrics: Optional[ModelMetrics] = None,
-        hyperparameters: Optional[Dict[str, Any]] = None,
-        description: Optional[str] = None,
-        tags: Optional[List[str]] = None,
-        created_by: Optional[str] = None,
-        parent_version: Optional[str] = None,
-        model_signature: Optional[Dict[str, Any]] = None,
-        framework: Optional[str] = None,
-        framework_version: Optional[str] = None,
-        training_dataset: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metrics: ModelMetrics | None = None,
+        hyperparameters: dict[str, Any] | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        created_by: str | None = None,
+        parent_version: str | None = None,
+        model_signature: dict[str, Any] | None = None,
+        framework: str | None = None,
+        framework_version: str | None = None,
+        training_dataset: str | None = None,
+        metadata: dict[str, Any] | None = None,
         allow_overwrite: bool = False,
         **extra,
     ) -> ModelVersion:
@@ -488,7 +489,7 @@ class ModelRegistry:
             # Link lineage
             if parent_version:
                 parent = self.models.get(parent_version)
-                if parent:
+                if parent:  # noqa: SIM102
                     if model_version.version_id not in parent.children:
                         parent.children.append(model_version.version_id)
                         self._save_metadata(parent)
@@ -577,7 +578,7 @@ class ModelRegistry:
             self._emit("tags_added", model)
             return model
 
-    def deprecate_model(self, version_id: str, reason: Optional[str] = None) -> ModelVersion:
+    def deprecate_model(self, version_id: str, reason: str | None = None) -> ModelVersion:
         with self._lock:
             model = self._require_model(version_id)
             model.status = ModelStatus.DEPRECATED
@@ -590,7 +591,7 @@ class ModelRegistry:
             return model
 
     def rollback_to(
-        self, target_version_id: str, new_version: Optional[str] = None
+        self, target_version_id: str, new_version: str | None = None
     ) -> ModelVersion:
         """
         Create a new version based on an existing production (or other) version's artifact.
@@ -630,11 +631,11 @@ class ModelRegistry:
 
     def get_model(
         self,
-        name: Optional[str] = None,
-        version: Optional[str] = None,
-        stage: Optional[ModelStage] = None,
+        name: str | None = None,
+        version: str | None = None,
+        stage: ModelStage | None = None,
         latest: bool = True,
-    ) -> Optional[ModelVersion]:
+    ) -> ModelVersion | None:
         with self._lock:
             if name and version:
                 return self.models.get(f"{name}:{version}")
@@ -652,12 +653,12 @@ class ModelRegistry:
 
     def list_models(
         self,
-        name: Optional[str] = None,
-        stage: Optional[ModelStage] = None,
-        status: Optional[ModelStatus] = None,
-        tags: Optional[Iterable[str]] = None,
+        name: str | None = None,
+        stage: ModelStage | None = None,
+        status: ModelStatus | None = None,
+        tags: Iterable[str] | None = None,
         include_archived: bool = True,
-    ) -> List[ModelVersion]:
+    ) -> list[ModelVersion]:
         with self._lock:
             models = list(self.models.values())
             if name:
@@ -678,10 +679,10 @@ class ModelRegistry:
 
     def search(
         self,
-        metric_gt: Optional[Dict[str, float]] = None,
-        metadata_contains: Optional[Dict[str, Any]] = None,
-        name_pattern: Optional[str] = None,
-    ) -> List[ModelVersion]:
+        metric_gt: dict[str, float] | None = None,
+        metadata_contains: dict[str, Any] | None = None,
+        name_pattern: str | None = None,
+    ) -> list[ModelVersion]:
         """
         Flexible search:
             metric_gt: dict of metric -> minimum threshold
@@ -706,7 +707,7 @@ class ModelRegistry:
             if metadata_contains:
 
                 def meta_pass(m: ModelVersion) -> bool:
-                    for k, v in metadata_contains.items():
+                    for k, v in metadata_contains.items():  # noqa: SIM110
                         if m.metadata.get(k) != v:
                             return False
                     return True
@@ -720,7 +721,7 @@ class ModelRegistry:
             )
             return results
 
-    def compare_models(self, version_id1: str, version_id2: str) -> Dict[str, Any]:
+    def compare_models(self, version_id1: str, version_id2: str) -> dict[str, Any]:
         with self._lock:
             m1 = self._require_model(version_id1)
             m2 = self._require_model(version_id2)
@@ -802,7 +803,7 @@ class ModelRegistry:
     # ------------------------------------------------------------------
     # Internal utilities
     # ------------------------------------------------------------------
-    def _capture_environment(self) -> Dict[str, Any]:
+    def _capture_environment(self) -> dict[str, Any]:
         return {
             "python_version": sys.version.split()[0],
             "platform": platform.platform(),
@@ -828,14 +829,14 @@ class ModelRegistry:
 
     def _validate_promotion(self, model: ModelVersion, to_stage: ModelStage):
         # Example validation rules (extend as necessary).
-        if to_stage == ModelStage.STAGING:
+        if to_stage == ModelStage.STAGING:  # noqa: SIM102
             if not model.metrics:
                 logger.warning("Promoting to staging without metrics: %s", model.version_id)
         if to_stage == ModelStage.PRODUCTION:
             if not model.metrics:
                 logger.warning("Promoting to production without metrics: %s", model.version_id)
             # Example threshold enforcement (customize)
-            if model.metrics and model.metrics.accuracy is not None:
+            if model.metrics and model.metrics.accuracy is not None:  # noqa: SIM102
                 if model.metrics.accuracy < 0.5:
                     raise ValidationError("Accuracy below minimal threshold for production (0.5)")
 
@@ -862,10 +863,10 @@ class ModelRegistry:
                     data = json.load(f)
                 model = ModelVersion.from_dict(data)
                 self.models[model.version_id] = model
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 logger.error("Failed to load %s: %s", metadata_file, e)
 
-    def export_registry(self, export_path: Union[str, Path]) -> Path:
+    def export_registry(self, export_path: str | Path) -> Path:
         export_path = Path(export_path)
         payload = {
             "exported_at": datetime.now(timezone.utc).isoformat(),
@@ -877,7 +878,7 @@ class ModelRegistry:
         return export_path
 
     def import_registry(
-        self, import_path: Union[str, Path], merge: bool = True, overwrite: bool = False
+        self, import_path: str | Path, merge: bool = True, overwrite: bool = False
     ):
         with self._lock:
             with open(import_path) as f:

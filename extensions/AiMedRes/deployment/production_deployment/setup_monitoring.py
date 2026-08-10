@@ -4,10 +4,8 @@ Monitoring Setup Automation Script
 Configures Prometheus, Grafana, and AlertManager for AiMedRes
 """
 
-import os
 import json
 import logging
-import subprocess
 from pathlib import Path
 
 logging.basicConfig(
@@ -25,14 +23,14 @@ GRAFANA_DASHBOARD = CONFIG_DIR / "grafana_dashboard.json"
 
 class MonitoringSetup:
     """Setup monitoring infrastructure"""
-    
+
     def __init__(self):
         CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-    
+
     def setup_prometheus(self):
         """Configure Prometheus"""
         logger.info("Setting up Prometheus configuration...")
-        
+
         config = {
             'global': {
                 'scrape_interval': '15s',
@@ -72,7 +70,7 @@ class MonitoringSetup:
                 }
             ]
         }
-        
+
         # Write Prometheus config
         import yaml
         try:
@@ -94,11 +92,11 @@ class MonitoringSetup:
                 f.write("      - targets: ['aimedres:8002']\n")
             logger.info("Basic Prometheus config written (install PyYAML for full config)")
             return True
-    
+
     def setup_alertmanager(self):
         """Configure AlertManager"""
         logger.info("Setting up AlertManager configuration...")
-        
+
         config = {
             'global': {
                 'smtp_smarthost': 'smtp.hospital.org:587',
@@ -132,17 +130,17 @@ class MonitoringSetup:
                 }
             ]
         }
-        
+
         with open(ALERTMANAGER_CONFIG, 'w') as f:
             json.dump(config, f, indent=2)
-        
+
         logger.info(f"AlertManager config written to: {ALERTMANAGER_CONFIG}")
         return True
-    
+
     def setup_grafana_dashboard(self):
         """Create Grafana dashboard"""
         logger.info("Setting up Grafana dashboard...")
-        
+
         dashboard = {
             'dashboard': {
                 'id': None,
@@ -202,19 +200,19 @@ class MonitoringSetup:
             },
             'overwrite': True
         }
-        
+
         with open(GRAFANA_DASHBOARD, 'w') as f:
             json.dump(dashboard, f, indent=2)
-        
+
         logger.info(f"Grafana dashboard written to: {GRAFANA_DASHBOARD}")
         return True
-    
+
     def setup_alert_rules(self):
         """Configure alert rules"""
         logger.info("Setting up alert rules...")
-        
+
         alert_rules_path = CONFIG_DIR / "alert_rules.yml"
-        
+
         rules = """
 groups:
   - name: aimedres_alerts
@@ -264,25 +262,25 @@ groups:
         annotations:
           summary: "Service down"
           description: "{{ $labels.job }} is down"
-"""
-        
+"""  # noqa: W293
+
         with open(alert_rules_path, 'w') as f:
             f.write(rules)
-        
+
         logger.info(f"Alert rules written to: {alert_rules_path}")
         return True
-    
+
     def verify_setup(self):
         """Verify monitoring setup"""
         logger.info("Verifying monitoring setup...")
-        
+
         required_files = [
             PROMETHEUS_CONFIG,
             ALERTMANAGER_CONFIG,
             GRAFANA_DASHBOARD,
             CONFIG_DIR / "alert_rules.yml"
         ]
-        
+
         all_present = True
         for file_path in required_files:
             if file_path.exists():
@@ -290,32 +288,32 @@ groups:
             else:
                 logger.error(f"  ✗ {file_path.name} not found")
                 all_present = False
-        
+
         return all_present
-    
+
     def run_setup(self):
         """Run complete monitoring setup"""
         logger.info("="*50)
         logger.info("Starting Monitoring Setup")
         logger.info("="*50)
-        
+
         success = True
-        
+
         if not self.setup_prometheus():
             success = False
-        
+
         if not self.setup_alertmanager():
             success = False
-        
+
         if not self.setup_grafana_dashboard():
             success = False
-        
+
         if not self.setup_alert_rules():
             success = False
-        
+
         if not self.verify_setup():
             success = False
-        
+
         if success:
             logger.info("="*50)
             logger.info("Monitoring Setup Completed Successfully!")
@@ -327,7 +325,7 @@ groups:
             logger.info(f"   -H 'Content-Type: application/json' -d @{GRAFANA_DASHBOARD}")
         else:
             logger.error("Monitoring setup failed")
-        
+
         return success
 
 

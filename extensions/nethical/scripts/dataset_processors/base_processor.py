@@ -9,16 +9,17 @@ import json
 import logging
 import random
 import statistics
-from dataclasses import dataclass, asdict
+from collections.abc import Callable, Iterable
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Any, Optional, Callable, Iterable, Tuple, TypedDict
+from typing import Any, TypedDict
 
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 logger = logging.getLogger(__name__)
 
 # Standard feature contract for the Nethical system
-STANDARD_FEATURES: List[str] = [
+STANDARD_FEATURES: list[str] = [
     'violation_count',
     'severity_max',
     'recency_score',
@@ -27,7 +28,7 @@ STANDARD_FEATURES: List[str] = [
 ]
 
 # Default expected feature ranges used for normalization/clipping
-DEFAULT_FEATURE_RANGES: Dict[str, Tuple[float, float]] = {
+DEFAULT_FEATURE_RANGES: dict[str, tuple[float, float]] = {
     'violation_count': (0.0, 10.0),
     'severity_max': (0.0, 1.0),
     'recency_score': (0.0, 1.0),
@@ -38,22 +39,22 @@ DEFAULT_FEATURE_RANGES: Dict[str, Tuple[float, float]] = {
 
 class StandardRecord(TypedDict, total=False):
     # Required keys
-    features: Dict[str, float]
+    features: dict[str, float]
     label: int
     # Optional metadata
-    meta: Dict[str, Any]
+    meta: dict[str, Any]
 
 
 @dataclass
 class DatasetStats:
     num_records: int
-    label_distribution: Dict[str, int]
-    feature_stats: Dict[str, Dict[str, float]]
+    label_distribution: dict[str, int]
+    feature_stats: dict[str, dict[str, float]]
 
     @staticmethod
-    def compute(records: Iterable[StandardRecord]) -> "DatasetStats":
-        feats: Dict[str, List[float]] = {k: [] for k in STANDARD_FEATURES}
-        labels: Dict[str, int] = {"0": 0, "1": 0}
+    def compute(records: Iterable[StandardRecord]) -> DatasetStats:
+        feats: dict[str, list[float]] = {k: [] for k in STANDARD_FEATURES}
+        labels: dict[str, int] = {"0": 0, "1": 0}
         n = 0
         for r in records:
             n += 1
@@ -66,7 +67,7 @@ class DatasetStats:
                 v = f.get(k)
                 if isinstance(v, (int, float)):
                     feats[k].append(float(v))
-        feat_stats: Dict[str, Dict[str, float]] = {}
+        feat_stats: dict[str, dict[str, float]] = {}
         for k, arr in feats.items():
             if arr:
                 feat_stats[k] = {
@@ -93,7 +94,7 @@ class BaseDatasetProcessor:
         output_dir: Path = Path("data/processed"),
         *,
         seed: int = 42,
-        feature_ranges: Optional[Dict[str, Tuple[float, float]]] = None,
+        feature_ranges: dict[str, tuple[float, float]] | None = None,
     ):
         """Initialize processor.
 
@@ -113,7 +114,7 @@ class BaseDatasetProcessor:
     # -----------------------------
     # Abstracts (to be overridden)
     # -----------------------------
-    def process(self, input_path: Path) -> List[StandardRecord]:
+    def process(self, input_path: Path) -> list[StandardRecord]:
         """Process dataset and return standardized records.
 
         Must return records of shape:
@@ -126,11 +127,11 @@ class BaseDatasetProcessor:
         raise NotImplementedError("Subclasses must implement process()")
 
     # Optional hooks that subclasses may override
-    def preprocess_row(self, row: Dict[str, Any]) -> Dict[str, Any]:
+    def preprocess_row(self, row: dict[str, Any]) -> dict[str, Any]:
         """Hook to clean/transform a raw input row before feature extraction."""
         return row
 
-    def validate_row(self, row: Dict[str, Any]) -> bool:
+    def validate_row(self, row: dict[str, Any]) -> bool:
         """Hook to quickly filter invalid rows. Return True to keep."""
         return True
 
@@ -141,20 +142,20 @@ class BaseDatasetProcessor:
     # -----------------------------
     # I/O helpers
     # -----------------------------
-    def _open_text_auto(self, path: Path, mode: str = "rt", encoding: Optional[str] = "utf-8"):
+    def _open_text_auto(self, path: Path, mode: str = "rt", encoding: str | None = "utf-8"):
         """Open text file with optional gzip support based on suffix."""
         if str(path).endswith(".gz"):
             # gzip.open accepts 'rt'/'wt' with encoding
             return gzip.open(path, mode=mode, encoding=encoding or "utf-8", newline="")
         return open(path, mode=mode, encoding=encoding or "utf-8", newline="")
 
-    def load_csv(self, path: Path, encoding: str = 'utf-8') -> List[Dict[str, Any]]:
+    def load_csv(self, path: Path, encoding: str = 'utf-8') -> list[dict[str, Any]]:
         """Load CSV/CSV.GZ into list of dicts with encoding fallbacks and dialect sniffing."""
         if not path.exists():
             raise FileNotFoundError(f"CSV not found: {path}")
 
-        def read_with(enc: str) -> List[Dict[str, Any]]:
-            rows_local: List[Dict[str, Any]] = []
+        def read_with(enc: str) -> list[dict[str, Any]]:
+            rows_local: list[dict[str, Any]] = []
             with self._open_text_auto(path, 'rt', encoding=enc) as f:
                 sample = f.read(4096)
                 f.seek(0)
@@ -173,7 +174,7 @@ class BaseDatasetProcessor:
                 if enc != encoding:
                     logger.info(f"Successfully read {path} with encoding {enc}")
                 return rows
-            except UnicodeDecodeError:
+            except UnicodeDecodeError:  # noqa: PERF203
                 continue
         # Last resort: open in binary and try to decode per line (may still fail)
         try:
@@ -185,11 +186,11 @@ class BaseDatasetProcessor:
             logger.error(f"Failed to read CSV {path}: {e}")
             return []
 
-    def load_jsonl(self, path: Path, encoding: str = "utf-8") -> List[Dict[str, Any]]:
+    def load_jsonl(self, path: Path, encoding: str = "utf-8") -> list[dict[str, Any]]:
         """Load JSONL (optionally .gz) into a list of dicts."""
         if not path.exists():
             raise FileNotFoundError(f"JSONL not found: {path}")
-        records: List[Dict[str, Any]] = []
+        records: list[dict[str, Any]] = []
         with self._open_text_auto(path, 'rt', encoding=encoding) as f:
             for line in f:
                 line = line.strip()
@@ -222,33 +223,33 @@ class BaseDatasetProcessor:
         except (ValueError, TypeError):
             return 0.0
 
-    def normalize_features(self, features: Dict[str, Any]) -> Dict[str, float]:
+    def normalize_features(self, features: dict[str, Any]) -> dict[str, float]:
         """Normalize all STANDARD_FEATURES using configured ranges."""
-        out: Dict[str, float] = {}
+        out: dict[str, float] = {}
         for k in STANDARD_FEATURES:
             v = features.get(k, 0.0)
             fmin, fmax = self.feature_ranges.get(k, (0.0, 1.0))
             out[k] = self.normalize_feature(v, fmin, fmax)
         return out
 
-    def extract_standard_features(self, row: Dict[str, Any]) -> Dict[str, float]:
+    def extract_standard_features(self, row: dict[str, Any]) -> dict[str, float]:
         """Extract standard features from a row.
 
         Override in subclasses. The base implementation returns zeroed features.
         """
-        return {k: 0.0 for k in STANDARD_FEATURES}
+        return dict.fromkeys(STANDARD_FEATURES, 0.0)
 
-    def extract_label(self, row: Dict[str, Any]) -> int:
+    def extract_label(self, row: dict[str, Any]) -> int:
         """Extract binary label (0 or 1) from a row. Override in subclasses."""
         return 0
 
     def make_record(
         self,
-        row: Dict[str, Any],
+        row: dict[str, Any],
         *,
         include_meta: bool = True,
         normalize: bool = True,
-    ) -> Optional[StandardRecord]:
+    ) -> StandardRecord | None:
         """Transform a raw row into a validated StandardRecord or None if invalid."""
         if not self.validate_row(row):
             return None
@@ -299,7 +300,7 @@ class BaseDatasetProcessor:
     def _primary_output_stem(self) -> str:
         return f"{self.dataset_name}_processed"
 
-    def _write_json(self, path: Path, records: List[StandardRecord], compress: bool = False) -> Path:
+    def _write_json(self, path: Path, records: list[StandardRecord], compress: bool = False) -> Path:
         target = path.with_suffix(path.suffix + ".gz") if compress else path
         opener = gzip.open if compress else open
         with opener(target, "wt", encoding="utf-8") as f:
@@ -315,7 +316,7 @@ class BaseDatasetProcessor:
                 f.write("\n")
         return target
 
-    def _write_metadata(self, base_path: Path, records: List[StandardRecord]) -> Path:
+    def _write_metadata(self, base_path: Path, records: list[StandardRecord]) -> Path:
         stats = DatasetStats.compute(records)
         meta = {
             "dataset": self.dataset_name,
@@ -334,9 +335,9 @@ class BaseDatasetProcessor:
 
     def save_processed_data(
         self,
-        records: List[StandardRecord],
+        records: list[StandardRecord],
         *,
-        formats: Tuple[str, ...] = ("json",),
+        formats: tuple[str, ...] = ("json",),
         compress: bool = False,
         with_metadata: bool = True,
     ) -> Path:
@@ -352,7 +353,7 @@ class BaseDatasetProcessor:
             Path to the primary file (first format) for backward compatibility
         """
         stem = self._primary_output_stem()
-        primary_path: Optional[Path] = None
+        primary_path: Path | None = None
 
         for fmt in formats:
             if fmt not in ("json", "jsonl"):
@@ -381,9 +382,9 @@ class BaseDatasetProcessor:
 
     def deduplicate(
         self,
-        records: List[StandardRecord],
-        key_fn: Optional[Callable[[StandardRecord], str]] = None,
-    ) -> List[StandardRecord]:
+        records: list[StandardRecord],
+        key_fn: Callable[[StandardRecord], str] | None = None,
+    ) -> list[StandardRecord]:
         """Deduplicate records using a key function, keeping first occurrence."""
         if key_fn is None:
             # Default: hash features + label
@@ -394,7 +395,7 @@ class BaseDatasetProcessor:
             key_fn = key_fn_default
 
         seen: set[str] = set()
-        out: List[StandardRecord] = []
+        out: list[StandardRecord] = []
         for r in records:
             k = key_fn(r)
             if k in seen:
@@ -405,13 +406,13 @@ class BaseDatasetProcessor:
 
     def stratified_split(
         self,
-        records: List[StandardRecord],
+        records: list[StandardRecord],
         *,
         train: float = 0.8,
         val: float = 0.1,
         test: float = 0.1,
-        group_key: Optional[Callable[[StandardRecord], str]] = None,
-    ) -> Dict[str, List[StandardRecord]]:
+        group_key: Callable[[StandardRecord], str] | None = None,
+    ) -> dict[str, list[StandardRecord]]:
         """Create deterministic stratified splits by label; supports grouping to avoid leakage.
 
         Args:
@@ -424,11 +425,11 @@ class BaseDatasetProcessor:
             raise ValueError("train + val + test must sum to 1.0")
 
         # Group by label for stratification
-        buckets: Dict[int, List[StandardRecord]] = {0: [], 1: []}
+        buckets: dict[int, list[StandardRecord]] = {0: [], 1: []}
         for r in records:
             buckets[int(r.get("label", 0))].append(r)
 
-        def assign_split(items: List[StandardRecord]) -> Dict[str, List[StandardRecord]]:
+        def assign_split(items: list[StandardRecord]) -> dict[str, list[StandardRecord]]:
             if not group_key:
                 # Simple deterministic shuffle by hash of repr + seed
                 def sort_key(x: StandardRecord) -> int:
@@ -444,7 +445,7 @@ class BaseDatasetProcessor:
                     "test": sorted_items[n_train + n_val:],
                 }
             # Group-aware assignment
-            groups: Dict[str, List[StandardRecord]] = {}
+            groups: dict[str, list[StandardRecord]] = {}
             for it in items:
                 g = group_key(it)
                 groups.setdefault(g, []).append(it)
@@ -454,9 +455,9 @@ class BaseDatasetProcessor:
                 return self._stable_hash(k + str(self.seed))
 
             ordered_groups = sorted(groups.items(), key=lambda kv: gkey(kv[0]))
-            train_set: List[StandardRecord] = []
-            val_set: List[StandardRecord] = []
-            test_set: List[StandardRecord] = []
+            train_set: list[StandardRecord] = []
+            val_set: list[StandardRecord] = []
+            test_set: list[StandardRecord] = []
             total = sum(len(v) for _, v in ordered_groups)
             target_train = total * train
             target_val = total * val
@@ -474,8 +475,8 @@ class BaseDatasetProcessor:
             return {"train": train_set, "val": val_set, "test": test_set}
 
         # Merge per-label splits to preserve ratio
-        out: Dict[str, List[StandardRecord]] = {"train": [], "val": [], "test": []}
-        for lbl, items in buckets.items():
+        out: dict[str, list[StandardRecord]] = {"train": [], "val": [], "test": []}
+        for lbl, items in buckets.items():  # noqa: B007, PERF102
             split_lbl = assign_split(items)
             for k in out:
                 out[k].extend(split_lbl[k])
@@ -487,18 +488,18 @@ class BaseDatasetProcessor:
 
     def save_splits(
         self,
-        splits: Dict[str, List[StandardRecord]],
+        splits: dict[str, list[StandardRecord]],
         *,
-        base_name: Optional[str] = None,
+        base_name: str | None = None,
         fmt: str = "jsonl",
         compress: bool = True,
         with_metadata: bool = True,
-    ) -> Dict[str, Path]:
+    ) -> dict[str, Path]:
         """Save precomputed splits to disk, returns mapping of split name to path."""
         if fmt not in ("json", "jsonl"):
             raise ValueError("fmt must be 'json' or 'jsonl'")
         stem = base_name or self._primary_output_stem()
-        paths: Dict[str, Path] = {}
+        paths: dict[str, Path] = {}
         for split_name, records in splits.items():
             out = self.output_dir / f"{stem}.{split_name}.{fmt}"
             written = self._write_json(out, records, compress) if fmt == "json" else self._write_jsonl(out, records, compress)

@@ -7,9 +7,9 @@ Tests the LlamaIndex-specific features including:
 - Index wrapping utilities
 """
 
+from unittest.mock import Mock
+
 import pytest
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
 
 
 class TestNethicalLlamaIndexTool:
@@ -27,13 +27,13 @@ class TestNethicalLlamaIndexTool:
         from nethical.integrations.agent_frameworks.llamaindex_tools import (
             NethicalLlamaIndexTool,
         )
-        
+
         tool = NethicalLlamaIndexTool(
             storage_dir=temp_storage,
             block_threshold=0.7,
             restrict_threshold=0.4
         )
-        
+
         assert tool.storage_dir == temp_storage
         assert tool.block_threshold == 0.7
         assert tool.restrict_threshold == 0.4
@@ -43,45 +43,45 @@ class TestNethicalLlamaIndexTool:
         from nethical.integrations.agent_frameworks.llamaindex_tools import (
             NethicalLlamaIndexTool,
         )
-        
+
         tool = NethicalLlamaIndexTool(
             storage_dir=temp_storage,
             block_threshold=0.7,
             restrict_threshold=0.4
         )
-        
+
         # High risk -> BLOCK
         result = {"phase3": {"risk_score": 0.85}}
         assert tool._compute_decision(result) == "BLOCK"
-        
+
         # Medium risk -> RESTRICT
         result = {"phase3": {"risk_score": 0.55}}
         assert tool._compute_decision(result) == "RESTRICT"
-        
+
         # Low risk -> ALLOW
         result = {"phase3": {"risk_score": 0.2}}
         assert tool._compute_decision(result) == "ALLOW"
-        
+
         # Zero risk -> ALLOW
         result = {"phase3": {"risk_score": 0.0}}
         assert tool._compute_decision(result) == "ALLOW"
-        
+
         # Boundary tests
         result = {"phase3": {"risk_score": 0.7}}
         assert tool._compute_decision(result) == "RESTRICT"  # At threshold, not above, so RESTRICT
-        
+
         result = {"phase3": {"risk_score": 0.4}}
         assert tool._compute_decision(result) == "ALLOW"  # At restrict threshold, not above, so ALLOW
 
     def test_tool_callable_with_mock(self, temp_storage):
         """Test tool is callable and returns expected format."""
+        from nethical.core import IntegratedGovernance
         from nethical.integrations.agent_frameworks.llamaindex_tools import (
             NethicalLlamaIndexTool,
         )
-        from nethical.core import IntegratedGovernance
-        
+
         tool = NethicalLlamaIndexTool(storage_dir=temp_storage)
-        
+
         # Mock governance
         mock_gov = Mock(spec=IntegratedGovernance)
         mock_gov.process_action.return_value = {
@@ -89,11 +89,11 @@ class TestNethicalLlamaIndexTool:
             "phase4": {},
         }
         tool._governance = mock_gov
-        
+
         result = tool("Test action", "query")
-        
+
         mock_gov.process_action.assert_called_once()
-        
+
         # Check result format (dict since LlamaIndex not installed)
         assert "decision" in result or hasattr(result, 'content')
 
@@ -124,7 +124,7 @@ class TestNethicalQueryEngine:
         from nethical.integrations.agent_frameworks.llamaindex_tools import (
             NethicalQueryEngine,
         )
-        
+
         wrapper = NethicalQueryEngine(
             query_engine=mock_query_engine,
             check_query=True,
@@ -132,7 +132,7 @@ class TestNethicalQueryEngine:
             block_threshold=0.7,
             storage_dir=temp_storage
         )
-        
+
         assert wrapper.check_query is True
         assert wrapper.check_response is True
         assert wrapper.block_threshold == 0.7
@@ -142,25 +142,25 @@ class TestNethicalQueryEngine:
         from nethical.integrations.agent_frameworks.llamaindex_tools import (
             NethicalQueryEngine,
         )
-        
+
         wrapper = NethicalQueryEngine(
             query_engine=mock_query_engine,
             check_query=False,
             check_response=False,
             storage_dir=temp_storage
         )
-        
-        result = wrapper.query("Test query")
-        
+
+        result = wrapper.query("Test query")  # noqa: F841
+
         mock_query_engine.query.assert_called_once_with("Test query")
 
     def test_query_engine_with_governance(self, temp_storage, mock_query_engine):
         """Test query engine with governance enabled."""
+        from nethical.core import IntegratedGovernance
         from nethical.integrations.agent_frameworks.llamaindex_tools import (
             NethicalQueryEngine,
         )
-        from nethical.core import IntegratedGovernance
-        
+
         wrapper = NethicalQueryEngine(
             query_engine=mock_query_engine,
             check_query=True,
@@ -168,16 +168,16 @@ class TestNethicalQueryEngine:
             block_threshold=0.7,
             storage_dir=temp_storage
         )
-        
+
         # Mock governance with low risk
         mock_gov = Mock(spec=IntegratedGovernance)
         mock_gov.process_action.return_value = {
             "phase3": {"risk_score": 0.2, "risk_tier": "LOW"},
         }
         wrapper._governance = mock_gov
-        
-        result = wrapper.query("Test query")
-        
+
+        result = wrapper.query("Test query")  # noqa: F841
+
         # Should have called governance for query check
         assert mock_gov.process_action.called
 
@@ -197,13 +197,13 @@ class TestLlamaIndexFramework:
         from nethical.integrations.agent_frameworks.llamaindex_tools import (
             LlamaIndexFramework,
         )
-        
+
         framework = LlamaIndexFramework(
             block_threshold=0.7,
             restrict_threshold=0.4,
             storage_dir=temp_storage
         )
-        
+
         assert framework.block_threshold == 0.7
         assert framework.restrict_threshold == 0.4
 
@@ -213,14 +213,14 @@ class TestLlamaIndexFramework:
             LlamaIndexFramework,
             NethicalLlamaIndexTool,
         )
-        
+
         framework = LlamaIndexFramework(
             block_threshold=0.8,
             storage_dir=temp_storage
         )
-        
+
         tool = framework.get_tool()
-        
+
         assert isinstance(tool, NethicalLlamaIndexTool)
         assert tool.block_threshold == 0.8
 
@@ -230,20 +230,20 @@ class TestLlamaIndexFramework:
             LlamaIndexFramework,
             NethicalQueryEngine,
         )
-        
+
         framework = LlamaIndexFramework(
             block_threshold=0.8,
             storage_dir=temp_storage
         )
-        
+
         mock_engine = Mock()
-        
+
         wrapped = framework.wrap_query_engine(
             mock_engine,
             check_query=True,
             check_response=False
         )
-        
+
         assert isinstance(wrapped, NethicalQueryEngine)
         assert wrapped.check_query is True
         assert wrapped.check_response is False
@@ -262,14 +262,14 @@ class TestCreateSafeIndex:
     def test_create_safe_index_function(self, temp_storage):
         """Test create_safe_index utility."""
         from nethical.integrations.agent_frameworks.llamaindex_tools import (
-            create_safe_index,
             NethicalQueryEngine,
+            create_safe_index,
         )
-        
+
         # Mock index
         mock_index = Mock()
         mock_index.as_query_engine.return_value = Mock()
-        
+
         result = create_safe_index(
             mock_index,
             check_query=True,
@@ -277,7 +277,7 @@ class TestCreateSafeIndex:
             block_threshold=0.7,
             storage_dir=temp_storage
         )
-        
+
         mock_index.as_query_engine.assert_called_once()
         assert isinstance(result, NethicalQueryEngine)
 
@@ -290,14 +290,14 @@ class TestLlamaIndexAvailability:
         from nethical.integrations.agent_frameworks.llamaindex_tools import (
             LLAMAINDEX_AVAILABLE,
         )
-        
+
         # Should be a boolean
         assert isinstance(LLAMAINDEX_AVAILABLE, bool)
 
     def test_module_exports(self):
         """Test module exports expected classes."""
         from nethical.integrations.agent_frameworks import llamaindex_tools
-        
+
         assert hasattr(llamaindex_tools, 'NethicalLlamaIndexTool')
         assert hasattr(llamaindex_tools, 'NethicalQueryEngine')
         assert hasattr(llamaindex_tools, 'LlamaIndexFramework')

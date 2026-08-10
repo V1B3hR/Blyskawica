@@ -3,9 +3,10 @@ Phase 8: Project Symbiosis core modules.
 Implements Carbon-Silicon Bridge, Ethical Firewall, BCI Simulator, and Quantum Stent.
 """
 
+from typing import Any
+
 import torch
-import numpy as np
-from typing import Dict, Any, List, Optional
+
 
 class NeurologicalTelemetry:
     def __init__(self, timestamp: float = 0.0, attention_level: float = 0.5, stress_level: float = 0.5):
@@ -40,7 +41,7 @@ class BCISimulator:
 
 class EthicalFirewall:
     def __init__(self):
-        self.alerts: List[str] = []
+        self.alerts: list[str] = []
         self.sovereignty_score: float = 1.0
 
     def validate_outbound_neuromodulation(self, signal: torch.Tensor) -> torch.Tensor:
@@ -67,7 +68,7 @@ class QuantumStent:
         self.coherence = 0.5
         self.pulses_applied = 0
 
-    def process_telemetry(self, attention_level: float, stress_level: float) -> Dict[str, Any]:
+    def process_telemetry(self, attention_level: float, stress_level: float) -> dict[str, Any]:
         # Simple simulation: low attention/high stress decreases coherence, activating stabilization
         if attention_level < 0.5 or stress_level > 0.5:
             self.coherence = max(0.1, self.coherence - 0.05)
@@ -105,5 +106,5 @@ class CarbonSiliconBridge:
         else:
             self.target_node.workspace.attention_gain = 0.5
 
-    def _generate_neuromodulatory_feedback(self, telemetry: NeurologicalTelemetry, stent_report: Dict[str, Any]) -> torch.Tensor:
+    def _generate_neuromodulatory_feedback(self, telemetry: NeurologicalTelemetry, stent_report: dict[str, Any]) -> torch.Tensor:
         return torch.ones(16)

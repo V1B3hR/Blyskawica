@@ -14,11 +14,10 @@ across all deployed regions.
 """
 
 import logging
-from typing import Dict, Any, List, Optional
-from enum import Enum
 from dataclasses import dataclass, field
+from enum import Enum
 from pathlib import Path
-import json
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +43,7 @@ class AccessibilityLevel(Enum):
 class RegionalConfig:
     """Regional deployment configuration"""
     region: DeploymentRegion
-    primary_languages: List[str]
+    primary_languages: list[str]
     cultural_context: str  # "individualistic", "collectivistic", "high_context"
     target_users: int
     current_users: int = 0
@@ -54,7 +53,7 @@ class RegionalConfig:
     cost_per_user_usd: float = 0.0
     median_income_usd: float = 0.0
     equity_score: float = 0.0
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -72,7 +71,7 @@ class CulturalAdaptation:
     """Cultural adaptation configuration"""
     region: DeploymentRegion
     language: str
-    emotion_expression_norms: Dict[str, str]
+    emotion_expression_norms: dict[str, str]
     empathy_style: str  # "direct", "indirect", "formal", "informal"
     privacy_expectations: str  # "high", "medium", "low"
     professional_hierarchy: str  # "flat", "hierarchical"
@@ -89,23 +88,23 @@ class RegionalDeploymentManager:
     - Regional coverage: ≥5 major global regions deployed
     - Accessibility compliance: ≥95% WCAG 2.2 AA+ across all interfaces
     - Cost accessibility: Service available at ≤10% median income in each region
-    """
-    
-    def __init__(self, data_dir: Optional[Path] = None):
+    """  # noqa: W293
+
+    def __init__(self, data_dir: Path | None = None):
         """Initialize regional deployment manager"""
         self.data_dir = data_dir or Path("/tmp/phase22_regional")
         self.data_dir.mkdir(parents=True, exist_ok=True)
-        
-        self.regional_configs: Dict[DeploymentRegion, RegionalConfig] = {}
-        self.accessibility_features: List[AccessibilityFeature] = []
-        self.cultural_adaptations: Dict[str, CulturalAdaptation] = {}
-        
+
+        self.regional_configs: dict[DeploymentRegion, RegionalConfig] = {}
+        self.accessibility_features: list[AccessibilityFeature] = []
+        self.cultural_adaptations: dict[str, CulturalAdaptation] = {}
+
         self._initialize_regional_configs()
         self._initialize_accessibility_features()
         self._initialize_cultural_adaptations()
-        
+
         logger.info("RegionalDeploymentManager initialized")
-    
+
     def _initialize_regional_configs(self):
         """Initialize regional deployment configurations"""
         # Phase 22 target deployment regions
@@ -159,10 +158,10 @@ class RegionalDeploymentManager:
                 cost_per_user_usd=1.0  # Reduced for better affordability
             )
         ]
-        
+
         for config in regions_config:
             self.regional_configs[config.region] = config
-    
+
     def _initialize_accessibility_features(self):
         """Initialize accessibility features per WCAG 2.2"""
         features = [
@@ -223,9 +222,9 @@ class RegionalDeploymentManager:
                 description="Reduced motion, simplified layouts, customizable UX"
             )
         ]
-        
+
         self.accessibility_features = features
-    
+
     def _initialize_cultural_adaptations(self):
         """Initialize cultural adaptation frameworks"""
         adaptations = [
@@ -360,11 +359,11 @@ class RegionalDeploymentManager:
                 validated=True
             )
         ]
-        
+
         for adaptation in adaptations:
             key = f"{adaptation.region.value}_{adaptation.language}"
             self.cultural_adaptations[key] = adaptation
-    
+
     def calculate_regional_equity_score(self, region: DeploymentRegion) -> float:
         """
         Calculate equity score for a region.
@@ -376,31 +375,31 @@ class RegionalDeploymentManager:
         - Accessibility compliance
         - Language support
         - Cultural adaptation
-        """
+        """  # noqa: W293
         if region not in self.regional_configs:
             return 0.0
-        
+
         config = self.regional_configs[region]
-        
+
         # Cost accessibility (lower is better)
         cost_ratio = config.cost_per_user_usd / (config.median_income_usd * 0.10)  # 10% target
         cost_score = max(0.0, 1.0 - min(1.0, cost_ratio))
-        
+
         # Accessibility compliance
         accessibility_score = self.get_accessibility_compliance_percentage() / 100.0
-        
+
         # Language support (simplified)
         language_coverage = len(config.primary_languages) / 5.0  # Normalize by max expected
         language_score = min(1.0, language_coverage)
-        
+
         # Cultural adaptation
-        cultural_key = f"{region.value}_*"
+        cultural_key = f"{region.value}_*"  # noqa: F841
         cultural_adaptations = sum(
             1 for key, adapt in self.cultural_adaptations.items()
             if adapt.region == region and adapt.validated
         )
         cultural_score = min(1.0, cultural_adaptations / 2.0)  # Expect at least 2 per region
-        
+
         # Weighted average
         equity_score = (
             0.30 * cost_score +
@@ -408,63 +407,63 @@ class RegionalDeploymentManager:
             0.20 * language_score +
             0.20 * cultural_score
         )
-        
+
         config.equity_score = equity_score
         return equity_score
-    
+
     def get_global_equity_score(self) -> float:
         """
         Calculate global equity score across all regions.
         
         Phase 22 exit criterion: ≥0.88
-        """
+        """  # noqa: W293
         if not self.regional_configs:
             return 0.0
-        
+
         regional_scores = [
             self.calculate_regional_equity_score(region)
             for region in self.regional_configs.keys()
         ]
-        
+
         # Use minimum to ensure no region is left behind
         # (Alternative: weighted average by user count)
         global_equity = min(regional_scores) if regional_scores else 0.0
-        
+
         return global_equity
-    
+
     def get_accessibility_compliance_percentage(self) -> float:
         """
         Get overall accessibility compliance percentage.
         
         Phase 22 target: ≥95% WCAG 2.2 AA+
-        """
+        """  # noqa: W293
         if not self.accessibility_features:
             return 0.0
-        
+
         # Filter to AA+ features
         aa_features = [
             f for f in self.accessibility_features
             if f.wcag_level in [AccessibilityLevel.AA, AccessibilityLevel.AAA]
             and f.enabled
         ]
-        
+
         if not aa_features:
             return 0.0
-        
+
         avg_compliance = sum(f.compliance_percentage for f in aa_features) / len(aa_features)
         return avg_compliance
-    
-    def identify_equity_gaps(self, threshold: float = 0.88) -> List[Dict[str, Any]]:
+
+    def identify_equity_gaps(self, threshold: float = 0.88) -> list[dict[str, Any]]:
         """
         Identify regions with equity scores below threshold.
         
         Returns list of regions needing improvement with recommendations.
-        """
+        """  # noqa: W293
         gaps = []
-        
+
         for region, config in self.regional_configs.items():
             equity_score = self.calculate_regional_equity_score(region)
-            
+
             if equity_score < threshold:
                 gap = {
                     'region': region.value,
@@ -473,7 +472,7 @@ class RegionalDeploymentManager:
                     'gap': threshold - equity_score,
                     'recommendations': []
                 }
-                
+
                 # Cost accessibility issue
                 cost_ratio = config.cost_per_user_usd / (config.median_income_usd * 0.10)
                 if cost_ratio > 0.8:
@@ -481,13 +480,13 @@ class RegionalDeploymentManager:
                         f"Reduce cost per user (current: ${config.cost_per_user_usd:.2f}, "
                         f"target: <${config.median_income_usd * 0.10:.2f})"
                     )
-                
+
                 # Language support issue
                 if len(config.primary_languages) < 3:
                     gap['recommendations'].append(
                         f"Expand language support (current: {len(config.primary_languages)}, target: ≥3)"
                     )
-                
+
                 # Cultural adaptation issue
                 cultural_count = sum(
                     1 for adapt in self.cultural_adaptations.values()
@@ -497,12 +496,12 @@ class RegionalDeploymentManager:
                     gap['recommendations'].append(
                         f"Develop cultural adaptations (current: {cultural_count}, target: ≥2)"
                     )
-                
+
                 gaps.append(gap)
-        
+
         return gaps
-    
-    def generate_regional_deployment_plan(self, region: DeploymentRegion) -> Dict[str, Any]:
+
+    def generate_regional_deployment_plan(self, region: DeploymentRegion) -> dict[str, Any]:
         """
         Generate deployment plan for a specific region.
         
@@ -512,13 +511,13 @@ class RegionalDeploymentManager:
         - Cost optimization strategy
         - Cultural adaptation requirements
         - Accessibility checklist
-        """
+        """  # noqa: W293
         if region not in self.regional_configs:
             raise ValueError(f"Region {region.value} not configured")
-        
+
         config = self.regional_configs[region]
         equity_score = self.calculate_regional_equity_score(region)
-        
+
         # Infrastructure recommendation
         if config.target_users > 50000:
             infrastructure = "hybrid"  # Edge + Cloud
@@ -529,7 +528,7 @@ class RegionalDeploymentManager:
         else:
             infrastructure = "cloud"
             rationale = "Standard cloud deployment with auto-scaling"
-        
+
         # Energy optimization
         energy_strategy = {
             'renewable_target': 80.0,  # % renewable energy
@@ -537,7 +536,7 @@ class RegionalDeploymentManager:
             'model_compression': True,
             'efficient_routing': True
         }
-        
+
         # Cost optimization
         cost_strategy = {
             'tiered_pricing': True,
@@ -545,7 +544,7 @@ class RegionalDeploymentManager:
             'volume_discount': config.target_users > 30000,
             'target_cost_usd': min(config.cost_per_user_usd, config.median_income_usd * 0.10)
         }
-        
+
         plan = {
             'region': region.value,
             'target_users': config.target_users,
@@ -580,19 +579,19 @@ class RegionalDeploymentManager:
                 'Phase 5: Full deployment and monitoring'
             ]
         }
-        
+
         return plan
-    
-    def get_global_equity_dashboard(self) -> Dict[str, Any]:
+
+    def get_global_equity_dashboard(self) -> dict[str, Any]:
         """
         Generate comprehensive global equity dashboard.
         
         Phase 22 exit criteria validation dashboard.
-        """
+        """  # noqa: W293
         global_equity = self.get_global_equity_score()
         accessibility_compliance = self.get_accessibility_compliance_percentage()
         equity_gaps = self.identify_equity_gaps()
-        
+
         # Regional breakdown
         regional_breakdown = []
         for region, config in self.regional_configs.items():
@@ -606,7 +605,7 @@ class RegionalDeploymentManager:
                 'cost_per_user': config.cost_per_user_usd,
                 'meets_target': equity_score >= 0.88
             })
-        
+
         dashboard = {
             'timestamp': '2025-10-16',
             'global_metrics': {
@@ -646,26 +645,26 @@ class RegionalDeploymentManager:
                 for gap in equity_gaps
             ] if equity_gaps else ['All regions meet equity targets']
         }
-        
+
         return dashboard
 
 
 def main():
     """Demonstrate regional deployment management"""
     logging.basicConfig(level=logging.INFO, format='%(message)s')
-    
+
     manager = RegionalDeploymentManager()
-    
+
     print("\n" + "="*70)
     print("  Phase 22 Regional Deployment & Global Equity Dashboard")
     print("="*70)
-    
+
     dashboard = manager.get_global_equity_dashboard()
-    
+
     print(f"\nGlobal Equity Score: {dashboard['global_metrics']['global_equity_score']:.3f}")
     print(f"Accessibility Compliance: {dashboard['global_metrics']['accessibility_compliance']:.1f}%")
     print(f"Regions Deployed: {dashboard['global_metrics']['regions_deployed']}")
-    
+
     print("\n" + "-"*70)
     print("Regional Breakdown:")
     print("-"*70)
@@ -673,7 +672,7 @@ def main():
         status = "✓" if region['meets_target'] else "✗"
         print(f"{status} {region['region']:15s}: Equity={region['equity_score']:.3f}, "
               f"Cost=${region['cost_per_user']:.2f}/user")
-    
+
     if dashboard['equity_gaps']:
         print("\n" + "-"*70)
         print(f"Equity Gaps Identified: {len(dashboard['equity_gaps'])} regions need improvement")
@@ -682,7 +681,7 @@ def main():
             print(f"\n{gap['region']} (score: {gap['current_equity']:.3f}, target: {gap['target']}):")
             for rec in gap['recommendations']:
                 print(f"  • {rec}")
-    
+
     print("\n" + "="*70)
     print("Phase 22 Exit Criteria:")
     print("="*70)
@@ -694,7 +693,7 @@ def main():
     print(f"Accessibility (≥95%): {criteria['accessibility_compliance']['actual']:.1f}% "
           f"{'✓' if criteria['accessibility_compliance']['met'] else '✗'}")
     print(f"\nOverall Readiness: {'✓ APPROVED' if criteria['overall_readiness'] else '✗ NEEDS WORK'}")
-    
+
 
 if __name__ == '__main__':
     main()

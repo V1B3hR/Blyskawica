@@ -6,7 +6,7 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from nethical_recon.adapters.nmap_adapter import NmapAdapter
 from nethical_recon.core.parsers.nmap_parser import NmapParser
@@ -29,9 +29,9 @@ class PortInfo:
     port: int
     protocol: str
     state: str
-    service: Optional[str] = None
-    version: Optional[str] = None
-    banner: Optional[str] = None
+    service: str | None = None
+    version: str | None = None
+    banner: str | None = None
 
 
 @dataclass
@@ -42,13 +42,13 @@ class ScanResult:
     target: str
     profile: ScanProfile
     started_at: datetime
-    completed_at: Optional[datetime] = None
+    completed_at: datetime | None = None
     ports: list[PortInfo] = field(default_factory=list)
-    hostname: Optional[str] = None
-    os_info: Optional[dict[str, Any]] = None
-    raw_output: Optional[str] = None
+    hostname: str | None = None
+    os_info: dict[str, Any] | None = None
+    raw_output: str | None = None
     findings: list[Any] = field(default_factory=list)
-    error: Optional[str] = None
+    error: str | None = None
 
 
 class ActiveScanner:
@@ -109,7 +109,7 @@ class ActiveScanner:
         self,
         target: str,
         profile: ScanProfile = ScanProfile.STANDARD,
-        ports: Optional[str] = None,
+        ports: str | None = None,
         timeout: int = 3600,
     ) -> ScanResult:
         """Perform active port scan.

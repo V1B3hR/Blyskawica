@@ -7,21 +7,22 @@ Tests the compliance validation capabilities including:
 - Right to Explanation (GDPR Article 22)
 """
 
-import pytest
-import tempfile
 import shutil
+import tempfile
 from pathlib import Path
 
+import pytest
+
 from nethical.compliance import (
-    ComplianceValidator,
-    ComplianceFramework,
-    GDPRComplianceValidator,
-    EUAIActValidator,
-    DataResidencyManager,
-    DataRegion,
-    DataClassification,
-    DataType,
     AIRiskLevel,
+    ComplianceFramework,
+    ComplianceValidator,
+    DataClassification,
+    DataRegion,
+    DataResidencyManager,
+    DataType,
+    EUAIActValidator,
+    GDPRComplianceValidator,
     LawfulBasis,
 )
 

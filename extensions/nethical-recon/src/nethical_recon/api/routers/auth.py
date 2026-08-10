@@ -1,6 +1,6 @@
 """Authentication endpoints."""
 
-from datetime import timedelta
+from datetime import UTC, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -48,7 +48,7 @@ async def create_api_key(
     current_user: Annotated[User, Depends(require_admin)],
 ):
     """Create a new API key (admin only)."""
-    from datetime import datetime, timezone
+    from datetime import datetime
     from uuid import uuid4
 
     # Generate new API key
@@ -59,7 +59,7 @@ async def create_api_key(
     fake_api_keys[api_key] = {
         "name": key_data.name,
         "scopes": key_data.scopes,
-        "created_at": datetime.now(timezone.utc),
+        "created_at": datetime.now(UTC),
         "expires_at": key_data.expires_at,
         "last_used_at": None,
     }

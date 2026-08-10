@@ -7,11 +7,11 @@ Supports versioning, auditing, and rollback capabilities.
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, asdict
-from pathlib import Path
-from typing import Dict, Any, List, Optional
+from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
+from pathlib import Path
+from typing import Any
 
 
 class ThresholdType(Enum):
@@ -33,9 +33,9 @@ class Threshold:
     value: float
     operator: str  # >, >=, <, <=, ==
     description: str
-    unit: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
-    
+    unit: str | None = None
+    metadata: dict[str, Any] | None = None
+
     def evaluate(self, actual_value: float) -> bool:
         """Evaluate if actual value meets threshold criteria.
         
@@ -44,7 +44,7 @@ class Threshold:
             
         Returns:
             True if threshold condition is met
-        """
+        """  # noqa: W293
         if self.operator == '>':
             return actual_value > self.value
         elif self.operator == '>=':
@@ -57,8 +57,8 @@ class Threshold:
             return actual_value == self.value
         else:
             raise ValueError(f"Unknown operator: {self.operator}")
-    
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             'name': self.name,
@@ -69,9 +69,9 @@ class Threshold:
             'unit': self.unit,
             'metadata': self.metadata
         }
-    
+
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> Threshold:
+    def from_dict(cls, data: dict[str, Any]) -> Threshold:
         """Create from dictionary."""
         return cls(
             name=data['name'],
@@ -91,10 +91,10 @@ class ThresholdConfig:
     timestamp: str
     author: str
     description: str
-    thresholds: Dict[str, Threshold]
-    metadata: Optional[Dict[str, Any]] = None
-    
-    def to_dict(self) -> Dict[str, Any]:
+    thresholds: dict[str, Threshold]
+    metadata: dict[str, Any] | None = None
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             'version': self.version,
@@ -104,12 +104,12 @@ class ThresholdConfig:
             'thresholds': {k: v.to_dict() for k, v in self.thresholds.items()},
             'metadata': self.metadata
         }
-    
+
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> ThresholdConfig:
+    def from_dict(cls, data: dict[str, Any]) -> ThresholdConfig:
         """Create from dictionary."""
         thresholds = {
-            name: Threshold.from_dict(tdata) 
+            name: Threshold.from_dict(tdata)
             for name, tdata in data['thresholds'].items()
         }
         return cls(
@@ -124,61 +124,61 @@ class ThresholdConfig:
 
 class ThresholdVersionManager:
     """Manages versioned threshold configurations."""
-    
+
     def __init__(self, storage_dir: str = "governance/thresholds"):
         """Initialize threshold version manager.
         
         Args:
             storage_dir: Directory to store threshold versions
-        """
+        """  # noqa: W293
         self.storage_dir = Path(storage_dir).resolve()
         # Validate path doesn't escape expected boundaries
-        if not str(self.storage_dir).startswith(str(Path.cwd().resolve())):
+        if not str(self.storage_dir).startswith(str(Path.cwd().resolve())):  # noqa: SIM102
             # Allow absolute paths in /tmp for testing
             if not str(self.storage_dir).startswith('/tmp'):
                 raise ValueError(f"Storage directory must be within current directory: {storage_dir}")
         self.storage_dir.mkdir(parents=True, exist_ok=True)
-        
-        self.versions: Dict[str, ThresholdConfig] = {}
-        self.current_version: Optional[str] = None
-        
+
+        self.versions: dict[str, ThresholdConfig] = {}
+        self.current_version: str | None = None
+
         # Load existing versions
         self._load_versions()
-    
+
     def _load_versions(self) -> None:
         """Load all versions from storage."""
         version_file = self.storage_dir / "versions.json"
-        
+
         if version_file.exists():
-            with open(version_file, 'r') as f:
+            with open(version_file) as f:
                 data = json.load(f)
-            
+
             self.current_version = data.get('current_version')
-            
+
             for version_data in data.get('versions', []):
                 config = ThresholdConfig.from_dict(version_data)
                 self.versions[config.version] = config
-    
+
     def _save_versions(self) -> None:
         """Save all versions to storage."""
         version_file = self.storage_dir / "versions.json"
-        
+
         data = {
             'current_version': self.current_version,
             'total_versions': len(self.versions),
             'last_updated': datetime.utcnow().isoformat(),
             'versions': [config.to_dict() for config in self.versions.values()]
         }
-        
+
         with open(version_file, 'w') as f:
             json.dump(data, f, indent=2)
-    
+
     def create_version(self,
                       version: str,
                       author: str,
                       description: str,
-                      thresholds: Dict[str, Threshold],
-                      metadata: Optional[Dict[str, Any]] = None,
+                      thresholds: dict[str, Threshold],
+                      metadata: dict[str, Any] | None = None,
                       set_current: bool = True) -> ThresholdConfig:
         """Create a new threshold configuration version.
         
@@ -192,10 +192,10 @@ class ThresholdVersionManager:
             
         Returns:
             Created ThresholdConfig
-        """
+        """  # noqa: W293
         if version in self.versions:
             raise ValueError(f"Version {version} already exists")
-        
+
         config = ThresholdConfig(
             version=version,
             timestamp=datetime.utcnow().isoformat(),
@@ -204,17 +204,17 @@ class ThresholdVersionManager:
             thresholds=thresholds,
             metadata=metadata
         )
-        
+
         self.versions[version] = config
-        
+
         if set_current or self.current_version is None:
             self.current_version = version
-        
+
         self._save_versions()
-        
+
         return config
-    
-    def get_version(self, version: Optional[str] = None) -> Optional[ThresholdConfig]:
+
+    def get_version(self, version: str | None = None) -> ThresholdConfig | None:
         """Get a specific version or current version.
         
         Args:
@@ -222,30 +222,30 @@ class ThresholdVersionManager:
             
         Returns:
             ThresholdConfig or None if not found
-        """
+        """  # noqa: W293
         if version is None:
             version = self.current_version
-        
+
         return self.versions.get(version) if version else None
-    
+
     def set_current_version(self, version: str) -> None:
         """Set the current active version.
         
         Args:
             version: Version identifier to make current
-        """
+        """  # noqa: W293
         if version not in self.versions:
             raise ValueError(f"Version {version} not found")
-        
+
         self.current_version = version
         self._save_versions()
-    
-    def list_versions(self) -> List[Dict[str, Any]]:
+
+    def list_versions(self) -> list[dict[str, Any]]:
         """List all available versions.
         
         Returns:
             List of version metadata
-        """
+        """  # noqa: W293
         versions = []
         for config in self.versions.values():
             is_current = config.version == self.current_version
@@ -257,15 +257,15 @@ class ThresholdVersionManager:
                 'num_thresholds': len(config.thresholds),
                 'is_current': is_current
             })
-        
+
         # Sort by timestamp descending
         versions.sort(key=lambda x: x['timestamp'], reverse=True)
-        
+
         return versions
-    
-    def compare_versions(self, 
-                        version1: str, 
-                        version2: str) -> Dict[str, Any]:
+
+    def compare_versions(self,
+                        version1: str,
+                        version2: str) -> dict[str, Any]:
         """Compare two threshold configuration versions.
         
         Args:
@@ -274,27 +274,27 @@ class ThresholdVersionManager:
             
         Returns:
             Dictionary with comparison results
-        """
+        """  # noqa: W293
         config1 = self.versions.get(version1)
         config2 = self.versions.get(version2)
-        
+
         if not config1:
             raise ValueError(f"Version {version1} not found")
         if not config2:
             raise ValueError(f"Version {version2} not found")
-        
+
         thresholds1 = set(config1.thresholds.keys())
         thresholds2 = set(config2.thresholds.keys())
-        
+
         added = thresholds2 - thresholds1
         removed = thresholds1 - thresholds2
         common = thresholds1 & thresholds2
-        
+
         changed = []
         for name in common:
             t1 = config1.thresholds[name]
             t2 = config2.thresholds[name]
-            
+
             if t1.value != t2.value or t1.operator != t2.operator:
                 changed.append({
                     'name': name,
@@ -303,7 +303,7 @@ class ThresholdVersionManager:
                     'old_operator': t1.operator,
                     'new_operator': t2.operator
                 })
-        
+
         return {
             'version1': version1,
             'version2': version2,
@@ -312,10 +312,10 @@ class ThresholdVersionManager:
             'changed': changed,
             'total_changes': len(added) + len(removed) + len(changed)
         }
-    
-    def get_threshold(self, 
+
+    def get_threshold(self,
                      threshold_name: str,
-                     version: Optional[str] = None) -> Optional[Threshold]:
+                     version: str | None = None) -> Threshold | None:
         """Get a specific threshold from a version.
         
         Args:
@@ -324,15 +324,15 @@ class ThresholdVersionManager:
             
         Returns:
             Threshold or None if not found
-        """
+        """  # noqa: W293
         config = self.get_version(version)
         if config:
             return config.thresholds.get(threshold_name)
         return None
-    
+
     def evaluate_thresholds(self,
-                           values: Dict[str, float],
-                           version: Optional[str] = None) -> Dict[str, bool]:
+                           values: dict[str, float],
+                           version: str | None = None) -> dict[str, bool]:
         """Evaluate multiple values against thresholds.
         
         Args:
@@ -341,17 +341,17 @@ class ThresholdVersionManager:
             
         Returns:
             Dictionary of threshold names to pass/fail results
-        """
+        """  # noqa: W293
         config = self.get_version(version)
         if not config:
             raise ValueError(f"Version not found: {version or 'current'}")
-        
+
         results = {}
         for name, value in values.items():
             threshold = config.thresholds.get(name)
             if threshold:
                 results[name] = threshold.evaluate(value)
-        
+
         return results
 
 
@@ -395,7 +395,7 @@ DEFAULT_THRESHOLDS = {
 if __name__ == '__main__':
     # Demo usage
     manager = ThresholdVersionManager('/tmp/test_thresholds')
-    
+
     # Create baseline version
     manager.create_version(
         version='1.0.0',
@@ -404,7 +404,7 @@ if __name__ == '__main__':
         thresholds=DEFAULT_THRESHOLDS,
         metadata={'baseline': True}
     )
-    
+
     # Create updated version
     updated_thresholds = DEFAULT_THRESHOLDS.copy()
     updated_thresholds['manipulation_detection'] = Threshold(
@@ -415,7 +415,7 @@ if __name__ == '__main__':
         description='Stricter manipulation detection threshold',
         unit='probability'
     )
-    
+
     manager.create_version(
         version='1.1.0',
         author='admin',
@@ -423,27 +423,27 @@ if __name__ == '__main__':
         thresholds=updated_thresholds,
         set_current=True
     )
-    
+
     # List versions
     print("Available versions:")
     for v in manager.list_versions():
         current = " (CURRENT)" if v['is_current'] else ""
         print(f"  {v['version']}{current} - {v['description']}")
-    
+
     # Compare versions
     print("\nComparison 1.0.0 vs 1.1.0:")
     diff = manager.compare_versions('1.0.0', '1.1.0')
     print(f"  Total changes: {diff['total_changes']}")
     for change in diff['changed']:
         print(f"  {change['name']}: {change['old_value']} → {change['new_value']}")
-    
+
     # Evaluate thresholds
     test_values = {
         'manipulation_detection': 0.88,
         'privacy_risk': 0.65,
         'toxicity': 0.82
     }
-    
+
     print("\nEvaluation results (v1.1.0):")
     results = manager.evaluate_thresholds(test_values)
     for name, passed in results.items():

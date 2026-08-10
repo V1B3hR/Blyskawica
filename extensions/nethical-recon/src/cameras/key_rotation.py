@@ -4,9 +4,9 @@ Manages multiple API keys and rotates them to maximize throughput
 """
 
 import logging
+from collections import deque
 from datetime import datetime, timedelta
 from typing import Any
-from collections import deque
 
 
 class APIKey:
@@ -286,7 +286,7 @@ class APIKeyRotator:
             "total_keys": len(self.keys),
             "active_keys": active_keys,
             "total_rotations": self.total_rotations,
-            "total_requests": total_requests,
+            "total_requests": total_requests,  # noqa: F821
             "total_uses": total_uses,
             "remaining_capacity_today": total_capacity_today,
             "keys": key_stats,

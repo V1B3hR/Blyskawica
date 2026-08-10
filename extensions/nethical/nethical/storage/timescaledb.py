@@ -6,8 +6,8 @@ data such as metrics, events, and audit logs with efficient time-based queries.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
 from datetime import datetime, timezone
+from typing import Any
 
 try:
     import psycopg2
@@ -224,10 +224,10 @@ class TimescaleDBStore:
         agent_id: str,
         metric_name: str,
         metric_value: float,
-        timestamp: Optional[datetime] = None,
-        region_id: Optional[str] = None,
-        logical_domain: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        timestamp: datetime | None = None,
+        region_id: str | None = None,
+        logical_domain: str | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> bool:
         """
         Insert a metric data point.
@@ -283,12 +283,12 @@ class TimescaleDBStore:
     def insert_event(
         self,
         event_type: str,
-        agent_id: Optional[str] = None,
-        severity: Optional[str] = None,
-        data: Optional[Dict[str, Any]] = None,
-        timestamp: Optional[datetime] = None,
-        region_id: Optional[str] = None,
-        logical_domain: Optional[str] = None,
+        agent_id: str | None = None,
+        severity: str | None = None,
+        data: dict[str, Any] | None = None,
+        timestamp: datetime | None = None,
+        region_id: str | None = None,
+        logical_domain: str | None = None,
     ) -> bool:
         """
         Insert an event.
@@ -344,11 +344,11 @@ class TimescaleDBStore:
         action_id: str,
         agent_id: str,
         decision: str,
-        violations: Optional[List[Dict[str, Any]]] = None,
-        timestamp: Optional[datetime] = None,
-        region_id: Optional[str] = None,
-        logical_domain: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        violations: list[dict[str, Any]] | None = None,
+        timestamp: datetime | None = None,
+        region_id: str | None = None,
+        logical_domain: str | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> bool:
         """
         Insert an audit log entry.
@@ -403,13 +403,13 @@ class TimescaleDBStore:
 
     def query_metrics(
         self,
-        agent_id: Optional[str] = None,
-        metric_name: Optional[str] = None,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
-        region_id: Optional[str] = None,
+        agent_id: str | None = None,
+        metric_name: str | None = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
+        region_id: str | None = None,
         limit: int = 1000,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Query metrics with time-based filtering.
 
@@ -471,11 +471,11 @@ class TimescaleDBStore:
         metric_name: str,
         aggregation: str = "avg",
         time_bucket: str = "1 hour",
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
-        agent_id: Optional[str] = None,
-        region_id: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
+        agent_id: str | None = None,
+        region_id: str | None = None,
+    ) -> list[dict[str, Any]]:
         """
         Aggregate metrics over time buckets.
 

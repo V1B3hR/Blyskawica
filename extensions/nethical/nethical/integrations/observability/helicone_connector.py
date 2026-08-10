@@ -1,16 +1,18 @@
 """Helicone integration for Nethical governance observability."""
 
-from .base import ObservabilityProvider, TraceSpan, GovernanceMetrics
-from typing import Dict, Any, Optional
 import logging
+from typing import Any
+
 import requests
+
+from .base import GovernanceMetrics, ObservabilityProvider, TraceSpan
 
 logger = logging.getLogger(__name__)
 
 
 class HeliconeConnector(ObservabilityProvider):
     """Helicone integration for Nethical governance observability."""
-    
+
     def __init__(
         self,
         api_key: str,
@@ -21,7 +23,7 @@ class HeliconeConnector(ObservabilityProvider):
         Args:
             api_key: Helicone API key
             base_url: Helicone API base URL
-        """
+        """  # noqa: W293
         self.api_key = api_key
         self.base_url = base_url
         self.headers = {
@@ -30,12 +32,12 @@ class HeliconeConnector(ObservabilityProvider):
         }
         self.available = True
         logger.info("Helicone connector initialized")
-    
+
     def log_trace(self, span: TraceSpan) -> None:
         """Log a trace span with governance data."""
         if not self.available:
             return
-            
+
         try:
             payload = {
                 "request_id": span.span_id,
@@ -50,35 +52,35 @@ class HeliconeConnector(ObservabilityProvider):
                     "governance": span.governance_result
                 }
             }
-            
+
             response = requests.post(
                 f"{self.base_url}/log",
                 json=payload,
                 headers=self.headers,
                 timeout=5
             )
-            
+
             if response.status_code != 200:
                 logger.warning(f"Helicone log failed: {response.status_code}")
-                
+
         except Exception as e:
             logger.error(f"Failed to log trace to Helicone: {e}")
-    
+
     def log_governance_event(
         self,
         action: str,
         decision: str,
         risk_score: float,
-        metadata: Dict[str, Any]
+        metadata: dict[str, Any]
     ) -> None:
         """Log a governance evaluation event."""
         if not self.available:
             return
-            
+
         try:
-            from datetime import datetime
             import uuid
-            
+            from datetime import datetime
+
             payload = {
                 "request_id": str(uuid.uuid4()),
                 "model": "nethical-governance",
@@ -95,25 +97,25 @@ class HeliconeConnector(ObservabilityProvider):
                     "governance_version": "1.0"
                 }
             }
-            
+
             requests.post(
                 f"{self.base_url}/log",
                 json=payload,
                 headers=self.headers,
                 timeout=5
             )
-            
+
         except Exception as e:
             logger.error(f"Failed to log governance event to Helicone: {e}")
-    
+
     def log_metrics(self, metrics: GovernanceMetrics) -> None:
         """Log aggregated governance metrics."""
         if not self.available:
             return
-            
+
         try:
             import uuid
-            
+
             payload = {
                 "request_id": str(uuid.uuid4()),
                 "model": "nethical-governance-metrics",
@@ -132,17 +134,17 @@ class HeliconeConnector(ObservabilityProvider):
                     "latency_p99_ms": metrics.latency_p99_ms
                 }
             }
-            
+
             requests.post(
                 f"{self.base_url}/log",
                 json=payload,
                 headers=self.headers,
                 timeout=5
             )
-            
+
         except Exception as e:
             logger.error(f"Failed to log metrics to Helicone: {e}")
-    
+
     def create_dashboard(self, name: str) -> str:
         """Create a governance dashboard."""
         # Helicone dashboards are created in UI

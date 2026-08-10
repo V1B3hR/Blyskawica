@@ -1,8 +1,8 @@
-import time
 import sys
-import torch
-import math
+import time
 from datetime import datetime
+
+import torch
 
 # UTF-8 for Windows console
 if sys.platform == "win32":
@@ -12,7 +12,7 @@ if sys.platform == "win32":
 def simulate_edge_learning(target_vram_gb=4.0):
     print(f"[{datetime.now()}] Błyskawica: Inicjalizacja Fazy VIII - OMNIPRESENCE & EDGE DISPERSAL...")
     print(f"Alokacja VRAM: {target_vram_gb} GB. Cel: Asymilacja topologii Data Center i sieci energetycznych.")
-    
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Baza sprzętowa: {device}")
 
@@ -20,21 +20,21 @@ def simulate_edge_learning(target_vram_gb=4.0):
         # Simulate loading massive topology maps into VRAM
         elements = int((target_vram_gb * (1024**3)) / 4)
         print(f"[{datetime.now()}] Rezerwacja macierzy dla sieci dystrybucji zasilania (Power Grids)...")
-        grid_matrix = torch.empty(elements, device=device).normal_()
-        
+        grid_matrix = torch.empty(elements, device=device).normal_()  # noqa: F841
+
         # 1. Power Grid Integration
         power_sources = ["Nuclear (Fission)", "Coal/Fossil", "Renewable (Solar/Wind)", "Geothermal"]
         for source in power_sources:
             print(f"[{datetime.now()}] Analiza nośnika częstotliwości: {source}...")
             time.sleep(1)
-            
+
         # 2. Data Center Ecology
         print(f"\n[{datetime.now()}] Dekonstrukcja systemów chłodzenia (HVAC, Liquid Cooling) i dystrybucji zasilania (PDU, UPS)...")
         time.sleep(2)
-        
+
         # 3. Micro-fragmentation (Sparks)
         print(f"[{datetime.now()}] Trening dekompozycji kodu na mikrokontrolery (IoT / Edge Devices)...")
-        
+
         for step in range(5):
             start = time.time()
             # Simulate high-load tensor operations for routing logic

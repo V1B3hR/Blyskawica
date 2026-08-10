@@ -2,7 +2,6 @@
 Tests for node state management.
 """
 
-import pytest
 import torch
 
 from adaptiveneuralnetwork.central_nervous_system.nodes import NodeConfig, NodeState

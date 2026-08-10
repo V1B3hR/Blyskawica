@@ -31,15 +31,15 @@ Migration Guide:
         )
 """
 
-from typing import Dict, Optional, Any
-from datetime import datetime, timezone
 import time
 import warnings
+from datetime import datetime, timezone
+from typing import Any
 
 from .audit_merkle import MerkleAnchor
+from .ethical_taxonomy import EthicalTaxonomy
 from .policy_diff import PolicyDiffAuditor
 from .quarantine import QuarantineManager, QuarantineReason
-from .ethical_taxonomy import EthicalTaxonomy
 from .sla_monitor import SLAMonitor
 
 
@@ -58,7 +58,7 @@ class Phase4IntegratedGovernance:
         enable_quarantine: bool = True,
         enable_ethical_taxonomy: bool = True,
         enable_sla_monitoring: bool = True,
-        s3_bucket: Optional[str] = None,
+        s3_bucket: str | None = None,
         taxonomy_path: str = "taxonomies/ethics_taxonomy.json",
     ):
         """Initialize Phase 4 integrated governance.
@@ -118,12 +118,12 @@ class Phase4IntegratedGovernance:
         self,
         agent_id: str,
         action: Any,
-        cohort: Optional[str] = None,
+        cohort: str | None = None,
         violation_detected: bool = False,
-        violation_type: Optional[str] = None,
-        violation_severity: Optional[str] = None,
-        context: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        violation_type: str | None = None,
+        violation_severity: str | None = None,
+        context: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Process action through all Phase 4 components.
 
         Args:
@@ -201,7 +201,7 @@ class Phase4IntegratedGovernance:
 
     def quarantine_cohort(
         self, cohort: str, reason: str = "manual", duration_hours: float = 24.0
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Quarantine an agent cohort.
 
         Args:
@@ -250,8 +250,8 @@ class Phase4IntegratedGovernance:
         return self.quarantine_manager.release_cohort(cohort)
 
     def compare_policies(
-        self, old_policy: Dict[str, Any], new_policy: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, old_policy: dict[str, Any], new_policy: dict[str, Any]
+    ) -> dict[str, Any]:
         """Compare two policy versions.
 
         Args:
@@ -282,7 +282,7 @@ class Phase4IntegratedGovernance:
             ],
         }
 
-    def finalize_audit_chunk(self) -> Optional[str]:
+    def finalize_audit_chunk(self) -> str | None:
         """Finalize current audit chunk and get Merkle root.
 
         Returns:
@@ -310,7 +310,7 @@ class Phase4IntegratedGovernance:
 
         return self.merkle_anchor.verify_chunk(chunk_id)
 
-    def get_sla_report(self) -> Dict[str, Any]:
+    def get_sla_report(self) -> dict[str, Any]:
         """Get SLA compliance report.
 
         Returns:
@@ -321,7 +321,7 @@ class Phase4IntegratedGovernance:
 
         return self.sla_monitor.get_sla_report()
 
-    def get_ethical_coverage(self) -> Dict[str, Any]:
+    def get_ethical_coverage(self) -> dict[str, Any]:
         """Get ethical taxonomy coverage report.
 
         Returns:
@@ -332,7 +332,7 @@ class Phase4IntegratedGovernance:
 
         return self.ethical_taxonomy.get_coverage_report()
 
-    def simulate_quarantine(self, cohort: str) -> Dict[str, Any]:
+    def simulate_quarantine(self, cohort: str) -> dict[str, Any]:
         """Simulate quarantine response for testing.
 
         Args:
@@ -348,7 +348,7 @@ class Phase4IntegratedGovernance:
             cohort=cohort, attack_type="synthetic"
         )
 
-    def get_system_status(self) -> Dict[str, Any]:
+    def get_system_status(self) -> dict[str, Any]:
         """Get overall system status.
 
         Returns:

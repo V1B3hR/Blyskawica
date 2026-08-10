@@ -30,7 +30,7 @@ jobs:
 
       - name: Dependency Vulnerability Audit
         run: |
-          pip-audit --fail-on-severity high
+          pip-audit
 
       - name: Run Test Suite
         run: |

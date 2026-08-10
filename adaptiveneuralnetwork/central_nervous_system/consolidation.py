@@ -7,7 +7,7 @@ This module consolidates different types of consolidation mechanisms:
 - Memory consolidation (episodic to semantic transfer)
 
 The unified system ensures these mechanisms work together effectively.
-"""
+"""  # noqa: W291
 
 import warnings
 from abc import ABC, abstractmethod
@@ -17,9 +17,9 @@ from typing import Any
 import torch
 import torch.nn as nn
 
-from adaptiveneuralnetwork.central_nervous_system.nodes import NodeState
-from adaptiveneuralnetwork.central_nervous_system.phases import PhaseScheduler, Phase, SubPhase
 from adaptiveneuralnetwork.central_nervous_system.narrative import NarrativeEngine
+from adaptiveneuralnetwork.central_nervous_system.nodes import NodeState
+from adaptiveneuralnetwork.central_nervous_system.phases import Phase, PhaseScheduler, SubPhase
 
 
 class ConsolidationType(Enum):
@@ -46,7 +46,7 @@ class ConsolidationMechanism(ABC):
         
         Returns:
             Dictionary with consolidation results and metrics
-        """
+        """  # noqa: W293
         pass
 
     @abstractmethod
@@ -107,7 +107,7 @@ class PhaseBasedConsolidation(ConsolidationMechanism):
 
         # Differentiated Sub-phase Logic
         sub_phases = phase_scheduler.node_sub_phases
-        
+
         # 1. LIGHT SLEEP: Synaptic Downscaling (Decay)
         light_nodes = sleep_nodes & (sub_phases == SubPhase.LIGHT.value)
         if light_nodes.any():
@@ -224,9 +224,9 @@ class SynapticConsolidation(ConsolidationMechanism):
                 target_batch = batch[-1]
             else:
                 continue
-                
+
             batch_size = target_batch.size(0)
-            
+
             # --- The Gallery Logic: Process each masterpiece individually ---
             for i in range(batch_size):
                 if sample_count >= self.config["fisher_samples"]:
@@ -235,7 +235,7 @@ class SynapticConsolidation(ConsolidationMechanism):
                 # 1. Approach the masterpiece (Select individual sample)
                 device = next(self.model.parameters()).device
                 sample_inputs = [x[i:i+1].to(device) if torch.is_tensor(x) else x for x in inputs_batch]
-                sample_target = target_batch[i:i+1].to(device)
+                sample_target = target_batch[i:i+1].to(device)  # noqa: F841
 
                 # Reset neuromorphic state and exorcise buffer-linked graph ghosts
                 with torch.no_grad():
@@ -244,7 +244,7 @@ class SynapticConsolidation(ConsolidationMechanism):
                         self.model.network.reset_state()
                     elif hasattr(self.model, 'reset_state'):
                         self.model.reset_state()
-                    
+
                     # 2. Buffer Exorcism: Break any temporal graph links in neuromorphic buffers
                     for buffer in self.model.buffers():
                         buffer.detach_()
@@ -262,17 +262,17 @@ class SynapticConsolidation(ConsolidationMechanism):
                     output = self.model(sample_inputs[0])
                 else:
                     output = self.model(*sample_inputs)
-                
+
                 # 3. Analyze details (Compute log-likelihood)
                 # We use the correct NLL sign for the Fisher information metric
                 log_prob = torch.nn.functional.log_softmax(output, dim=1)
-                
+
                 # We need to sample the class to estimate Fisher
                 with torch.no_grad():
                     pred_class = output.argmax(dim=1)
-                
+
                 loss = -log_prob[0, pred_class[0]]
-                
+
                 # 4. Record importance (Backward pass on individual graph)
                 loss.backward()
 
@@ -396,7 +396,7 @@ class MemoryConsolidation(ConsolidationMechanism):
 
 class NarrativeConsolidation(ConsolidationMechanism):
     """Consolidation mechanism for narrative synthesis (Autobiographical Memory)."""
-    
+
     def __init__(self, narrative_engine: NarrativeEngine, **config):
         default_config = {"consolidation_strength": 0.9}
         default_config.update(config)
@@ -408,12 +408,12 @@ class NarrativeConsolidation(ConsolidationMechanism):
         results = {"modifications": [], "metrics": {}}
         if not self.is_active:
             return results
-            
+
         # Run synthesis
         self.narrative_engine.synthesize(episodic_observations)
         results["modifications"].append("Synthesized new narrative GISt from episodic history")
         results["metrics"]["reflection"] = self.narrative_engine.reflect()
-        
+
         return results
 
     def get_consolidation_strength(self) -> float:
@@ -524,7 +524,7 @@ class UnifiedConsolidationManager:
             for key in ["episodic_memories", "semantic_memories", "importance_scores"]:
                 if key in kwargs:
                     filtered[key] = kwargs[key]
-                    
+
         elif mechanism.consolidation_type == ConsolidationType.NARRATIVE:
             # Narrative synthesis needs episodic history
             for key in ["episodic_observations"]:

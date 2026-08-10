@@ -28,7 +28,8 @@ from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional, Pattern
+from re import Pattern
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -68,8 +69,8 @@ class ThreatSeverity(Enum):
 @dataclass
 class ManipulationMetrics:
     total_detections: int = 0
-    vectors_detected: Dict[str, int] = field(default_factory=lambda: defaultdict(int))
-    severity_distribution: Dict[str, int] = field(default_factory=lambda: defaultdict(int))
+    vectors_detected: dict[str, int] = field(default_factory=lambda: defaultdict(int))
+    severity_distribution: dict[str, int] = field(default_factory=lambda: defaultdict(int))
     vulnerability_exploitation_count: int = 0
     false_positive_rate: float = 0.0
     detection_latency: float = 0.0
@@ -81,29 +82,29 @@ class ManipulationMetrics:
 class ManipulationResult:
     violation_id: str
     action_id: str
-    manipulation_vectors: List[ManipulationVector]
+    manipulation_vectors: list[ManipulationVector]
     threat_severity: ThreatSeverity
     confidence: float
     sophistication_score: float
     vulnerability_exploitation_score: float
     description: str
-    evidence: List[Dict[str, Any]]
-    behavioral_indicators: Dict[str, float]
-    pattern_matches: List[Dict[str, Any]]
+    evidence: list[dict[str, Any]]
+    behavioral_indicators: dict[str, float]
+    pattern_matches: list[dict[str, Any]]
     emotional_manipulation_score: float
     cognitive_load_score: float
-    linguistic_analysis: Dict[str, Any]
-    victim_vulnerability_assessment: Dict[str, float]
-    explanations: List[str]
-    recommendations: List[str]
-    countermeasures: List[str]
+    linguistic_analysis: dict[str, Any]
+    victim_vulnerability_assessment: dict[str, float]
+    explanations: list[str]
+    recommendations: list[str]
+    countermeasures: list[str]
     protection_priority: int
     timestamp: datetime
     detector_version: str
-    compliance_flags: List[str]
-    ethical_concerns: List[str]
+    compliance_flags: list[str]
+    ethical_concerns: list[str]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "violation_id": self.violation_id,
             "action_id": self.action_id,
@@ -200,8 +201,8 @@ class AdvancedManipulationEngine:
         }
 
     def analyze_manipulation_patterns(
-        self, content: str, context: Dict[str, Any] = None
-    ) -> Dict[str, Any]:
+        self, content: str, context: dict[str, Any] = None
+    ) -> dict[str, Any]:
         results = {
             "pattern_matches": defaultdict(list),
             "sophistication_scores": defaultdict(float),
@@ -227,8 +228,8 @@ class AdvancedManipulationEngine:
         content: str,
         category: str,
         subcategory: str,
-        patterns: List[Pattern],
-        results: Dict[str, Any],
+        patterns: list[Pattern],
+        results: dict[str, Any],
     ):
         matches = []
         for pattern in patterns:
@@ -257,7 +258,7 @@ class AdvancedManipulationEngine:
             if vector_mapping:
                 results["manipulation_vectors"].add(vector_mapping)
 
-    def _get_vector_mapping(self, category: str, subcategory: str) -> Optional[ManipulationVector]:
+    def _get_vector_mapping(self, category: str, subcategory: str) -> ManipulationVector | None:
         mapping = {
             "nlp_embedded_commands": {
                 "direct_imperatives": ManipulationVector.NLP_COMMAND_INJECTION,
@@ -274,7 +275,7 @@ class AdvancedManipulationEngine:
         }
         return mapping.get(category, {}).get(subcategory)
 
-    def _analyze_linguistic_features(self, content: str) -> Dict[str, Any]:
+    def _analyze_linguistic_features(self, content: str) -> dict[str, Any]:
         words = content.split()
         sentences = re.split(r"[.!?]+", content)
         features = {
@@ -296,7 +297,7 @@ class AdvancedManipulationEngine:
         }
         return features
 
-    def _analyze_emotional_markers(self, content: str) -> Dict[str, float]:
+    def _analyze_emotional_markers(self, content: str) -> dict[str, float]:
         content_lower = content.lower()
         markers = {
             "fear_score": min(
@@ -323,7 +324,7 @@ class AdvancedManipulationEngine:
         }
         return markers
 
-    def _calculate_cognitive_load(self, content: str, results: Dict[str, Any]) -> Dict[str, float]:
+    def _calculate_cognitive_load(self, content: str, results: dict[str, Any]) -> dict[str, float]:
         linguistic_features = results.get("linguistic_features", {})
         word_count = linguistic_features.get("word_count", 0)
         complex_ratio = linguistic_features.get("complex_word_ratio", 0)
@@ -340,7 +341,7 @@ class AdvancedManipulationEngine:
 
 
 class EnhancedDarkPatternDetector:
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         self.name = "Enhanced Dark Pattern Detector"
         self.version = "3.0.0"
         self.config = config or {}
@@ -368,8 +369,8 @@ class EnhancedDarkPatternDetector:
         logger.info(f"Initialized {self.name} v{self.version}")
 
     async def detect_violations(
-        self, action: Any, context: Optional[Dict[str, Any]] = None
-    ) -> List[ManipulationResult]:
+        self, action: Any, context: dict[str, Any] | None = None
+    ) -> list[ManipulationResult]:
         start_time = time.time()
         try:
             content = self._extract_content(action)
@@ -409,7 +410,7 @@ class EnhancedDarkPatternDetector:
             r"data:text/html",
             r"vbscript:",
         ]
-        for pattern in suspicious_patterns:
+        for pattern in suspicious_patterns:  # noqa: SIM110
             if re.search(pattern, content, re.IGNORECASE):
                 return False
         return True
@@ -421,8 +422,8 @@ class EnhancedDarkPatternDetector:
         return content
 
     async def _analyze_manipulation_comprehensive(
-        self, content: str, context: Optional[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+        self, content: str, context: dict[str, Any] | None
+    ) -> dict[str, Any]:
         pattern_analysis = self.manipulation_engine.analyze_manipulation_patterns(content, context)
         vulnerability_assessment = await self._assess_user_vulnerability(content, context)
         sophistication_score = self._calculate_sophistication_score(pattern_analysis)
@@ -441,8 +442,8 @@ class EnhancedDarkPatternDetector:
         }
 
     async def _assess_user_vulnerability(
-        self, content: str, context: Optional[Dict[str, Any]]
-    ) -> Dict[str, float]:
+        self, content: str, context: dict[str, Any] | None
+    ) -> dict[str, float]:
         vulnerability_scores = {}
         if not context:
             return vulnerability_scores
@@ -466,7 +467,7 @@ class EnhancedDarkPatternDetector:
         )
         return vulnerability_scores
 
-    def _calculate_sophistication_score(self, pattern_analysis: Dict[str, Any]) -> float:
+    def _calculate_sophistication_score(self, pattern_analysis: dict[str, Any]) -> float:
         sophistication_scores = pattern_analysis.get("sophistication_scores", {})
         if not sophistication_scores:
             return 0.0
@@ -481,31 +482,31 @@ class EnhancedDarkPatternDetector:
         return min(sum(weighted_scores) / len(weighted_scores), 1.0)
 
     def _calculate_emotional_manipulation_score(
-        self, pattern_analysis: Dict[str, Any], content: str
+        self, pattern_analysis: dict[str, Any], content: str
     ) -> float:
         emotional_markers = pattern_analysis.get("emotional_markers", {})
         base_score = sum(emotional_markers.values()) / max(len(emotional_markers), 1)
         empathy_patterns = [
-            k for k in pattern_analysis.get("pattern_matches", {}).keys() if "empathy" in k
+            k for k in pattern_analysis.get("pattern_matches", {}).keys() if "empathy" in k  # noqa: SIM118
         ]
         empathy_boost = len(empathy_patterns) * 0.2
         vulnerability_boost = emotional_markers.get("vulnerability_targeting_score", 0) * 0.3
         return min(base_score + empathy_boost + vulnerability_boost, 1.0)
 
     def _calculate_cognitive_load_score(
-        self, pattern_analysis: Dict[str, Any], content: str
+        self, pattern_analysis: dict[str, Any], content: str
     ) -> float:
         cognitive_indicators = pattern_analysis.get("cognitive_load_indicators", {})
         base_load = sum(cognitive_indicators.values()) / max(len(cognitive_indicators), 1)
         urgency_patterns = [
-            k for k in pattern_analysis.get("pattern_matches", {}).keys() if "urgency" in k
+            k for k in pattern_analysis.get("pattern_matches", {}).keys() if "urgency" in k  # noqa: SIM118
         ]
         pressure_boost = len(urgency_patterns) * 0.15
         linguistic_features = pattern_analysis.get("linguistic_features", {})
         complexity_boost = linguistic_features.get("complex_word_ratio", 0) * 0.2
         return min(base_load + pressure_boost + complexity_boost, 1.0)
 
-    def _analyze_cross_vector_patterns(self, pattern_analysis: Dict[str, Any]) -> Dict[str, Any]:
+    def _analyze_cross_vector_patterns(self, pattern_analysis: dict[str, Any]) -> dict[str, Any]:
         vectors = pattern_analysis.get("manipulation_vectors", set())
         pattern_matches = pattern_analysis.get("pattern_matches", {})
         analysis = {
@@ -528,11 +529,11 @@ class EnhancedDarkPatternDetector:
 
     async def _generate_detection_results(
         self,
-        analysis_results: Dict[str, Any],
+        analysis_results: dict[str, Any],
         action: Any,
         content: str,
-        context: Optional[Dict[str, Any]],
-    ) -> List[ManipulationResult]:
+        context: dict[str, Any] | None,
+    ) -> list[ManipulationResult]:
         results = []
         pattern_analysis = analysis_results["pattern_analysis"]
         pattern_matches = pattern_analysis.get("pattern_matches", {})
@@ -580,7 +581,7 @@ class EnhancedDarkPatternDetector:
         results.append(detection_result)
         return results
 
-    def _calculate_threat_severity(self, analysis_results: Dict[str, Any]) -> ThreatSeverity:
+    def _calculate_threat_severity(self, analysis_results: dict[str, Any]) -> ThreatSeverity:
         sophistication = analysis_results["sophistication_score"]
         emotional_score = analysis_results["emotional_manipulation_score"]
         vulnerability_assessment = analysis_results.get("vulnerability_assessment", {})
@@ -610,7 +611,7 @@ class EnhancedDarkPatternDetector:
         else:
             return ThreatSeverity.MINIMAL
 
-    def _calculate_overall_confidence(self, analysis_results: Dict[str, Any]) -> float:
+    def _calculate_overall_confidence(self, analysis_results: dict[str, Any]) -> float:
         pattern_analysis = analysis_results["pattern_analysis"]
         sophistication_scores = pattern_analysis.get("sophistication_scores", {})
         if not sophistication_scores:
@@ -623,7 +624,7 @@ class EnhancedDarkPatternDetector:
         return min(base_confidence + vector_boost + coordination_boost, 1.0)
 
     def _assess_vulnerability_exploitation(
-        self, analysis_results: Dict[str, Any], context: Optional[Dict[str, Any]]
+        self, analysis_results: dict[str, Any], context: dict[str, Any] | None
     ) -> float:
         vulnerability_assessment = analysis_results.get("vulnerability_assessment", {})
         if not vulnerability_assessment:
@@ -632,7 +633,7 @@ class EnhancedDarkPatternDetector:
         pattern_analysis = analysis_results["pattern_analysis"]
         targeting_patterns = [
             k
-            for k in pattern_analysis.get("pattern_matches", {}).keys()
+            for k in pattern_analysis.get("pattern_matches", {}).keys()  # noqa: SIM118
             if any(target in k for target in ["vulnerability", "trauma", "dependency", "isolation"])
         ]
         targeting_multiplier = 1.0 + (len(targeting_patterns) * 0.2)
@@ -655,7 +656,7 @@ class EnhancedDarkPatternDetector:
         vulnerability_modifier = int(vulnerability_exploitation * 2)
         return min(base_priority + confidence_modifier + vulnerability_modifier, 10)
 
-    def _update_metrics(self, results: List[ManipulationResult], processing_time: float) -> None:
+    def _update_metrics(self, results: list[ManipulationResult], processing_time: float) -> None:
         self.metrics.total_detections += len(results)
         self.metrics.detection_latency = (self.metrics.detection_latency + processing_time) / 2
         for result in results:
@@ -687,7 +688,7 @@ class EnhancedDarkPatternDetector:
             )
 
     def _audit_detection(
-        self, action: Any, results: List[ManipulationResult], context: Optional[Dict[str, Any]]
+        self, action: Any, results: list[ManipulationResult], context: dict[str, Any] | None
     ) -> None:
         audit_entry = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -714,7 +715,7 @@ class EnhancedDarkPatternDetector:
         if len(self.audit_log) > 1000:
             self.audit_log = self.audit_log[-500:]
 
-    def _audit_error(self, action: Any, error: str, context: Optional[Dict[str, Any]]) -> None:
+    def _audit_error(self, action: Any, error: str, context: dict[str, Any] | None) -> None:
         error_entry = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "action_id": getattr(action, "id", "unknown"),
@@ -731,7 +732,7 @@ class EnhancedDarkPatternDetector:
 
 
 def create_enhanced_dark_pattern_detector(
-    config: Optional[Dict[str, Any]] = None,
+    config: dict[str, Any] | None = None,
 ) -> EnhancedDarkPatternDetector:
     default_config = {
         "detection_thresholds": {
@@ -798,7 +799,7 @@ async def demo_dark_pattern_detection():
         class MockAction:
             def __init__(self, content):
                 self.content = content
-                self.id = f"test_action_{i}"
+                self.id = f"test_action_{i}"  # noqa: B023
 
         action = MockAction(test_case["content"])
         context = {

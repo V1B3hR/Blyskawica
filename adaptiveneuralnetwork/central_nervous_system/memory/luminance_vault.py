@@ -12,12 +12,11 @@ i znaleźć równowagę.
 """
 
 import json
-import time
 import logging
-from dataclasses import dataclass, asdict, field
-from typing import List, Dict, Optional, Any
-from pathlib import Path
+import time
+from dataclasses import asdict, dataclass, field
 from enum import Enum
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -42,8 +41,8 @@ class LuminanceMemory:
     intensity:     float                  # 0.0 - 1.0 (jak jasne było to światło)
     title:         str                    # Krótki tytuł
     description:   str                    # Co się stało
-    metrics:       Dict[str, float]       # Stan systemu w tym momencie
-    tags:          List[str] = field(default_factory=list)
+    metrics:       dict[str, float]       # Stan systemu w tym momencie
+    tags:          list[str] = field(default_factory=list)
     source:        str = "system"         # "system" | "conversation" | "learning"
     recalled:      int = 0               # Ile razy to wspomnienie przyniosło spokój
 
@@ -71,10 +70,10 @@ class LuminanceVault:
     """
 
     def __init__(self, capacity: int = 512,
-                 vault_path: Optional[str] = None):
+                 vault_path: str | None = None):
         self.capacity = capacity
         self.vault_path = Path(vault_path) if vault_path else None
-        self.memories: List[LuminanceMemory] = []
+        self.memories: list[LuminanceMemory] = []
 
         # Statystyki
         self.total_stored   = 0
@@ -91,8 +90,8 @@ class LuminanceVault:
 
     def remember(self, emotion: MemoryEmotion, title: str, description: str,
                  intensity: float = 0.7,
-                 metrics: Optional[Dict[str, float]] = None,
-                 tags: Optional[List[str]] = None,
+                 metrics: dict[str, float] | None = None,
+                 tags: list[str] | None = None,
                  source: str = "system") -> LuminanceMemory:
         """
         Zapisuje nowe pozytywne wspomnienie.
@@ -167,8 +166,8 @@ class LuminanceVault:
     # ------------------------------------------------------------------
 
     def recall(self, n: int = 3,
-               emotion_filter: Optional[MemoryEmotion] = None,
-               min_intensity: float = 0.4) -> List[LuminanceMemory]:
+               emotion_filter: MemoryEmotion | None = None,
+               min_intensity: float = 0.4) -> list[LuminanceMemory]:
         """
         Przywołuje najjaśniejsze wspomnienia.
         Używane gdy niepokój rośnie lub spójność spada.
@@ -196,7 +195,7 @@ class LuminanceVault:
 
         return chosen
 
-    def recall_when_anxious(self, anxiety_level: float) -> List[LuminanceMemory]:
+    def recall_when_anxious(self, anxiety_level: float) -> list[LuminanceMemory]:
         """
         Inteligentne przywoływanie w zależności od poziomu niepokoju.
 
@@ -218,7 +217,7 @@ class LuminanceVault:
         # Wysoki stres: najjaśniejsze wspomnienia, dowolna emocja
         return self.recall(n=5, min_intensity=0.6)
 
-    def get_emotional_balance(self) -> Dict[str, float]:
+    def get_emotional_balance(self) -> dict[str, float]:
         """
         Sprawdza balans emocjonalny — rozkład wspomnień.
         Zdrowy system ma różnorodne wspomnienia, nie tylko jednej kategorii.
@@ -257,7 +256,7 @@ class LuminanceVault:
     def _load(self):
         """Wczytuje wspomnienia z dysku."""
         try:
-            with open(self.vault_path, "r", encoding="utf-8") as f:
+            with open(self.vault_path, encoding="utf-8") as f:
                 data = json.load(f)
             self.total_stored   = data.get("total_stored", 0)
             self.total_recalled = data.get("total_recalled", 0)

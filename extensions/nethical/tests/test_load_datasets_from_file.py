@@ -30,7 +30,7 @@ class TestLoadDatasetsFromFile:
             f.write("https://www.kaggle.com/datasets/Microsoft/microsoft-security-incident-prediction\n")
             f.write("https://www.kaggle.com/datasets/owner/dataset-name\n")
             file_path = f.name
-        
+
         try:
             result = load_datasets_from_file(Path(file_path))
             assert len(result) == 3
@@ -47,7 +47,7 @@ class TestLoadDatasetsFromFile:
             f.write("https://www.kaggle.com/competitions/2023-kaggle-ai-report/discussion/409817\n")
             f.write("https://www.kaggle.com/discussions/general/409208\n")
             file_path = f.name
-        
+
         try:
             result = load_datasets_from_file(Path(file_path))
             # Only the first URL should be parsed (the dataset URL)
@@ -61,7 +61,7 @@ class TestLoadDatasetsFromFile:
         with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
             f.write("https://www.kaggle.com/datasets/teamincribo/cyber-security-attacks\n")
             file_path = f.name
-        
+
         try:
             result = load_datasets_from_file(Path(file_path))
             # Only the dataset URL should be parsed, not code
@@ -76,7 +76,7 @@ class TestLoadDatasetsFromFile:
             f.write("https://www.kaggle.com/datasets/owner/dataset\n")
             f.write("https://www.kaggle.com/competitions/some-competition\n")
             file_path = f.name
-        
+
         try:
             result = load_datasets_from_file(Path(file_path))
             assert len(result) == 1
@@ -94,7 +94,7 @@ class TestLoadDatasetsFromFile:
         with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
             f.write("")
             file_path = f.name
-        
+
         try:
             result = load_datasets_from_file(Path(file_path))
             assert result == []
@@ -108,7 +108,7 @@ class TestLoadDatasetsFromFile:
             f.write("https://www.kaggle.com/competitions/competition-name\n")
             f.write("https://www.kaggle.com/discussions/general/123456\n")
             file_path = f.name
-        
+
         try:
             result = load_datasets_from_file(Path(file_path))
             assert result == []
@@ -125,7 +125,7 @@ class TestLoadDatasetsFromFile:
             f.write("https://www.kaggle.com/datasets/owner2/dataset2\n")
             f.write("\n")
             file_path = f.name
-        
+
         try:
             result = load_datasets_from_file(Path(file_path))
             assert len(result) == 2
@@ -140,7 +140,7 @@ class TestLoadDatasetsFromFile:
             f.write("https://www.kaggle.com/datasets/mpwolke/cusersmarildownloadsphilosophycsv/discussion/156387\n")
             f.write("https://www.kaggle.com/datasets/owner/dataset/versions/2\n")
             file_path = f.name
-        
+
         try:
             result = load_datasets_from_file(Path(file_path))
             assert len(result) == 2
@@ -167,7 +167,7 @@ class TestLoadDatasetsFromFile:
             f.write("https://www.kaggle.com/datasets/owner/\n")  # Empty dataset name
             f.write("https://www.kaggle.com/datasets/owner/dataset\n")  # Valid
             file_path = f.name
-        
+
         try:
             result = load_datasets_from_file(Path(file_path))
             # Only the valid URL should be parsed
@@ -183,7 +183,7 @@ class TestLoadDatasetsFromFile:
             f.write("https://example.com/datasets/something\n")
             f.write("https://www.kaggle.com/datasets/owner/dataset\n")
             file_path = f.name
-        
+
         try:
             result = load_datasets_from_file(Path(file_path))
             assert len(result) == 1

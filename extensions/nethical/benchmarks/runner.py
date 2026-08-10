@@ -8,12 +8,10 @@ import asyncio
 import json
 import logging
 import os
-import sys
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -47,8 +45,8 @@ class BenchmarkResult:
     min_latency_ms: float
     max_latency_ms: float
     throughput_rps: float
-    errors: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    errors: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class BenchmarkRunner:
@@ -56,7 +54,7 @@ class BenchmarkRunner:
 
     def __init__(self, config: BenchmarkConfig):
         self.config = config
-        self.results: List[BenchmarkResult] = []
+        self.results: list[BenchmarkResult] = []
 
     async def run_scenario(
         self,
@@ -69,16 +67,16 @@ class BenchmarkRunner:
         # Warmup
         logger.info(f"Warming up with {self.config.warmup_iterations} iterations")
         for _ in range(self.config.warmup_iterations):
-            try:
+            try:  # noqa: SIM105
                 await asyncio.wait_for(
                     scenario_func(), timeout=self.config.timeout_seconds
                 )
-            except Exception:
+            except Exception:  # noqa: PERF203
                 pass
 
         # Main benchmark
-        latencies: List[float] = []
-        errors: List[str] = []
+        latencies: list[float] = []
+        errors: list[str] = []
         successful = 0
         failed = 0
 
@@ -86,7 +84,7 @@ class BenchmarkRunner:
 
         semaphore = asyncio.Semaphore(self.config.concurrent_workers)
 
-        async def run_iteration() -> Optional[float]:
+        async def run_iteration() -> float | None:
             nonlocal successful, failed
             async with semaphore:
                 try:
@@ -156,7 +154,7 @@ class BenchmarkRunner:
 
         return result
 
-    def save_results(self, output_path: Optional[str] = None) -> str:
+    def save_results(self, output_path: str | None = None) -> str:
         """Save benchmark results to JSON file."""
         if output_path is None:
             os.makedirs(self.config.output_dir, exist_ok=True)
@@ -207,8 +205,8 @@ class BenchmarkRunner:
 
 async def run_default_benchmarks() -> None:
     """Run all default benchmark scenarios."""
-    from benchmarks.scenarios.throughput import ThroughputScenario
     from benchmarks.scenarios.latency import LatencyScenario
+    from benchmarks.scenarios.throughput import ThroughputScenario
 
     config = BenchmarkConfig(
         name="default",

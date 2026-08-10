@@ -26,12 +26,12 @@ import os
 import socket
 import threading
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Union
-
+from typing import Any
 
 # ====== Utilities ======
 
@@ -68,13 +68,13 @@ def _redact(value: Any) -> Any:
 
 
 def sanitize_metadata(
-    md: Dict[str, Any],
+    md: dict[str, Any],
     *,
     redact_keys: Iterable[str] = _DEFAULT_REDACT_KEYS,
     max_len: int = _DEFAULT_MAX_METADATA_LEN,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Redact sensitive keys and cap oversized string values."""
-    safe: Dict[str, Any] = {}
+    safe: dict[str, Any] = {}
     redact_keys_lower = {k.lower() for k in redact_keys}
 
     for k, v in md.items():
@@ -112,9 +112,9 @@ class LogEntry:
     level: LogLevel
     message: str
     source: str
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         safe_metadata = sanitize_metadata(self.metadata)
         return {
             "timestamp": self.timestamp.isoformat(),  # UTC with tz
@@ -129,7 +129,7 @@ class LogEntry:
         return json.dumps(self.to_dict(), ensure_ascii=False)
 
     @staticmethod
-    def from_log_record(record: logging.LogRecord, source: str = "python-logger") -> "LogEntry":
+    def from_log_record(record: logging.LogRecord, source: str = "python-logger") -> LogEntry:
         # Attach extras if present
         md = {}
         for k, v in getattr(record, "__dict__", {}).items():
@@ -211,8 +211,8 @@ class SyslogConnector(LogConnector):
         facility: int = 16,  # LOG_LOCAL0
         protocol: str = "UDP",
         rfc: int = 3164,  # or 5424
-        app_name: Optional[str] = None,
-        procid: Optional[str] = None,
+        app_name: str | None = None,
+        procid: str | None = None,
         msgid: str = "-",
         include_metadata: bool = True,
     ):
@@ -249,7 +249,7 @@ class SyslogConnector(LogConnector):
         else:
             raise ValueError(f"Unsupported protocol: {protocol}")
 
-        self.buffer: List[LogEntry] = []
+        self.buffer: list[LogEntry] = []
         self.buffer_size = 100
 
     def _format(self, entry: LogEntry) -> bytes:
@@ -293,7 +293,7 @@ class SyslogConnector(LogConnector):
         host = socket.gethostname()
         base = f"<{pri}>{timestamp} {host} {entry.source}: {entry.message}"
         if self.include_metadata and entry.metadata:
-            try:
+            try:  # noqa: SIM105
                 base += " " + json.dumps(sanitize_metadata(entry.metadata), ensure_ascii=False)
             except Exception:
                 pass
@@ -319,13 +319,13 @@ class SyslogConnector(LogConnector):
         failed = []
         for entry in self.buffer:
             if not self.send(entry):
-                failed.append(entry)
+                failed.append(entry)  # noqa: PERF401
         self.buffer = failed
         return len(self.buffer) == 0
 
     def close(self) -> None:
         self.flush()
-        try:
+        try:  # noqa: SIM105
             self.socket.close()
         except Exception:
             pass
@@ -353,10 +353,10 @@ class CloudWatchConnector(LogConnector):
         self.batch_size = batch_size
         self.create_if_missing = create_if_missing
 
-        self.buffer: List[LogEntry] = []
+        self.buffer: list[LogEntry] = []
         self._lock = threading.Lock()
         self._client = None
-        self._sequence_token: Optional[str] = None
+        self._sequence_token: str | None = None
 
         try:
             import boto3  # type: ignore
@@ -462,7 +462,7 @@ class JSONFileConnector(LogConnector):
 
     def __init__(
         self,
-        filepath: Union[str, Path],
+        filepath: str | Path,
         buffer_size: int = 10,
         max_bytes: int = 10_000_000,  # ~10MB
         backup_count: int = 5,
@@ -479,7 +479,7 @@ class JSONFileConnector(LogConnector):
         self.filepath = Path(filepath)
         self.filepath.parent.mkdir(parents=True, exist_ok=True)
 
-        self.buffer: List[LogEntry] = []
+        self.buffer: list[LogEntry] = []
         self.buffer_size = buffer_size
 
         self.max_bytes = max_bytes
@@ -490,7 +490,7 @@ class JSONFileConnector(LogConnector):
         self._open_file()
 
     def _open_file(self) -> None:
-        self.file = open(self.filepath, "a", encoding=self.encoding)
+        self.file = open(self.filepath, "a", encoding=self.encoding)  # noqa: SIM115
 
     def _should_rotate(self) -> bool:
         if self.max_bytes <= 0:
@@ -503,7 +503,7 @@ class JSONFileConnector(LogConnector):
             return False
 
     def _rotate(self) -> None:
-        try:
+        try:  # noqa: SIM105
             self.file.close()
         except Exception:
             pass
@@ -559,7 +559,7 @@ class JSONFileConnector(LogConnector):
         try:
             self.flush()
         finally:
-            try:
+            try:  # noqa: SIM105
                 self.file.close()
             except Exception:
                 pass
@@ -577,10 +577,10 @@ class MerkleAnchorConnector(LogConnector):
     - docs/implementation/AUDIT_LOGGING_IMPLEMENTATION.md
     """
 
-    def __init__(self, audit_path: Union[str, Path] = "training_audit_logs"):
+    def __init__(self, audit_path: str | Path = "training_audit_logs"):
         self.audit_path = Path(audit_path)
         self.audit_path.mkdir(parents=True, exist_ok=True)
-        self._buffer: List[LogEntry] = []
+        self._buffer: list[LogEntry] = []
         self._anchor = None
         try:
             # Lazy import to avoid hard dependency for general use
@@ -638,7 +638,7 @@ class LogAggregator:
     """
 
     def __init__(self):
-        self.connectors: List[LogConnector] = []
+        self.connectors: list[LogConnector] = []
 
     def add_connector(self, connector: LogConnector) -> None:
         self.connectors.append(connector)
@@ -654,31 +654,31 @@ class LogAggregator:
         for connector in self.connectors:
             try:
                 connector.send(entry)
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 logging.error(f"Connector {connector.__class__.__name__} failed: {e}")
 
     def flush_all(self) -> None:
         for connector in self.connectors:
             try:
                 connector.flush()
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 logging.error(f"Failed to flush {connector.__class__.__name__}: {e}")
 
     def close_all(self) -> None:
         for connector in self.connectors:
             try:
                 connector.close()
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 logging.error(f"Failed to close {connector.__class__.__name__}: {e}")
 
-    def __enter__(self) -> "LogAggregator":
+    def __enter__(self) -> LogAggregator:
         return self
 
     def __exit__(self, exc_type, exc, tb) -> None:
         self.close_all()
 
     @classmethod
-    def from_config(cls, config: Dict[str, Any]) -> "LogAggregator":
+    def from_config(cls, config: dict[str, Any]) -> LogAggregator:
         """
         Construct aggregator from a config dict, consistent with
         docs/EXTERNAL_INTEGRATIONS_GUIDE.md recommendations.
@@ -719,7 +719,7 @@ class AggregatorHandler(logging.Handler):
         logging.getLogger().addHandler(handler)
     """
 
-    def __init__(self, aggregator: LogAggregator, source: Optional[str] = None):
+    def __init__(self, aggregator: LogAggregator, source: str | None = None):
         super().__init__()
         self.aggregator = aggregator
         self.source = source or "python-logger"

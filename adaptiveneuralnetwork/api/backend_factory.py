@@ -9,6 +9,7 @@ import logging
 from typing import Union
 
 from adaptiveneuralnetwork.central_nervous_system.jax_backend import convert_pytorch_to_jax_config
+
 from .config import AdaptiveConfig
 from .model import AdaptiveModel
 
@@ -19,7 +20,7 @@ class BackendFactory:
     """Factory class for creating models with different backends."""
 
     @staticmethod
-    def create_model(config: AdaptiveConfig) -> Union[AdaptiveModel, 'JAXAdaptiveModel', 'NeuromorphicAdaptiveModel']:
+    def create_model(config: AdaptiveConfig) -> Union[AdaptiveModel, 'JAXAdaptiveModel', 'NeuromorphicAdaptiveModel']:  # noqa: F821
         """
         Create adaptive model with specified backend.
         
@@ -32,7 +33,7 @@ class BackendFactory:
         Raises:
             ValueError: If backend is not supported
             ImportError: If required dependencies are not available
-        """
+        """  # noqa: W293
         backend = config.backend.lower()
 
         if backend == "pytorch":
@@ -52,9 +53,12 @@ class BackendFactory:
         return AdaptiveModel(config)
 
     @staticmethod
-    def _create_jax_model(config: AdaptiveConfig) -> 'JAXAdaptiveModel':
+    def _create_jax_model(config: AdaptiveConfig) -> 'JAXAdaptiveModel':  # noqa: F821
         """Create JAX-based adaptive model."""
-        from adaptiveneuralnetwork.central_nervous_system.jax_backend import is_jax_available, JAXAdaptiveModel
+        from adaptiveneuralnetwork.central_nervous_system.jax_backend import (
+            JAXAdaptiveModel,
+            is_jax_available,
+        )
         if not is_jax_available():
             raise ImportError("JAX backend requested but JAX is not available. "
                             "Please install JAX with: pip install jax jaxlib flax optax")
@@ -73,9 +77,13 @@ class BackendFactory:
         return model
 
     @staticmethod
-    def _create_neuromorphic_model(config: AdaptiveConfig) -> 'NeuromorphicAdaptiveModel':
+    def _create_neuromorphic_model(config: AdaptiveConfig) -> 'NeuromorphicAdaptiveModel':  # noqa: F821
         """Create neuromorphic-compatible adaptive model."""
-        from adaptiveneuralnetwork.central_nervous_system.neuromorphic import NeuromorphicAdaptiveModel, NeuromorphicConfig, NeuromorphicPlatform
+        from adaptiveneuralnetwork.central_nervous_system.neuromorphic import (
+            NeuromorphicAdaptiveModel,
+            NeuromorphicConfig,
+            NeuromorphicPlatform,
+        )
         logger.info("Creating neuromorphic-compatible adaptive model")
 
         # Create neuromorphic config
@@ -100,7 +108,7 @@ def create_adaptive_model(
     config: AdaptiveConfig | None = None,
     backend: str = "pytorch",
     **kwargs
-) -> Union[AdaptiveModel, 'JAXAdaptiveModel', 'NeuromorphicAdaptiveModel']:
+) -> Union[AdaptiveModel, 'JAXAdaptiveModel', 'NeuromorphicAdaptiveModel']:  # noqa: F821
     """
     Convenience function to create adaptive model with specified backend.
     
@@ -121,7 +129,7 @@ def create_adaptive_model(
         
         >>> # Neuromorphic model
         >>> model = create_adaptive_model(backend="neuromorphic", hidden_dim=64)
-    """
+    """  # noqa: W293
     if config is None:
         import dataclasses
         valid_fields = {f.name for f in dataclasses.fields(AdaptiveConfig)}
@@ -146,7 +154,7 @@ def list_available_backends() -> dict[str, bool]:
     
     Returns:
         Dictionary mapping backend names to availability status
-    """
+    """  # noqa: W293
     from adaptiveneuralnetwork.central_nervous_system.jax_backend import is_jax_available
     backends = {
         "pytorch": True,  # Always available since it's a core dependency
@@ -163,7 +171,7 @@ def get_backend_info() -> dict[str, dict]:
     
     Returns:
         Dictionary with backend information
-    """
+    """  # noqa: W293
     from adaptiveneuralnetwork.central_nervous_system.jax_backend import is_jax_available
     info = {
         "pytorch": {

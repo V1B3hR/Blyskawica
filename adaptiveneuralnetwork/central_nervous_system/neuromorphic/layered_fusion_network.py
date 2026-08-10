@@ -15,17 +15,15 @@ Zasady:
     - Kule melioracyjne: posiadają wewnętrzny tryb KWARANTANNY
 """
 
-import torch
-import torch.nn as nn
-import math
-from typing import Optional, List, Dict, Tuple
 from enum import IntEnum
 
-from adaptiveneuralnetwork.central_nervous_system.neuromorphic.orbital_networks import (
-    QuantumGravityNode,
-    LQGSpinNetwork,
-)
+import torch
+import torch.nn as nn
 
+from adaptiveneuralnetwork.central_nervous_system.neuromorphic.orbital_networks import (
+    LQGSpinNetwork,
+    QuantumGravityNode,
+)
 
 # =============================================================================
 # STAŁE ARCHITEKTONICZNE
@@ -83,7 +81,7 @@ class MeliorationBall(nn.Module):
         )
 
         # Stan kwarantanny: lista przechwyconych tensorów
-        self.quarantine_buffer: List[torch.Tensor] = []
+        self.quarantine_buffer: list[torch.Tensor] = []
         self.quarantine_hits: int = 0
         self.released_hits: int = 0
 
@@ -118,7 +116,7 @@ class MeliorationBall(nn.Module):
             self.quarantine_buffer.append(signal.detach().clone())
             self.quarantine_hits += 1
 
-    def _release_quarantine(self, original_shape) -> Optional[torch.Tensor]:
+    def _release_quarantine(self, original_shape) -> torch.Tensor | None:
         """
         Zwalnia dane z kwarantanny po wewnętrznej weryfikacji przez siatki LQG.
         Zwraca oczyszczony sygnał (kształt zgodny z original_shape) lub None.
@@ -200,7 +198,7 @@ class MeliorationBall(nn.Module):
 
         return out, thick, stiff, pos
 
-    def get_status(self) -> Dict:
+    def get_status(self) -> dict:
         return {
             "layer": self.layer_role.name,
             "mass": self.mass,
@@ -255,7 +253,7 @@ class FusionHeart(nn.Module):
         # Energia fuzji — skumulowana energia kognitywna
         self.register_buffer('fusion_energy', torch.zeros(1))
 
-        print("[FusionHeart] *** Fuzyjne Serce aktywne. Masa=%.1f, "
+        print("[FusionHeart] *** Fuzyjne Serce aktywne. Masa=%.1f, "  # noqa: UP031
               "Siatka plazmowa: %d wezlow, dim=%d" % (self.core.mass, self.PLASMA_GRID_SIZE, dim))
 
     def _plasma_filter(self, signal: torch.Tensor) -> torch.Tensor:
@@ -294,7 +292,7 @@ class FusionHeart(nn.Module):
         return filtered
 
     def forward(self, signal_from_layer2: torch.Tensor,
-                time_delta: float = 0.05) -> Tuple[torch.Tensor, Dict]:
+                time_delta: float = 0.05) -> tuple[torch.Tensor, dict]:
         """
         Przyjmuje sygnał z Warstwy 2, przepuszcza przez plazmę, przetwarza w sercu.
         signal_from_layer2: shape (1, 32) — zagregowany wektor z NetworkLayer
@@ -372,9 +370,9 @@ class NetworkLayer(nn.Module):
         self.dim = dim
         self.num_balls = n
 
-    def forward(self, external_input: Optional[List[Optional[torch.Tensor]]] = None,
-                inter_layer_signal: Optional[torch.Tensor] = None,
-                time_delta: float = 0.05) -> Tuple[torch.Tensor, List[Dict]]:
+    def forward(self, external_input: list[torch.Tensor | None] | None = None,
+                inter_layer_signal: torch.Tensor | None = None,
+                time_delta: float = 0.05) -> tuple[torch.Tensor, list[dict]]:
         """
         Jeden krok przetwarzania warstwy.
 
@@ -465,7 +463,7 @@ class LayeredFusionNetwork(nn.Module):
         self._frozen_layers = set()
 
         # Historia
-        self.processing_log: List[Dict] = []
+        self.processing_log: list[dict] = []
 
         total_balls = (
             self.layer_external.num_balls +
@@ -474,22 +472,22 @@ class LayeredFusionNetwork(nn.Module):
         )
         print("\n" + "="*60)
         print("  [V5] Blyskawica V5 - Architektura Kwantowo-Fuzyjna")
-        print("  Laczna liczba kul: %d (3+4+3+1)" % total_balls)
+        print("  Laczna liczba kul: %d (3+4+3+1)" % total_balls)  # noqa: UP031
         print("  Warstwy filtrow: 3 + Fuzyjne Serce")
         print("="*60 + "\n")
 
     def freeze_layer(self, role: LayerRole):
         """DEFCON: Zamroz warstwe (dane przez nia nie przejda)."""
         self._frozen_layers.add(role)
-        print("[LayeredFusion] [FROZEN] Warstwa %s ZAMROZONA (DEFCON)" % role.name)
+        print("[LayeredFusion] [FROZEN] Warstwa %s ZAMROZONA (DEFCON)" % role.name)  # noqa: UP031
 
     def unfreeze_layer(self, role: LayerRole):
         """Odblokuj warstwe po normalizacji sytuacji."""
         self._frozen_layers.discard(role)
-        print("[LayeredFusion] [OK] Warstwa %s ODBLOKOWANA" % role.name)
+        print("[LayeredFusion] [OK] Warstwa %s ODBLOKOWANA" % role.name)  # noqa: UP031
 
-    def forward(self, external_stimuli: Optional[List[Optional[torch.Tensor]]] = None,
-                time_steps: int = 4, time_delta: float = 0.05) -> Dict:
+    def forward(self, external_stimuli: list[torch.Tensor | None] | None = None,
+                time_steps: int = 4, time_delta: float = 0.05) -> dict:
         """
         Pełny cykl przetwarzania przez wszystkie warstwy.
 
@@ -513,7 +511,7 @@ class LayeredFusionNetwork(nn.Module):
         sig_w1 = None
         sig_w2 = None
 
-        for step in range(time_steps):
+        for step in range(time_steps):  # noqa: B007
 
             # ─── WARSTWA 0: Interfejs zewnętrzny ───────────────────────
             if LayerRole.EXTERNAL not in self._frozen_layers:
@@ -573,11 +571,11 @@ class LayeredFusionNetwork(nn.Module):
             "=" * 52,
             "  [V5] BLYSKAWICA V5 - STATUS SYSTEMU",
             "-" * 52,
-            "  Kule W0 (zewn.):    %d aktywne" % self.layer_external.num_balls,
-            "  Kule W1 (mel.I):    %d aktywne" % self.layer_melio_1.num_balls,
-            "  Kule W2 (mel.II):   %d aktywne" % self.layer_melio_2.num_balls,
-            "  [HEART] Serce fuzyjne:  Energia = %.4f" % fusion_e,
-            "  Kwarantanny lacznie: %d" % total_quarantined,
+            "  Kule W0 (zewn.):    %d aktywne" % self.layer_external.num_balls,  # noqa: UP031
+            "  Kule W1 (mel.I):    %d aktywne" % self.layer_melio_1.num_balls,  # noqa: UP031
+            "  Kule W2 (mel.II):   %d aktywne" % self.layer_melio_2.num_balls,  # noqa: UP031
+            "  [HEART] Serce fuzyjne:  Energia = %.4f" % fusion_e,  # noqa: UP031
+            "  Kwarantanny lacznie: %d" % total_quarantined,  # noqa: UP031
             "  Zamrozone warstwy:  %s" % (str(frozen) if frozen else 'BRAK'),
             "=" * 52,
         ]

@@ -11,7 +11,7 @@ import statistics
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ class ConnectionMetrics:
     bytes_sent: int = 0
     bytes_received: int = 0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert metrics to dictionary."""
         return {
             "timestamp": self.timestamp.isoformat(),
@@ -151,7 +151,7 @@ class SatelliteMetrics:
         self._max_samples = max_samples
 
         # Sample storage
-        self._samples: List[MetricsSample] = []
+        self._samples: list[MetricsSample] = []
 
         # Cumulative counters
         self._total_packets_sent = 0
@@ -162,8 +162,8 @@ class SatelliteMetrics:
         self._reconnection_count = 0
 
         # Connection tracking
-        self._connection_start: Optional[datetime] = None
-        self._last_update: Optional[datetime] = None
+        self._connection_start: datetime | None = None
+        self._last_update: datetime | None = None
 
         # Current values
         self._current_latency_ms = 0.0
@@ -236,7 +236,7 @@ class SatelliteMetrics:
         """Record a reconnection event."""
         self._reconnection_count += 1
 
-    def set_connection_start(self, start_time: Optional[datetime] = None):
+    def set_connection_start(self, start_time: datetime | None = None):
         """Set connection start time."""
         self._connection_start = start_time or datetime.utcnow()
 
@@ -286,7 +286,7 @@ class SatelliteMetrics:
             bytes_received=self._total_bytes_received,
         )
 
-    def _calculate_latency_stats(self) -> Dict[str, float]:
+    def _calculate_latency_stats(self) -> dict[str, float]:
         """Calculate latency statistics."""
         if not self._samples:
             return {"min": 0, "max": 0, "avg": 0, "p95": 0, "p99": 0}
@@ -302,7 +302,7 @@ class SatelliteMetrics:
             "p99": sorted_latencies[int(len(sorted_latencies) * 0.99)],
         }
 
-    def _calculate_jitter_stats(self) -> Dict[str, float]:
+    def _calculate_jitter_stats(self) -> dict[str, float]:
         """Calculate jitter statistics."""
         if not self._samples:
             return {"avg": 0}
@@ -313,7 +313,7 @@ class SatelliteMetrics:
 
         return {"avg": statistics.mean(jitters)}
 
-    def _calculate_packet_loss(self) -> Dict[str, Any]:
+    def _calculate_packet_loss(self) -> dict[str, Any]:
         """Calculate packet loss statistics."""
         if self._total_packets_sent == 0:
             return {"percent": 0.0, "lost": 0}
@@ -380,7 +380,7 @@ class SatelliteMetrics:
         # Weighted average
         return (latency_score * 0.4 + loss_score * 0.4 + signal_score * 0.2)
 
-    def get_health_assessment(self) -> Dict[str, Any]:
+    def get_health_assessment(self) -> dict[str, Any]:
         """
         Get connection health assessment.
 

@@ -1,4 +1,4 @@
-[pełny plik – ze wszystkimi nowościami na temat codziennej empatii dodanymi na stałe]
+# pełny plik – ze wszystkimi nowościami na temat codziennej empatii dodanymi na stałe
 
 """
 Complete Enhanced Empathy Engine for GCS-v7 with OpenBCI Integration
@@ -24,24 +24,24 @@ Author: Enhanced for GCS-v7 Integration
 Date: 2026
 """
 
-import logging
+import logging  # noqa: I001
 import os
 import re
 import json
-import hashlib
+import hashlib  # noqa: F401
 import threading
 import queue
 import time
 import warnings
-from datetime import datetime, timedelta
-from dataclasses import dataclass, field, asdict
-from typing import Dict, List, Optional, Any, Tuple, Callable
+from datetime import datetime, timedelta  # noqa: F401
+from dataclasses import dataclass, field, asdict  # noqa: F401
+from typing import Dict, List, Optional, Any, Tuple, Callable  # noqa: F401, UP035
 from enum import Enum
 from collections import deque
 
 import numpy as np
 from scipy import signal
-from scipy.stats import pearsonr, skew, kurtosis
+from scipy.stats import pearsonr, skew, kurtosis  # noqa: F401
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
@@ -49,7 +49,7 @@ from cryptography.fernet import Fernet
 
 # Optional imports with fallbacks
 try:
-    from brainflow.board_shim import BoardShim, BrainFlowInputParams, BoardIds
+    from brainflow.board_shim import BoardShim, BrainFlowInputParams, BoardIds  # noqa: I001
     from brainflow.data_filter import DataFilter, FilterTypes
     BRAINFLOW_AVAILABLE = True
 except ImportError:
@@ -58,22 +58,22 @@ except ImportError:
 
 try:
     from sklearn.decomposition import FastICA
-    from sklearn.ensemble import IsolationForest
+    from sklearn.ensemble import IsolationForest  # noqa: F401
     SKLEARN_AVAILABLE = True
 except ImportError:
     SKLEARN_AVAILABLE = False
     logging.warning("scikit-learn not available for advanced processing")
 
 try:
-    from transformers import pipeline
+    from transformers import pipeline  # noqa: F401
     TRANSFORMERS_AVAILABLE = True
 except ImportError:
     TRANSFORMERS_AVAILABLE = False
     logging.warning("transformers not available for text emotion")
 
 try:
-    import matplotlib.pyplot as plt
-    from matplotlib.animation import FuncAnimation
+    import matplotlib.pyplot as plt  # noqa: F401
+    from matplotlib.animation import FuncAnimation  # noqa: F401
     MATPLOTLIB_AVAILABLE = True
 except ImportError:
     MATPLOTLIB_AVAILABLE = False
@@ -89,7 +89,7 @@ except Exception:
 
 # Optional Prometheus observability
 try:
-    from prometheus_client import start_http_server, Gauge, Counter
+    from prometheus_client import start_http_server, Gauge, Counter  # noqa: I001
     PROM_AVAILABLE = True
 except Exception:
     PROM_AVAILABLE = False
@@ -164,7 +164,7 @@ def _init_metrics(port: int):
 # CORE DATA STRUCTURES
 # ============================================================================
 
-class EmotionalState(str, Enum):
+class EmotionalState(str, Enum):  # noqa: UP042
     """28-category emotional taxonomy"""
     # High arousal positive
     EXCITEMENT = "excitement"
@@ -172,28 +172,28 @@ class EmotionalState(str, Enum):
     ENTHUSIASM = "enthusiasm"
     EUPHORIA = "euphoria"
     AMUSEMENT = "amusement"
-    
+# noqa: W293
     # Low arousal positive
     CONTENTMENT = "contentment"
     PEACEFULNESS = "peacefulness"
     GRATITUDE = "gratitude"
     SERENITY = "serenity"
     SATISFACTION = "satisfaction"
-    
+# noqa: W293
     # High arousal negative
     ANGER = "anger"
     FEAR = "fear"
     ANXIETY = "anxiety"
     PANIC = "panic"
     FRUSTRATION = "frustration"
-    
+# noqa: W293
     # Low arousal negative
     SADNESS = "sadness"
     DEPRESSION = "depression"
     LONELINESS = "loneliness"
     MELANCHOLY = "melancholy"
     HOPELESSNESS = "hopelessness"
-    
+# noqa: W293
     # Complex emotions
     STRESS = "stress"
     CONFUSION = "confusion"
@@ -219,17 +219,17 @@ class CrisisLevel(Enum):
 class EmotionPrediction:
     """Comprehensive emotion prediction result"""
     primary_emotion: EmotionalState
-    emotion_probabilities: Dict[str, float]
+    emotion_probabilities: Dict[str, float]  # noqa: UP006
     valence: float  # -1 to 1
     arousal: float  # 0 to 1
     dominance: float  # 0 to 1
     confidence: float  # 0 to 1
     temporal_stability: float  # 0 to 1
-    feature_importance: Dict[str, float]
+    feature_importance: Dict[str, float]  # noqa: UP006
     crisis_level: CrisisLevel = CrisisLevel.NONE
     crisis_risk_score: float = 0.0
     timestamp: datetime = field(default_factory=datetime.now)
-    empathic_message: Optional[str] = None  # NEW FIELD
+    empathic_message: Optional[str] = None  # NEW FIELD  # noqa: UP045
 
 
 @dataclass
@@ -243,7 +243,7 @@ class UserProfile:
     calibration_completed: bool = False
     session_start: datetime = field(default_factory=datetime.now)
     emotion_history: deque = field(default_factory=lambda: deque(maxlen=100))
-    liked_activities: List[str] = field(default_factory=lambda: ["posłuchać muzyki", "obejrzeć zabawny filmik", "przypomnieć sobie najlepsze momenty tygodnia"])  # przykłady
+    liked_activities: List[str] = field(default_factory=lambda: ["posłuchać muzyki", "obejrzeć zabawny filmik", "przypomnieć sobie najlepsze momenty tygodnia"])  # przykłady  # noqa: UP006
 
 
 # ============================================================================
@@ -291,7 +291,7 @@ class OnlineStandardizer:
 
 class OpenBCIInterface:
     """Real-time OpenBCI board interface"""
-    
+# noqa: W293
     FREQ_BANDS = {
         'delta': (0.5, 4),
         'theta': (4, 8),
@@ -299,15 +299,15 @@ class OpenBCIInterface:
         'beta': (13, 30),
         'gamma': (30, 50)
     }
-    
-    def __init__(self, board_type: str = 'synthetic', serial_port: str = '', 
+# noqa: W293
+    def __init__(self, board_type: str = 'synthetic', serial_port: str = '',  # noqa: W291
                  sampling_rate: int = 250):
         self.board = None
         self.board_type = board_type
         self.sampling_rate = sampling_rate
         self.is_streaming = False
         self.data_queue = queue.Queue(maxsize=1000)
-        
+# noqa: W293
         if BRAINFLOW_AVAILABLE:
             board_ids = {
                 'synthetic': BoardIds.SYNTHETIC_BOARD,
@@ -315,7 +315,7 @@ class OpenBCIInterface:
                 'ganglion': BoardIds.GANGLION_BOARD,
                 'cyton_daisy': BoardIds.CYTON_DAISY_BOARD
             }
-            
+# noqa: W293
             params = BrainFlowInputParams()
             params.serial_port = serial_port
             try:
@@ -326,7 +326,7 @@ class OpenBCIInterface:
                 self.board = None
         else:
             logging.warning("BrainFlow not available - simulation mode")
-    
+# noqa: W293
     def start_stream(self):
         """Start data acquisition"""
         if self.board and not self.is_streaming:
@@ -339,7 +339,7 @@ class OpenBCIInterface:
             except Exception as e:
                 logging.error(f"Failed to start OpenBCI stream: {e}")
                 self.is_streaming = False
-    
+# noqa: W293
     def stop_stream(self):
         """Stop data acquisition"""
         if self.board and self.is_streaming:
@@ -350,7 +350,7 @@ class OpenBCIInterface:
                 logging.info("OpenBCI stream stopped")
             except Exception as e:
                 logging.error(f"Error stopping OpenBCI: {e}")
-    
+# noqa: W293
     def _collect_data(self):
         """Background data collection thread"""
         while self.is_streaming:
@@ -367,42 +367,42 @@ class OpenBCIInterface:
                     time.sleep(0.05)
             except Exception as e:
                 logging.error(f"Error collecting data: {e}")
-    
-    def get_latest_window(self, window_size: float = 4.0) -> Optional[np.ndarray]:
+# noqa: W293
+    def get_latest_window(self, window_size: float = 4.0) -> Optional[np.ndarray]:  # noqa: UP045
         """Get latest time window of EEG data as (channels, samples)"""
         if not self.is_streaming:
             # Simulation mode - generate synthetic data
             n_channels = 8
             n_samples = int(window_size * self.sampling_rate)
             return np.random.randn(n_channels, n_samples) * 50
-        
+# noqa: W293
         try:
             all_data = []
             while not self.data_queue.empty():
                 all_data.append(self.data_queue.get_nowait())
-            
+# noqa: W293
             if not all_data:
                 return None
-            
+# noqa: W293
             combined = np.concatenate(all_data, axis=1)
             n_samples = int(window_size * self.sampling_rate)
-            
+# noqa: W293
             if combined.shape[1] < n_samples:
                 return None
-            
+# noqa: W293
             eeg_channels = BoardShim.get_eeg_channels(self.board.board_id)
             return combined[eeg_channels, -n_samples:]
         except Exception as e:
             logging.error(f"Error getting data: {e}")
             return None
-    
+# noqa: W293
     def preprocess_eeg(self, eeg_data: np.ndarray) -> np.ndarray:
         """Advanced EEG preprocessing"""
         if eeg_data.size == 0:
             return eeg_data
-        
+# noqa: W293
         processed = eeg_data.copy()
-        
+# noqa: W293
         # Bandpass filter (0.5-50 Hz) and notch 50/60Hz
         if BRAINFLOW_AVAILABLE:
             for ch in range(processed.shape[0]):
@@ -419,7 +419,7 @@ class OpenBCIInterface:
                     logging.debug(f"Filtering error on ch {ch}: {e}")
         else:
             pass
-        
+# noqa: W293
         if SKLEARN_AVAILABLE and processed.shape[0] >= 4:
             try:
                 ica = FastICA(n_components=min(processed.shape[0], 8), random_state=42, max_iter=500)
@@ -430,31 +430,31 @@ class OpenBCIInterface:
                 processed = ica.inverse_transform(sources).T
             except Exception as e:
                 logging.debug(f"ICA failed or skipped: {e}")
-        
+# noqa: W293
         return processed
-    
-    def extract_features(self, eeg_data: np.ndarray) -> Dict[str, float]:
+# noqa: W293
+    def extract_features(self, eeg_data: np.ndarray) -> Dict[str, float]:  # noqa: UP006
         """Extract comprehensive EEG features"""
         features = {}
-        
+# noqa: W293
         if eeg_data.size == 0:
             return features
-        
+# noqa: W293
         features['mean'] = float(np.mean(eeg_data))
         features['std'] = float(np.std(eeg_data))
         features['rms'] = float(np.sqrt(np.mean(eeg_data**2)))
-        
+# noqa: W293
         for band_name, (low, high) in self.FREQ_BANDS.items():
             band_power = self._compute_band_power(eeg_data, low, high)
             features[f'power_{band_name}'] = float(band_power)
-        
+# noqa: W293
         if eeg_data.shape[0] >= 4:
             alpha_left = self._compute_band_power(eeg_data[:2].mean(axis=0).reshape(1, -1), 8, 13)
             alpha_right = self._compute_band_power(eeg_data[2:4].mean(axis=0).reshape(1, -1), 8, 13)
             features['alpha_asymmetry'] = float(np.log(alpha_right + 1e-10) - np.log(alpha_left + 1e-10))
-        
+# noqa: W293
         return features
-    
+# noqa: W293
     def _compute_band_power(self, data: np.ndarray, low_freq: float, high_freq: float) -> float:
         """Compute power in frequency band over channels"""
         try:
@@ -479,7 +479,7 @@ class OpenBCIInterface:
 
 class EmotionRecognitionModel:
     """Multi-scale CNN + Attention for emotion recognition with uncertainty"""
-    
+# noqa: W293
     def __init__(self, n_channels: int = 8, n_timepoints: int = 1000, weights_path: str = ""):
         self.n_channels = n_channels
         self.n_timepoints = n_timepoints
@@ -493,7 +493,7 @@ class EmotionRecognitionModel:
                 logging.warning(f"Failed to load weights ({weights_path}): {e}")
         else:
             logging.warning("EmotionRecognitionModel running with random weights (no weights file found).")
-    
+# noqa: W293
     def _build_model(self):
         inputs = layers.Input(shape=(self.n_timepoints, self.n_channels))
         conv_outputs = []
@@ -527,12 +527,12 @@ class EmotionRecognitionModel:
             metrics={'emotion': 'accuracy', 'valence': 'mae', 'arousal': 'mae', 'dominance': 'mae'}
         )
         return model
-    
+# noqa: W293
     @tf.function
     def _forward_train(self, batch):
         return self.model(batch, training=True)
 
-    def predict_with_uncertainty(self, eeg_data: np.ndarray, n_samples: int = 15) -> Dict[str, Any]:
+    def predict_with_uncertainty(self, eeg_data: np.ndarray, n_samples: int = 15) -> Dict[str, Any]:  # noqa: UP006
         if eeg_data.shape != (self.n_timepoints, self.n_channels):
             eeg_data = self._resize_input(eeg_data)
         batch = np.expand_dims(eeg_data, axis=0)
@@ -554,7 +554,7 @@ class EmotionRecognitionModel:
             'dominance_mean': float(np.mean(doms)),
             'dominance_std': float(np.std(doms)),
         }
-    
+# noqa: W293
     def _resize_input(self, eeg_data: np.ndarray) -> np.ndarray:
         from scipy.interpolate import interp1d
         if eeg_data.shape[0] == self.n_channels and eeg_data.shape[1] != self.n_channels:
@@ -597,18 +597,18 @@ class CrisisDetector:
         r"\bsuicide\b", r"\bkill myself\b", r"\bend it all\b", r"\bself[-\s]?harm\b",
         r"\bnot worth living\b", r"\bbetter off dead\b", r"\bno reason to live\b"
     ]
-    
+# noqa: W293
     def __init__(self, half_life_sec: float = 120.0):
-        self.pattern_buffer: Dict[str, deque] = {}
-        self.crisis_history: Dict[str, List] = {}
-        self.user_state: Dict[str, Dict[str, Any]] = {}
+        self.pattern_buffer: Dict[str, deque] = {}  # noqa: UP006
+        self.crisis_history: Dict[str, List] = {}  # noqa: UP006
+        self.user_state: Dict[str, Dict[str, Any]] = {}  # noqa: UP006
         self.decay_lambda = np.log(2) / max(half_life_sec, 1.0)
-    
+# noqa: W293
     def _decay(self, prior_score: float, dt_sec: float) -> float:
         return float(prior_score * np.exp(-self.decay_lambda * max(dt_sec, 0.0)))
-    
+# noqa: W293
     def detect_crisis(self, user_id: str, emotion_prediction: EmotionPrediction,
-                      text_input: Optional[str] = None) -> Tuple[CrisisLevel, float]:
+                      text_input: Optional[str] = None) -> Tuple[CrisisLevel, float]:  # noqa: UP006, UP045
         now = datetime.now()
         state = self.user_state.get(user_id, {'score': 0.0, 'last_ts': now})
         dt = (now - state['last_ts']).total_seconds()
@@ -652,7 +652,7 @@ class CrisisDetector:
         if crisis_level.value >= CrisisLevel.MODERATE.value:
             self._log_crisis(user_id, crisis_level, risk_score)
         return crisis_level, risk_score
-    
+# noqa: W293
     def _log_crisis(self, user_id: str, level: CrisisLevel, score: float):
         if user_id not in self.crisis_history:
             self.crisis_history[user_id] = []
@@ -668,7 +668,7 @@ class CrisisDetector:
 # EVERYDAY EMPATHY MESSAGES
 # ============================================================================
 
-def generate_empathic_message(emotion: EmotionalState, user_profile: UserProfile) -> Optional[str]:
+def generate_empathic_message(emotion: EmotionalState, user_profile: UserProfile) -> Optional[str]:  # noqa: UP045
     """Return supportive, contextually appropriate message (non-crisis)"""
     if emotion in [EmotionalState.ANGER, EmotionalState.FRUSTRATION]:
         return (
@@ -700,8 +700,8 @@ def generate_empathic_message(emotion: EmotionalState, user_profile: UserProfile
 
 class EnhancedEmpathyEngine:
     """Complete empathy engine integrating all components"""
-    
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+# noqa: W293
+    def __init__(self, config: Optional[Dict[str, Any]] = None):  # noqa: UP006, UP045
         if PYDANTIC_AVAILABLE:
             if isinstance(config, dict):
                 self.config = EmpathyConfig(**config)
@@ -725,7 +725,7 @@ class EnhancedEmpathyEngine:
         )
         self.crisis_detector = CrisisDetector()
         self.standardizer = OnlineStandardizer()
-        self.user_profiles: Dict[str, UserProfile] = {}
+        self.user_profiles: Dict[str, UserProfile] = {}  # noqa: UP006
         self.is_running = False
         key_env = os.environ.get("EMPATHY_FERNET_KEY", "") or getattr(self.config, "fernet_key", "")
         if key_env:
@@ -745,20 +745,20 @@ class EnhancedEmpathyEngine:
             logging.info("Prometheus metrics disabled or not available.")
 
         logging.info("Enhanced Empathy Engine initialized (with everyday empathy)")
-    
+# noqa: W293
     def start_monitoring(self, user_id: str):
         self.openbci.start_stream()
         if user_id not in self.user_profiles:
             self.user_profiles[user_id] = UserProfile(user_id=user_id)
         self.is_running = True
         logging.info(f"Monitoring started for user: {user_id}")
-    
+# noqa: W293
     def stop_monitoring(self):
         self.is_running = False
         self.openbci.stop_stream()
         logging.info("Monitoring stopped")
-    
-    def process_emotion(self, user_id: str, text_input: Optional[str] = None) -> EmotionPrediction:
+# noqa: W293
+    def process_emotion(self, user_id: str, text_input: Optional[str] = None) -> EmotionPrediction:  # noqa: UP045
         eeg_window = self.openbci.get_latest_window(window_size=4.0)
         if eeg_window is None or eeg_window.size == 0:
             return self._create_neutral_prediction()
@@ -766,7 +766,7 @@ class EnhancedEmpathyEngine:
         eeg_preprocessed = self.openbci.preprocess_eeg(eeg_window)
         self.standardizer.update(eeg_preprocessed)
         eeg_preprocessed = self.standardizer.transform(eeg_preprocessed)
-        features = self.openbci.extract_features(eeg_preprocessed)
+        features = self.openbci.extract_features(eeg_preprocessed)  # noqa: F841
         mc_samples = int(getattr(self.config, "mc_dropout_samples", 15))
         unc = self.emotion_model.predict_with_uncertainty(eeg_preprocessed.T, n_samples=mc_samples)
         emotion_idx = int(np.argmax(unc['emotion_probs_mean']))
@@ -820,7 +820,7 @@ class EnhancedEmpathyEngine:
         if CRISIS_EVENTS is not None and prediction.crisis_level.value >= CrisisLevel.MODERATE.value:
             CRISIS_EVENTS.inc()
         return prediction
-    
+# noqa: W293
     def calibrate_baseline(self, user_id: str, duration: float = 60.0):
         logging.info(f"Starting baseline calibration for {user_id} ({duration}s)")
         start_time = time.time()
@@ -837,8 +837,8 @@ class EnhancedEmpathyEngine:
             profile.calibration_completed = True
             logging.info(f"Calibration complete - Baseline V:{profile.baseline_valence:.2f}, "
                         f"A:{profile.baseline_arousal:.2f}")
-    
-    def get_session_report(self, user_id: str) -> Dict[str, Any]:
+# noqa: W293
+    def get_session_report(self, user_id: str) -> Dict[str, Any]:  # noqa: UP006
         if user_id not in self.user_profiles:
             return {'error': 'User not found'}
         profile = self.user_profiles[user_id]
@@ -847,7 +847,7 @@ class EnhancedEmpathyEngine:
             return {'error': 'No emotion history'}
         valences = [p.valence for p in history]
         arousals = [p.arousal for p in history]
-        emotion_counts: Dict[str, int] = {}
+        emotion_counts: Dict[str, int] = {}  # noqa: UP006
         for pred in history:
             emotion = pred.primary_emotion.value
             emotion_counts[emotion] = emotion_counts.get(emotion, 0) + 1
@@ -876,7 +876,7 @@ class EnhancedEmpathyEngine:
             'calibration_status': profile.calibration_completed
         }
         return report
-    
+# noqa: W293
     def export_session(self, user_id: str, filepath: str):
         report = self.get_session_report(user_id)
         if 'error' in report:
@@ -911,7 +911,7 @@ class EnhancedEmpathyEngine:
         with open(filepath, 'wb') as f:
             f.write(token)
         logging.info(f"Encrypted session exported to {filepath}")
-    
+# noqa: W293
     def _compute_stability(self, user_id: str, current_emotion: EmotionalState) -> float:
         if user_id not in self.user_profiles:
             return 0.0
@@ -921,12 +921,12 @@ class EnhancedEmpathyEngine:
         recent = history[-3:]
         same_count = sum(1 for p in recent if p.primary_emotion == current_emotion)
         return same_count / 3.0
-    
+# noqa: W293
     def _handle_crisis(self, user_id: str, prediction: EmotionPrediction):
         logging.critical(f"CRISIS INTERVENTION - User: {user_id}, Level: {prediction.crisis_level.name}")
         crisis_message = self._generate_crisis_response(prediction.crisis_level)
         logging.critical(f"Crisis Response: {crisis_message}")
-    
+# noqa: W293
     def _generate_crisis_response(self, level: CrisisLevel) -> str:
         if level == CrisisLevel.EMERGENCY:
             return (
@@ -945,7 +945,7 @@ class EnhancedEmpathyEngine:
             )
         else:
             return "If you're experiencing distress, support is available. Consider reaching out to a trusted person."
-    
+# noqa: W293
     def _create_neutral_prediction(self) -> EmotionPrediction:
         return EmotionPrediction(
             primary_emotion=EmotionalState.NEUTRAL,

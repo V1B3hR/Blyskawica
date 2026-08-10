@@ -1,16 +1,16 @@
-import os
-import sys
-import torch
-import torch.nn.functional as F
 import hashlib
 import logging
+import os
+import sys
+
+import torch
 
 # Dodanie ścieżki do głównego katalogu, aby widzieć pakiet adaptiveneuralnetwork
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from adaptiveneuralnetwork.applications.continual_learning import (
+    ContinualLearningConfig,
     ContinualLearningSystem,
-    ContinualLearningConfig
 )
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
@@ -24,11 +24,11 @@ def text_to_tensor(text: str, dim: int = 784) -> torch.Tensor:
     # Haszowanie tekstu
     hash_obj = hashlib.sha256(text.encode('utf-8'))
     hash_bytes = hash_obj.digest()
-    
+
     # Zamiana bajtów na liczby całkowite i normalizacja
     # Powtarzamy bajty, aby wypełnić wymiar 'dim'
     repeated_bytes = (hash_bytes * (dim // len(hash_bytes) + 1))[:dim]
-    
+
     # Tworzenie tensora (wartości od 0.0 do 1.0)
     tensor = torch.tensor([b / 255.0 for b in repeated_bytes], dtype=torch.float32)
     return tensor
@@ -37,14 +37,14 @@ def parse_knowledge_base(filepath: str, label_id: int):
     """Odczytuje plik z bazą wiedzy i konwertuje na tensory treningowe."""
     data = []
     labels = []
-    
+
     if not os.path.exists(filepath):
         logger.error(f"Nie znaleziono pliku: {filepath}")
         return None, None
-        
-    with open(filepath, 'r', encoding='utf-8') as f:
+
+    with open(filepath, encoding='utf-8') as f:
         content = f.read()
-        
+
     # Prosty podział na koncepty
     concepts = [c for c in content.split('[CONCEPT:') if c.strip()]
     for i, concept in enumerate(concepts):
@@ -53,10 +53,10 @@ def parse_knowledge_base(filepath: str, label_id: int):
         data.append(tensor)
         # Każdy koncept dostaje unikalne ID
         labels.append(label_id + i)
-        
+
     if not data:
         return None, None
-        
+
     return torch.stack(data), torch.tensor(labels, dtype=torch.long)
 
 def evaluate(system, data, labels, task_id, task_name):
@@ -66,12 +66,12 @@ def evaluate(system, data, labels, task_id, task_name):
         # Move to device
         device_data = data.to(system.device)
         device_labels = labels.to(system.device)
-        
+
         output = system(device_data, task_id=task_id)
         # Pobieramy przewidywaną klasę
         preds = torch.argmax(output, dim=1)
         accuracy = (preds == device_labels).float().mean().item()
-        
+
     logger.info(f"[EWALUACJA] Temat: {task_name} | Skuteczność: {accuracy * 100:.1f}%")
     return accuracy
 
@@ -94,28 +94,28 @@ def run_experiment():
         threshold_adaptation=False,
         memory_replay_ratio=0.5
     )
-    
+
     logger.info("Inicjalizacja Mózgu (Continual Learning System)...")
     blyskawica = ContinualLearningSystem(config)
-    optimizer = torch.optim.Adam(blyskawica.parameters(), lr=0.01)
-    
+    optimizer = torch.optim.Adam(blyskawica.parameters(), lr=0.01)  # noqa: F841
+
     # 2. Przygotowanie danych
     base_dir = os.path.dirname(os.path.abspath(__file__))
     physics_path = os.path.join(base_dir, '..', 'data', 'knowledge_base', 'physics.txt')
     biology_path = os.path.join(base_dir, '..', 'data', 'knowledge_base', 'biology.txt')
-    
+
     physics_data, physics_labels = parse_knowledge_base(physics_path, label_id=0)
     biology_data, biology_labels = parse_knowledge_base(biology_path, label_id=3)
-    
+
     if physics_data is None or biology_data is None:
         logger.error("Brak danych do eksperymentu. Przerwanie.")
         return
 
-    from torch.utils.data import TensorDataset, DataLoader
-    
+    from torch.utils.data import DataLoader, TensorDataset
+
     physics_dataset = TensorDataset(physics_data, physics_labels)
     physics_loader = DataLoader(physics_dataset, batch_size=len(physics_dataset), shuffle=True)
-    
+
     biology_dataset = TensorDataset(biology_data, biology_labels)
     biology_loader = DataLoader(biology_dataset, batch_size=len(biology_dataset), shuffle=True)
 
@@ -123,31 +123,31 @@ def run_experiment():
     print("\n[FAZA 1] Błyskawica czyta o Fizyce...")
     # learn_task przyjmuje DataLoader, task_id, num_epochs i wykonuje pętlę wewnątrz!
     metrics_physics = blyskawica.learn_task(physics_loader, task_id=0, num_epochs=100, learning_rate=0.05)
-    
+
     logger.info(f"Nauka fizyki zakończona. Ostatnia dokładność: {metrics_physics.get('accuracy', 0):.4f}")
-    
+
     # Konsolidacja pamięci (Zapisanie Fizyki w Crystallized Intelligence)
     print("[KONSOLIDACJA] Zapisywanie praw fizyki w pamięci długotrwałej...")
     blyskawica.synaptic_consolidation.update_optimal_params()
-    
+
     # Test z Fizyki
     acc_physics_before = evaluate(blyskawica, physics_data, physics_labels, task_id=0, task_name="Fizyka (Po nauce fizyki)")
 
     # 4. ZADANIE 2: NAUKA BIOLOGII
     print("\n[FAZA 2] Błyskawica czyta o Biologii...")
     metrics_biology = blyskawica.learn_task(biology_loader, task_id=1, num_epochs=100, learning_rate=0.05)
-        
+
     logger.info(f"Nauka biologii zakończona. Ostatnia dokładność: {metrics_biology.get('accuracy', 0):.4f}")
-    
+
     # Test z Biologii
-    acc_biology = evaluate(blyskawica, biology_data, biology_labels, task_id=1, task_name="Biologia (Po nauce biologii)")
+    acc_biology = evaluate(blyskawica, biology_data, biology_labels, task_id=1, task_name="Biologia (Po nauce biologii)")  # noqa: F841
 
     # 5. SPRAWDZIAN OSTATECZNY: CZY ZAPOMNIAŁA FIZYKĘ?
     print("\n[FAZA 3] Sprawdzian ostateczny (Test Katastroficznego Zapominania)")
     acc_physics_after = evaluate(blyskawica, physics_data, physics_labels, task_id=0, task_name="Fizyka (PO NAUCE BIOLOGII)")
-    
+
     drop = acc_physics_before - acc_physics_after
-    
+
     print("\n" + "="*80)
     print(" WYNIKI EKSPERYMENTU")
     print("="*80)

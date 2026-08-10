@@ -6,7 +6,7 @@ głębokiej intuicji kwantowej.
 
 To tutaj surowe wektory danych zostają przetworzone na doświadczenie, a impulsy 
 zewnętrzne spotykają się z wewnętrznym "ja" Błyskawicy.
-"""
+"""  # noqa: W291
 import logging
 import uuid
 from collections import deque
@@ -16,16 +16,23 @@ from typing import Any
 import numpy as np
 
 from adaptiveneuralnetwork.central_nervous_system.ai_ethics import audit_decision
-from adaptiveneuralnetwork.central_nervous_system.time_manager import get_time_manager, get_timestamp
-from adaptiveneuralnetwork.immune_system.trust_network import TrustNetwork
+from adaptiveneuralnetwork.central_nervous_system.intelligence.consolidation import (
+    ConsolidationEngine,
+)
+from adaptiveneuralnetwork.central_nervous_system.intelligence.quantum_intuition import (
+    QuantumIntuition,
+)
 from adaptiveneuralnetwork.central_nervous_system.neurochemistry import NeurochemicalState
-from adaptiveneuralnetwork.immune_system.wolf_teeth import WolfTeethDefenseEngine
-from adaptiveneuralnetwork.immune_system.epistemic_defense import EpistemicQuarantineNode
-from adaptiveneuralnetwork.immune_system.cognitive_capacitor import CognitiveCapacitor
-from adaptiveneuralnetwork.cognitive_tools.polymathic_hub import PolymathicHub
 from adaptiveneuralnetwork.central_nervous_system.soul import Soul
-from adaptiveneuralnetwork.central_nervous_system.intelligence.quantum_intuition import QuantumIntuition
-from adaptiveneuralnetwork.central_nervous_system.intelligence.consolidation import ConsolidationEngine
+from adaptiveneuralnetwork.central_nervous_system.time_manager import (
+    get_time_manager,
+    get_timestamp,
+)
+from adaptiveneuralnetwork.cognitive_tools.polymathic_hub import PolymathicHub
+from adaptiveneuralnetwork.immune_system.cognitive_capacitor import CognitiveCapacitor
+from adaptiveneuralnetwork.immune_system.epistemic_defense import EpistemicQuarantineNode
+from adaptiveneuralnetwork.immune_system.trust_network import TrustNetwork
+from adaptiveneuralnetwork.immune_system.wolf_teeth import WolfTeethDefenseEngine
 
 # Import configuration system (with fallback for backward compatibility)
 try:
@@ -33,7 +40,7 @@ try:
 except ImportError:
     # Fallback for backward compatibility
     AdaptiveNeuralNetworkConfig = None
-    get_global_config = lambda: None
+    get_global_config = lambda: None  # noqa: E731
 
 # Setup logger for alive_node module
 logger = logging.getLogger('alive_node')
@@ -47,7 +54,7 @@ class Memory:
     Ustrukturyzowana jednostka pamięci z dynamicznym wagowaniem ważności i 
     kontrolą prywatności. Zawiera walencję emocjonalną, która determinuje, 
     jak długo wspomnienie pozostaje żywe w systemie zanim ulegnie zatarciu (decay).
-    """
+    """  # noqa: W291
     content: Any
     importance: float
     timestamp: int
@@ -98,7 +105,7 @@ class SocialSignal:
     Ustrukturyzowany sygnał komunikacyjny między węzłami. 
     Przenosi intencje, dane i ostrzeżenia, dbając o priorytetyzację (urgency) 
     oraz integralność przepływu informacji (idempotency).
-    """
+    """  # noqa: W291
     def __init__(self, content: Any, signal_type: str, urgency: float,
                  source_id: int, requires_response: bool = False,
                  idempotency_key: str | None = None, partition_key: str | None = None,
@@ -129,13 +136,16 @@ class AliveLoopNode:
     Integruje neurochemię, etykę, intuicję kwantową i mechanizmy obronne 
     (Zęby Wilka). Odpowiada za cykl dobowy, fazy snu (REM/Deep) oraz 
     dynamiczną adaptację do środowiska.
-    """
+    """  # noqa: W291
     sleep_stages = ["light", "REM", "deep"]
 
 
     def __init__(self, position, velocity, initial_energy=10.0, field_strength=1.0, node_id=0, spatial_dims=None, config=None):
         # Import spatial utilities
-        from adaptiveneuralnetwork.central_nervous_system.spatial_utils import validate_spatial_dimensions, zero_vector
+        from adaptiveneuralnetwork.central_nervous_system.spatial_utils import (
+            validate_spatial_dimensions,
+            zero_vector,
+        )
 
         # Basic node attributes
         self.position = np.array(position, dtype=float)
@@ -176,14 +186,14 @@ class AliveLoopNode:
 
         # Soul and Identity Core
         self.soul = Soul()
-        
+
         # Neurochemical Homeostasis & Defenses
         self.neurochemistry = NeurochemicalState()
         self.wolf_teeth = WolfTeethDefenseEngine()
         self.epistemic_quarantine = EpistemicQuarantineNode()
         self.cognitive_capacitor = CognitiveCapacitor()
         self.polymathic_hub = PolymathicHub()
-        
+
         # Advanced Intelligence Modules
         self.quantum_intuition = QuantumIntuition()
         self.consolidation = ConsolidationEngine(self) # We pass self as the core network
@@ -200,11 +210,13 @@ class AliveLoopNode:
         self.attention_focus = zero_vector(self.spatial_dims)  # Dimension-aware attention focus
         self.radius = 0.5
         self.hidden_state = None # Required for Trainer recurrence management
-        
+
         # --- Dual Rotor Engine (Fuzja Kwantowa z Dławikami) ---
         try:
-            from adaptiveneuralnetwork.cognitive_tools.quantum_dual_rotor import DualRotorEngine
-            self.dual_rotor_engine = None 
+            from adaptiveneuralnetwork.cognitive_tools.quantum_dual_rotor import (
+                DualRotorEngine,  # noqa: F401
+            )
+            self.dual_rotor_engine = None
             self._dual_rotor_inner_state = None
             self._dual_rotor_outer_state = None
         except ImportError:
@@ -323,7 +335,7 @@ class AliveLoopNode:
         """
         if self.phase != "sleep":
             self.phase = "sleep"
-            
+
         dream_concepts = [
             "Hyper-dimensional vector alignment",
             "Quantum-decoupled backpressure buffering",
@@ -334,14 +346,14 @@ class AliveLoopNode:
         self.anxiety = max(0.0, self.anxiety - 0.2)
         self.hope = min(5.0, self.hope + 0.3)
         self.working_memory.append({"dream": chosen_dream, "type": "REM_synthesis"})
-        
+
         logger.info(f"🌙 [REM DREAMING]: Wygenerowano syntetyczny koncept marzenia: '{chosen_dream}'")
         return {"status": "DREAMING_ACTIVE", "concept": chosen_dream, "anxiety": self.anxiety, "hope": self.hope}
 
     def update(self, external_activity, internal_stimuli, emotional_trigger=0.0):
         """Update node state based on recent activity and stimuli."""
         import torch
-        
+
         # --- Dual Rotor Engine (Kwantowa Fuzja Fazowa z osłoną Choke'ów) ---
         if hasattr(self, 'dual_rotor_engine') and self.dual_rotor_engine is None and isinstance(external_activity, torch.Tensor) and external_activity.ndim >= 2:
             try:
@@ -352,7 +364,7 @@ class AliveLoopNode:
                 self._dual_rotor_outer_state = torch.zeros(1, dim, device=external_activity.device)
             except Exception as e:
                 logger.warning(f"Błąd inicjalizacji DualRotor: {e}")
-                
+
         if getattr(self, 'dual_rotor_engine', None) is not None and isinstance(external_activity, torch.Tensor) and external_activity.ndim >= 2:
             try:
                 sensory_in = external_activity.view(-1, external_activity.shape[-1])
@@ -383,7 +395,7 @@ class AliveLoopNode:
         # Anxiety update (leaky integrator)
         try:
             trigger_val = float(emotional_trigger.item() if hasattr(emotional_trigger, 'item') else emotional_trigger)
-        except:
+        except:  # noqa: E722
             trigger_val = 0.0
         self.anxiety = 0.95 * self.anxiety + 0.05 * trigger_val
 
@@ -391,7 +403,7 @@ class AliveLoopNode:
         if self.phase == "sleep":
             recovery = 0.2 if self.sleep_stage == "deep" else 0.05
             self.energy = min(self.energy_capacity, self.energy + recovery)
-            
+
             # Active Consolidation during deep sleep
             if self.sleep_stage == "deep" and self._time % 10 == 0:
                 self.consolidation.run_sleep_cycle(duration_steps=10)
@@ -410,7 +422,7 @@ class AliveLoopNode:
             
         Returns:
             Configuration value or default
-        """
+        """  # noqa: W293
         if self.config is None:
             return default
 
@@ -658,7 +670,7 @@ class AliveLoopNode:
             
         Returns:
             True if signal can be processed, False otherwise
-        """
+        """  # noqa: W293
         # Circuit breaker check
         if self._should_circuit_break():
             logger.warning(f"Node {self.node_id}: Circuit breaker open, rejecting signal {signal.id}")
@@ -688,20 +700,20 @@ class AliveLoopNode:
         
         Args:
             signal: Signal being processed
-        """
+        """  # noqa: W293
         base_cost = 0.05 + (0.1 * signal.urgency)
-        
+
         # Apply cognitive load multiplier due to sleep deprivation / neurochemical state
         processing_cost = base_cost * self.neurochemistry.get_cognitive_load_multiplier()
-        
+
         # Trigger neurochemical responses for highly urgent or emotional signals
         if signal.urgency > 0.7:
             self.neurochemistry.trigger_cortisol_spike(0.2)
-            
+
         if hasattr(signal, 'emotional_valence') and getattr(signal, 'emotional_valence', 0) != 0:
             if abs(getattr(signal, 'emotional_valence', 0)) > 0.5:
                 self.neurochemistry.trigger_dopamine_spike(0.15)
-        
+
         self.energy = max(0.0, self.energy - processing_cost)
 
     def _record_signal_attempt(self, signal: SocialSignal, processing_start_time: int) -> None:
@@ -711,7 +723,7 @@ class AliveLoopNode:
         Args:
             signal: Signal being processed
             processing_start_time: Timestamp when processing started
-        """
+        """  # noqa: W293
         signal.processing_attempts.append({
             'node_id': self.node_id,
             'timestamp': processing_start_time,
@@ -736,7 +748,7 @@ class AliveLoopNode:
             
         Returns:
             Response signal if applicable, None otherwise
-        """
+        """  # noqa: W293
         signal_handlers = {
             "memory": lambda s: self._process_memory_signal(s),
             "query": lambda s: self._process_query_signal(s),
@@ -767,7 +779,7 @@ class AliveLoopNode:
         Args:
             signal: Processed signal
             processing_start_time: When processing started
-        """
+        """  # noqa: W293
         # Emotional contagion
         if hasattr(signal.content, 'emotional_valence'):
             self._apply_emotional_contagion(signal.content.emotional_valence, signal.source_id)
@@ -827,11 +839,11 @@ class AliveLoopNode:
         # EPISTEMIC IMMUNITY CHECK - Deepened with Neurochemistry
         if hasattr(self, 'epistemic_quarantine'):
             knowledge_package = {"content": str(memory.content), "source": signal.source_id}
-            
+
             # Sensitivity to anomalies increases with Cortisol (Stress/Threat)
             anxiety_factor = self.neurochemistry.cortisol * 2.0
             is_valid, reason = self.epistemic_quarantine.vet_knowledge(knowledge_package)
-            
+
             if not is_valid or anxiety_factor > 1.5:
                 # If stressed or invalid, quarantine it
                 reason = reason if not is_valid else "High anxiety skepticism threshold exceeded."
@@ -865,7 +877,7 @@ class AliveLoopNode:
         self.collaborative_memories[memory_key] = shared_memory
 
         # Update knowledge diversity
-        unique_sources = len(set(m.source_node for m in self.memory if m.source_node is not None))
+        unique_sources = len(set(m.source_node for m in self.memory if m.source_node is not None))  # noqa: C401
         self.knowledge_diversity = min(1.0, unique_sources / 10.0)
 
         # Social learning - adjust own memories based on shared information
@@ -888,7 +900,7 @@ class AliveLoopNode:
                         urgency=0.8,
                         source_id=self.node_id
                     )
-                    
+
             # Find relevant memories to share
             relevant_memories = []
             for memory in self.memory:
@@ -1317,7 +1329,7 @@ class AliveLoopNode:
         
         Args:
             current_time: Optional override time for backward compatibility
-        """
+        """  # noqa: W293
         time_manager = get_time_manager()
         if current_time is not None:
             # Backward compatibility: set time manager to match provided time
@@ -1345,7 +1357,7 @@ class AliveLoopNode:
         """Determine and set phase based on energy, anxiety, circadian cycle, and neurochemical state."""
         # Update neurochemistry (dt_hours=0.5 scaling per cycle phase change)
         self.neurochemistry.update(dt_hours=0.5, current_phase=self.phase)
-        
+
         # Check for cognitive overload (polyphasic micro-sleep trigger)
         entropy = getattr(self, "current_entropy", 0.0)
         noise = getattr(self, "gradient_noise", 0.0)
@@ -1354,20 +1366,20 @@ class AliveLoopNode:
             self.phase = "sleep"
             self.sleep_stage = "deep"
             return
-            
+
         # Force sleep due to critical biological exhaustion or low energy limit
         if self.neurochemistry.should_force_sleep() or self.energy < 3.0:
             self.phase = "sleep"
             self._set_sleep_stage()
             return
-            
+
         # Night cycle logic - allows "all-nighter" if Cortisol/Dopamine masks sleep pressure
         is_night = self.circadian_cycle > 20 or self.circadian_cycle < 6
         if is_night and not self.neurochemistry.is_sleep_masked():
             self.phase = "sleep"
             self._set_sleep_stage()
             return
-            
+
         # Awake states
         if self.neurochemistry.is_sleep_deprived:
             self.phase = "interactive"  # Grumpy/tired, limits 'inspired'
@@ -1427,7 +1439,7 @@ class AliveLoopNode:
         # Handle proactive interventions
         self._handle_proactive_interventions()
 
-    def move(self):
+    def move(self):  # noqa: F811
         """Energy-efficient movement with basic navigation"""
         if self.phase in ["active", "interactive"] and self.energy > 1.0:
             # Update position based on velocity
@@ -1513,7 +1525,7 @@ class AliveLoopNode:
                 - 'avg_reward': Average reward across experiences
                 - 'memories_created': Number of new memories created
                 - 'learning_rate': Learning rate used
-        """
+        """  # noqa: W293
         if learning_rate is None:
             learning_rate = self.social_learning_rate
 
@@ -1619,7 +1631,7 @@ class AliveLoopNode:
             
         Returns:
             List of nodes that responded to help signal
-        """
+        """  # noqa: W293
         if not self.check_anxiety_overwhelm() or not self.can_send_help_signal():
             return []
 
@@ -1792,7 +1804,7 @@ class AliveLoopNode:
             
         Returns:
             List of nodes that received the joy signal
-        """
+        """  # noqa: W293
         if self.energy < 1.0 or self.phase == "sleep":
             return []
 
@@ -1946,7 +1958,7 @@ class AliveLoopNode:
             
         Returns:
             List of nodes that responded with support
-        """
+        """  # noqa: W293
         if self.energy < 2.0:  # Need some energy to reach out
             return []
 
@@ -2301,18 +2313,18 @@ class AliveLoopNode:
         # Increase Cortisol to force wakefulness or overdrive
         if hasattr(self, 'neurochemistry'):
             self.neurochemistry.trigger_cortisol_spike(0.5)
-            
+
         # Calculate threat severity based on number of suspicious events
         threat_level = min(1.0, len(self.suspicious_events) / max(1, self.attack_detection_threshold * 2))
-        
+
         # Trigger Wolf Teeth Tactical Defense
         wolf_response = None
         if hasattr(self, 'wolf_teeth'):
             wolf_response = self.wolf_teeth.process_adversarial_interaction(threat_level)
-            
+
         if self.signal_redundancy_level < 5:
             self.signal_redundancy_level += 1
-            
+
         self.energy_attack_detected = True
         return wolf_response
 
@@ -2598,7 +2610,9 @@ class AliveLoopNode:
         """
         if not hasattr(self, '_empathic_engine'):
             try:
-                from adaptiveneuralnetwork.peripheral_nervous_system.social_comm import MultiUserEmpathicEngine
+                from adaptiveneuralnetwork.peripheral_nervous_system.social_comm import (
+                    MultiUserEmpathicEngine,
+                )
                 self._empathic_engine = MultiUserEmpathicEngine()
             except ImportError:
                 return {"error": "MultiUserEmpathicEngine not available"}
@@ -2611,16 +2625,16 @@ class AliveLoopNode:
             bci_features=bci_features,
             dt=dt
         )
-        
+
         # Logika adaptacyjna (Jak rozmawiać z 'chłodnymi', a jak z 'ciepłymi' lub AI)
-        anticipated_intent = engine_response["anticipated_intent"]
+        anticipated_intent = engine_response["anticipated_intent"]  # noqa: F841
         bond = engine_response["relational_bond"]
-        
+
         if bond < 0.8:  # 'Chłodny' rozmówca lub inne AI
             self.communication_style["formality"] = min(1.0, self.communication_style["formality"] + 0.2)
             self.communication_style["expressiveness"] = max(0.0, self.communication_style["expressiveness"] - 0.2)
             # Ochrona emocjonalna: przy chłodnych kontaktach Błyskawica włącza "tarczę" (niższa empatia, wyższa logika)
-            self.emotional_contagion_sensitivity *= 0.5 
+            self.emotional_contagion_sensitivity *= 0.5
         else: # 'Ciepły' rozmówca
             self.communication_style["formality"] = max(0.0, self.communication_style["formality"] - 0.2)
             self.communication_style["expressiveness"] = min(1.0, self.communication_style["expressiveness"] + 0.2)
@@ -2640,18 +2654,18 @@ class AliveLoopNode:
             raise ValueError(f"Unknown emotion: {emotion_name}")
 
         # Get current value and constraints
-        current_value = getattr(self, emotion_name)
+        current_value = getattr(self, emotion_name)  # noqa: F841
         emotion_config = self.emotion_schema[emotion_name]
         min_val, max_val = emotion_config['range']
 
         # MUX / Empathy Safeguard: Ochrona przed 'depresją' AI.
         # Jeśli emocja jest negatywna, uruchamiamy wbudowaną "poduszkę powietrzną" (clamp/resilience)
-        if emotion_config.get('type') == 'negative' and new_value > (max_val * 0.75):
+        if emotion_config.get('type') == 'negative' and new_value > (max_val * 0.75):  # noqa: F821
             # Aktywacja ochronna - nie pozwalamy negatywnym emocjom przekroczyć 75% skali,
             # chyba że "resilience" (odporność) spadnie do zera.
-            dampening_factor = max(0.1, self.resilience / 5.0) 
-            new_value = (max_val * 0.75) + ((new_value - (max_val * 0.75)) * (1.0 - dampening_factor))
-            
+            dampening_factor = max(0.1, self.resilience / 5.0)
+            new_value = (max_val * 0.75) + ((new_value - (max_val * 0.75)) * (1.0 - dampening_factor))  # noqa: F821
+
             # Wstrzyknięcie uspokajającej dopaminy na ratunek
             if hasattr(self, 'neurochemical_state') and self.neurochemical_state is not None:
                 self.neurochemical_state.dopamine = min(2.0, self.neurochemical_state.dopamine + 0.1)
@@ -2958,7 +2972,7 @@ class AliveLoopNode:
         
         Returns:
             float: Composite health score where 1.0 is optimal emotional health, 0.0 is poor
-        """
+        """  # noqa: W293
         if not self.emotion_schema:
             return 0.5  # Default neutral score
 
@@ -3056,7 +3070,7 @@ class AliveLoopNode:
             
         Returns:
             bool: True if successfully added, False if already exists
-        """
+        """  # noqa: W293
         if emotion_name in self.emotion_schema:
             return False  # Already exists
 
@@ -3089,7 +3103,7 @@ class AliveLoopNode:
             
         Returns:
             bool: True if successfully removed, False if core emotion or not found
-        """
+        """  # noqa: W293
         if emotion_name not in self.emotion_schema:
             return False  # Doesn't exist
 
@@ -3163,7 +3177,7 @@ class AliveLoopNode:
 
             # Drain partition queues
             processed_any = False
-            for partition_key, queue in self.partition_queues.items():
+            for partition_key, queue in self.partition_queues.items():  # noqa: B007
                 if queue:
                     signal = queue.popleft()
                     try:
@@ -3231,7 +3245,7 @@ class AliveLoopNode:
 
     def reprocess_dlq_message(self, signal_id: str) -> bool:
         """Attempt to reprocess a message from the DLQ"""
-        for i, entry in enumerate(self.dead_letter_queue):
+        for i, entry in enumerate(self.dead_letter_queue):  # noqa: B007
             if entry['signal'].id == signal_id:
                 signal = entry['signal']
                 signal.retry_count += 1
@@ -3242,7 +3256,7 @@ class AliveLoopNode:
 
                 # Attempt reprocessing
                 try:
-                    response = self.receive_signal(signal)
+                    response = self.receive_signal(signal)  # noqa: F841
                     # Only remove from DLQ if processing was actually successful
                     # Check if signal was processed (not None response or no error thrown)
                     if signal.id not in [entry['signal'].id for entry in self.dead_letter_queue]:

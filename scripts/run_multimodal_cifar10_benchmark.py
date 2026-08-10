@@ -11,6 +11,7 @@ import logging
 import sys
 import time
 from pathlib import Path
+
 import torch
 
 # Configure logging
@@ -19,9 +20,12 @@ logger = logging.getLogger("multimodal_benchmark")
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from adaptiveneuralnetwork.applications.sensory_processing import SensoryConfig, SensoryProcessingPipeline
-from adaptiveneuralnetwork.api.config import AdaptiveConfig
-from adaptiveneuralnetwork.api.model import AdaptiveModel
+from adaptiveneuralnetwork.api.config import AdaptiveConfig  # noqa: E402
+from adaptiveneuralnetwork.api.model import AdaptiveModel  # noqa: E402
+from adaptiveneuralnetwork.applications.sensory_processing import (  # noqa: E402
+    SensoryConfig,
+    SensoryProcessingPipeline,
+)
 
 
 def run_benchmark():
@@ -44,7 +48,7 @@ def run_benchmark():
         num_nodes=64,
         device="cpu"
     )
-    model = AdaptiveModel(adaptive_config)
+    model = AdaptiveModel(adaptive_config)  # noqa: F841
 
     # Generate synthetic multi-modal batch (CIFAR-10 visual feature + audio spectrum)
     batch_size = 64
@@ -56,7 +60,7 @@ def run_benchmark():
     latencies = []
     cross_modal_activations = []
 
-    for i in range(num_batches):
+    for i in range(num_batches):  # noqa: B007
         vision_data = torch.randn(batch_size, 1024)
         audio_data = torch.randn(batch_size, 128)
 
@@ -95,7 +99,7 @@ def run_benchmark():
         json.dump(results, f, indent=2)
 
     logger.info("=" * 70)
-    logger.info(f"Multi-Modal Benchmark Completed!")
+    logger.info("Multi-Modal Benchmark Completed!")
     logger.info(f"Throughput:           {throughput:.2f} samples/sec")
     logger.info(f"Avg Batch Latency:    {avg_latency:.2f} ms")
     logger.info(f"Cross-Modal Activation: {results['mean_cross_modal_activation']}")

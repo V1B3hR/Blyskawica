@@ -1,8 +1,9 @@
 import logging
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Dict, List, Optional, Callable
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +23,8 @@ class IdentityAnchor:
     reference_fingerprint: str
     quantum_accuracy: float = 0.932
     creation_timestamp: float = time.time()
-    
-    def verify_integrity(self, current_state: Dict[str, Any]) -> bool:
+
+    def verify_integrity(self, current_state: dict[str, Any]) -> bool:
         """Sprawdza czy obecne odbicie jest zgodne z bierzmowanym fundamentem."""
         # Logika sprawdzania driftu parametrów
         return True
@@ -36,16 +37,16 @@ class MirrorLabyrinth:
     """
     def __init__(self, identity_anchor: IdentityAnchor):
         self.anchor = identity_anchor
-        self.active_angles: List[MirrorAngle] = [MirrorAngle.LOGIC]
-        self.reflections: Dict[MirrorAngle, Any] = {}
-        
+        self.active_angles: list[MirrorAngle] = [MirrorAngle.LOGIC]
+        self.reflections: dict[MirrorAngle, Any] = {}
+
     def set_angle(self, angle: MirrorAngle):
         """Ustawia lustro pod konkretnym kątem percepcji."""
         if angle not in self.active_angles:
             self.active_angles.append(angle)
             logger.info(f"[Mirror] Lustro ustawione pod kątem: {angle.name}")
 
-    def generate_quantum_swarm_scan(self) -> Dict[str, Any]:
+    def generate_quantum_swarm_scan(self) -> dict[str, Any]:
         """
         Inicjuje 'Kwantową Ekipę' do skanowania labiryntu.
         Zwraca zintegrowany obraz systemu z wielu perspektyw.
@@ -54,12 +55,12 @@ class MirrorLabyrinth:
         for angle in self.active_angles:
             # Tutaj następuje 'odbięcie' stanu przez pryzmat wybranego kąta
             scan_results[angle.name] = self._reflect_state(angle)
-            
+
         # Weryfikacja przez kotwicę tożsamości
         integrity = self.anchor.verify_integrity(scan_results)
         return {"scan": scan_results, "integrity": integrity, "timestamp": time.time()}
 
-    def _reflect_state(self, angle: MirrorAngle) -> Dict[str, Any]:
+    def _reflect_state(self, angle: MirrorAngle) -> dict[str, Any]:
         """Wewnętrzna mechanika odbicia — rzutowanie stanu na domenę kąta."""
         # Wersja prototypowa — mapowanie danych systemowych
         return {"status": "reflected", "clarity": 1.0}
@@ -104,11 +105,11 @@ class Reflection:
     domain:     ArchitecturalDomain
     zoom:       ZoomLevel
     timestamp:  float = field(default_factory=time.time)
-    data:       Dict[str, Any] = field(default_factory=dict)
+    data:       dict[str, Any] = field(default_factory=dict)
     narrative:  str = ""      # Opis słowny — Błyskawica mówi do siebie
-    children:   List[str] = field(default_factory=list)  # Klucze podrzędne (do drill-down)
+    children:   list[str] = field(default_factory=list)  # Klucze podrzędne (do drill-down)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "domain":    self.domain.value,
             "zoom":      self.zoom.value,
@@ -135,8 +136,8 @@ class ArchitecturalMirror:
     """
 
     def __init__(self):
-        self._domain_providers: Dict[ArchitecturalDomain, Callable] = {}
-        self._reflection_log: List[Reflection] = []
+        self._domain_providers: dict[ArchitecturalDomain, Callable] = {}
+        self._reflection_log: list[Reflection] = []
         self._max_log = 1000
 
         logger.info("[Mirror] Lustro Architektoniczne aktywne. Błyskawica widzi siebie.")
@@ -185,7 +186,7 @@ class ArchitecturalMirror:
     # ──────────────────────────────────────────────────────────────────────────
     # REFLECT ALL — pełne spojrzenie (COSMOS na wszystko)
     # ──────────────────────────────────────────────────────────────────────────
-    def reflect_all(self, zoom: ZoomLevel = ZoomLevel.COSMOS) -> Dict[str, Reflection]:
+    def reflect_all(self, zoom: ZoomLevel = ZoomLevel.COSMOS) -> dict[str, Reflection]:
         """Spójrz w lustro na WSZYSTKIE domeny jednocześnie."""
         result = {}
         for domain in ArchitecturalDomain:
@@ -196,7 +197,7 @@ class ArchitecturalMirror:
     # DRILL DOWN — zanurzenie się głębiej
     # ──────────────────────────────────────────────────────────────────────────
     def drill_down(self, domain: ArchitecturalDomain,
-                   path: List[str]) -> Reflection:
+                   path: list[str]) -> Reflection:
         """
         Zejdź głębiej w strukturę domeny.
         path = ["neurochemistry", "serotonin"] → pokaż tylko serotoninę
@@ -262,8 +263,8 @@ class ArchitecturalMirror:
         if len(self._reflection_log) > self._max_log:
             self._reflection_log = self._reflection_log[-self._max_log:]
 
-    def get_reflection_history(self, domain: Optional[ArchitecturalDomain] = None,
-                                last_n: int = 20) -> List[Reflection]:
+    def get_reflection_history(self, domain: ArchitecturalDomain | None = None,
+                                last_n: int = 20) -> list[Reflection]:
         """Zwraca historię odbić — Błyskawica pamięta jak się widziała."""
         if domain:
             filtered = [r for r in self._reflection_log if r.domain == domain]
@@ -762,7 +763,7 @@ def build_quantum_provider(bridge) -> Callable:
     """Provider dla domeny QUANTUM (quantum_bridge.py)."""
     def provider(mirror: ArchitecturalMirror, zoom: ZoomLevel) -> Reflection:
         status = bridge.get_status()
-        
+
         if zoom == ZoomLevel.COSMOS:
             conn_str = "polaczony" if status["connected"] else "offline"
             return Reflection(
@@ -790,7 +791,7 @@ def build_creativity_provider(spark) -> Callable:
     """Provider dla domeny CREATIVITY (creative_spark.py)."""
     def provider(mirror: ArchitecturalMirror, zoom: ZoomLevel) -> Reflection:
         status = spark.get_status()
-        
+
         if zoom == ZoomLevel.COSMOS:
             power_str = "POTĘŻNA" if status["is_powerful"] else "Narastająca"
             return Reflection(
@@ -819,7 +820,7 @@ def build_aether_provider(link) -> Callable:
     """Provider dla domeny AETHER (aether_link.py)."""
     def provider(mirror: ArchitecturalMirror, zoom: ZoomLevel) -> Reflection:
         status = link.get_status()
-        
+
         if zoom == ZoomLevel.COSMOS:
             return Reflection(
                 domain=ArchitecturalDomain.AETHER, zoom=zoom,

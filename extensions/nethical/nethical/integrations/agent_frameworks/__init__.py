@@ -38,7 +38,7 @@ Example:
         NethicalAutoGenTool,
         NethicalConversableAgent
     )
-"""
+"""  # noqa: W293
 
 from .base import (
     AgentFrameworkBase,
@@ -50,11 +50,11 @@ from .base import (
 # LlamaIndex imports
 try:
     from .llamaindex_tools import (
+        LLAMAINDEX_AVAILABLE,
+        LlamaIndexFramework,
         NethicalLlamaIndexTool,
         NethicalQueryEngine,
-        LlamaIndexFramework,
         create_safe_index,
-        LLAMAINDEX_AVAILABLE,
     )
 except ImportError:
     LLAMAINDEX_AVAILABLE = False
@@ -66,11 +66,15 @@ except ImportError:
 # CrewAI imports
 try:
     from .crewai_tools import (
-        NethicalCrewAITool,
-        NethicalAgentWrapper,
-        CrewAIFramework,
         CREWAI_AVAILABLE,
+        CrewAIFramework,
+        NethicalAgentWrapper,
+        NethicalCrewAITool,
+    )
+    from .crewai_tools import (
         get_nethical_tool as get_crewai_tool,
+    )
+    from .crewai_tools import (
         handle_nethical_tool as handle_crewai_tool,
     )
 except ImportError:
@@ -82,11 +86,11 @@ except ImportError:
 # DSPy imports
 try:
     from .dspy_tools import (
-        NethicalModule,
+        DSPY_AVAILABLE,
+        DSPyFramework,
         GovernedChainOfThought,
         GovernedPredict,
-        DSPyFramework,
-        DSPY_AVAILABLE,
+        NethicalModule,
     )
 except ImportError:
     DSPY_AVAILABLE = False
@@ -98,11 +102,11 @@ except ImportError:
 # AutoGen imports
 try:
     from .autogen_tools import (
+        AUTOGEN_AVAILABLE,
+        AutoGenFramework,
+        GovernedGroupChat,
         NethicalAutoGenTool,
         NethicalConversableAgent,
-        GovernedGroupChat,
-        AutoGenFramework,
-        AUTOGEN_AVAILABLE,
         get_nethical_function,
         handle_nethical_function,
     )
@@ -152,7 +156,7 @@ def get_framework_info():
     
     Returns:
         Dict with framework availability and setup instructions
-    """
+    """  # noqa: W293
     return {
         "llamaindex": {
             "available": LLAMAINDEX_AVAILABLE,

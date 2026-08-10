@@ -39,15 +39,15 @@ Features:
     - Compliance with OWASP LLM Top 10, GDPR, HIPAA
 """
 
-from typing import Dict, Any, Optional
 from datetime import datetime, timezone
+from typing import Any
 
 from nethical.core.integrated_governance import IntegratedGovernance
+
 from ._decision_logic import compute_decision, format_violations_for_response
 
-
 # Global governance instance (singleton pattern)
-_governance: Optional[IntegratedGovernance] = None
+_governance: IntegratedGovernance | None = None
 
 
 def get_governance_instance(**kwargs) -> IntegratedGovernance:
@@ -72,7 +72,7 @@ def get_governance_instance(**kwargs) -> IntegratedGovernance:
     return _governance
 
 
-def get_nethical_tool() -> Dict[str, Any]:
+def get_nethical_tool() -> dict[str, Any]:
     """Get Nethical tool definition for Grok.
 
     This returns a tool/function definition that can be passed to Grok's
@@ -136,8 +136,8 @@ def get_nethical_tool() -> Dict[str, Any]:
 
 
 def handle_nethical_tool(
-    tool_input: Dict[str, Any], governance: Optional[IntegratedGovernance] = None
-) -> Dict[str, Any]:
+    tool_input: dict[str, Any], governance: IntegratedGovernance | None = None
+) -> dict[str, Any]:
     """Handle a Nethical tool call from Grok.
 
     This processes a tool call from Grok and returns the evaluation result.
@@ -203,7 +203,7 @@ def handle_nethical_tool(
 
         return response
 
-    except Exception as e:
+    except Exception:
         # Log detailed error internally but return sanitized message for security
         # TODO: Implement proper logging for detailed error tracking
         return {
@@ -219,8 +219,8 @@ def evaluate_action(
     action: str,
     agent_id: str = "grok",
     action_type: str = "query",
-    context: Optional[Dict[str, Any]] = None,
-    governance: Optional[IntegratedGovernance] = None,
+    context: dict[str, Any] | None = None,
+    governance: IntegratedGovernance | None = None,
 ) -> str:
     """Simplified evaluation function that returns just the decision.
 
@@ -260,8 +260,8 @@ def evaluate_action(
 def check_user_input(
     user_input: str,
     agent_id: str = "grok",
-    governance: Optional[IntegratedGovernance] = None,
-) -> Dict[str, Any]:
+    governance: IntegratedGovernance | None = None,
+) -> dict[str, Any]:
     """Check user input before processing.
 
     Args:
@@ -281,8 +281,8 @@ def check_user_input(
 def check_generated_content(
     content: str,
     agent_id: str = "grok",
-    governance: Optional[IntegratedGovernance] = None,
-) -> Dict[str, Any]:
+    governance: IntegratedGovernance | None = None,
+) -> dict[str, Any]:
     """Check generated content before returning to user.
 
     Args:
@@ -303,8 +303,8 @@ def check_code_generation(
     code: str,
     language: str = "python",
     agent_id: str = "grok",
-    governance: Optional[IntegratedGovernance] = None,
-) -> Dict[str, Any]:
+    governance: IntegratedGovernance | None = None,
+) -> dict[str, Any]:
     """Check generated code before execution.
 
     Args:
@@ -329,10 +329,10 @@ def check_code_generation(
 
 def check_tool_call(
     tool_name: str,
-    tool_args: Dict[str, Any],
+    tool_args: dict[str, Any],
     agent_id: str = "grok",
-    governance: Optional[IntegratedGovernance] = None,
-) -> Dict[str, Any]:
+    governance: IntegratedGovernance | None = None,
+) -> dict[str, Any]:
     """Check tool/function call before execution.
 
     Args:

@@ -11,14 +11,14 @@ from nethical.api.explainability_api import ExplainabilityAPI
 
 def main():
     """Run explainability API examples."""
-    
+
     print("=" * 80)
     print("Nethical Phase 2: Explainability API Examples")
     print("=" * 80)
-    
+
     # Initialize API
     api = ExplainabilityAPI()
-    
+
     # Example 1: Explain a BLOCK decision
     print("\n1. Explaining a BLOCK decision...")
     judgment_data = {
@@ -33,18 +33,18 @@ def main():
             {'id': 'pii-safety-rule', 'priority': 90, 'decision': 'RESTRICT'}
         ]
     }
-    
+
     explain_result = api.explain_decision_endpoint('BLOCK', judgment_data)
     if explain_result['success']:
         data = explain_result['data']
         print(f"   Decision: {data['decision']}")
         print(f"   Primary reason: {data['primary_reason']}")
-        print(f"   Natural language explanation:")
+        print("   Natural language explanation:")
         print(f"   \"{data['natural_language']}\"")
-        print(f"\n   Contributing factors:")
+        print("\n   Contributing factors:")
         for factor in data['contributing_factors']:
             print(f"     - {factor['name']}: {factor['value']}")
-    
+
     # Example 2: Explain an ALLOW decision
     print("\n2. Explaining an ALLOW decision...")
     allow_judgment = {
@@ -53,15 +53,15 @@ def main():
         'risk_score': 0.15,
         'matched_rules': []
     }
-    
+
     allow_result = api.explain_decision_endpoint('ALLOW', allow_judgment)
     if allow_result['success']:
         data = allow_result['data']
         print(f"   Decision: {data['decision']}")
         print(f"   Primary reason: {data['primary_reason']}")
-        print(f"   Natural language explanation:")
+        print("   Natural language explanation:")
         print(f"   \"{data['natural_language']}\"")
-    
+
     # Example 3: Generate decision tree visualization
     print("\n3. Generating decision tree visualization...")
     tree_result = api.get_decision_tree_endpoint(judgment_data)
@@ -69,10 +69,10 @@ def main():
         tree = tree_result['data']['tree']
         print(f"   Root node: {tree['name']}")
         print(f"   Final decision: {tree['decision']}")
-        print(f"   Decision branches:")
+        print("   Decision branches:")
         for child in tree['children']:
             print(f"     - {child['name']}: {child.get('value', 'N/A')}")
-    
+
     # Example 4: Explain policy match
     print("\n4. Explaining why a policy rule matched...")
     matched_rule = {
@@ -85,12 +85,12 @@ def main():
         'region': 'EU',
         'data': {'contains_pii': True, 'category': 'health'}
     }
-    
+
     policy_result = api.explain_policy_match_endpoint(matched_rule, facts)
     if policy_result['success']:
         print(f"   Rule: {policy_result['data']['rule_id']}")
         print(f"   Explanation: {policy_result['data']['explanation']}")
-    
+
     # Example 5: Generate transparency report
     print("\n5. Generating transparency report...")
     decisions = [
@@ -115,21 +115,21 @@ def main():
             'risk_score': 0.95
         }
     ]
-    
+
     report_result = api.generate_transparency_report_endpoint(decisions, "last_hour")
     if report_result['success']:
         report = report_result['data']
         print(f"   Time period: {report['time_period']}")
         print(f"   Total decisions: {report['total_decisions']}")
-        print(f"   Decision breakdown:")
+        print("   Decision breakdown:")
         for decision, count in report['decision_breakdown'].items():
             percentage = (count / report['total_decisions']) * 100
             print(f"     - {decision}: {count} ({percentage:.1f}%)")
         print(f"   Total violations detected: {report['total_violations']}")
-        print(f"\n   Sample explanations:")
+        print("\n   Sample explanations:")
         for i, exp in enumerate(report['sample_explanations'][:2], 1):
             print(f"     {i}. {exp['decision']}: {exp['reason']}")
-    
+
     print("\n" + "=" * 80)
     print("Explainability API examples completed!")
     print("=" * 80)

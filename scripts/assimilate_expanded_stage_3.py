@@ -1,10 +1,15 @@
 import logging
-import torch
+
 import numpy as np
+import torch
+
 from adaptiveneuralnetwork.central_nervous_system.alive_node import AliveLoopNode
-from adaptiveneuralnetwork.data.science_loader import GlobalScienceLoader
-from adaptiveneuralnetwork.training.expanded_curriculum import ExpandedOmniscientCurriculum, MasteryStage
 from adaptiveneuralnetwork.central_nervous_system.time_manager import get_time_manager
+from adaptiveneuralnetwork.data.science_loader import GlobalScienceLoader
+from adaptiveneuralnetwork.training.expanded_curriculum import (
+    ExpandedOmniscientCurriculum,
+    MasteryStage,
+)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -16,28 +21,28 @@ def perform_expanded_assimilation_stage_3(target_mastery=0.75):
     Focus on strategic depth, contradiction detection, and advanced modelling.
     """
     logger.info(f"⚡ [STRATEGIC_ASCENT] Starting Stage 3: Advanced Analysis - Target {target_mastery*100}%.")
-    
+
     # Init
     pos = torch.zeros(3)
     vel = torch.zeros(3)
     node = AliveLoopNode(position=pos, velocity=vel, node_id=88, spatial_dims=3)
     curriculum = ExpandedOmniscientCurriculum()
-    
+
     # Carry over progress from Stage 2
     for d in curriculum.get_all_domains():
-        curriculum.confidences[d] = 0.52 
-        
+        curriculum.confidences[d] = 0.52
+
     loader = GlobalScienceLoader(target_node=node)
     tm = get_time_manager()
     tm.reset()
-    
+
     all_domains = curriculum.get_all_domains()
-    
+
     # 2. Main Loop
     max_steps = 1500 # More steps needed for 75%
     for step in range(max_steps):
         tm.advance_simulation(1)
-        
+
         if node.phase == "sleep":
             node.step_phase()
             if node.phase != "sleep":
@@ -46,30 +51,30 @@ def perform_expanded_assimilation_stage_3(target_mastery=0.75):
                 node.gradient_noise = 0.0
                 node.working_memory.clear()
             continue
-            
+
         # Target domains with lowest confidence
         target_domain = min(curriculum.confidences, key=curriculum.confidences.get)
         current_conf = curriculum.confidences[target_domain]
-        
+
         if all(c >= target_mastery for c in curriculum.confidences.values()):
             logger.info(f"🎉 [SUCCESS] Stage 3 Mastery Reached ({target_mastery*100}%). Final Strategic Polish (Stage 4) is next.")
             break
-            
+
         # Global Load
         loader.universal_ingest_v5(target_domain)
-        
+
         # Mastery Improvement (Diminishing returns at 75%)
         difficulty_factor = 1.0 - current_conf
         improvement = np.random.uniform(0.04, 0.07) * max(0.1, difficulty_factor)
         curriculum.update_mastery(target_domain, improvement)
-        
+
         # Cognitive Load (STRATEGIC is the most taxing so far)
         node.current_entropy = min(1.0, node.current_entropy + 0.25)
         node.gradient_noise = min(1.0, node.gradient_noise + 0.18)
-        for i in range(12): node.working_memory.append(i) # Heavy buffer
-        
+        for i in range(12): node.working_memory.append(i) # Heavy buffer  # noqa: E701
+
         node.step_phase()
-        
+
         if step % 50 == 0:
             avg_mastery = sum(curriculum.confidences.values()) / len(all_domains)
             logger.info(f"--- Strategic Step {step} [Phase: {node.phase}] Avg Mastery: {avg_mastery:.4f} ---")

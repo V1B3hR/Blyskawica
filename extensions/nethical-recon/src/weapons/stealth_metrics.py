@@ -4,8 +4,8 @@ Measures and validates stealth characteristics of weapons
 """
 
 import logging
-from typing import Any
 from datetime import datetime
+from typing import Any
 
 
 class StealthMetrics:

@@ -2,15 +2,13 @@
 Tests for Attack Surface Mapping Module
 """
 
-import pytest
-from datetime import datetime
 
 from nethical_recon.attack_surface import (
     AttackSurfaceMapper,
     BaselineManager,
-    TechnologyFingerprinter,
-    ServiceDetector,
     CMSDetector,
+    ServiceDetector,
+    TechnologyFingerprinter,
 )
 
 
@@ -112,7 +110,7 @@ class TestAttackSurfaceMapper:
         mapper = AttackSurfaceMapper()
 
         # Create a mock snapshot
-        from nethical_recon.attack_surface.mapper import AttackSurfaceSnapshot, Asset
+        from nethical_recon.attack_surface.mapper import Asset, AttackSurfaceSnapshot
 
         snapshot = AttackSurfaceSnapshot(
             snapshot_id="test_snapshot",
@@ -147,7 +145,7 @@ class TestBaselineManager:
         """Test baseline creation."""
         manager = BaselineManager(storage_path="/tmp/test_baselines")
 
-        from nethical_recon.attack_surface.mapper import AttackSurfaceSnapshot, Asset
+        from nethical_recon.attack_surface.mapper import AttackSurfaceSnapshot
 
         snapshot = AttackSurfaceSnapshot(
             snapshot_id="test_snapshot",
@@ -183,7 +181,7 @@ class TestBaselineManager:
         """Test change detection between snapshots."""
         manager = BaselineManager(storage_path="/tmp/test_baselines")
 
-        from nethical_recon.attack_surface.mapper import AttackSurfaceSnapshot, Asset
+        from nethical_recon.attack_surface.mapper import Asset, AttackSurfaceSnapshot
 
         # Create baseline
         baseline_snapshot = AttackSurfaceSnapshot(

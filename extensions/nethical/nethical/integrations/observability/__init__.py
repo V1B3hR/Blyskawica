@@ -9,10 +9,10 @@ This module provides integration with multiple ML observability platforms:
 - TruLens: LLM evaluation and monitoring
 """
 
-from typing import Dict, Any, List, Optional
 import logging
+from typing import Any, Dict, List, Optional  # noqa: UP035
 
-from .base import ObservabilityProvider, TraceSpan, GovernanceMetrics
+from .base import GovernanceMetrics, ObservabilityProvider, TraceSpan
 
 logger = logging.getLogger(__name__)
 
@@ -76,50 +76,50 @@ except ImportError:
 
 class ObservabilityManager:
     """Manage multiple observability providers."""
-    
+
     def __init__(self):
         """Initialize observability manager."""
-        self.providers: Dict[str, ObservabilityProvider] = {}
+        self.providers: dict[str, ObservabilityProvider] = {}
         logger.info("ObservabilityManager initialized")
-    
+
     def add_provider(self, name: str, provider: ObservabilityProvider) -> None:
         """Add an observability provider.
         
         Args:
             name: Provider name (for reference)
             provider: ObservabilityProvider instance
-        """
+        """  # noqa: W293
         self.providers[name] = provider
         logger.info(f"Added observability provider: {name}")
-    
+
     def remove_provider(self, name: str) -> None:
         """Remove an observability provider.
         
         Args:
             name: Provider name
-        """
+        """  # noqa: W293
         if name in self.providers:
             self.providers.pop(name)
             logger.info(f"Removed observability provider: {name}")
-    
+
     def log_trace_all(self, span: TraceSpan) -> None:
         """Log trace to all providers.
         
         Args:
             span: TraceSpan to log
-        """
+        """  # noqa: W293
         for name, provider in self.providers.items():
             try:
                 provider.log_trace(span)
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 logger.error(f"Failed to log trace to {name}: {e}")
-    
+
     def log_governance_event_all(
         self,
         action: str,
         decision: str,
         risk_score: float,
-        metadata: Dict[str, Any]
+        metadata: dict[str, Any]
     ) -> None:
         """Log governance event to all providers.
         
@@ -128,7 +128,7 @@ class ObservabilityManager:
             decision: Governance decision (ALLOW, BLOCK, RESTRICT)
             risk_score: Risk score (0.0-1.0)
             metadata: Additional event metadata
-        """
+        """  # noqa: W293
         for name, provider in self.providers.items():
             try:
                 provider.log_governance_event(
@@ -137,38 +137,38 @@ class ObservabilityManager:
                     risk_score=risk_score,
                     metadata=metadata
                 )
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 logger.error(f"Failed to log governance event to {name}: {e}")
-    
+
     def log_metrics_all(self, metrics: GovernanceMetrics) -> None:
         """Log metrics to all providers.
         
         Args:
             metrics: GovernanceMetrics to log
-        """
+        """  # noqa: W293
         for name, provider in self.providers.items():
             try:
                 provider.log_metrics(metrics)
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 logger.error(f"Failed to log metrics to {name}: {e}")
-    
+
     def flush_all(self) -> None:
         """Flush all providers."""
         for name, provider in self.providers.items():
             try:
                 provider.flush()
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 logger.error(f"Failed to flush {name}: {e}")
-    
+
     def close_all(self) -> None:
         """Close all providers."""
         for name, provider in self.providers.items():
             try:
                 provider.close()
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 logger.error(f"Failed to close {name}: {e}")
-    
-    def get_provider(self, name: str) -> Optional[ObservabilityProvider]:
+
+    def get_provider(self, name: str) -> ObservabilityProvider | None:
         """Get a specific provider by name.
         
         Args:
@@ -176,25 +176,25 @@ class ObservabilityManager:
             
         Returns:
             ObservabilityProvider or None if not found
-        """
+        """  # noqa: W293
         return self.providers.get(name)
-    
-    def list_providers(self) -> List[str]:
+
+    def list_providers(self) -> list[str]:
         """List all provider names.
         
         Returns:
             List of provider names
-        """
+        """  # noqa: W293
         return list(self.providers.keys())
 
 
 def create_observability_stack(
-    langfuse_config: Optional[Dict[str, str]] = None,
-    langsmith_config: Optional[Dict[str, str]] = None,
-    arize_config: Optional[Dict[str, str]] = None,
-    whylabs_config: Optional[Dict[str, str]] = None,
-    helicone_config: Optional[Dict[str, str]] = None,
-    trulens_config: Optional[Dict[str, Any]] = None
+    langfuse_config: dict[str, str] | None = None,
+    langsmith_config: dict[str, str] | None = None,
+    arize_config: dict[str, str] | None = None,
+    whylabs_config: dict[str, str] | None = None,
+    helicone_config: dict[str, str] | None = None,
+    trulens_config: dict[str, Any] | None = None
 ) -> ObservabilityManager:
     """Create a pre-configured observability stack.
     
@@ -227,9 +227,9 @@ def create_observability_stack(
         ...     risk_score=0.1,
         ...     metadata={}
         ... )
-    """
+    """  # noqa: W293
     manager = ObservabilityManager()
-    
+
     if langfuse_config and LANGFUSE_AVAILABLE and LangfuseConnector:
         try:
             connector = LangfuseConnector(**langfuse_config)
@@ -237,7 +237,7 @@ def create_observability_stack(
             logger.info("Added Langfuse to observability stack")
         except Exception as e:
             logger.error(f"Failed to add Langfuse: {e}")
-    
+
     if langsmith_config and LANGSMITH_AVAILABLE and LangSmithConnector:
         try:
             connector = LangSmithConnector(**langsmith_config)
@@ -245,7 +245,7 @@ def create_observability_stack(
             logger.info("Added LangSmith to observability stack")
         except Exception as e:
             logger.error(f"Failed to add LangSmith: {e}")
-    
+
     if arize_config and ARIZE_AVAILABLE and ArizeConnector:
         try:
             connector = ArizeConnector(**arize_config)
@@ -253,7 +253,7 @@ def create_observability_stack(
             logger.info("Added Arize to observability stack")
         except Exception as e:
             logger.error(f"Failed to add Arize: {e}")
-    
+
     if whylabs_config and WHYLABS_AVAILABLE and WhyLabsConnector:
         try:
             connector = WhyLabsConnector(**whylabs_config)
@@ -261,7 +261,7 @@ def create_observability_stack(
             logger.info("Added WhyLabs to observability stack")
         except Exception as e:
             logger.error(f"Failed to add WhyLabs: {e}")
-    
+
     if helicone_config and HELICONE_AVAILABLE and HeliconeConnector:
         try:
             connector = HeliconeConnector(**helicone_config)
@@ -269,7 +269,7 @@ def create_observability_stack(
             logger.info("Added Helicone to observability stack")
         except Exception as e:
             logger.error(f"Failed to add Helicone: {e}")
-    
+
     if trulens_config and TRULENS_AVAILABLE and TruLensConnector:
         try:
             connector = TruLensConnector(**trulens_config)
@@ -277,16 +277,16 @@ def create_observability_stack(
             logger.info("Added TruLens to observability stack")
         except Exception as e:
             logger.error(f"Failed to add TruLens: {e}")
-    
+
     return manager
 
 
-def get_observability_info() -> Dict[str, Any]:
+def get_observability_info() -> dict[str, Any]:
     """Get information about available observability integrations.
     
     Returns:
         Dictionary with integration availability
-    """
+    """  # noqa: W293
     return {
         "langfuse": {
             "available": LANGFUSE_AVAILABLE,

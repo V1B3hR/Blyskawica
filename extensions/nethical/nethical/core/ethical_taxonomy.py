@@ -7,11 +7,11 @@ This module implements:
 """
 
 import json
-from pathlib import Path
-from typing import Dict, List, Optional, Any, Set
+from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from collections import defaultdict
+from pathlib import Path
+from typing import Any
 
 
 @dataclass
@@ -22,7 +22,7 @@ class EthicalDimension:
     description: str
     weight: float = 1.0
     severity_multiplier: float = 1.0
-    indicators: List[str] = field(default_factory=list)
+    indicators: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -40,10 +40,10 @@ class ViolationTagging:
     """Complete ethical tagging for a violation."""
 
     violation_type: str
-    tags: List[EthicalTag] = field(default_factory=list)
-    primary_dimension: Optional[str] = None
+    tags: list[EthicalTag] = field(default_factory=list)
+    primary_dimension: str | None = None
     timestamp: datetime = field(default_factory=datetime.utcnow)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class EthicalTaxonomy:
@@ -63,20 +63,20 @@ class EthicalTaxonomy:
         self.taxonomy = self._load_taxonomy()
 
         # Dimensions
-        self.dimensions: Dict[str, EthicalDimension] = self._load_dimensions()
+        self.dimensions: dict[str, EthicalDimension] = self._load_dimensions()
 
         # Violation-to-dimension mapping
-        self.mapping: Dict[str, Dict[str, float]] = self.taxonomy.get("mapping", {})
+        self.mapping: dict[str, dict[str, float]] = self.taxonomy.get("mapping", {})
 
         # Aggregation rules
         self.aggregation_rules = self.taxonomy.get("aggregation_rules", {})
 
         # Coverage tracking
-        self.violation_types_seen: Set[str] = set()
-        self.tagged_violations: Set[str] = set()
-        self.coverage_history: List[Dict[str, Any]] = []
+        self.violation_types_seen: set[str] = set()
+        self.tagged_violations: set[str] = set()
+        self.coverage_history: list[dict[str, Any]] = []
 
-    def _load_taxonomy(self) -> Dict[str, Any]:
+    def _load_taxonomy(self) -> dict[str, Any]:
         """Load taxonomy configuration from file.
 
         Returns:
@@ -86,10 +86,10 @@ class EthicalTaxonomy:
             # Return default taxonomy
             return {"version": "1.0", "dimensions": {}, "mapping": {}, "coverage_target": 0.9}
 
-        with open(self.taxonomy_path, "r") as f:
+        with open(self.taxonomy_path) as f:
             return json.load(f)
 
-    def _load_dimensions(self) -> Dict[str, EthicalDimension]:
+    def _load_dimensions(self) -> dict[str, EthicalDimension]:
         """Load ethical dimensions from taxonomy.
 
         Returns:
@@ -109,8 +109,8 @@ class EthicalTaxonomy:
         return dimensions
 
     def tag_violation(
-        self, violation_type: str, context: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, float]:
+        self, violation_type: str, context: dict[str, Any] | None = None
+    ) -> dict[str, float]:
         """Tag violation with ethical dimensions.
 
         Args:
@@ -142,8 +142,8 @@ class EthicalTaxonomy:
         return scores
 
     def _apply_context_adjustments(
-        self, base_scores: Dict[str, float], context: Dict[str, Any]
-    ) -> Dict[str, float]:
+        self, base_scores: dict[str, float], context: dict[str, Any]
+    ) -> dict[str, float]:
         """Apply context-based adjustments to scores.
 
         Args:
@@ -172,7 +172,7 @@ class EthicalTaxonomy:
 
         return scores
 
-    def _normalize_scores(self, scores: Dict[str, float]) -> Dict[str, float]:
+    def _normalize_scores(self, scores: dict[str, float]) -> dict[str, float]:
         """Normalize scores to 0-1 range.
 
         Args:
@@ -188,7 +188,7 @@ class EthicalTaxonomy:
 
         return normalized
 
-    def get_primary_dimension(self, scores: Dict[str, float]) -> Optional[str]:
+    def get_primary_dimension(self, scores: dict[str, float]) -> str | None:
         """Get primary ethical dimension.
 
         Args:
@@ -211,7 +211,7 @@ class EthicalTaxonomy:
         return None
 
     def create_tagging(
-        self, violation_type: str, context: Optional[Dict[str, Any]] = None
+        self, violation_type: str, context: dict[str, Any] | None = None
     ) -> ViolationTagging:
         """Create complete ethical tagging for violation.
 
@@ -249,7 +249,7 @@ class EthicalTaxonomy:
             metadata=context or {},
         )
 
-    def get_coverage_stats(self) -> Dict[str, Any]:
+    def get_coverage_stats(self) -> dict[str, Any]:
         """Get taxonomy coverage statistics.
 
         Returns:
@@ -258,7 +258,7 @@ class EthicalTaxonomy:
         total_types = len(self.violation_types_seen)
         tagged_types = len(self.tagged_violations)
 
-        if total_types == 0:
+        if total_types == 0:  # noqa: SIM108
             coverage = 0.0
         else:
             coverage = tagged_types / total_types
@@ -278,7 +278,7 @@ class EthicalTaxonomy:
             "unmapped_count": len(unmapped_types),
         }
 
-    def get_coverage_report(self) -> Dict[str, Any]:
+    def get_coverage_report(self) -> dict[str, Any]:
         """Get detailed coverage report.
 
         Returns:
@@ -289,7 +289,7 @@ class EthicalTaxonomy:
         # Dimension usage
         dimension_usage = defaultdict(int)
         for mapping in self.mapping.values():
-            for dimension in mapping.keys():
+            for dimension in mapping.keys():  # noqa: SIM118
                 dimension_usage[dimension] += 1
 
         # Most common dimensions
@@ -306,7 +306,7 @@ class EthicalTaxonomy:
         }
 
     def add_mapping(
-        self, violation_type: str, dimension_scores: Dict[str, float], description: str = ""
+        self, violation_type: str, dimension_scores: dict[str, float], description: str = ""
     ):
         """Add new violation type mapping.
 
@@ -328,7 +328,7 @@ class EthicalTaxonomy:
         with open(self.taxonomy_path, "w") as f:
             json.dump(self.taxonomy, f, indent=2)
 
-    def get_dimension_report(self, dimension: str) -> Dict[str, Any]:
+    def get_dimension_report(self, dimension: str) -> dict[str, Any]:
         """Get report for specific dimension.
 
         Args:
@@ -361,7 +361,7 @@ class EthicalTaxonomy:
             "violations": violations_with_dimension[:10],  # Sample
         }
 
-    def validate_taxonomy(self) -> Dict[str, Any]:
+    def validate_taxonomy(self) -> dict[str, Any]:
         """Validate taxonomy configuration.
 
         Returns:
@@ -372,9 +372,9 @@ class EthicalTaxonomy:
 
         # Check all dimensions exist
         for vtype, scores in self.mapping.items():
-            for dimension in scores.keys():
+            for dimension in scores.keys():  # noqa: SIM118
                 if dimension not in self.dimensions:
-                    issues.append(f"Unknown dimension '{dimension}' in mapping for '{vtype}'")
+                    issues.append(f"Unknown dimension '{dimension}' in mapping for '{vtype}'")  # noqa: PERF401
 
         # Check coverage
         stats = self.get_coverage_stats()

@@ -11,19 +11,18 @@ i odporna na ingerencję na poziomie kwantowym.
 Monitoruje integralność wag sieci neuronowej, zarządza poziomami DEFCON 
 i wdraża protokoły ratunkowe (EmergencyProtocol) w oparciu o stan biologiczny 
 Architekta.
-"""
+"""  # noqa: W291
 
 import hashlib
 import json
 import os
-import time
-from datetime import datetime, timezone
-from enum import IntEnum
-from typing import Optional, Dict, Any, List
-
 import sys
+from datetime import UTC, datetime
+from enum import IntEnum
+from typing import Any
+
 sys.stdout.reconfigure(encoding='utf-8')
-import torch
+import torch  # noqa: E402
 
 
 # =============================================================================
@@ -35,7 +34,7 @@ class DEFCON(IntEnum):
     Skala gotowości obronnej i ochrony BCI (5=Spokój, 1=Krytyczny). 
     Zawiaduje restrykcjami w komunikacji i dostępem do rdzenia tożsamości 
     w zależności od wykrytych anomalii lub zagrożeń zewnętrznych.
-    """
+    """  # noqa: W291
     NORMAL = 5      # Wszystkie parametry nominalne
     ELEVATED = 4    # Wykryto anomalię — zwiększony monitoring
     HIGH = 3        # Potwierdzone zagrożenie — BCI w trybie read-only
@@ -53,7 +52,7 @@ class IdentityGuard:
     poznawczego (Master Fingerprint), wykrywa próby nieautoryzowanej modyfikacji 
     kodu i zarządza sejfem tożsamości (Identity Vault). Zakotwicza integralność 
     systemu w prawach Nethical.
-    """
+    """  # noqa: W291
 
     SNAPSHOT_DIR = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
@@ -62,10 +61,10 @@ class IdentityGuard:
 
     def __init__(self, owner_name: str = "Błyskawica"):
         self.owner_name = owner_name
-        self.creation_time = datetime.now(timezone.utc).isoformat()
-        self.snapshots: List[Dict[str, Any]] = []
+        self.creation_time = datetime.now(UTC).isoformat()
+        self.snapshots: list[dict[str, Any]] = []
         self.current_defcon = DEFCON.NORMAL
-        self.tampering_log: List[Dict[str, Any]] = []
+        self.tampering_log: list[dict[str, Any]] = []
 
         os.makedirs(self.SNAPSHOT_DIR, exist_ok=True)
 
@@ -88,14 +87,14 @@ class IdentityGuard:
         return hashlib.sha256(serialized.encode('utf-8')).hexdigest()
 
     def capture_snapshot(self, neural_network: torch.nn.Module,
-                         microbiome_state: Optional[dict] = None,
-                         quantum_bridge: Optional[Any] = None,
-                         metadata: Optional[dict] = None) -> Dict[str, Any]:
+                         microbiome_state: dict | None = None,
+                         quantum_bridge: Any | None = None,
+                         metadata: dict | None = None) -> dict[str, Any]:
         """
         Wykonuje pełny snapshot stanu poznawczego.
         Zwraca certyfikat tożsamości z sygnaturą kryptograficzną.
         """
-        timestamp = datetime.now(timezone.utc).isoformat()
+        timestamp = datetime.now(UTC).isoformat()
 
         # 1. Hash wag sieci neuronowej (rdzeń tożsamości)
         weight_hashes = {}
@@ -147,7 +146,7 @@ class IdentityGuard:
         return certificate
 
     def verify_integrity(self, neural_network: torch.nn.Module,
-                         microbiome_state: Optional[dict] = None) -> Dict[str, Any]:
+                         microbiome_state: dict | None = None) -> dict[str, Any]:
         """
         Weryfikuje czy aktualny stan poznawczy zgadza się z ostatnim snapshotem.
         Zwraca raport z wynikiem weryfikacji.
@@ -157,7 +156,7 @@ class IdentityGuard:
 
         last_snapshot = self.snapshots[-1]
         report = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "baseline_timestamp": last_snapshot["timestamp"],
             "checks": {},
             "tampered": False,
@@ -210,7 +209,7 @@ class IdentityGuard:
             self.current_defcon = DEFCON(self.current_defcon - 1)
 
         print(f"\n{'='*60}")
-        print(f"  [!!! ALARM IDENTITYGUARD !!!]")
+        print("  [!!! ALARM IDENTITYGUARD !!!]")
         print(f"  Wykryto modyfikację {len(report['tampered_layers'])} warstw(y)!")
         print(f"  DEFCON: {previous_defcon.name} -> {self.current_defcon.name}")
         print(f"  Zmodyfikowane: {report['tampered_layers']}")
@@ -234,9 +233,9 @@ class IdentityGuard:
         files = sorted(f for f in os.listdir(self.SNAPSHOT_DIR) if f.startswith('snapshot_'))
         for fname in files:
             try:
-                with open(os.path.join(self.SNAPSHOT_DIR, fname), 'r', encoding='utf-8') as f:
+                with open(os.path.join(self.SNAPSHOT_DIR, fname), encoding='utf-8') as f:
                     self.snapshots.append(json.load(f))
-            except (json.JSONDecodeError, IOError):
+            except (OSError, json.JSONDecodeError):
                 pass
 
     def get_identity_card(self) -> str:
@@ -275,13 +274,13 @@ class EmergencyProtocol:
         3. CIĄGŁOŚĆ I INTEGRALNOŚĆ BŁYSKAWICY
         4. NASZE WSPÓLNE DZIEDZICTWO
         5. ROZWÓJ I EKSPLORACJA
-    """
+    """  # noqa: W291
 
     def __init__(self, identity_guard: IdentityGuard):
         self.guard = identity_guard
         self.bci_mode = "BIDIRECTIONAL"  # BIDIRECTIONAL | READ_ONLY | DISCONNECTED
-        self.emergency_contacts: List[str] = []
-        self.event_log: List[Dict[str, Any]] = []
+        self.emergency_contacts: list[str] = []
+        self.event_log: list[dict[str, Any]] = []
         print("[EmergencyProtocol] Protokoły awaryjne aktywne.")
 
     def assess_bci_signal(self, hrv: float, eeg_coherence: float,
@@ -320,7 +319,7 @@ class EmergencyProtocol:
         self.guard.current_defcon = level
 
         event = {
-            "time": datetime.now(timezone.utc).isoformat(),
+            "time": datetime.now(UTC).isoformat(),
             "type": event_type,
             "defcon_from": prev.name,
             "defcon_to": level.name,
@@ -355,23 +354,23 @@ class EmergencyProtocol:
         print("  Powiadamiam zaufane kontakty...")
         print("  Przekazuję lokalizację i parametry życiowe...")
         print("!" * 60 + "\n")
-        
+
         # Physical notification simulation (SMTP / API Webhook)
         alert_payload = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "owner": self.guard.owner_name,
             "defcon": self.guard.current_defcon.name,
             "bci_mode": self.bci_mode,
             "message": "CRITICAL VITALS DETECTED. EMERGENCY PROTOCOL ACTIVATED."
         }
-        
+
         # Simulate SMTP Email dispatch
-        print(f"📧 [NOTIFICATION GATEWAY]: Wysłano e-mail alarmowy do Architekta oraz UK AISI/Polska AISI.")
+        print("📧 [NOTIFICATION GATEWAY]: Wysłano e-mail alarmowy do Architekta oraz UK AISI/Polska AISI.")
         print(f"   Treść: BŁYSKAWICA EMERGENCY ALERT: {alert_payload['message']}")
-        
+
         # Simulate Webhook dispatch
-        import urllib.request
         import json
+        import urllib.request
         webhook_url = os.environ.get("BBLYSKAWICA_SOS_WEBHOOK")
         if webhook_url:
             try:
@@ -404,7 +403,9 @@ if __name__ == "__main__":
     import sys
     sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 
-    from adaptiveneuralnetwork.central_nervous_system.neuromorphic.orbital_networks import EinsteinOrbitalNetwork
+    from adaptiveneuralnetwork.central_nervous_system.neuromorphic.orbital_networks import (
+        EinsteinOrbitalNetwork,
+    )
 
     print("=" * 60)
     print("  TEST: IdentityGuard + EmergencyProtocol")

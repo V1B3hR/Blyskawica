@@ -9,7 +9,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
 
-class Severity(str, Enum):
+class Severity(str, Enum):  # noqa: UP042
     """Severity level of a finding."""
 
     CRITICAL = "critical"
@@ -19,7 +19,7 @@ class Severity(str, Enum):
     INFO = "info"
 
 
-class Confidence(str, Enum):
+class Confidence(str, Enum):  # noqa: UP042
     """Confidence level in the finding."""
 
     CONFIRMED = "confirmed"

@@ -9,7 +9,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
 
-class IOCType(str, Enum):
+class IOCType(str, Enum):  # noqa: UP042
     """Type of indicator of compromise."""
 
     IP = "ip"

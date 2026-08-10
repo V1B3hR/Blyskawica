@@ -1,4 +1,3 @@
-import os
 import re
 from pathlib import Path
 
@@ -24,12 +23,12 @@ def get_target_dir(mod_name):
 for py_file in BASE_DIR.rglob("*.py"):
     if "venv_orbital" in py_file.parts or "core_backup" in py_file.parts:
         continue
-        
-    with open(py_file, 'r', encoding='utf-8') as f:
+
+    with open(py_file, encoding='utf-8') as f:
         content = f.read()
-        
+
     original = content
-    
+
     # Replace "..core.mod" with "..target_dir.mod" or absolute if needed
     # Actually, easiest is just to replace "..core.xxx" with "adaptiveneuralnetwork.target_dir.xxx"
     # Or simply:
@@ -38,15 +37,15 @@ for py_file in BASE_DIR.rglob("*.py"):
         tdir = get_target_dir(mod)
         # return f"adaptiveneuralnetwork.{tdir}.{mod}" # This changes relative to absolute! Safe.
         return f"adaptiveneuralnetwork.{tdir}.{mod}"
-        
+
     content = re.sub(r"\.\.core\.([a-zA-Z0-9_]+)", repl_dotdotcore, content)
-    
+
     # Replace "core.mod" with "adaptiveneuralnetwork.target_dir.mod"
     def repl_core(match):
         mod = match.group(1)
         tdir = get_target_dir(mod)
         return f"adaptiveneuralnetwork.{tdir}.{mod}"
-        
+
     content = re.sub(r"from core\.([a-zA-Z0-9_]+)", lambda m: f"from adaptiveneuralnetwork.{get_target_dir(m.group(1))}.{m.group(1)}", content)
     content = re.sub(r"import core\.([a-zA-Z0-9_]+)", lambda m: f"import adaptiveneuralnetwork.{get_target_dir(m.group(1))}.{m.group(1)}", content)
 

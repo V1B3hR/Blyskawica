@@ -16,7 +16,6 @@ import json
 import random
 
 import numpy as np
-
 from config.network_config import load_network_config
 from core.alive_node import AliveLoopNode
 from core.capacitor import CapacitorInSpace
@@ -51,7 +50,7 @@ def demo_2d_vs_3d_comparison():
 
         # Create capacitors
         capacitors = []
-        for i in range(3):
+        for i in range(3):  # noqa: B007
             position = [random.uniform(-6, 6) for _ in range(spatial_dims)]
             cap = CapacitorInSpace(
                 position=position,
@@ -216,7 +215,7 @@ def demo_3d_trust_network():
     total_trust_changes = 0
 
     for step in range(30):
-        for i, node in enumerate(nodes):
+        for i, node in enumerate(nodes):  # noqa: B007
             node.step_phase(step)
             node.move()
 
@@ -313,10 +312,10 @@ def main():
     scaling_results = demo_dimensional_scaling()
 
     # Demo 3: 3D trust networks
-    trust_nodes = demo_3d_trust_network()
+    trust_nodes = demo_3d_trust_network()  # noqa: F841
 
     # Demo 4: Configuration switching
-    config_nodes = demo_3d_configuration_switching()
+    config_nodes = demo_3d_configuration_switching()  # noqa: F841
 
     # Summary
     print("\n" + "=" * 60)

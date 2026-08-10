@@ -192,7 +192,7 @@ def test_contiguous_tensors():
     # Run forward pass
     x = torch.randn(8, 784)
     with torch.no_grad():
-        output = model(x)
+        output = model(x)  # noqa: F841
 
     # Check that node state tensors are contiguous
     assert model.node_state.hidden_state.is_contiguous(), "Hidden state not contiguous"

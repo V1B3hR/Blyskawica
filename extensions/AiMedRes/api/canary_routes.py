@@ -9,12 +9,11 @@ Provides endpoints for:
 - Rollback and promotion actions
 """
 
-from flask import request, jsonify, current_app, Blueprint
 import logging
-from typing import Dict, Any
 from datetime import datetime
 
-from security.auth import require_auth, require_admin
+from flask import Blueprint, current_app, jsonify, request
+from security.auth import require_admin, require_auth
 
 logger = logging.getLogger('aimedres.api.canary')
 
@@ -29,20 +28,20 @@ def list_deployments():
     
     Required: API key authentication
     Query params: limit (optional, default 20)
-    """
+    """  # noqa: W293
     try:
         limit = int(request.args.get('limit', 20))
-        
+
         # Get canary pipeline from app context
         if not hasattr(current_app, 'canary_pipeline'):
             return jsonify({
                 'deployments': [],
                 'message': 'Canary pipeline not initialized'
             }), 200
-        
+
         canary_pipeline = current_app.canary_pipeline
         deployments = canary_pipeline.list_deployments(limit=limit)
-        
+
         return jsonify({
             'success': True,
             'deployments': [
@@ -76,7 +75,7 @@ def list_deployments():
                 for d in deployments
             ]
         }), 200
-        
+
     except Exception as e:
         logger.error(f"Failed to list deployments: {e}")
         return jsonify({'error': 'Internal server error'}), 500
@@ -88,17 +87,17 @@ def get_deployment(deployment_id: str):
     Get deployment details.
     
     Required: API key authentication
-    """
+    """  # noqa: W293
     try:
         if not hasattr(current_app, 'canary_pipeline'):
             return jsonify({'error': 'Canary pipeline not initialized'}), 503
-        
+
         canary_pipeline = current_app.canary_pipeline
         deployment = canary_pipeline.get_deployment(deployment_id)
-        
+
         if not deployment:
             return jsonify({'error': 'Deployment not found'}), 404
-        
+
         return jsonify({
             'deployment_id': deployment.deployment_id,
             'model_id': deployment.model_id,
@@ -126,7 +125,7 @@ def get_deployment(deployment_id: str):
             'rollback_triggered': deployment.rollback_triggered,
             'rollback_reason': deployment.rollback_reason
         }), 200
-        
+
     except Exception as e:
         logger.error(f"Failed to get deployment: {e}")
         return jsonify({'error': 'Internal server error'}), 500
@@ -138,19 +137,19 @@ def get_deployment_metrics(deployment_id: str):
     Get real-time deployment metrics.
     
     Required: API key authentication
-    """
+    """  # noqa: W293
     try:
         if not hasattr(current_app, 'canary_pipeline'):
             return jsonify({'error': 'Canary pipeline not initialized'}), 503
-        
+
         canary_pipeline = current_app.canary_pipeline
         metrics = canary_pipeline.get_deployment_metrics(deployment_id)
-        
+
         if not metrics:
             return jsonify({'error': 'Metrics not found'}), 404
-        
+
         return jsonify(metrics), 200
-        
+
     except Exception as e:
         logger.error(f"Failed to get metrics: {e}")
         return jsonify({'error': 'Internal server error'}), 500
@@ -163,17 +162,17 @@ def trigger_rollback(deployment_id: str):
     
     Required: Admin API key
     Body: { "reason": "rollback reason" }
-    """
+    """  # noqa: W293
     try:
         data = request.get_json()
         reason = data.get('reason', 'Manual rollback')
-        
+
         if not hasattr(current_app, 'canary_pipeline'):
             return jsonify({'error': 'Canary pipeline not initialized'}), 503
-        
+
         canary_pipeline = current_app.canary_pipeline
         success = canary_pipeline.trigger_rollback(deployment_id, reason)
-        
+
         if success:
             return jsonify({
                 'success': True,
@@ -183,7 +182,7 @@ def trigger_rollback(deployment_id: str):
             }), 200
         else:
             return jsonify({'error': 'Failed to trigger rollback'}), 400
-            
+
     except Exception as e:
         logger.error(f"Failed to trigger rollback: {e}")
         return jsonify({'error': 'Internal server error'}), 500
@@ -195,14 +194,14 @@ def promote_deployment(deployment_id: str):
     Promote canary deployment to stable.
     
     Required: Admin API key
-    """
+    """  # noqa: W293
     try:
         if not hasattr(current_app, 'canary_pipeline'):
             return jsonify({'error': 'Canary pipeline not initialized'}), 503
-        
+
         canary_pipeline = current_app.canary_pipeline
         success = canary_pipeline.promote_to_stable(deployment_id)
-        
+
         if success:
             return jsonify({
                 'success': True,
@@ -211,7 +210,7 @@ def promote_deployment(deployment_id: str):
             }), 200
         else:
             return jsonify({'error': 'Failed to promote deployment'}), 400
-            
+
     except Exception as e:
         logger.error(f"Failed to promote deployment: {e}")
         return jsonify({'error': 'Internal server error'}), 500
@@ -227,13 +226,13 @@ def canary_health():
             'timestamp': datetime.now().isoformat(),
             'pipeline_initialized': hasattr(current_app, 'canary_pipeline')
         }
-        
+
         if hasattr(current_app, 'canary_pipeline'):
             canary_pipeline = current_app.canary_pipeline
             health['active_deployments'] = len(canary_pipeline.list_deployments(limit=100))
-        
+
         return jsonify(health), 200
-        
+
     except Exception as e:
         logger.error(f"Health check failed: {e}")
         return jsonify({'status': 'unhealthy', 'error': str(e)}), 500

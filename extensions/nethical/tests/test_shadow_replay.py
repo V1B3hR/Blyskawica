@@ -14,21 +14,22 @@ Tests cover:
 
 import json
 import os
-import pytest
-import tempfile
-from pathlib import Path
-from unittest.mock import patch
-import warnings
 
 # Import the module to test
 import sys
+import tempfile
+import warnings
+from pathlib import Path
+from unittest.mock import patch
+
+import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 
 from shadow_replay import (  # noqa: E402
-    ShadowReplayTool,
-    ReplayRequest,
     ReplayReport,
+    ReplayRequest,
+    ShadowReplayTool,
 )
 
 # Use requests_mock for mocking HTTP requests
@@ -115,7 +116,7 @@ def temp_har_file(sample_har_data):
     yield Path(temp_path)
 
     # Cleanup
-    try:
+    try:  # noqa: SIM105
         os.unlink(temp_path)
     except OSError:
         # Ignore if file is already deleted or cannot be deleted during cleanup
@@ -131,7 +132,7 @@ def temp_json_file(sample_json_data):
     yield Path(temp_path)
 
     # Cleanup
-    try:
+    try:  # noqa: SIM105
         # Ignore if file is already deleted or cannot be deleted during cleanup
         os.unlink(temp_path)
     except OSError:
@@ -561,13 +562,13 @@ def test_save_report(staging_url):
         tool.save_report(temp_path)
 
         # Verify file was created and contains valid JSON
-        with open(temp_path, "r") as f:
+        with open(temp_path) as f:
             saved_data = json.load(f)
 
         assert saved_data["total_requests"] == 5
         assert saved_data["processed"] == 5
     finally:
-        try:
+        try:  # noqa: SIM105
             os.unlink(temp_path)
         except OSError:
             pass
@@ -827,7 +828,7 @@ def test_end_to_end_har_replay(temp_har_file, staging_url):
             try:
                 os.unlink(temp_report_path)
             except OSError:
-                warnings.warn(f"Failed to delete temporary file: {temp_report_path}", RuntimeWarning)
+                warnings.warn(f"Failed to delete temporary file: {temp_report_path}", RuntimeWarning)  # noqa: B028
 
 
 def test_end_to_end_json_replay_dry_run(temp_json_file, staging_url):

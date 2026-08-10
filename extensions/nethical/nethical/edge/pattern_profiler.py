@@ -9,7 +9,7 @@ import threading
 import time
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -34,8 +34,8 @@ class ActionPattern:
     action_type: str
     occurrence_count: int = 0
     avg_risk_score: float = 0.0
-    common_decisions: Dict[str, int] = field(default_factory=dict)
-    contexts: List[Dict[str, Any]] = field(default_factory=list)
+    common_decisions: dict[str, int] = field(default_factory=dict)
+    contexts: list[dict[str, Any]] = field(default_factory=list)
     first_seen: float = field(default_factory=time.time)
     last_seen: float = field(default_factory=time.time)
 
@@ -70,11 +70,11 @@ class PatternProfiler:
         self.pattern_ttl_seconds = pattern_ttl_hours * 3600
 
         # Pattern storage
-        self._patterns: Dict[str, ActionPattern] = {}
+        self._patterns: dict[str, ActionPattern] = {}
         self._lock = threading.RLock()
 
         # Action type clustering
-        self._type_clusters: Dict[str, Set[str]] = defaultdict(set)
+        self._type_clusters: dict[str, set[str]] = defaultdict(set)
 
         # Metrics
         self._total_actions_profiled = 0
@@ -88,9 +88,9 @@ class PatternProfiler:
         self,
         action: str,
         action_type: str,
-        context: Optional[Dict[str, Any]] = None,
-        decision: Optional[str] = None,
-        risk_score: Optional[float] = None,
+        context: dict[str, Any] | None = None,
+        decision: str | None = None,
+        risk_score: float | None = None,
     ):
         """
         Record an action for pattern learning.
@@ -151,7 +151,7 @@ class PatternProfiler:
             # Update type cluster
             self._type_clusters[action_type].add(pattern_hash)
 
-    def _extract_context_features(self, context: Dict[str, Any]) -> Dict[str, Any]:
+    def _extract_context_features(self, context: dict[str, Any]) -> dict[str, Any]:
         """Extract relevant features from context."""
         features = {}
         relevant_keys = [
@@ -188,9 +188,9 @@ class PatternProfiler:
 
     def get_common_patterns(
         self,
-        action_type: Optional[str] = None,
-        min_count: Optional[int] = None,
-    ) -> List[ActionPattern]:
+        action_type: str | None = None,
+        min_count: int | None = None,
+    ) -> list[ActionPattern]:
         """
         Get commonly occurring patterns.
 
@@ -206,7 +206,7 @@ class PatternProfiler:
         with self._lock:
             patterns = []
             for pattern in self._patterns.values():
-                if pattern.occurrence_count >= threshold:
+                if pattern.occurrence_count >= threshold:  # noqa: SIM102
                     if action_type is None or pattern.action_type == action_type:
                         patterns.append(pattern)
 
@@ -214,7 +214,7 @@ class PatternProfiler:
             patterns.sort(key=lambda p: p.occurrence_count, reverse=True)
             return patterns
 
-    def get_frequent_action_types(self, top_n: int = 10) -> List[Dict[str, Any]]:
+    def get_frequent_action_types(self, top_n: int = 10) -> list[dict[str, Any]]:
         """
         Get most frequent action types.
 
@@ -225,8 +225,8 @@ class PatternProfiler:
             List of action type statistics
         """
         with self._lock:
-            type_counts: Dict[str, int] = defaultdict(int)
-            type_patterns: Dict[str, List[ActionPattern]] = defaultdict(list)
+            type_counts: dict[str, int] = defaultdict(int)
+            type_patterns: dict[str, list[ActionPattern]] = defaultdict(list)
 
             for pattern in self._patterns.values():
                 type_counts[pattern.action_type] += pattern.occurrence_count
@@ -253,7 +253,7 @@ class PatternProfiler:
 
     def predict_decision(
         self, action: str, action_type: str
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         Predict likely decision based on similar patterns.
 
@@ -272,7 +272,7 @@ class PatternProfiler:
             if pattern_hash in self._patterns:
                 pattern = self._patterns[pattern_hash]
 
-                if pattern.occurrence_count >= self.min_occurrences:
+                if pattern.occurrence_count >= self.min_occurrences:  # noqa: SIM102
                     # Find most common decision
                     if pattern.common_decisions:
                         most_common = max(
@@ -290,7 +290,7 @@ class PatternProfiler:
 
         return None
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get profiler metrics."""
         with self._lock:
             significant = sum(
@@ -306,7 +306,7 @@ class PatternProfiler:
                 "max_patterns": self.max_patterns,
             }
 
-    def export_patterns(self) -> List[Dict[str, Any]]:
+    def export_patterns(self) -> list[dict[str, Any]]:
         """Export all patterns for persistence."""
         with self._lock:
             return [
@@ -322,7 +322,7 @@ class PatternProfiler:
                 for p in self._patterns.values()
             ]
 
-    def import_patterns(self, patterns_data: List[Dict[str, Any]]):
+    def import_patterns(self, patterns_data: list[dict[str, Any]]):
         """Import patterns from persisted data."""
         with self._lock:
             for data in patterns_data:

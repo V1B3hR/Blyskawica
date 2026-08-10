@@ -7,8 +7,8 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 from nethical_recon.core.models import (
-    Severity,
     JobStatus,
+    Severity,
     TargetScope,
     TargetType,
     ToolStatus,

@@ -13,10 +13,9 @@ Archiwizuje izolowane/martwe atomy z pełnym kontekstem:
 """
 
 import json
-import time
 import logging
-from dataclasses import dataclass, asdict, field
-from typing import List, Dict, Optional, Any
+import time
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -29,11 +28,11 @@ class AtomRecord:
     specialization:   str
     timestamp:        float                # Kiedy atom został izolowany/zniszczony
     reason:           str                  # Powód: "anomaly_overload" | "health_critical" | "timeout"
-    final_metrics:    Dict[str, float]     # Ostatni znany stan atomu
-    system_state:     Dict[str, float]     # Stan systemu w chwili śmierci
+    final_metrics:    dict[str, float]     # Ostatni znany stan atomu
+    system_state:     dict[str, float]     # Stan systemu w chwili śmierci
     lifetime_cycles:  int = 0             # Ile cykli przeżył
     peak_performance: float = 0.0        # Najlepszy wynik jaki osiągnął
-    lessons:          List[str] = field(default_factory=list)  # Co można wyciągnąć z tej porażki
+    lessons:          list[str] = field(default_factory=list)  # Co można wyciągnąć z tej porażki
     resurrectable:    bool = True          # Czy można go wskrzesić?
 
     @property
@@ -53,10 +52,10 @@ class AtomGraveyard:
     """
 
     def __init__(self, capacity: int = 256,
-                 graveyard_path: Optional[str] = None):
+                 graveyard_path: str | None = None):
         self.capacity = capacity
         self.graveyard_path = Path(graveyard_path) if graveyard_path else None
-        self.records: List[AtomRecord] = []
+        self.records: list[AtomRecord] = []
         self.total_archived = 0
 
         if self.graveyard_path and self.graveyard_path.exists():
@@ -65,8 +64,8 @@ class AtomGraveyard:
 
     def archive(self, atom_id: str, specialization: str,
                 reason: str,
-                final_metrics: Dict[str, float],
-                system_state: Optional[Dict[str, float]] = None,
+                final_metrics: dict[str, float],
+                system_state: dict[str, float] | None = None,
                 lifetime_cycles: int = 0,
                 peak_performance: float = 0.0) -> AtomRecord:
         """Archiwizuje atom który zakończył swój żywot."""
@@ -102,14 +101,14 @@ class AtomGraveyard:
 
         return record
 
-    def get_failure_patterns(self) -> Dict[str, int]:
+    def get_failure_patterns(self) -> dict[str, int]:
         """Jakie są najczęstsze powody śmierci atomów?"""
         patterns = {}
         for r in self.records:
             patterns[r.reason] = patterns.get(r.reason, 0) + 1
         return dict(sorted(patterns.items(), key=lambda x: -x[1]))
 
-    def get_resurrection_candidates(self, min_performance: float = 0.3) -> List[AtomRecord]:
+    def get_resurrection_candidates(self, min_performance: float = 0.3) -> list[AtomRecord]:
         """Które atomy mogą zostać wskrzeszone?"""
         candidates = [
             r for r in self.records
@@ -117,7 +116,7 @@ class AtomGraveyard:
         ]
         return sorted(candidates, key=lambda r: r.peak_performance, reverse=True)
 
-    def _extract_lessons(self, reason: str, metrics: Dict[str, float]) -> List[str]:
+    def _extract_lessons(self, reason: str, metrics: dict[str, float]) -> list[str]:
         """Wyciąga lekcje z porażki atomu."""
         lessons = []
         if reason == "anomaly_overload":
@@ -149,7 +148,7 @@ class AtomGraveyard:
 
     def _load(self):
         try:
-            with open(self.graveyard_path, "r", encoding="utf-8") as f:
+            with open(self.graveyard_path, encoding="utf-8") as f:
                 data = json.load(f)
             self.total_archived = data.get("total_archived", 0)
             self.records = [AtomRecord(**r) for r in data.get("records", [])]

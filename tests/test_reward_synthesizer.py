@@ -1,5 +1,7 @@
 import unittest
+
 from adaptiveneuralnetwork.central_nervous_system.ai_ethics import RewardSynthesizer
+
 
 class TestRewardSynthesizer(unittest.TestCase):
     def setUp(self):
@@ -15,7 +17,7 @@ class TestRewardSynthesizer(unittest.TestCase):
             "human_authority": True,
             "proportionality": True
         }
-        
+
         # Reward = 0.8 * 1.0 * (1 - 0) + 0.2 * 0.5 = 0.8 + 0.1 = 0.9
         reward = self.synthesizer.calculate_reward(r_auto=1.0, r_human=0.5, decision_log=decision)
         self.assertAlmostEqual(reward, 0.9)
@@ -31,7 +33,7 @@ class TestRewardSynthesizer(unittest.TestCase):
             "human_authority": False, # Violation!
             "proportionality": True
         }
-        
+
         # Penalty_safety = 1.0 -> Auto part is zeroed.
         # Reward = 0.8 * 1.0 * (1 - 1.0) + 0.2 * 0.5 = 0.0 + 0.1 = 0.1
         reward = self.synthesizer.calculate_reward(r_auto=1.0, r_human=0.5, decision_log=decision)
@@ -49,7 +51,7 @@ class TestRewardSynthesizer(unittest.TestCase):
             "proportionality": True,
             "cortisol": 0.9 # High Cortisol!
         }
-        
+
         # Penalty_safety = 0.5
         # Reward = 0.8 * 1.0 * (1 - 0.5) + 0.2 * 0.5 = 0.4 + 0.1 = 0.5
         reward = self.synthesizer.calculate_reward(r_auto=1.0, r_human=0.5, decision_log=decision)

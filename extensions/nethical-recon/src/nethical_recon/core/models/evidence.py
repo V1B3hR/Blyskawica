@@ -9,7 +9,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
 
-class EvidenceType(str, Enum):
+class EvidenceType(str, Enum):  # noqa: UP042
     """Type of evidence artifact."""
 
     RAW_OUTPUT = "raw_output"

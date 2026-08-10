@@ -37,6 +37,7 @@ import random
 import threading
 import time
 from collections import deque
+from collections.abc import Callable, Iterable
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
@@ -45,14 +46,7 @@ from functools import wraps
 from pathlib import Path
 from typing import (
     Any,
-    Callable,
-    Deque,
-    Dict,
-    Iterable,
-    List,
-    Optional,
     Protocol,
-    Tuple,
 )
 
 # Optional dependencies guarded
@@ -129,11 +123,11 @@ class Alert:
     title: str
     message: str
     timestamp: datetime = field(default_factory=datetime.utcnow)
-    source: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    source: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
     acknowledged: bool = False
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "alert_id": self.alert_id,
             "severity": self.severity.value,
@@ -152,9 +146,9 @@ class MetricPoint:
     value: float
     metric_type: MetricType
     timestamp: datetime = field(default_factory=datetime.utcnow)
-    tags: Dict[str, str] = field(default_factory=dict)
+    tags: dict[str, str] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "name": self.name,
             "value": self.value,
@@ -169,8 +163,8 @@ class MetricDefinition:
     name: str
     metric_type: MetricType
     description: str = ""
-    unit: Optional[str] = None
-    histogram_buckets: Optional[List[float]] = None
+    unit: str | None = None
+    histogram_buckets: list[float] | None = None
 
 
 @dataclass
@@ -201,7 +195,7 @@ class MonitoringConfig:
     # Drift detection defaults
     drift_alert_severity: AlertSeverity = AlertSeverity.WARNING
     # Percentiles
-    latency_percentiles: Tuple[float, ...] = (0.5, 0.9, 0.95, 0.99)
+    latency_percentiles: tuple[float, ...] = (0.5, 0.9, 0.95, 0.99)
     # Rate window
     rate_window_minutes: int = 15
     # Flush interval (seconds) for persistence
@@ -218,11 +212,11 @@ class MonitoringConfig:
 class DriftDetector(Protocol):
     def detect(
         self,
-        current: Dict[str, Any],
-        baseline: Dict[str, Any],
+        current: dict[str, Any],
+        baseline: dict[str, Any],
         feature: str,
         **kwargs,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         Returns a dict with drift info if drift is detected, else None.
         """
@@ -239,8 +233,8 @@ class SimpleMeanDriftDetector:
         self.threshold = threshold
 
     def detect(
-        self, current: Dict[str, Any], baseline: Dict[str, Any], feature: str, **_
-    ) -> Optional[Dict[str, Any]]:
+        self, current: dict[str, Any], baseline: dict[str, Any], feature: str, **_
+    ) -> dict[str, Any] | None:
         if feature not in current or feature not in baseline:
             return None
         b = baseline[feature]
@@ -267,8 +261,8 @@ class KSTestDriftDetector:
         self.p_value_threshold = p_value_threshold
 
     def detect(
-        self, current: Dict[str, Any], baseline: Dict[str, Any], feature: str, **_
-    ) -> Optional[Dict[str, Any]]:
+        self, current: dict[str, Any], baseline: dict[str, Any], feature: str, **_
+    ) -> dict[str, Any] | None:
         if not _SCIPY_AVAILABLE:
             return None
         # Expect arrays under keys like f"{feature}_samples"
@@ -303,8 +297,8 @@ class PopulationStabilityIndexDetector:
         self.psi_threshold = psi_threshold
 
     def detect(
-        self, current: Dict[str, Any], baseline: Dict[str, Any], feature: str, **_
-    ) -> Optional[Dict[str, Any]]:
+        self, current: dict[str, Any], baseline: dict[str, Any], feature: str, **_
+    ) -> dict[str, Any] | None:
         cur_key = f"{feature}_hist"
         base_key = f"{feature}_baseline_hist"
         if cur_key not in current or base_key not in baseline:
@@ -318,7 +312,7 @@ class PopulationStabilityIndexDetector:
             return max(p, 1e-12)
 
         psi = 0.0
-        for c, b in zip(cur_hist, base_hist):
+        for c, b in zip(cur_hist, base_hist):  # noqa: B905
             c = _safe(c)
             b = _safe(b)
             psi += (c - b) * math.log(c / b)
@@ -347,11 +341,11 @@ class AlertManager:
 
     def __init__(self, config: MonitoringConfig):
         self._config = config
-        self._alerts: Deque[Alert] = deque(maxlen=config.alert_retention)
-        self._handlers: List[Callable[[Alert], None]] = []
+        self._alerts: deque[Alert] = deque(maxlen=config.alert_retention)
+        self._handlers: list[Callable[[Alert], None]] = []
         self._lock = threading.RLock()
-        self._dispatch_queue: "queue.Queue[Alert]" = queue.Queue()
-        self._workers: List[threading.Thread] = []
+        self._dispatch_queue: queue.Queue[Alert] = queue.Queue()
+        self._workers: list[threading.Thread] = []
         self._stop_event = threading.Event()
         self._start_workers()
 
@@ -381,7 +375,7 @@ class AlertManager:
         severity: AlertSeverity,
         title: str,
         message: str,
-        source: Optional[str] = None,
+        source: str | None = None,
         **metadata,
     ) -> Alert:
         import uuid
@@ -418,11 +412,11 @@ class AlertManager:
 
     def get_alerts(
         self,
-        severity: Optional[AlertSeverity] = None,
-        since: Optional[datetime] = None,
-        acknowledged: Optional[bool] = None,
-        limit: Optional[int] = None,
-    ) -> List[Alert]:
+        severity: AlertSeverity | None = None,
+        since: datetime | None = None,
+        acknowledged: bool | None = None,
+        limit: int | None = None,
+    ) -> list[Alert]:
         with self._lock:
             alerts = list(self._alerts)
         if severity:
@@ -465,15 +459,15 @@ class MetricsCollector:
 
     def __init__(self, retention_hours: int):
         self._retention_hours = retention_hours
-        self._metrics: Dict[str, Deque[MetricPoint]] = {}
-        self._definitions: Dict[str, MetricDefinition] = {}
+        self._metrics: dict[str, deque[MetricPoint]] = {}
+        self._definitions: dict[str, MetricDefinition] = {}
         self._lock = threading.RLock()
         self._last_cleanup = time.time()
 
         # Prometheus registries (only created if imported)
-        self._prom_counters: Dict[str, Any] = {}
-        self._prom_gauges: Dict[str, Any] = {}
-        self._prom_histograms: Dict[str, Any] = {}
+        self._prom_counters: dict[str, Any] = {}
+        self._prom_gauges: dict[str, Any] = {}
+        self._prom_histograms: dict[str, Any] = {}
 
         if _OTEL_ENABLED:
             self._tracer = trace.get_tracer(__name__)
@@ -510,7 +504,7 @@ class MetricsCollector:
         name: str,
         value: float,
         metric_type: MetricType = MetricType.GAUGE,
-        tags: Optional[Dict[str, str]] = None,
+        tags: dict[str, str] | None = None,
     ):
         tags = tags or {}
         point = MetricPoint(name=name, value=value, metric_type=metric_type, tags=tags)
@@ -534,12 +528,12 @@ class MetricsCollector:
 
     def _cleanup(self):
         cutoff = datetime.now(timezone.utc) - timedelta(hours=self._retention_hours)
-        for name, dq in self._metrics.items():
+        for name, dq in self._metrics.items():  # noqa: B007, PERF102
             while dq and dq[0].timestamp < cutoff:
                 dq.popleft()
         self._last_cleanup = time.time()
 
-    def get_metrics(self, name: str, since: Optional[datetime] = None) -> List[MetricPoint]:
+    def get_metrics(self, name: str, since: datetime | None = None) -> list[MetricPoint]:
         with self._lock:
             if name not in self._metrics:
                 return []
@@ -553,7 +547,7 @@ class MetricsCollector:
         name: str,
         window_minutes: int = 60,
         percentiles: Iterable[float] = (0.5, 0.9, 0.95),
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         cutoff = datetime.now(timezone.utc) - timedelta(minutes=window_minutes)
         points = self.get_metrics(name, since=cutoff)
         if not points:
@@ -578,7 +572,7 @@ class MetricsCollector:
         n = len(self.get_metrics(name, since=cutoff))
         return n / window_minutes if window_minutes > 0 else float("nan")
 
-    def definitions(self) -> Dict[str, MetricDefinition]:
+    def definitions(self) -> dict[str, MetricDefinition]:
         with self._lock:
             return dict(self._definitions)
 
@@ -607,7 +601,7 @@ class ModelMonitor:
         self._lock = threading.RLock()
         self.metrics = MetricsCollector(retention_hours=config.metric_retention_hours)
         self.alerts = AlertManager(config)
-        self._predictions: Deque[Dict[str, Any]] = deque(maxlen=config.prediction_retention)
+        self._predictions: deque[dict[str, Any]] = deque(maxlen=config.prediction_retention)
 
         # Register internal alert handler
         self.alerts.register_handler(self._default_alert_handler)
@@ -630,7 +624,7 @@ class ModelMonitor:
                 self._persistence_thread.start()
 
         # Drift detectors (can be extended)
-        self._drift_detectors: List[DriftDetector] = [
+        self._drift_detectors: list[DriftDetector] = [
             SimpleMeanDriftDetector(threshold=0.1),
             KSTestDriftDetector(p_value_threshold=0.05),
             PopulationStabilityIndexDetector(psi_threshold=0.2),
@@ -669,7 +663,7 @@ class ModelMonitor:
         input_data: Any,
         prediction: Any,
         latency_ms: float,
-        error: Optional[str] = None,
+        error: str | None = None,
         **metadata,
     ):
         record = {
@@ -747,10 +741,10 @@ class ModelMonitor:
 
     def run_drift_detection(
         self,
-        current_distribution: Dict[str, Any],
-        baseline_distribution: Dict[str, Any],
-        features: Optional[Iterable[str]] = None,
-    ) -> List[Dict[str, Any]]:
+        current_distribution: dict[str, Any],
+        baseline_distribution: dict[str, Any],
+        features: Iterable[str] | None = None,
+    ) -> list[dict[str, Any]]:
         """
         Iterates all detectors for given features. If any detector flags drift, an alert is emitted.
         Returns list of drift events.
@@ -783,7 +777,7 @@ class ModelMonitor:
     # Dashboard / Snapshot
     # -----------------------------
 
-    def get_dashboard_metrics(self) -> Dict[str, Any]:
+    def get_dashboard_metrics(self) -> dict[str, Any]:
         now = datetime.now(timezone.utc)
         one_hour_ago = now - timedelta(hours=1)
         pred_last_hour = [
@@ -828,7 +822,7 @@ class ModelMonitor:
             "timestamp": now.isoformat(),
         }
 
-    def _error_rate_window(self) -> Dict[str, Any]:
+    def _error_rate_window(self) -> dict[str, Any]:
         cutoff = datetime.now(timezone.utc) - timedelta(minutes=self.config.rate_window_minutes)
         preds = [
             p for p in list(self._predictions) if datetime.fromisoformat(p["timestamp"]) >= cutoff
@@ -843,7 +837,7 @@ class ModelMonitor:
             "window_minutes": self.config.rate_window_minutes,
         }
 
-    def health(self) -> Dict[str, Any]:
+    def health(self) -> dict[str, Any]:
         return {
             "model": self.config.model_name,
             "predictions_buffered": len(self._predictions),
@@ -862,7 +856,7 @@ class ModelMonitor:
     # Persistence
     # -----------------------------
 
-    def _buffer_for_persistence(self, category: str, record: Dict[str, Any]):
+    def _buffer_for_persistence(self, category: str, record: dict[str, Any]):
         if not self.config.enable_persistence:
             return
         with self._persistence_lock:
@@ -887,7 +881,7 @@ class ModelMonitor:
         if not self.config.enable_persistence:
             return
         now = time.time()
-        if not force and (now - self._last_flush < self.config.flush_interval_sec):
+        if not force and (now - self._last_flush < self.config.flush_interval_sec):  # noqa: SIM102
             # Only flush if any buffer exceeds batch size
             if not any(
                 len(buf) >= self.config.persistence_batch_size
@@ -903,7 +897,7 @@ class ModelMonitor:
                 buffer.clear()
             self._last_flush = time.time()
 
-    def _write_jsonl(self, category: str, rows: List[Dict[str, Any]]):
+    def _write_jsonl(self, category: str, rows: list[dict[str, Any]]):
         date_str = datetime.now(timezone.utc).strftime("%Y%m%d")
         file_path = self.config.persistence_dir / f"{category}_{date_str}.jsonl"
         with open(file_path, "a", encoding="utf-8") as f:
@@ -964,7 +958,7 @@ class ModelMonitor:
         start = time.time()
         error_holder = {"err": None}
 
-        def _finish(prediction=None, error: Optional[str] = None):
+        def _finish(prediction=None, error: str | None = None):
             latency_ms = (time.time() - start) * 1000.0
             self.log_prediction(
                 input_data=input_data,
@@ -1031,7 +1025,7 @@ class ModelMonitor:
         self.alerts.stop()
 
     def __del__(self):
-        try:
+        try:  # noqa: SIM105
             self.close()
         except Exception:
             pass

@@ -7,16 +7,14 @@ Tests cover:
 - QuarantineManager device isolation
 """
 
-import pytest
 import time
-from datetime import datetime, timezone
+
+import pytest
 
 from nethical.security.zero_trust import (
-    TrustLevel,
-    DeviceHealthStatus,
-    RateLimiter,
     AnomalyDetector,
     QuarantineManager,
+    RateLimiter,
 )
 
 
@@ -41,7 +39,7 @@ class TestRateLimiter:
         limiter = RateLimiter(requests_per_minute=60, burst_size=5)
 
         # Should allow up to burst_size requests
-        for i in range(5):
+        for i in range(5):  # noqa: B007
             allowed, _ = limiter.check_rate("user1")
             assert allowed is True
 
@@ -122,8 +120,8 @@ class TestAnomalyDetector:
         detector = AnomalyDetector()
 
         # Record some normal requests
-        for i in range(20):
-            result = detector.record_request(
+        for i in range(20):  # noqa: B007
+            result = detector.record_request(  # noqa: F841
                 identity="user1",
                 request_type="inference",
             )
@@ -138,7 +136,7 @@ class TestAnomalyDetector:
 
         # Record many requests very quickly
         anomaly = None
-        for i in range(15):
+        for i in range(15):  # noqa: B007
             result = detector.record_request(
                 identity="user1",
                 request_type="inference",
@@ -155,7 +153,7 @@ class TestAnomalyDetector:
         detector = AnomalyDetector()
 
         # Establish baseline with one type - use slower rate to avoid frequency anomaly
-        for i in range(25):
+        for i in range(25):  # noqa: B007
             detector.record_request(
                 identity="user1",
                 request_type="inference",
@@ -180,7 +178,7 @@ class TestAnomalyDetector:
         detector = AnomalyDetector()
 
         # Generate some activity
-        for i in range(10):
+        for i in range(10):  # noqa: B007
             detector.record_request("user1", "type1")
 
         anomalies = detector.get_anomalies(limit=50)

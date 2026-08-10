@@ -6,7 +6,7 @@ sensitive information and comply with OWASP logging guidelines.
 
 import hashlib
 import re
-from typing import Any, Optional
+from typing import Any
 
 
 class SecureLogger:
@@ -62,7 +62,7 @@ class SecureLogger:
         """
         sanitized = message
 
-        for pattern_name, pattern in self.SENSITIVE_PATTERNS.items():
+        for pattern_name, pattern in self.SENSITIVE_PATTERNS.items():  # noqa: B007
             matches = pattern.finditer(sanitized)
             for match in matches:
                 # Replace the entire match with masked version
@@ -119,7 +119,7 @@ class SecureLogger:
 
         return masked
 
-    def hash_pii(self, pii_value: str, salt: Optional[str] = None) -> str:
+    def hash_pii(self, pii_value: str, salt: str | None = None) -> str:
         """Hash personally identifiable information for logging.
 
         Args:
@@ -143,7 +143,7 @@ class SecureLogger:
         action: str,
         resource: str,
         result: str,
-        details: Optional[dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Create a structured audit log entry.
 
@@ -179,7 +179,7 @@ class SecureLogger:
         severity: str,
         category: str,
         message: str,
-        context: Optional[dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Format a security event for logging.
 

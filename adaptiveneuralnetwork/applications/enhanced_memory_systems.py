@@ -57,7 +57,7 @@ class TimeSeriesAnalyzer:
         
         Returns:
             List of (index, value, event_type) tuples
-        """
+        """  # noqa: W293
         if len(self.history) < 10:
             return []
 
@@ -190,7 +190,7 @@ class DynamicPriorityBuffer:
         
         Returns:
             features, labels, tasks, importance_weights, indices
-        """
+        """  # noqa: W293
         if self.stored_samples == 0:
             return (torch.empty(0, self.feature_size), torch.empty(0, dtype=torch.long),
                    torch.empty(0, dtype=torch.long), torch.empty(0), np.array([]))
@@ -216,7 +216,7 @@ class DynamicPriorityBuffer:
         priorities = np.array(priorities)
 
         # Calculate importance sampling weights
-        max_priority = self.priority_tree.max_leaf_value()
+        max_priority = self.priority_tree.max_leaf_value()  # noqa: F841
         sampling_probabilities = priorities / self.priority_tree.total()
         importance_weights = (1.0 / (self.stored_samples * sampling_probabilities)) ** self.config.importance_sampling_weight
         importance_weights = importance_weights / importance_weights.max()  # Normalize

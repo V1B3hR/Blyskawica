@@ -5,13 +5,12 @@ Ultra-fast policy caching for edge deployment.
 Target: <0.1ms cache lookup
 """
 
-import hashlib
 import logging
 import threading
 import time
 from collections import OrderedDict
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -34,14 +33,14 @@ class CachedPolicy:
     """
 
     policy_id: str
-    rules: List[Dict[str, Any]]
-    risk_weights: Dict[str, float] = field(default_factory=dict)
-    blocked_patterns: List[str] = field(default_factory=list)
-    restricted_patterns: List[str] = field(default_factory=list)
+    rules: list[dict[str, Any]]
+    risk_weights: dict[str, float] = field(default_factory=dict)
+    blocked_patterns: list[str] = field(default_factory=list)
+    restricted_patterns: list[str] = field(default_factory=list)
     created_at: float = field(default_factory=time.time)
     expires_at: float = 0.0
     version: str = "1.0"
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def is_expired(self) -> bool:
         """Check if policy cache entry has expired."""
@@ -95,7 +94,7 @@ class PolicyCache:
             f"ttl={ttl_seconds}s, max_entries={max_entries}"
         )
 
-    def get(self, key: str) -> Optional[CachedPolicy]:
+    def get(self, key: str) -> CachedPolicy | None:
         """
         Get policy from cache.
 
@@ -130,7 +129,7 @@ class PolicyCache:
         self,
         key: str,
         policy: CachedPolicy,
-        ttl_override: Optional[int] = None,
+        ttl_override: int | None = None,
     ):
         """
         Set policy in cache.
@@ -187,7 +186,7 @@ class PolicyCache:
             pattern: Pattern to match (substring match)
         """
         with self._lock:
-            keys_to_delete = [k for k in self._cache.keys() if pattern in k]
+            keys_to_delete = [k for k in self._cache.keys() if pattern in k]  # noqa: SIM118
             for key in keys_to_delete:
                 del self._cache[key]
                 self._evictions += 1
@@ -196,7 +195,7 @@ class PolicyCache:
         self,
         key: str,
         factory: callable,
-        ttl_override: Optional[int] = None,
+        ttl_override: int | None = None,
     ) -> CachedPolicy:
         """
         Get policy from cache or create using factory.
@@ -231,7 +230,7 @@ class PolicyCache:
                 del self._cache[key]
                 self._evictions += 1
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get cache metrics."""
         with self._lock:
             total = self._hits + self._misses
@@ -253,6 +252,6 @@ class PolicyCache:
         with self._lock:
             if key not in self._cache:
                 return False
-            if self._cache[key].is_expired():
+            if self._cache[key].is_expired():  # noqa: SIM103
                 return False
             return True

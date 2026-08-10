@@ -1,11 +1,13 @@
 import unittest
+
 import numpy as np
-import math
+
 from scripts.cern_quantum_learning import (
     SubatomicCollisionSimulator,
     TokamakMHDSolver,
-    simulate_learning
+    simulate_learning,
 )
+
 
 class TestCernPhysics(unittest.TestCase):
     def setUp(self):
@@ -17,7 +19,7 @@ class TestCernPhysics(unittest.TestCase):
         mean = 91.18
         gamma = 2.49
         samples = [self.collision_sim.sample_breit_wigner(mean, gamma) for _ in range(500)]
-        
+
         # Mean of Breit-Wigner samples should be close to nominal mean
         # (Breit-Wigner has heavy tails, so we filter out outliers for standard mean verification)
         filtered_samples = [s for s in samples if abs(s - mean) < 5 * gamma]
@@ -27,17 +29,17 @@ class TestCernPhysics(unittest.TestCase):
     def test_bethe_bloch_energy_loss(self):
         """Tests that Bethe-Bloch energy loss values are physically reasonable."""
         m_muon = 0.1056
-        
+
         # Test positive energy loss for different momenta
         loss_low = self.collision_sim.simulate_bethe_bloch(momentum_gev=0.04, mass_gev=m_muon)
         loss_high = self.collision_sim.simulate_bethe_bloch(momentum_gev=2.0, mass_gev=m_muon)
-        
+
         self.assertGreater(loss_low, 0.0)
         self.assertGreater(loss_high, 0.0)
-        
+
         # Low momentum (near ionization peak) typically loses more energy than high momentum (minimum ionizing)
         self.assertGreater(loss_low, loss_high)
-        
+
         # Boundary checks
         self.assertEqual(self.collision_sim.simulate_bethe_bloch(0.0, m_muon), 0.0)
         self.assertEqual(self.collision_sim.simulate_bethe_bloch(-5.0, m_muon), 0.0)
@@ -51,7 +53,7 @@ class TestCernPhysics(unittest.TestCase):
         ]
         for key in required_keys:
             self.assertIn(key, res_z)
-            
+
         # Z mass should be physically bounded
         self.assertTrue(70.0 < res_z["true_mass"] < 110.0)
         self.assertTrue(60.0 < res_z["reconstructed_mass"] < 120.0)
@@ -67,7 +69,7 @@ class TestCernPhysics(unittest.TestCase):
         """Tests that safety factor q(r) increases radially from center to edge."""
         q = self.tokamak.compute_safety_factor()
         self.assertEqual(len(q), 30)
-        
+
         # In a standard tokamak, q increases from the magnetic axis to the plasma boundary
         self.assertGreater(q[-1], q[0])
         # Central q should be around 1.0 - 1.5, edge q should be higher (e.g. > 3.0)
@@ -77,11 +79,11 @@ class TestCernPhysics(unittest.TestCase):
     def test_tokamak_mhd_diffusion_loop(self):
         """Tests poloidal magnetic field diffusion over simulation steps."""
         initial_B_theta = self.tokamak.B_theta.copy()
-        
+
         # Step diffusion multiple times
         for _ in range(50):
             self.tokamak.step_diffusion(dt=0.01)
-            
+
         # Magnetic field profile should diffuse and change
         self.assertFalse(np.array_equal(self.tokamak.B_theta, initial_B_theta))
         self.assertEqual(self.tokamak.B_theta[0], 0.0)  # Boundary condition preserved
@@ -91,16 +93,16 @@ class TestCernPhysics(unittest.TestCase):
         # 1. Initially, no disruption
         disrupted, _ = self.tokamak.check_disruption()
         self.assertFalse(disrupted)
-        
+
         # 2. Force tearing mode growth
         # Increase resistivity and tearing mode index to force fast disruption
         self.tokamak.delta_prime_0 = 15.0
         self.tokamak.eta.fill(1e-7)  # Stable resistivity
         self.tokamak.w_sat = 0.40    # Set saturation above disruption limit
-        
+
         for _ in range(200):
             self.tokamak.step_rutherford_growth(dt=0.1)
-            
+
         disrupted_after_growth, reason = self.tokamak.check_disruption()
         self.assertTrue(disrupted_after_growth)
         self.assertIn("Major Disruption", reason)

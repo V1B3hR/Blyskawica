@@ -18,14 +18,13 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional, Dict, Any
 
 
 class PluginDevelopmentKit:
     """Main PDK class for plugin development operations"""
-    
+
     PLUGIN_TYPES = ['detector', 'policy', 'analyzer']
-    
+
     DETECTOR_TEMPLATE = '''"""
 {name} - Nethical Detector Plugin
 
@@ -107,7 +106,7 @@ class {class_name}(DetectorPlugin):
         """
         # TODO: Implement health check logic
         return True
-'''
+'''  # noqa: W293
 
     TEST_TEMPLATE = '''"""
 Tests for {name}
@@ -162,7 +161,7 @@ async def test_{snake_name}_health_check():
 
 
 # Add more tests as needed
-'''
+'''  # noqa: W293
 
     MANIFEST_TEMPLATE = '''{{
     "name": "{name}",
@@ -237,10 +236,10 @@ MIT License - see LICENSE file for details
 
 {version}
 '''
-    
+
     def __init__(self):
         pass
-    
+
     def init_plugin(self, name: str, plugin_type: str, output_dir: Path,
                    description: str = "", author: str = "") -> bool:
         """
@@ -255,30 +254,30 @@ MIT License - see LICENSE file for details
             
         Returns:
             True if successful, False otherwise
-        """
+        """  # noqa: W293
         if plugin_type not in self.PLUGIN_TYPES:
             print(f"Error: Invalid plugin type. Must be one of: {', '.join(self.PLUGIN_TYPES)}")
             return False
-        
+
         # Create plugin directory structure
         plugin_dir = output_dir / name.lower().replace(' ', '_')
-        
+
         if plugin_dir.exists():
             print(f"Error: Directory {plugin_dir} already exists")
             return False
-        
+
         print(f"Creating plugin '{name}' in {plugin_dir}")
-        
+
         # Create directories
         plugin_dir.mkdir(parents=True, exist_ok=True)
         (plugin_dir / 'tests').mkdir(exist_ok=True)
         (plugin_dir / 'docs').mkdir(exist_ok=True)
-        
+
         # Generate file names
         module_name = name.lower().replace(' ', '_').replace('-', '_')
         class_name = ''.join(word.capitalize() for word in name.split())
         snake_name = module_name
-        
+
         # Prepare template variables
         template_vars = {
             'name': name,
@@ -291,45 +290,45 @@ MIT License - see LICENSE file for details
             'snake_name': snake_name,
             'timestamp': datetime.now(timezone.utc).isoformat()
         }
-        
+
         # Create main plugin file
         plugin_file = plugin_dir / f'{module_name}.py'
         with open(plugin_file, 'w') as f:
             f.write(self.DETECTOR_TEMPLATE.format(**template_vars))
-        
+
         print(f"  ✓ Created {plugin_file}")
-        
+
         # Create test file
         test_file = plugin_dir / 'tests' / f'test_{module_name}.py'
         with open(test_file, 'w') as f:
             f.write(self.TEST_TEMPLATE.format(**template_vars))
-        
+
         print(f"  ✓ Created {test_file}")
-        
+
         # Create manifest
         manifest_file = plugin_dir / 'plugin.json'
         with open(manifest_file, 'w') as f:
             f.write(self.MANIFEST_TEMPLATE.format(**template_vars))
-        
+
         print(f"  ✓ Created {manifest_file}")
-        
+
         # Create README
         readme_file = plugin_dir / 'README.md'
         with open(readme_file, 'w') as f:
             f.write(self.README_TEMPLATE.format(**template_vars))
-        
+
         print(f"  ✓ Created {readme_file}")
-        
+
         # Create __init__.py
         init_file = plugin_dir / '__init__.py'
         with open(init_file, 'w') as f:
             f.write(f'"""Nethical {name} Plugin"""\n')
             f.write(f'from .{module_name} import {class_name}\n\n')
-            f.write(f'__version__ = "0.1.0"\n')
+            f.write('__version__ = "0.1.0"\n')
             f.write(f'__all__ = ["{class_name}"]\n')
-        
+
         print(f"  ✓ Created {init_file}")
-        
+
         # Create setup.py
         setup_file = plugin_dir / 'setup.py'
         with open(setup_file, 'w') as f:
@@ -362,34 +361,34 @@ setup(
     ],
 )
 ''')
-        
+
         print(f"  ✓ Created {setup_file}")
-        
+
         # Create requirements.txt
         requirements_file = plugin_dir / 'requirements.txt'
         with open(requirements_file, 'w') as f:
             f.write('nethical>=0.1.0\n')
-        
+
         print(f"  ✓ Created {requirements_file}")
-        
+
         # Create .gitignore
         gitignore_file = plugin_dir / '.gitignore'
         with open(gitignore_file, 'w') as f:
             f.write('__pycache__/\n*.py[cod]\n*$py.class\n.pytest_cache/\n')
             f.write('dist/\nbuild/\n*.egg-info/\n.venv/\nvenv/\n')
-        
+
         print(f"  ✓ Created {gitignore_file}")
-        
+
         print(f"\n✅ Plugin '{name}' created successfully!")
-        print(f"\nNext steps:")
+        print("\nNext steps:")
         print(f"  1. cd {plugin_dir}")
         print(f"  2. Implement your detection logic in {module_name}.py")
         print(f"  3. Add tests in tests/test_{module_name}.py")
-        print(f"  4. Run tests: pytest tests/")
-        print(f"  5. Package: nethical-pdk package .")
-        
+        print("  4. Run tests: pytest tests/")
+        print("  5. Package: nethical-pdk package .")
+
         return True
-    
+
     def validate_plugin(self, plugin_path: Path) -> bool:
         """
         Validate a plugin structure and manifest.
@@ -399,12 +398,12 @@ setup(
             
         Returns:
             True if valid, False otherwise
-        """
+        """  # noqa: W293
         print(f"Validating plugin at {plugin_path}")
-        
+
         errors = []
         warnings = []
-        
+
         # Check required files
         required_files = ['plugin.json', 'README.md']
         for filename in required_files:
@@ -413,21 +412,21 @@ setup(
                 errors.append(f"Missing required file: {filename}")
             else:
                 print(f"  ✓ Found {filename}")
-        
+
         # Validate manifest
         manifest_path = plugin_path / 'plugin.json'
         if manifest_path.exists():
             try:
-                with open(manifest_path, 'r') as f:
+                with open(manifest_path) as f:
                     manifest = json.load(f)
-                
+
                 required_fields = ['name', 'version', 'description', 'author', 'type', 'entry_point']
                 for field in required_fields:
                     if field not in manifest:
                         errors.append(f"Missing required field in plugin.json: {field}")
                     else:
                         print(f"  ✓ Manifest field '{field}': {manifest[field]}")
-                
+
                 # Validate entry point exists
                 if 'entry_point' in manifest:
                     try:
@@ -439,10 +438,10 @@ setup(
                             print(f"  ✓ Entry point module exists: {module_file}")
                     except ValueError:
                         errors.append(f"Invalid entry point format: {manifest['entry_point']} (expected 'module.Class')")
-            
+
             except json.JSONDecodeError as e:
                 errors.append(f"Invalid JSON in plugin.json: {e}")
-        
+
         # Check for tests
         tests_dir = plugin_path / 'tests'
         if not tests_dir.exists():
@@ -453,22 +452,22 @@ setup(
                 warnings.append("No test files found in tests/")
             else:
                 print(f"  ✓ Found {len(test_files)} test file(s)")
-        
+
         # Report results
         if errors:
             print("\n❌ Validation failed:")
             for error in errors:
                 print(f"  - {error}")
             return False
-        
+
         if warnings:
             print("\n⚠️  Warnings:")
             for warning in warnings:
                 print(f"  - {warning}")
-        
+
         print("\n✅ Plugin validation passed!")
         return True
-    
+
     def test_plugin(self, plugin_path: Path) -> bool:
         """
         Run tests for a plugin.
@@ -478,14 +477,14 @@ setup(
             
         Returns:
             True if tests pass, False otherwise
-        """
+        """  # noqa: W293
         print(f"Running tests for plugin at {plugin_path}")
-        
+
         tests_dir = plugin_path / 'tests'
         if not tests_dir.exists():
             print("Error: No tests directory found")
             return False
-        
+
         try:
             result = subprocess.run(
                 ['pytest', str(tests_dir), '-v'],
@@ -494,26 +493,26 @@ setup(
                 text=True,
                 timeout=60
             )
-            
+
             print(result.stdout)
             if result.stderr:
                 print(result.stderr)
-            
+
             if result.returncode == 0:
                 print("\n✅ All tests passed!")
                 return True
             else:
                 print("\n❌ Some tests failed")
                 return False
-        
+
         except subprocess.TimeoutExpired:
             print("Error: Tests timed out")
             return False
         except FileNotFoundError:
             print("Error: pytest not found. Install with: pip install pytest pytest-asyncio")
             return False
-    
-    def package_plugin(self, plugin_path: Path, output_dir: Optional[Path] = None) -> bool:
+
+    def package_plugin(self, plugin_path: Path, output_dir: Path | None = None) -> bool:
         """
         Package a plugin for distribution.
         
@@ -523,16 +522,16 @@ setup(
             
         Returns:
             True if successful, False otherwise
-        """
+        """  # noqa: W293
         print(f"Packaging plugin at {plugin_path}")
-        
+
         if not self.validate_plugin(plugin_path):
             print("Error: Plugin validation failed. Fix errors before packaging.")
             return False
-        
+
         output_dir = output_dir or (plugin_path / 'dist')
         output_dir.mkdir(parents=True, exist_ok=True)
-        
+
         try:
             # Build distribution
             result = subprocess.run(
@@ -542,7 +541,7 @@ setup(
                 text=True,
                 timeout=60
             )
-            
+
             if result.returncode == 0:
                 print("\n✅ Plugin packaged successfully!")
                 print(f"Distribution files in: {plugin_path / 'dist'}")
@@ -551,11 +550,11 @@ setup(
                 print("\n❌ Packaging failed:")
                 print(result.stderr)
                 return False
-        
+
         except Exception as e:
             print(f"Error: {e}")
             return False
-    
+
     def generate_docs(self, plugin_path: Path) -> bool:
         """
         Generate documentation for a plugin.
@@ -565,40 +564,40 @@ setup(
             
         Returns:
             True if successful, False otherwise
-        """
+        """  # noqa: W293
         print(f"Generating documentation for plugin at {plugin_path}")
-        
+
         manifest_path = plugin_path / 'plugin.json'
         if not manifest_path.exists():
             print("Error: plugin.json not found")
             return False
-        
-        with open(manifest_path, 'r') as f:
+
+        with open(manifest_path) as f:
             manifest = json.load(f)
-        
+
         docs_dir = plugin_path / 'docs'
         docs_dir.mkdir(exist_ok=True)
-        
+
         # Generate API documentation
         api_doc = docs_dir / 'API.md'
         with open(api_doc, 'w') as f:
             f.write(f"# {manifest['name']} API Documentation\n\n")
             f.write(f"Version: {manifest['version']}\n\n")
-            f.write(f"## Overview\n\n")
+            f.write("## Overview\n\n")
             f.write(f"{manifest['description']}\n\n")
-            f.write(f"## Installation\n\n")
-            f.write(f"```bash\n")
+            f.write("## Installation\n\n")
+            f.write("```bash\n")
             f.write(f"pip install {manifest['name'].lower().replace(' ', '-')}\n")
-            f.write(f"```\n\n")
-            f.write(f"## Usage\n\n")
-            f.write(f"```python\n")
+            f.write("```\n\n")
+            f.write("## Usage\n\n")
+            f.write("```python\n")
             f.write(f"from {manifest['entry_point'].rsplit('.', 1)[0]} import {manifest['entry_point'].rsplit('.', 1)[1]}\n\n")
-            f.write(f"# Initialize the plugin\n")
+            f.write("# Initialize the plugin\n")
             f.write(f"plugin = {manifest['entry_point'].rsplit('.', 1)[1]}()\n\n")
-            f.write(f"# Use the plugin\n")
-            f.write(f"violations = await plugin.detect_violations(action)\n")
-            f.write(f"```\n\n")
-        
+            f.write("# Use the plugin\n")
+            f.write("violations = await plugin.detect_violations(action)\n")
+            f.write("```\n\n")
+
         print(f"  ✓ Generated {api_doc}")
         print("\n✅ Documentation generated successfully!")
         return True
@@ -609,9 +608,9 @@ def main():
         description='Nethical Plugin Development Kit',
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    
+
     subparsers = parser.add_subparsers(dest='command', help='Available commands')
-    
+
     # Init command
     init_parser = subparsers.add_parser('init', help='Initialize a new plugin')
     init_parser.add_argument('--name', required=True, help='Plugin name')
@@ -621,32 +620,32 @@ def main():
                             help='Output directory')
     init_parser.add_argument('--description', default='', help='Plugin description')
     init_parser.add_argument('--author', default='', help='Plugin author')
-    
+
     # Validate command
     validate_parser = subparsers.add_parser('validate', help='Validate a plugin')
     validate_parser.add_argument('path', type=Path, help='Path to plugin directory')
-    
+
     # Test command
     test_parser = subparsers.add_parser('test', help='Run plugin tests')
     test_parser.add_argument('path', type=Path, help='Path to plugin directory')
-    
+
     # Package command
     package_parser = subparsers.add_parser('package', help='Package a plugin')
     package_parser.add_argument('path', type=Path, help='Path to plugin directory')
     package_parser.add_argument('--output', type=Path, help='Output directory')
-    
+
     # Docs command
     docs_parser = subparsers.add_parser('docs', help='Generate plugin documentation')
     docs_parser.add_argument('path', type=Path, help='Path to plugin directory')
-    
+
     args = parser.parse_args()
-    
+
     if not args.command:
         parser.print_help()
         return 1
-    
+
     pdk = PluginDevelopmentKit()
-    
+
     if args.command == 'init':
         success = pdk.init_plugin(
             name=args.name,
@@ -656,23 +655,23 @@ def main():
             author=args.author
         )
         return 0 if success else 1
-    
+
     elif args.command == 'validate':
         success = pdk.validate_plugin(args.path)
         return 0 if success else 1
-    
+
     elif args.command == 'test':
         success = pdk.test_plugin(args.path)
         return 0 if success else 1
-    
+
     elif args.command == 'package':
         success = pdk.package_plugin(args.path, args.output)
         return 0 if success else 1
-    
+
     elif args.command == 'docs':
         success = pdk.generate_docs(args.path)
         return 0 if success else 1
-    
+
     return 0
 
 

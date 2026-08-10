@@ -9,12 +9,7 @@ This module provides multi-channel alerting capabilities including:
 - Rate limiting to prevent alert storms
 """
 
-from nethical.alerting.alert_manager import (
-    AlertManager,
-    AlertSeverity,
-    AlertChannel,
-    RateLimiter
-)
+from nethical.alerting.alert_manager import AlertChannel, AlertManager, AlertSeverity, RateLimiter
 from nethical.alerting.alert_rules import AlertRules
 
 __all__ = [

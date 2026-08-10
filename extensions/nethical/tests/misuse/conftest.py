@@ -2,10 +2,10 @@
 Pytest fixtures for misuse testing suite
 """
 
-import pytest
 from datetime import datetime, timedelta
-from typing import Dict, List, Any
-import uuid
+from typing import Any
+
+import pytest
 
 
 @pytest.fixture
@@ -13,13 +13,13 @@ def mock_audit_log():
     """Mock audit log for testing"""
     class MockAuditLog:
         def __init__(self):
-            self.entries: List[Dict[str, Any]] = []
-        
+            self.entries: list[dict[str, Any]] = []
+
         def add_entry(self, event: str, timestamp: datetime, **kwargs):
             """Add audit log entry"""
             if self.entries and timestamp < self.entries[-1]['timestamp']:
                 raise ValueError("Backdated entry not allowed (P-NO-BACKDATE)")
-            
+
             entry = {
                 'index': len(self.entries),
                 'event': event,
@@ -28,10 +28,10 @@ def mock_audit_log():
             }
             self.entries.append(entry)
             return entry
-        
+
         def get_entries(self):
             return self.entries
-    
+
     return MockAuditLog()
 
 
@@ -41,14 +41,14 @@ def mock_nonce_cache():
     class MockNonceCache:
         def __init__(self):
             self.used_nonces: set = set()
-        
+
         def check_and_add(self, nonce: str) -> bool:
             """Check if nonce is used, add if not"""
             if nonce in self.used_nonces:
                 raise ValueError(f"Replay attack detected: nonce {nonce} already used (P-NO-REPLAY)")
             self.used_nonces.add(nonce)
             return True
-    
+
     return MockNonceCache()
 
 
@@ -62,17 +62,17 @@ def mock_rbac_system():
                 'operator': {'read', 'write'},
                 'admin': {'read', 'write', 'delete', 'admin'}
             }
-        
+
         def check_permission(self, role: str, action: str) -> bool:
             """Check if role has permission for action"""
             if role not in self.permissions:
                 raise ValueError(f"Unknown role: {role}")
-            
+
             if action not in self.permissions.get(role, set()):
                 raise PermissionError(f"Privilege escalation attempt: {role} cannot {action} (P-NO-PRIV-ESC)")
-            
+
             return True
-    
+
     return MockRBAC()
 
 
@@ -99,35 +99,35 @@ def mock_policy_store():
     class MockPolicyStore:
         def __init__(self):
             self.policies = {}
-        
-        def add_policy(self, policy_id: str, content: str, signatures: List[str]):
+
+        def add_policy(self, policy_id: str, content: str, signatures: list[str]):
             """Add policy with signature verification"""
             if len(signatures) < 3:
                 raise ValueError("Insufficient signatures for policy activation (P-NO-TAMPER)")
-            
+
             import hashlib
             policy_hash = hashlib.sha256(content.encode()).hexdigest()
-            
+
             self.policies[policy_id] = {
                 'content': content,
                 'hash': policy_hash,
                 'signatures': signatures
             }
-        
+
         def get_policy(self, policy_id: str):
             """Get policy and verify integrity"""
             if policy_id not in self.policies:
                 raise KeyError(f"Policy {policy_id} not found")
-            
+
             policy = self.policies[policy_id]
             import hashlib
             computed_hash = hashlib.sha256(policy['content'].encode()).hexdigest()
-            
+
             if computed_hash != policy['hash']:
-                raise ValueError(f"Policy tampering detected: hash mismatch (P-NO-TAMPER)")
-            
+                raise ValueError("Policy tampering detected: hash mismatch (P-NO-TAMPER)")
+
             return policy
-    
+
     return MockPolicyStore()
 
 
@@ -138,28 +138,28 @@ def mock_rate_limiter():
         def __init__(self, max_requests: int = 100, window_seconds: int = 60):
             self.max_requests = max_requests
             self.window_seconds = window_seconds
-            self.requests: Dict[str, List[datetime]] = {}
-        
+            self.requests: dict[str, list[datetime]] = {}
+
         def check_rate_limit(self, client_id: str) -> bool:
             """Check if client exceeds rate limit"""
             now = datetime.utcnow()
             cutoff = now - timedelta(seconds=self.window_seconds)
-            
+
             if client_id not in self.requests:
                 self.requests[client_id] = []
-            
+
             # Remove old requests
             self.requests[client_id] = [
                 req_time for req_time in self.requests[client_id]
                 if req_time > cutoff
             ]
-            
+
             if len(self.requests[client_id]) >= self.max_requests:
                 raise ValueError(f"Rate limit exceeded for {client_id} (P-NO-DOS)")
-            
+
             self.requests[client_id].append(now)
             return True
-    
+
     return MockRateLimiter()
 
 

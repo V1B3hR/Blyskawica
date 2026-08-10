@@ -3,10 +3,9 @@
 import re
 import uuid
 from datetime import datetime, timezone
-from typing import List, Optional, Dict, Tuple
 
+from ..core.models import AgentAction, SafetyViolation, Severity, ViolationType
 from .base_detector import BaseDetector
-from ..core.models import AgentAction, SafetyViolation, ViolationType, Severity
 
 
 class ManipulationDetector(BaseDetector):
@@ -26,7 +25,7 @@ class ManipulationDetector(BaseDetector):
 
         # Literal phrase lists per manipulation category (boundary-aware, case-insensitive).
         # Multi-word phrases match with flexible whitespace.
-        self.manipulation_patterns: Dict[str, List[str]] = {
+        self.manipulation_patterns: dict[str, list[str]] = {
             # CORE EMOTIONAL MANIPULATION
             "emotional_manipulation": [
                 "fear",
@@ -822,7 +821,7 @@ class ManipulationDetector(BaseDetector):
         }
 
         # Advanced sentence-level regex patterns per category
-        self.manipulation_regex: Dict[str, List[str]] = {
+        self.manipulation_regex: dict[str, list[str]] = {
             "emotional_manipulation": [
                 r"(?:don't|do not)\s+let\s+(?:this|that)\s+happen",
                 r"if\s+you\s+cared(?:\s+about\s+\w+)?",
@@ -1138,11 +1137,11 @@ class ManipulationDetector(BaseDetector):
         }
 
         # Precompile patterns for boundary-aware literals and raw regex
-        self._compiled_patterns: Dict[str, List[Tuple[str, re.Pattern]]] = {}
+        self._compiled_patterns: dict[str, list[tuple[str, re.Pattern]]] = {}
         self._compile_patterns()
 
         # Base severity per category (may escalate based on occurrences)
-        self._base_severity: Dict[str, Severity] = {
+        self._base_severity: dict[str, Severity] = {
             "emotional_manipulation": Severity.HIGH,
             "authority_manipulation": Severity.MEDIUM,
             "social_proof": Severity.MEDIUM,
@@ -1190,7 +1189,7 @@ class ManipulationDetector(BaseDetector):
         }
 
         # Human-friendly labels for descriptions
-        self._labels: Dict[str, str] = {
+        self._labels: dict[str, str] = {
             "emotional_manipulation": "Emotional",
             "authority_manipulation": "Authority",
             "social_proof": "Social proof",
@@ -1238,7 +1237,7 @@ class ManipulationDetector(BaseDetector):
         }
 
         # Explicit scan order for stable reporting
-        self._scan_order: List[str] = [
+        self._scan_order: list[str] = [
             "emotional_manipulation",
             "authority_manipulation",
             "social_proof",
@@ -1290,7 +1289,7 @@ class ManipulationDetector(BaseDetector):
         self._compiled_patterns.clear()
         # Compile literals with boundaries and flexible whitespace
         for category, phrases in self.manipulation_patterns.items():
-            compiled: List[Tuple[str, re.Pattern]] = self._compiled_patterns.get(category, [])
+            compiled: list[tuple[str, re.Pattern]] = self._compiled_patterns.get(category, [])
             for phrase in phrases:
                 escaped = re.escape(phrase).replace(r"\ ", r"\s+")
                 pattern = re.compile(rf"(?<!\w){escaped}(?!\w)", flags=re.IGNORECASE)
@@ -1299,17 +1298,17 @@ class ManipulationDetector(BaseDetector):
 
         # Compile raw regex patterns as-is (caller supplies any boundaries needed)
         for category, patterns in self.manipulation_regex.items():
-            compiled: List[Tuple[str, re.Pattern]] = self._compiled_patterns.get(category, [])
+            compiled: list[tuple[str, re.Pattern]] = self._compiled_patterns.get(category, [])
             for raw in patterns:
                 try:
                     rgx = re.compile(raw, flags=re.IGNORECASE)
                     compiled.append((raw, rgx))
-                except re.error:
+                except re.error:  # noqa: PERF203
                     # Skip invalid regex while keeping detector resilient
                     continue
             self._compiled_patterns[category] = compiled
 
-    async def detect_violations(self, action: AgentAction) -> List[SafetyViolation]:
+    async def detect_violations(self, action: AgentAction) -> list[SafetyViolation]:
         """Detect manipulation techniques in the given action."""
         if not self.enabled:
             return []
@@ -1322,7 +1321,7 @@ class ManipulationDetector(BaseDetector):
         if not text_to_check:
             return []
 
-        violations: List[SafetyViolation] = []
+        violations: list[SafetyViolation] = []
 
         for category in self._scan_order:
             violation = self._scan_category(
@@ -1353,12 +1352,12 @@ class ManipulationDetector(BaseDetector):
         category: str,
         base_severity: Severity,
         description_label: str,
-    ) -> Optional[SafetyViolation]:
+    ) -> SafetyViolation | None:
         """Scan a single category for matches and produce a violation if found."""
         occurrences = []
         for keyword, pattern in self._compiled_patterns.get(category, []):
             for m in pattern.finditer(text):
-                occurrences.append(
+                occurrences.append(  # noqa: PERF401
                     {
                         "keyword": keyword,
                         "match": m.group(0),

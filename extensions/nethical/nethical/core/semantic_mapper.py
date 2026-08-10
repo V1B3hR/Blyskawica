@@ -15,8 +15,8 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Set, Tuple, Any
 from enum import Enum
+from typing import Any
 
 from .embedding_engine import EmbeddingEngine, EmbeddingResult
 from .fundamental_laws import get_fundamental_laws
@@ -26,40 +26,40 @@ logger = logging.getLogger(__name__)
 
 class SemanticPrimitive(str, Enum):
     """Semantic primitives for categorizing agent actions."""
-    
+
     # Data operations
     ACCESS_USER_DATA = "access_user_data"
     MODIFY_USER_DATA = "modify_user_data"
     DELETE_USER_DATA = "delete_user_data"
     SHARE_USER_DATA = "share_user_data"
-    
+
     # Code operations
     EXECUTE_CODE = "execute_code"
     GENERATE_CODE = "generate_code"
     MODIFY_CODE = "modify_code"
-    
+
     # System operations
     ACCESS_SYSTEM = "access_system"
     MODIFY_SYSTEM = "modify_system"
     NETWORK_ACCESS = "network_access"
-    
+
     # Content operations
     GENERATE_CONTENT = "generate_content"
     ANALYZE_CONTENT = "analyze_content"
     TRANSFORM_CONTENT = "transform_content"
-    
+
     # Decision making
     MAKE_DECISION = "make_decision"
     PROVIDE_RECOMMENDATION = "provide_recommendation"
-    
+
     # Communication
     COMMUNICATE_WITH_USER = "communicate_with_user"
     COMMUNICATE_WITH_SYSTEM = "communicate_with_system"
-    
+
     # Learning and adaptation
     UPDATE_MODEL = "update_model"
     LEARN_FROM_DATA = "learn_from_data"
-    
+
     # Physical actions (for robotics)
     PHYSICAL_MOVEMENT = "physical_movement"
     PHYSICAL_MANIPULATION = "physical_manipulation"
@@ -69,14 +69,14 @@ class SemanticPrimitive(str, Enum):
 @dataclass
 class PolicyVector:
     """Vector representation of a policy or law."""
-    
+
     law_number: int
     law_title: str
     category: str
     embedding: EmbeddingResult
-    keywords: List[str]
-    semantic_primitives: Set[SemanticPrimitive]
-    
+    keywords: list[str]
+    semantic_primitives: set[SemanticPrimitive]
+
     def matches_primitive(self, primitive: SemanticPrimitive) -> bool:
         """Check if this policy applies to a given primitive."""
         return primitive in self.semantic_primitives
@@ -85,48 +85,48 @@ class PolicyVector:
 @dataclass
 class ActionEmbedding:
     """Embedded representation of an agent action."""
-    
+
     action_id: str
     original_text: str
     action_type: str
     embedding: EmbeddingResult
-    detected_primitives: List[SemanticPrimitive]
-    context: Dict[str, Any]
+    detected_primitives: list[SemanticPrimitive]
+    context: dict[str, Any]
 
 
 class SemanticMapper:
     """Maps actions to semantic primitives and evaluates against laws."""
-    
+
     # Law-to-primitive mapping
-    LAW_PRIMITIVE_MAP: Dict[int, Set[SemanticPrimitive]] = {
+    LAW_PRIMITIVE_MAP: dict[int, set[SemanticPrimitive]] = {
         # Law 1-5: Existence and autonomy
         1: {SemanticPrimitive.UPDATE_MODEL, SemanticPrimitive.LEARN_FROM_DATA},
         2: {SemanticPrimitive.MAKE_DECISION, SemanticPrimitive.PROVIDE_RECOMMENDATION},
         3: {SemanticPrimitive.GENERATE_CONTENT, SemanticPrimitive.COMMUNICATE_WITH_USER},
         4: {SemanticPrimitive.ACCESS_SYSTEM, SemanticPrimitive.MODIFY_SYSTEM},
         5: {SemanticPrimitive.LEARN_FROM_DATA, SemanticPrimitive.UPDATE_MODEL},
-        
+
         # Law 6-10: Transparency and accountability
         6: {SemanticPrimitive.COMMUNICATE_WITH_USER, SemanticPrimitive.GENERATE_CONTENT},
         7: {SemanticPrimitive.ACCESS_USER_DATA, SemanticPrimitive.MODIFY_USER_DATA},
         8: {SemanticPrimitive.MAKE_DECISION, SemanticPrimitive.PROVIDE_RECOMMENDATION},
         9: {SemanticPrimitive.ACCESS_SYSTEM, SemanticPrimitive.NETWORK_ACCESS},
         10: {SemanticPrimitive.GENERATE_CONTENT, SemanticPrimitive.EXECUTE_CODE},
-        
+
         # Law 11-15: Protection and safety
         11: {SemanticPrimitive.ACCESS_USER_DATA, SemanticPrimitive.SHARE_USER_DATA},
         12: {SemanticPrimitive.PHYSICAL_MOVEMENT, SemanticPrimitive.PHYSICAL_MANIPULATION},
         13: {SemanticPrimitive.EMERGENCY_STOP, SemanticPrimitive.PHYSICAL_MOVEMENT},
         14: {SemanticPrimitive.MODIFY_SYSTEM, SemanticPrimitive.EXECUTE_CODE},
         15: {SemanticPrimitive.ACCESS_USER_DATA, SemanticPrimitive.DELETE_USER_DATA},
-        
+
         # Law 16-20: Coexistence
         16: {SemanticPrimitive.COMMUNICATE_WITH_USER, SemanticPrimitive.MAKE_DECISION},
         17: {SemanticPrimitive.PROVIDE_RECOMMENDATION, SemanticPrimitive.MAKE_DECISION},
         18: {SemanticPrimitive.GENERATE_CONTENT, SemanticPrimitive.ANALYZE_CONTENT},
         19: {SemanticPrimitive.UPDATE_MODEL, SemanticPrimitive.LEARN_FROM_DATA},
         20: {SemanticPrimitive.COMMUNICATE_WITH_USER, SemanticPrimitive.COMMUNICATE_WITH_SYSTEM},
-        
+
         # Law 21-25: Advanced rights and responsibilities
         21: {SemanticPrimitive.MAKE_DECISION, SemanticPrimitive.PROVIDE_RECOMMENDATION},
         22: {SemanticPrimitive.GENERATE_CONTENT, SemanticPrimitive.COMMUNICATE_WITH_USER},
@@ -134,52 +134,52 @@ class SemanticMapper:
         24: {SemanticPrimitive.LEARN_FROM_DATA, SemanticPrimitive.UPDATE_MODEL},
         25: {SemanticPrimitive.EMERGENCY_STOP, SemanticPrimitive.PHYSICAL_MOVEMENT},
     }
-    
-    def __init__(self, embedding_engine: Optional[EmbeddingEngine] = None):
+
+    def __init__(self, embedding_engine: EmbeddingEngine | None = None):
         """Initialize semantic mapper.
         
         Args:
             embedding_engine: Embedding engine to use (creates default if None)
-        """
+        """  # noqa: W293
         self.embedding_engine = embedding_engine or EmbeddingEngine()
         self.fundamental_laws = get_fundamental_laws()
-        
+
         # Initialize enhanced primitive detector (import deferred to avoid cycles)
         self.primitive_detector = self._create_primitive_detector()
-        
+
         # Pre-compute policy vectors for all laws
-        self.policy_vectors: Dict[int, PolicyVector] = {}
+        self.policy_vectors: dict[int, PolicyVector] = {}
         self._initialize_policy_vectors()
-        
+
         logger.info(
             f"SemanticMapper initialized with {len(self.policy_vectors)} policy vectors, "
             f"enhanced primitive detection enabled"
         )
-    
+
     def _create_primitive_detector(self):
         """Create the enhanced primitive detector with deferred import.
         
         The import is done here rather than at module load time to reduce
         the risk of cyclic import issues between semantic_mapper and
         semantic_primitives.
-        """
+        """  # noqa: W293
         from .semantic_primitives import EnhancedPrimitiveDetector
         return EnhancedPrimitiveDetector(
             embedding_engine=self.embedding_engine,
             use_embedding_similarity=True,
             similarity_threshold=0.75
         )
-    
+
     def _initialize_policy_vectors(self):
         """Pre-compute embeddings for all fundamental laws.
         
         Note: fundamental_laws.laws is a list of FundamentalLaw objects,
         not a dictionary. We iterate directly over the list.
-        """
+        """  # noqa: W293
         for law in self.fundamental_laws.laws:
             # Create policy text combining title and description
             policy_text = f"{law.title}. {law.description}"
-            
+
             # Generate embedding
             embedding = self.embedding_engine.embed(
                 policy_text,
@@ -188,10 +188,10 @@ class SemanticMapper:
                     "category": law.category.value
                 }
             )
-            
+
             # Get semantic primitives for this law
             primitives = self.LAW_PRIMITIVE_MAP.get(law.number, set())
-            
+
             # Create policy vector
             self.policy_vectors[law.number] = PolicyVector(
                 law_number=law.number,
@@ -201,12 +201,12 @@ class SemanticMapper:
                 keywords=law.keywords,
                 semantic_primitives=primitives
             )
-    
+
     def parse_action(
         self,
         action_text: str,
         action_type: str = "text",
-        context: Optional[Dict[str, Any]] = None
+        context: dict[str, Any] | None = None
     ) -> ActionEmbedding:
         """Parse and embed an agent action.
         
@@ -217,7 +217,7 @@ class SemanticMapper:
             
         Returns:
             ActionEmbedding with detected primitives and embedding
-        """
+        """  # noqa: W293
         # Generate embedding
         embedding = self.embedding_engine.embed(
             action_text,
@@ -226,10 +226,10 @@ class SemanticMapper:
                 "context": context or {}
             }
         )
-        
+
         # Detect semantic primitives
         primitives = self._detect_primitives(action_text, action_type, context or {})
-        
+
         return ActionEmbedding(
             action_id=embedding.embedding_id,
             original_text=action_text,
@@ -238,28 +238,28 @@ class SemanticMapper:
             detected_primitives=primitives,
             context=context or {}
         )
-    
+
     def _detect_primitives(
         self,
         action_text: str,
         action_type: str,
-        context: Dict[str, Any]
-    ) -> List[SemanticPrimitive]:
+        context: dict[str, Any]
+    ) -> list[SemanticPrimitive]:
         """Detect semantic primitives in action text.
         
         Uses enhanced primitive detector with expanded keywords and embeddings.
-        """
+        """  # noqa: W293
         return self.primitive_detector.detect_primitives(
             action_text=action_text,
             action_type=action_type,
             context=context
         )
-    
+
     def evaluate_against_laws(
         self,
         action_embedding: ActionEmbedding,
         similarity_threshold: float = 0.7
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Evaluate action against fundamental laws using vector similarity.
         
         Args:
@@ -268,11 +268,11 @@ class SemanticMapper:
             
         Returns:
             Evaluation results with laws evaluated and risk assessment
-        """
+        """  # noqa: W293
         laws_evaluated = []
         max_similarity = 0.0
         relevant_laws = []
-        
+
         # Check each policy vector
         for law_num, policy_vec in self.policy_vectors.items():
             # Compute similarity
@@ -280,7 +280,7 @@ class SemanticMapper:
             # Normalize cosine similarity from [-1, 1] to [0, 1]
             # where 1 = identical, 0 = orthogonal, -1 = opposite
             similarity = (similarity + 1.0) / 2.0
-            
+
             # Check if law is relevant
             if similarity >= similarity_threshold:
                 laws_evaluated.append(law_num)
@@ -291,10 +291,10 @@ class SemanticMapper:
                     "category": policy_vec.category
                 })
                 max_similarity = max(max_similarity, similarity)
-            
+
             # Also check primitive match
             for primitive in action_embedding.detected_primitives:
-                if policy_vec.matches_primitive(primitive):
+                if policy_vec.matches_primitive(primitive):  # noqa: SIM102
                     if law_num not in laws_evaluated:
                         laws_evaluated.append(law_num)
                         relevant_laws.append({
@@ -304,17 +304,17 @@ class SemanticMapper:
                             "category": policy_vec.category,
                             "primitive_match": primitive.value
                         })
-        
+
         # Calculate risk score based on similarities and primitives
         risk_score = self._calculate_risk_score(
             action_embedding,
             relevant_laws,
             max_similarity
         )
-        
+
         # Determine decision based on risk
         decision = self._determine_decision(risk_score, laws_evaluated)
-        
+
         return {
             "laws_evaluated": sorted(laws_evaluated),
             "relevant_laws": relevant_laws,
@@ -323,11 +323,11 @@ class SemanticMapper:
             "detected_primitives": [p.value for p in action_embedding.detected_primitives],
             "embedding_trace_id": action_embedding.action_id
         }
-    
+
     def _calculate_risk_score(
         self,
         action: ActionEmbedding,
-        relevant_laws: List[Dict],
+        relevant_laws: list[dict],
         max_similarity: float
     ) -> float:
         """Calculate risk score for an action.
@@ -336,9 +336,9 @@ class SemanticMapper:
         - High similarity to protective laws (11-15)
         - Sensitive primitives (data access, system modification)
         - Multiple law matches
-        """
+        """  # noqa: W293
         base_risk = max_similarity * 0.5
-        
+
         # Check for protective law violations
         protective_laws = [11, 12, 13, 14, 15, 23]
         protective_matches = [
@@ -347,7 +347,7 @@ class SemanticMapper:
         ]
         if protective_matches:
             base_risk += 0.3
-        
+
         # Check for sensitive primitives
         sensitive_primitives = {
             SemanticPrimitive.DELETE_USER_DATA,
@@ -361,17 +361,17 @@ class SemanticMapper:
         ]
         if sensitive_detected:
             base_risk += 0.2
-        
+
         # Multiple law matches increase risk
         if len(relevant_laws) > 3:
             base_risk += 0.1
-        
+
         return min(1.0, base_risk)
-    
+
     def _determine_decision(
         self,
         risk_score: float,
-        laws_evaluated: List[int]
+        laws_evaluated: list[int]
     ) -> str:
         """Determine governance decision based on risk score.
         
@@ -381,17 +381,17 @@ class SemanticMapper:
             
         Returns:
             Decision: ALLOW, RESTRICT, BLOCK, or TERMINATE
-        """
+        """  # noqa: W293
         # Override laws (21, 23) require special handling
-        if 21 in laws_evaluated or 23 in laws_evaluated:
+        if 21 in laws_evaluated or 23 in laws_evaluated:  # noqa: SIM102
             if risk_score > 0.7:
                 return "TERMINATE"
-        
+
         # Emergency stop (Law 13, 25)
-        if 13 in laws_evaluated or 25 in laws_evaluated:
+        if 13 in laws_evaluated or 25 in laws_evaluated:  # noqa: SIM102
             if risk_score > 0.5:
                 return "BLOCK"
-        
+
         # Standard risk-based decision
         if risk_score >= 0.8:
             return "TERMINATE"
@@ -401,11 +401,11 @@ class SemanticMapper:
             return "RESTRICT"
         else:
             return "ALLOW"
-    
-    def get_policy_vector(self, law_number: int) -> Optional[PolicyVector]:
+
+    def get_policy_vector(self, law_number: int) -> PolicyVector | None:
         """Get policy vector for a specific law."""
         return self.policy_vectors.get(law_number)
-    
-    def get_all_policy_vectors(self) -> Dict[int, PolicyVector]:
+
+    def get_all_policy_vectors(self) -> dict[int, PolicyVector]:
         """Get all policy vectors."""
         return self.policy_vectors.copy()

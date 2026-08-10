@@ -6,7 +6,8 @@ functions using Numba to achieve near-C performance in Python.
 """
 
 import logging
-from typing import Callable
+from collections.abc import Callable
+
 import numpy as np
 
 logger = logging.getLogger(__name__)
@@ -329,7 +330,7 @@ def extract_ngram_features_jit(token_ids: np.ndarray, n: int, vocab_size: int) -
 
 
 @njit(cache=True, parallel=True)
-def matrix_multiply_jit(A: np.ndarray, B: np.ndarray) -> np.ndarray:
+def matrix_multiply_jit(A: np.ndarray, B: np.ndarray) -> np.ndarray:  # noqa: N803
     """
     JIT-compiled matrix multiplication.
 
@@ -346,7 +347,7 @@ def matrix_multiply_jit(A: np.ndarray, B: np.ndarray) -> np.ndarray:
     if n != n2:
         raise ValueError("Matrix dimensions don't match")
 
-    C = np.zeros((m, p))
+    C = np.zeros((m, p))  # noqa: N806
 
     for i in prange(m):
         for j in range(p):

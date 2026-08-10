@@ -1,8 +1,7 @@
 import hashlib
-import time
-import math
 import logging
-from typing import Dict, Any, List
+import math
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -33,14 +32,14 @@ class MemoryLedgerEntry:
 
 class MemoryLedger:
     def __init__(self, drift_threshold: float = 0.65, db_path: str = None):
-        self.chain: List[MemoryLedgerEntry] = []
+        self.chain: list[MemoryLedgerEntry] = []
         self.drift_threshold = drift_threshold
         self.db_path = db_path
-        
+
         if self.db_path:
             self._init_db()
             self._load_chain_from_db()
-            
+
         # Genesis block setup
         if not self.chain:
             self._create_genesis_block()
@@ -77,7 +76,7 @@ class MemoryLedger:
             cursor.execute("SELECT index_val, timestamp, vector_id, text, prev_hash, signature, hash FROM memory_ledger ORDER BY index_val ASC")
             rows = cursor.fetchall()
             conn.close()
-            
+
             for row in rows:
                 entry = MemoryLedgerEntry(
                     index=row[0],
@@ -89,16 +88,16 @@ class MemoryLedger:
                 )
                 entry.hash = row[6]
                 self.chain.append(entry)
-            
+
             if self.chain:
                 logger.info(f"[MEMORY LEDGER] Loaded {len(self.chain)} entries from SQLite database.")
         except Exception as e:
             logger.error(f"[MEMORY LEDGER] Error loading chain from SQLite: {e}")
 
-    def _save_entry_to_db(self, entry: MemoryLedgerEntry, vector: List[float] = None):
+    def _save_entry_to_db(self, entry: MemoryLedgerEntry, vector: list[float] = None):
         try:
-            import sqlite3
             import json
+            import sqlite3
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             vector_json = json.dumps(vector) if vector is not None else "[]"
@@ -111,16 +110,16 @@ class MemoryLedger:
         except Exception as e:
             logger.error(f"[MEMORY LEDGER] Error saving entry to SQLite: {e}")
 
-    def _get_all_vectors_from_db(self) -> List[List[float]]:
+    def _get_all_vectors_from_db(self) -> list[list[float]]:
         try:
-            import sqlite3
             import json
+            import sqlite3
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             cursor.execute("SELECT vector_json FROM memory_ledger ORDER BY index_val ASC")
             rows = cursor.fetchall()
             conn.close()
-            
+
             vectors = []
             for row in rows:
                 try:
@@ -158,7 +157,7 @@ class MemoryLedger:
                 return False
         return True
 
-    def validate_and_append(self, vector_id: int, text: str, vector: List[float], historical_vectors: List[List[float]], signature: str = "") -> bool:
+    def validate_and_append(self, vector_id: int, text: str, vector: list[float], historical_vectors: list[list[float]], signature: str = "") -> bool:
         """
         Waliduje wektor wejściowy, sprawdza dryf semantyczny (dystans cosinusowy) i dodaje wpis do rejestru.
         """
@@ -171,7 +170,7 @@ class MemoryLedger:
         # 1. Obliczenie dystansu cosinusowego (pure Python)
         if historical_vectors:
             def dot_product(v1, v2):
-                return sum(a * b for a, b in zip(v1, v2))
+                return sum(a * b for a, b in zip(v1, v2))  # noqa: B905
 
             def magnitude(v):
                 return math.sqrt(sum(a * a for a in v))
@@ -184,12 +183,12 @@ class MemoryLedger:
                     similarity = 0.0
                 else:
                     similarity = dot_product(vector, hist_vec) / (mag_a * mag_b)
-                
+
                 if similarity > max_similarity:
                     max_similarity = similarity
-            
+
             cosine_distance = 1.0 - max_similarity
-            
+
             if cosine_distance > self.drift_threshold:
                 logger.warning(
                     f"[MEMORY LEDGER] 🚨 Zablokowano konsolidację z powodu dryfu semantycznego! "
@@ -208,10 +207,10 @@ class MemoryLedger:
             signature=signature
         )
         self.chain.append(new_entry)
-        
+
         # Zapis do bazy danych SQLite
         if self.db_path:
             self._save_entry_to_db(new_entry, vector)
-            
+
         logger.info(f"[MEMORY LEDGER] Dodano wpis: ID={vector_id}, Hash={new_entry.hash[:8]}")
         return True

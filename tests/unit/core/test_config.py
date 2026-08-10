@@ -4,16 +4,13 @@ Tests for the central configuration system.
 
 import os
 import tempfile
-from pathlib import Path
 
 import pytest
 
 from adaptiveneuralnetwork.config import (
     AdaptiveNeuralNetworkConfig,
     AttackResilienceConfig,
-    EnvironmentAdaptationConfig,
     ProactiveInterventionsConfig,
-    RollingHistoryConfig,
     TrendAnalysisConfig,
     get_global_config,
     load_config,

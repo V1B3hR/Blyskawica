@@ -15,7 +15,7 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Dict, List, Optional, Any
+from typing import Any
 
 
 class AuditEventType(str, Enum):
@@ -53,10 +53,10 @@ class AuditEvent:
     action: str
     resource: str
     result: str  # success, failure, denied
-    ip_address: Optional[str] = None
-    user_agent: Optional[str] = None
-    details: Dict[str, Any] = field(default_factory=dict)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    ip_address: str | None = None
+    user_agent: str | None = None
+    details: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -65,7 +65,7 @@ class BlockchainBlock:
 
     index: int
     timestamp: datetime
-    events: List[AuditEvent]
+    events: list[AuditEvent]
     previous_hash: str
     nonce: int = 0
     hash: str = ""
@@ -112,7 +112,7 @@ class TimestampAuthority:
     tsa_url: str = "https://timestamp.example.com"
     enabled: bool = True
 
-    def request_timestamp(self, data: bytes) -> Dict[str, Any]:
+    def request_timestamp(self, data: bytes) -> dict[str, Any]:
         """Request RFC 3161 timestamp for data"""
         # In production, this would make actual TSA request
         data_hash = hashlib.sha256(data).hexdigest()
@@ -124,7 +124,7 @@ class TimestampAuthority:
             "serial_number": uuid.uuid4().hex,
         }
 
-    def verify_timestamp(self, timestamp_token: Dict[str, Any]) -> bool:
+    def verify_timestamp(self, timestamp_token: dict[str, Any]) -> bool:
         """Verify RFC 3161 timestamp token"""
         # In production, verify cryptographic signature
         required_fields = ["timestamp", "data_hash", "tsa_signature"]
@@ -141,7 +141,7 @@ class DigitalSignature:
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     @staticmethod
-    def sign_data(data: bytes, private_key: Optional[str] = None) -> "DigitalSignature":
+    def sign_data(data: bytes, private_key: str | None = None) -> "DigitalSignature":
         """Sign data with digital signature"""
         # In production, use actual cryptographic signing
         data_hash = hashlib.sha256(data).hexdigest()
@@ -151,7 +151,7 @@ class DigitalSignature:
         )
         return signature
 
-    def verify(self, data: bytes, public_key: Optional[str] = None) -> bool:
+    def verify(self, data: bytes, public_key: str | None = None) -> bool:
         """Verify digital signature"""
         # In production, use actual cryptographic verification
         return len(self.signature) > 0 and self.signature.startswith("sig_")
@@ -161,8 +161,8 @@ class AuditBlockchain:
     """Blockchain-based audit log storage"""
 
     def __init__(self, difficulty: int = 2):
-        self.chain: List[BlockchainBlock] = []
-        self.pending_events: List[AuditEvent] = []
+        self.chain: list[BlockchainBlock] = []
+        self.pending_events: list[AuditEvent] = []
         self.difficulty = difficulty
         self.max_events_per_block = 100
         self._create_genesis_block()
@@ -183,7 +183,7 @@ class AuditBlockchain:
         if len(self.pending_events) >= self.max_events_per_block:
             self.create_block()
 
-    def create_block(self) -> Optional[BlockchainBlock]:
+    def create_block(self) -> BlockchainBlock | None:
         """Create new block with pending events"""
         if not self.pending_events:
             return None
@@ -217,7 +217,7 @@ class AuditBlockchain:
 
         return True
 
-    def get_block(self, index: int) -> Optional[BlockchainBlock]:
+    def get_block(self, index: int) -> BlockchainBlock | None:
         """Retrieve block by index"""
         if 0 <= index < len(self.chain):
             return self.chain[index]
@@ -225,11 +225,11 @@ class AuditBlockchain:
 
     def search_events(
         self,
-        user_id: Optional[str] = None,
-        event_type: Optional[AuditEventType] = None,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
-    ) -> List[AuditEvent]:
+        user_id: str | None = None,
+        event_type: AuditEventType | None = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
+    ) -> list[AuditEvent]:
         """Search for events across the blockchain"""
         results = []
 
@@ -256,7 +256,7 @@ class ForensicAnalyzer:
     def __init__(self, blockchain: AuditBlockchain):
         self.blockchain = blockchain
 
-    def analyze_user_activity(self, user_id: str, timeframe_hours: int = 24) -> Dict[str, Any]:
+    def analyze_user_activity(self, user_id: str, timeframe_hours: int = 24) -> dict[str, Any]:
         """Analyze user activity patterns"""
         end_time = datetime.now(timezone.utc)
         from datetime import timedelta
@@ -274,19 +274,19 @@ class ForensicAnalyzer:
             "event_types": self._count_event_types(events),
             "failed_actions": sum(1 for e in events if e.result == "failure"),
             "successful_actions": sum(1 for e in events if e.result == "success"),
-            "accessed_resources": list(set(e.resource for e in events)),
+            "accessed_resources": list(set(e.resource for e in events)),  # noqa: C401
             "suspicious_patterns": self._detect_suspicious_patterns(events),
         }
 
-    def _count_event_types(self, events: List[AuditEvent]) -> Dict[str, int]:
+    def _count_event_types(self, events: list[AuditEvent]) -> dict[str, int]:
         """Count events by type"""
-        counts: Dict[str, int] = {}
+        counts: dict[str, int] = {}
         for event in events:
             event_type = event.event_type.value
             counts[event_type] = counts.get(event_type, 0) + 1
         return counts
 
-    def _detect_suspicious_patterns(self, events: List[AuditEvent]) -> List[str]:
+    def _detect_suspicious_patterns(self, events: list[AuditEvent]) -> list[str]:
         """Detect suspicious patterns in events"""
         patterns = []
 
@@ -300,19 +300,19 @@ class ForensicAnalyzer:
             patterns.append(f"Excessive failed authentication attempts: {failed_auth}")
 
         # Check for unusual access patterns
-        unique_resources = set(e.resource for e in events)
+        unique_resources = set(e.resource for e in events)  # noqa: C401
         if len(unique_resources) > 50:
             patterns.append(f"Unusual number of accessed resources: {len(unique_resources)}")
 
         return patterns
 
-    def generate_timeline(self, start_time: datetime, end_time: datetime) -> List[Dict[str, Any]]:
+    def generate_timeline(self, start_time: datetime, end_time: datetime) -> list[dict[str, Any]]:
         """Generate event timeline for forensic analysis"""
         events = self.blockchain.search_events(start_time=start_time, end_time=end_time)
 
         timeline = []
         for event in sorted(events, key=lambda e: e.timestamp):
-            timeline.append(
+            timeline.append(  # noqa: PERF401
                 {
                     "timestamp": event.timestamp.isoformat(),
                     "event_type": event.event_type.value,
@@ -326,7 +326,7 @@ class ForensicAnalyzer:
 
         return timeline
 
-    def verify_chain_integrity(self) -> Dict[str, Any]:
+    def verify_chain_integrity(self) -> dict[str, Any]:
         """Verify blockchain integrity for forensic purposes"""
         is_valid = self.blockchain.verify_chain()
 
@@ -343,11 +343,11 @@ class ChainOfCustodyManager:
     """Chain-of-custody documentation for audit evidence"""
 
     def __init__(self):
-        self.custody_records: Dict[str, List[Dict[str, Any]]] = {}
+        self.custody_records: dict[str, list[dict[str, Any]]] = {}
 
     def create_evidence(
         self, evidence_id: str, description: str, collected_by: str, source: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create new evidence with chain of custody"""
         record = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -396,7 +396,7 @@ class ChainOfCustodyManager:
         self.custody_records[evidence_id].append(record)
         return True
 
-    def get_custody_chain(self, evidence_id: str) -> List[Dict[str, Any]]:
+    def get_custody_chain(self, evidence_id: str) -> list[dict[str, Any]]:
         """Retrieve complete chain of custody"""
         return self.custody_records.get(evidence_id, [])
 
@@ -414,7 +414,7 @@ class ChainOfCustodyManager:
 
         # Verify chronological order
         timestamps = [record["timestamp"] for record in chain]
-        if timestamps != sorted(timestamps):
+        if timestamps != sorted(timestamps):  # noqa: SIM103
             return False
 
         return True
@@ -437,8 +437,8 @@ class EnhancedAuditLogger:
         resource: str,
         result: str,
         severity: AuditSeverity = AuditSeverity.INFO,
-        details: Optional[Dict[str, Any]] = None,
-        ip_address: Optional[str] = None,
+        details: dict[str, Any] | None = None,
+        ip_address: str | None = None,
     ) -> AuditEvent:
         """Log audit event with blockchain and timestamp"""
 
@@ -492,7 +492,7 @@ class EnhancedAuditLogger:
 
         return event
 
-    def finalize_block(self) -> Optional[BlockchainBlock]:
+    def finalize_block(self) -> BlockchainBlock | None:
         """Finalize current block of audit events"""
         return self.blockchain.create_block()
 
@@ -502,14 +502,14 @@ class EnhancedAuditLogger:
 
     def search_logs(
         self,
-        user_id: Optional[str] = None,
-        event_type: Optional[AuditEventType] = None,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
-    ) -> List[AuditEvent]:
+        user_id: str | None = None,
+        event_type: AuditEventType | None = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
+    ) -> list[AuditEvent]:
         """Search audit logs"""
         return self.blockchain.search_events(user_id, event_type, start_time, end_time)
 
-    def generate_forensic_report(self, user_id: str) -> Dict[str, Any]:
+    def generate_forensic_report(self, user_id: str) -> dict[str, Any]:
         """Generate forensic analysis report"""
         return self.forensic_analyzer.analyze_user_activity(user_id)

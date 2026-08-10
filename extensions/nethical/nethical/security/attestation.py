@@ -13,19 +13,20 @@ Enhancements:
 - Backward compatible with existing interfaces.
 """
 
-from typing import Any, Dict, Optional, Tuple, Literal, Callable
-import os
-import sys
-import platform
-import json
-import logging
-import hashlib
-import secrets
-import time
-from datetime import datetime, timezone, timedelta
-from dataclasses import dataclass, field
+import hashlib  # noqa: E402
+import json  # noqa: E402
+import logging  # noqa: E402
+import os  # noqa: E402
+import platform  # noqa: E402
+import secrets  # noqa: E402
+import sys  # noqa: E402
+import time  # noqa: E402
+from collections.abc import Callable  # noqa: E402
+from dataclasses import dataclass, field  # noqa: E402
+from datetime import datetime, timedelta, timezone  # noqa: E402
+from typing import Any, Literal  # noqa: E402
 
-from nethical.hooks.interfaces import (
+from nethical.hooks.interfaces import (  # noqa: E402
     AttestationProvider,
     AttestationResult,
     Evidence,
@@ -67,12 +68,12 @@ ERR_POLICY_INDETERMINATE = AttestationErrorCodes.POLICY_INDETERMINATE
 # ---------------------------------------------------------------------------
 # Provider registry
 # ---------------------------------------------------------------------------
-_PROVIDER_REGISTRY: Dict[str, Callable[[Dict[str, Any]], AttestationProvider]] = {}
+_PROVIDER_REGISTRY: dict[str, Callable[[dict[str, Any]], AttestationProvider]] = {}
 
 
 def register_attestation_provider(
     type_name: str,
-    factory: Callable[[Dict[str, Any]], AttestationProvider],
+    factory: Callable[[dict[str, Any]], AttestationProvider],
     override: bool = False,
 ) -> None:
     """
@@ -95,9 +96,9 @@ def _sanitize_key(key: str) -> str:
     return "".join(c for c in key if c in _ALLOWED_KEY_CHARS)[:256]
 
 
-def _as_str_map(d: Dict[str, Any]) -> Dict[str, str]:
+def _as_str_map(d: dict[str, Any]) -> dict[str, str]:
     """Safely convert any values to strings for Evidence.measurements."""
-    out: Dict[str, str] = {}
+    out: dict[str, str] = {}
     for k, v in d.items():
         sk = _sanitize_key(str(k))
         if isinstance(v, (str, bytes)):
@@ -111,13 +112,13 @@ def _as_str_map(d: Dict[str, Any]) -> Dict[str, str]:
 
 
 # Caching baseline measurements (lightweight; extend if heavy operations appear)
-_BASELINE_CACHE: Dict[str, Tuple[datetime, Dict[str, str]]] = {}
+_BASELINE_CACHE: dict[str, tuple[datetime, dict[str, str]]] = {}
 _BASELINE_TTL = timedelta(seconds=30)
 _PROCESS_START_UTC = datetime.now(timezone.utc)
 _PROCESS_START_MONO = time.monotonic()
 
 
-def _baseline_measurements(debug_extra: bool = False) -> Dict[str, str]:
+def _baseline_measurements(debug_extra: bool = False) -> dict[str, str]:
     """
     Deterministic baseline: basic runtime info + stable process data.
     debug_extra (False): if True, includes additional introspection (safe subset).
@@ -154,7 +155,7 @@ def _baseline_measurements(debug_extra: bool = False) -> Dict[str, str]:
     return measurements
 
 
-def compute_measurements_digest(measurements: Dict[str, str]) -> str:
+def compute_measurements_digest(measurements: dict[str, str]) -> str:
     """
     Produce a canonical SHA-256 digest of the measurements for tamper-evidence.
     Keys sorted, JSON canonical form (compact).
@@ -165,9 +166,9 @@ def compute_measurements_digest(measurements: Dict[str, str]) -> str:
 
 def _base_evidence(
     verifier: str,
-    measurements: Optional[Dict[str, str]] = None,
-    meta: Optional[Dict[str, Any]] = None,
-    nonce: Optional[str] = None,
+    measurements: dict[str, str] | None = None,
+    meta: dict[str, Any] | None = None,
+    nonce: str | None = None,
 ) -> Evidence:
     ev: Evidence = {
         "verifier": verifier,
@@ -221,12 +222,12 @@ def normalize_attestation_result(result: AttestationResult) -> AttestationResult
 class PolicyOutcome:
     decision: Literal["permit", "deny", "indeterminate"]
     reason: str
-    details: Dict[str, Any] = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
 
 
 def evaluate_policy_stub(
-    measurements: Dict[str, str],
-    expected_tcb_min: Optional[str],
+    measurements: dict[str, str],
+    expected_tcb_min: str | None,
 ) -> PolicyOutcome:
     """
     Placeholder policy: if expected_tcb_min is specified and a tcb_version measurement
@@ -263,7 +264,7 @@ class NoopAttestation(AttestationProvider):
     - Marked explicitly as 'noop' to prevent accidental production acceptance.
     """
 
-    def __init__(self, meta: Optional[Dict[str, Any]] = None, debug_extra: bool = False):
+    def __init__(self, meta: dict[str, Any] | None = None, debug_extra: bool = False):
         self.meta = meta or {}
         self.debug_extra = debug_extra
 
@@ -306,11 +307,11 @@ class NoopAttestation(AttestationProvider):
 @dataclass
 class TrustedProviderConfig:
     enabled: bool = False
-    provider: Optional[str] = None  # 'tpm2', 'sgx', 'sev-snp', 'tdx', 'custom'
+    provider: str | None = None  # 'tpm2', 'sgx', 'sev-snp', 'tdx', 'custom'
     require_cert_chain: bool = False
-    expected_tcb_min: Optional[str] = None
+    expected_tcb_min: str | None = None
     verifier_name: str = "nethical/trusted"
-    meta: Dict[str, Any] = field(default_factory=dict)
+    meta: dict[str, Any] = field(default_factory=dict)
     debug_extra: bool = False
     require_strict_policy: bool = False  # if True, indeterminate -> failure
     # Future fields: cert_store_path, quote_timeout, network_endpoints, etc.
@@ -323,7 +324,7 @@ class TrustedAttestation(AttestationProvider):
     Currently stubbed: real cryptographic verification is NOT performed.
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         cfg_dict = config or {}
         # Map into dataclass (ignore unknown keys gracefully).
         self.cfg = TrustedProviderConfig(
@@ -407,7 +408,7 @@ class TrustedAttestation(AttestationProvider):
 
     def _evaluate_policy(
         self,
-        measurements: Dict[str, str],
+        measurements: dict[str, str],
     ) -> PolicyOutcome:
         return evaluate_policy_stub(
             measurements=measurements,
@@ -530,7 +531,7 @@ for p in ("trusted", "tpm2", "sgx", "sev-snp", "tdx", "custom"):
     )
 
 
-def select_attestation_provider(config: Optional[Dict[str, Any]] = None) -> AttestationProvider:
+def select_attestation_provider(config: dict[str, Any] | None = None) -> AttestationProvider:
     """
     Helper to select an AttestationProvider based on config.
 

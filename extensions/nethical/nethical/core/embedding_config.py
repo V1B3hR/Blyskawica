@@ -7,11 +7,11 @@ supporting multiple providers, ensemble configurations, and fallback strategies.
 
 from __future__ import annotations
 
-import os
 import logging
+import os
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any, Literal
 from enum import Enum
+from typing import Any, Literal
 
 logger = logging.getLogger(__name__)
 
@@ -35,23 +35,23 @@ class EnsembleStrategy(str, Enum):
 @dataclass
 class ProviderConfig:
     """Configuration for a single embedding provider."""
-    
+
     provider_type: EmbeddingProviderType
-    model_name: Optional[str] = None
-    api_key: Optional[str] = None
-    dimensions: Optional[int] = None
+    model_name: str | None = None
+    api_key: str | None = None
+    dimensions: int | None = None
     weight: float = 1.0  # For weighted ensemble
     enabled: bool = True
     fallback_order: int = 0  # Lower = higher priority
-    
+
     # Performance options
     batch_size: int = 32
     timeout_seconds: float = 30.0
     max_retries: int = 3
-    
+
     # Advanced options
-    custom_options: Dict[str, Any] = field(default_factory=dict)
-    
+    custom_options: dict[str, Any] = field(default_factory=dict)
+
     def __post_init__(self):
         """Set defaults based on provider type."""
         if self.model_name is None:
@@ -63,7 +63,7 @@ class ProviderConfig:
                 self.model_name = "sentence-transformers/all-mpnet-base-v2"
             elif self.provider_type == EmbeddingProviderType.SIMPLE:
                 self.model_name = "simple-local-embeddings"
-        
+
         if self.dimensions is None:
             if self.provider_type == EmbeddingProviderType.OPENAI:
                 self.dimensions = 1536
@@ -73,7 +73,7 @@ class ProviderConfig:
                 self.dimensions = 768
             elif self.provider_type == EmbeddingProviderType.SIMPLE:
                 self.dimensions = 384
-        
+
         # Get API key from environment if not provided
         if self.api_key is None and self.provider_type in [
             EmbeddingProviderType.OPENAI,
@@ -85,42 +85,42 @@ class ProviderConfig:
 @dataclass
 class EmbeddingConfig:
     """Complete embedding configuration for Universal Vector Language."""
-    
+
     # Primary provider
     primary_provider: ProviderConfig
-    
+
     # Fallback providers (in priority order)
-    fallback_providers: List[ProviderConfig] = field(default_factory=list)
-    
+    fallback_providers: list[ProviderConfig] = field(default_factory=list)
+
     # Ensemble configuration
     enable_ensemble: bool = False
     ensemble_strategy: EnsembleStrategy = EnsembleStrategy.AVERAGE
-    ensemble_providers: List[ProviderConfig] = field(default_factory=list)
-    
+    ensemble_providers: list[ProviderConfig] = field(default_factory=list)
+
     # Caching and performance
     enable_cache: bool = True
     cache_size: int = 10000
-    cache_ttl_seconds: Optional[float] = None
-    
+    cache_ttl_seconds: float | None = None
+
     # Similarity and thresholds
     similarity_threshold: float = 0.7
     use_normalized_similarity: bool = True  # Normalize cosine sim to [0,1]
-    
+
     # Multi-modal support
     enable_multimodal: bool = False
     text_weight: float = 0.7
     code_weight: float = 0.3
-    
+
     # Fine-tuning and feedback
     enable_feedback_logging: bool = False
-    feedback_log_path: Optional[str] = None
-    
+    feedback_log_path: str | None = None
+
     # Advanced features
     enable_gpu_acceleration: bool = False
     enable_federated: bool = False
-    
+
     @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> EmbeddingConfig:
+    def from_dict(cls, config_dict: dict[str, Any]) -> EmbeddingConfig:
         """Create EmbeddingConfig from dictionary."""
         # Parse primary provider
         primary_config = config_dict.get("primary_provider", {})
@@ -130,7 +130,7 @@ class EmbeddingConfig:
             api_key=primary_config.get("api_key"),
             dimensions=primary_config.get("dimensions"),
         )
-        
+
         # Parse fallback providers
         fallback_providers = []
         for i, fb_config in enumerate(config_dict.get("fallback_providers", [])):
@@ -141,18 +141,18 @@ class EmbeddingConfig:
                 dimensions=fb_config.get("dimensions"),
                 fallback_order=i,
             ))
-        
+
         # Parse ensemble providers
         ensemble_providers = []
         for ens_config in config_dict.get("ensemble_providers", []):
-            ensemble_providers.append(ProviderConfig(
+            ensemble_providers.append(ProviderConfig(  # noqa: PERF401
                 provider_type=EmbeddingProviderType(ens_config.get("type")),
                 model_name=ens_config.get("model_name"),
                 api_key=ens_config.get("api_key"),
                 dimensions=ens_config.get("dimensions"),
                 weight=ens_config.get("weight", 1.0),
             ))
-        
+
         return cls(
             primary_provider=primary_provider,
             fallback_providers=fallback_providers,
@@ -174,15 +174,15 @@ class EmbeddingConfig:
             enable_gpu_acceleration=config_dict.get("enable_gpu_acceleration", False),
             enable_federated=config_dict.get("enable_federated", False),
         )
-    
+
     @classmethod
     def from_env(cls) -> EmbeddingConfig:
         """Create EmbeddingConfig from environment variables."""
         provider_type = os.getenv(
-            "NETHICAL_EMBEDDING_PROVIDER", 
+            "NETHICAL_EMBEDDING_PROVIDER",
             EmbeddingProviderType.SIMPLE
         )
-        
+
         if isinstance(provider_type, str):
             try:
                 provider_type = EmbeddingProviderType(provider_type.lower())
@@ -191,13 +191,13 @@ class EmbeddingConfig:
                     f"Invalid provider type '{provider_type}', falling back to SIMPLE"
                 )
                 provider_type = EmbeddingProviderType.SIMPLE
-        
+
         primary_provider = ProviderConfig(
             provider_type=provider_type,
             model_name=os.getenv("NETHICAL_EMBEDDING_MODEL"),
             api_key=os.getenv("OPENAI_API_KEY"),
         )
-        
+
         # Check for fallback provider
         fallback_providers = []
         fallback_type = os.getenv("NETHICAL_EMBEDDING_FALLBACK")
@@ -209,7 +209,7 @@ class EmbeddingConfig:
                 ))
             except ValueError:
                 logger.warning(f"Invalid fallback provider type '{fallback_type}'")
-        
+
         return cls(
             primary_provider=primary_provider,
             fallback_providers=fallback_providers,
@@ -221,7 +221,7 @@ class EmbeddingConfig:
             ).lower() == "true",
             feedback_log_path=os.getenv("NETHICAL_FEEDBACK_LOG_PATH"),
         )
-    
+
     @classmethod
     def default(cls) -> EmbeddingConfig:
         """Create default EmbeddingConfig with simple provider."""
@@ -230,7 +230,7 @@ class EmbeddingConfig:
                 provider_type=EmbeddingProviderType.SIMPLE,
             ),
         )
-    
+
     @classmethod
     def openai_default(cls) -> EmbeddingConfig:
         """Create default config with OpenAI provider."""
@@ -245,7 +245,7 @@ class EmbeddingConfig:
                 )
             ],
         )
-    
+
     @classmethod
     def openai_large_default(cls) -> EmbeddingConfig:
         """Create default config with OpenAI large model for maximum accuracy."""
@@ -264,7 +264,7 @@ class EmbeddingConfig:
                 )
             ],
         )
-    
+
     @classmethod
     def huggingface_default(cls) -> EmbeddingConfig:
         """Create default config with HuggingFace provider."""
@@ -279,7 +279,7 @@ class EmbeddingConfig:
                 )
             ],
         )
-    
+
     @classmethod
     def ensemble_default(cls) -> EmbeddingConfig:
         """Create default ensemble config for maximum accuracy."""
@@ -304,7 +304,7 @@ class EmbeddingConfig:
 
 
 def load_embedding_config(
-    config_path: Optional[str] = None,
+    config_path: str | None = None,
     use_env: bool = True,
     default_type: Literal["simple", "openai", "openai_large", "huggingface", "ensemble"] = "simple"
 ) -> EmbeddingConfig:
@@ -317,23 +317,23 @@ def load_embedding_config(
         
     Returns:
         EmbeddingConfig instance
-    """
+    """  # noqa: W293
     # Try loading from file first
     if config_path:
         import yaml
         try:
-            with open(config_path, 'r') as f:
+            with open(config_path) as f:
                 config_dict = yaml.safe_load(f)
                 if 'embedding' in config_dict:
                     config_dict = config_dict['embedding']
                 return EmbeddingConfig.from_dict(config_dict)
         except Exception as e:
             logger.warning(f"Failed to load config from {config_path}: {e}")
-    
+
     # Try environment variables
     if use_env and os.getenv("NETHICAL_EMBEDDING_PROVIDER"):
         return EmbeddingConfig.from_env()
-    
+
     # Use defaults based on type
     if default_type == "openai":
         return EmbeddingConfig.openai_default()

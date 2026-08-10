@@ -16,13 +16,12 @@
 #   bandpower & spectral-entropy heuristics (alpha/beta dynamics), then smooth + hysteresis.
 # - Swap the `score_from_features` for your ML classifier if you have one.
 
-import numpy as np
-from collections import deque
-from dataclasses import dataclass, field
-from typing import Dict, Any, Optional, Tuple
 import logging
+from dataclasses import dataclass
+from typing import Any
 
-from scipy.signal import resample_poly, welch, filtfilt, iirnotch
+import numpy as np
+from scipy.signal import filtfilt, iirnotch, resample_poly, welch
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
 
@@ -80,7 +79,7 @@ class DetectorConfig:
     target_fs: float = 250.0
 
     # Sliding window options (seconds)
-    window_options: Tuple[float, float, float] = (1.0, 0.5, 0.25)
+    window_options: tuple[float, float, float] = (1.0, 0.5, 0.25)
     # Initial window length (seconds)
     init_window: float = 1.0
 
@@ -88,9 +87,9 @@ class DetectorConfig:
     step_fraction: float = 0.25
 
     # Band definitions (Hz)
-    theta: Tuple[float, float] = (4.0, 7.0)
-    alpha: Tuple[float, float] = (8.0, 13.0)
-    beta:  Tuple[float, float] = (13.0, 30.0)
+    theta: tuple[float, float] = (4.0, 7.0)
+    alpha: tuple[float, float] = (8.0, 13.0)
+    beta:  tuple[float, float] = (13.0, 30.0)
 
     # Adaptive-policy thresholds on entropy (busy vs calm)
     # Busy => shrink window; Calm => expand window
@@ -137,16 +136,16 @@ class AdaptiveFeedbackDetector:
     - Adapts window size based on spectral entropy (busy->shorter, calm->longer).
     """
 
-    def __init__(self, config: Optional[DetectorConfig] = None):
+    def __init__(self, config: DetectorConfig | None = None):
         self.cfg = config or DetectorConfig()
         self.target_fs = self.cfg.target_fs
 
         # Buffer to accumulate resampled EEG (shape: [n_channels, variable_samples])
-        self._buf: Optional[np.ndarray] = None
+        self._buf: np.ndarray | None = None
         self._buf_max_samples = int(self.cfg.max_buffer_sec * self.target_fs)
 
         self._channels: int = 0
-        self._states: Dict[int, ChannelState] = {}
+        self._states: dict[int, ChannelState] = {}
         self._adaptive = AdaptiveState(cur_window_sec=self.cfg.init_window)
 
         self._step_samples_cache = None  # recompute when window changes
@@ -155,7 +154,7 @@ class AdaptiveFeedbackDetector:
 
     # ------------------------ Public API ------------------------
 
-    def process(self, eeg_chunk: np.ndarray, chunk_fs: float) -> Dict[str, Any]:
+    def process(self, eeg_chunk: np.ndarray, chunk_fs: float) -> dict[str, Any]:
         """
         Push a new EEG chunk and get a detection decision.
         Args:
@@ -276,7 +275,7 @@ class AdaptiveFeedbackDetector:
         if self._buf.shape[1] > self._buf_max_samples:
             self._buf = self._buf[:, -self._buf_max_samples :]
 
-    def _extract_features(self, x: np.ndarray, fs: float) -> Dict[str, float]:
+    def _extract_features(self, x: np.ndarray, fs: float) -> dict[str, float]:
         """Compute lightweight features for fast real-time scoring."""
         alpha = bandpower_welch(x, fs, *self.cfg.alpha)
         beta  = bandpower_welch(x, fs, *self.cfg.beta)
@@ -295,7 +294,7 @@ class AdaptiveFeedbackDetector:
             "entropy": ent,
         }
 
-    def _score_from_features(self, f: Dict[str, float]) -> float:
+    def _score_from_features(self, f: dict[str, float]) -> float:
         """
         Heuristic score in [0,1] from features.
         Replace this with your trained classifier if available.
@@ -354,7 +353,7 @@ class AdaptiveFeedbackDetector:
 
 # ---------------------- Rational Approximation Helper -------------------------
 
-def _best_rational_approx(x: float, max_den: int = 64) -> Tuple[int, int]:
+def _best_rational_approx(x: float, max_den: int = 64) -> tuple[int, int]:
     """
     Find p/q approximating x with q <= max_den (simple continued fraction approach).
     Keeps resample_poly factors small & efficient.
