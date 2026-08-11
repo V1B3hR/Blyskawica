@@ -45,13 +45,21 @@ class EpisodicMemory(nn.Module):
               target: torch.Tensor, 
               importance: Optional[torch.Tensor] = None,
               self_context: Optional[torch.Tensor] = None):
-        """Store a batch of experiences."""
+        """Store a batch of experiences with dynamic feature size adapter (F-18 & F-04)."""
         batch_size = obs.size(0)
         
+        # Safe feature dimension handling
+        obs_flat = obs.detach().to(self.device).view(batch_size, -1)
+        if obs_flat.size(1) > self.feature_size:
+            obs_flat = obs_flat[:, :self.feature_size]
+        elif obs_flat.size(1) < self.feature_size:
+            padding = torch.zeros(batch_size, self.feature_size - obs_flat.size(1), device=self.device)
+            obs_flat = torch.cat([obs_flat, padding], dim=1)
+
         # handle potential wrap-around
         indices = torch.arange(self.ptr, self.ptr + batch_size) % self.memory_size
         
-        self.observations[indices] = obs.detach().to(self.device).view(batch_size, -1)
+        self.observations[indices] = obs_flat
         self.targets[indices] = target.detach().to(self.device)
         
         if importance is not None:
@@ -60,7 +68,13 @@ class EpisodicMemory(nn.Module):
             self.importance[indices] = 1.0
 
         if self_context is not None:
-            self.self_contexts[indices] = self_context.detach().to(self.device).view(batch_size, -1)
+            ctx_flat = self_context.detach().to(self.device).view(batch_size, -1)
+            if ctx_flat.size(1) > self.feature_size:
+                ctx_flat = ctx_flat[:, :self.feature_size]
+            elif ctx_flat.size(1) < self.feature_size:
+                padding = torch.zeros(batch_size, self.feature_size - ctx_flat.size(1), device=self.device)
+                ctx_flat = torch.cat([ctx_flat, padding], dim=1)
+            self.self_contexts[indices] = ctx_flat
             
         self.ptr = (self.ptr + batch_size) % self.memory_size
         if self.ptr < batch_size:

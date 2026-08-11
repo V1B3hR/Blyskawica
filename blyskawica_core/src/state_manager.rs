@@ -39,6 +39,19 @@ pub struct ExpertModule {
     pub id: usize,
     pub mmap: Mmap,
     pub weights_path: PathBuf,
+    pub engine: Option<crate::local_inference::LocalInferenceEngine>,
+}
+
+impl ExpertModule {
+    pub fn new(id: usize, mmap: Mmap, weights_path: PathBuf) -> Self {
+        let engine = crate::local_inference::LocalInferenceEngine::load_from_slice(mmap.as_ref(), &candle_core::Device::Cpu).ok();
+        Self {
+            id,
+            mmap,
+            weights_path,
+            engine,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -535,11 +548,7 @@ impl BlyskawicaEngine {
                                         if file.write_all(&byte_data).is_ok() {
                                             if let Ok(open_file) = File::open(&new_weights_path) {
                                                 if let Ok(mmap) = unsafe { memmap2::Mmap::map(&open_file) } {
-                                                    experts.push(ExpertModule {
-                                                        id: new_id,
-                                                        mmap,
-                                                        weights_path: new_weights_path.clone(),
-                                                    });
+                                                    experts.push(ExpertModule::new(new_id, mmap, new_weights_path.clone()));
                                                     gating.num_experts = experts.len();
                                                     *ewc_saturation = 0.0; // reset
                                                     log_print!(self, "🧬 [ENGINE NEUROGENESIS]: Nowy Ekspert ID: {} załadowany. Łączna liczba ekspertów: {}", new_id, gating.num_experts);
@@ -578,61 +587,31 @@ impl BlyskawicaEngine {
 
     pub fn project_vector_with_expert(&self, input: &[f32], expert_idx: usize) -> Vec<f32> {
         let input_dim = 128;
-        let hidden_dim = 64;
-        
         if input.len() != input_dim {
             return input.to_vec();
         }
 
-        // Pobranie zamapowanych wag wybranego eksperta MoE
-        let mmap_slice = match &self.state {
+        match &self.state {
             BlysState::Active { experts, .. } => {
+                if experts.is_empty() {
+                    return input.to_vec();
+                }
                 let idx = if expert_idx < experts.len() { expert_idx } else { 0 };
-                experts[idx].mmap.as_ref()
-            }
-            _ => return input.to_vec(),
-        };
+                let expert = &experts[idx];
 
-        // Potrzebujemy (128 * 64 + 64 + 64 * 128 + 128) * 4 = 16576 * 4 = 66304 bajtów
-        let required_bytes = (input_dim * hidden_dim + hidden_dim + hidden_dim * input_dim + input_dim) * 4;
-        if mmap_slice.len() < required_bytes {
-            return input.to_vec();
-        }
-
-        // Sprawdzenie, czy wszystkie wagi są równe zero (brak inicjalizacji -> fallback)
-        let mut all_zero = true;
-        for i in 0..16576 {
-            let byte_idx = i * 4;
-            let bytes = [
-                mmap_slice[byte_idx],
-                mmap_slice[byte_idx + 1],
-                mmap_slice[byte_idx + 2],
-                mmap_slice[byte_idx + 3],
-            ];
-            if f32::from_le_bytes(bytes) != 0.0 {
-                all_zero = false;
-                break;
+                if let Some(engine) = &expert.engine {
+                    match engine.project(input) {
+                        Ok(output) => output,
+                        Err(e) => {
+                            log_print!(self, "⚠️ [ENGINE ERROR]: Błąd projekcji Candle: {}", e);
+                            input.to_vec()
+                        }
+                    }
+                } else {
+                    input.to_vec()
+                }
             }
-        }
-        if all_zero {
-            return input.to_vec();
-        }
-
-        // Uruchomienie lokalnego silnika tensorowego Candle do projekcji wektora
-        let engine = match crate::local_inference::LocalInferenceEngine::load_from_slice(mmap_slice, &candle_core::Device::Cpu) {
-            Ok(eng) => eng,
-            Err(e) => {
-                log_print!(self, "⚠️ [ENGINE ERROR]: Nie udało się zainicjalizować silnika Candle: {}", e);
-                return input.to_vec();
-            }
-        };
-
-        match engine.project(input) {
-            Ok(output) => output,
-            Err(e) => {
-                log_print!(self, "⚠️ [ENGINE ERROR]: Błąd projekcji Candle: {}", e);
-                input.to_vec()
-            }
+            _ => input.to_vec(),
         }
     }
 
@@ -655,11 +634,7 @@ impl BlyskawicaEngine {
                                     log_print!(self, "🧠 [ENGINE STATE]: Zainicjowano profil kognitywny 'study'.");
                                     self.emit_event(EngineEvent::Neurochemistry(ns.clone()));
                                 }
-                                let base_expert = ExpertModule {
-                                    id: 0,
-                                    mmap,
-                                    weights_path: weights_path.clone(),
-                                };
+                                let base_expert = ExpertModule::new(0, mmap, weights_path.clone());
                                 self.state = BlysState::Active {
                                     experts: vec![base_expert],
                                     gating: GatingNetwork::new(),

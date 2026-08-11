@@ -391,6 +391,17 @@ def train_with_config(config: WorkflowConfig):
         # 1. Resolve seed
         torch.manual_seed(config.training.seed)
 
+        # Common DataLoader kwargs from config (F-02: respect num_workers, pin_memory)
+        _use_cuda = config.training.device != "cpu" and torch.cuda.is_available()
+        _loader_kwargs = {
+            "batch_size": config.dataset.batch_size,
+            "shuffle": config.dataset.shuffle,
+            "num_workers": config.dataset.num_workers,
+            "pin_memory": _use_cuda,
+            "persistent_workers": config.dataset.num_workers > 0,
+            "prefetch_factor": 2 if config.dataset.num_workers > 0 else None,
+        }
+
         # 2. Load dataset
         train_loader = None
         if config.dataset.name == "mnist":
@@ -401,7 +412,7 @@ def train_with_config(config: WorkflowConfig):
                     transforms.Normalize((0.1307,), (0.3081,))
                 ])
                 train_dataset = datasets.MNIST('data', train=True, download=True, transform=transform)
-                train_loader = DataLoader(train_dataset, batch_size=config.dataset.batch_size, shuffle=config.dataset.shuffle)
+                train_loader = DataLoader(train_dataset, **_loader_kwargs)
             except Exception as e:
                 logger.warning(f"Could not load MNIST dataset: {e}. Falling back to synthetic.")
         elif config.dataset.name == "annomi":
@@ -409,7 +420,7 @@ def train_with_config(config: WorkflowConfig):
                 from adaptiveneuralnetwork.data.kaggle_datasets import load_annomi_dataset
                 data_path = config.dataset.data_path or "data/annomi"
                 train_dataset = load_annomi_dataset(data_path)
-                train_loader = DataLoader(train_dataset, batch_size=config.dataset.batch_size, shuffle=config.dataset.shuffle)
+                train_loader = DataLoader(train_dataset, **_loader_kwargs)
             except Exception as e:
                 logger.warning(f"Could not load ANNOMI dataset: {e}. Falling back to synthetic.")
         elif config.dataset.name == "curriculum":
@@ -423,7 +434,7 @@ def train_with_config(config: WorkflowConfig):
             X = torch.randn(100, config.model.input_dim)
             y = torch.randint(0, config.model.output_dim, (100,))
             train_dataset = TensorDataset(X, y)
-            train_loader = DataLoader(train_dataset, batch_size=config.dataset.batch_size, shuffle=config.dataset.shuffle)
+            train_loader = DataLoader(train_dataset, **_loader_kwargs)
 
         # 3. Instantiate Model
         from adaptiveneuralnetwork.api.model import AdaptiveModel

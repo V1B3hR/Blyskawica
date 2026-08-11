@@ -405,23 +405,34 @@ class BatchPredictor:
         self.batch_size = batch_size
         self.max_delay_ms = max_delay_ms
         self.batch_queue = []
-        self.batch_futures = []
+        self._lock = asyncio.Lock()
+        self._flush_task = None
 
     async def predict(self, data: list[list[float]]) -> dict[str, Any]:
         """Add prediction to batch queue."""
         future = asyncio.Future()
-        self.batch_queue.append((data, future))
-        self.batch_futures.append(future)
+        async with self._lock:
+            self.batch_queue.append((data, future))
 
-        # Process batch if conditions are met
-        if (len(self.batch_queue) >= self.batch_size or
-            len(self.batch_queue) > 0):
-            await self._process_batch()
+            if len(self.batch_queue) >= self.batch_size:
+                await self._process_batch()
+            else:
+                self._schedule_flush()
 
         return await future
 
+    def _schedule_flush(self):
+        if self._flush_task is not None and not self._flush_task.done():
+            return
+        self._flush_task = asyncio.ensure_future(self._delayed_flush())
+
+    async def _delayed_flush(self):
+        await asyncio.sleep(self.max_delay_ms / 1000.0)
+        async with self._lock:
+            await self._process_batch()
+
     async def _process_batch(self):
-        """Process the current batch."""
+        """Process the current batch. Caller must hold self._lock."""
         if not self.batch_queue:
             return
 

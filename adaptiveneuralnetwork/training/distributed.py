@@ -255,8 +255,8 @@ class DistributedTrainer:
     def load_checkpoint(self, filepath: str | Path) -> dict[str, Any]:
         """Load checkpoint."""
         try:
-            checkpoint = torch.load(filepath, map_location=self.device, weights_only=False)
-        except TypeError:
+            checkpoint = torch.load(filepath, map_location=self.device, weights_only=True)
+        except Exception:
             checkpoint = torch.load(filepath, map_location=self.device)
 
         # Load into underlying model (not DDP wrapper)

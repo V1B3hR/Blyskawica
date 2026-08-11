@@ -53,10 +53,23 @@ class VectorizedDataset(Dataset):
         if not isinstance(targets, torch.Tensor):
             targets = torch.tensor(np.array(targets), dtype=torch.long)
 
+        # Calculate dataset byte size to prevent GPU OOM (F-07)
+        data_bytes = data.element_size() * data.nelement() + targets.element_size() * targets.nelement()
+        max_gpu_bytes = 500 * 1024 * 1024  # 500 MB threshold for resident GPU datasets
+
+        if device != 'cpu' and data_bytes > max_gpu_bytes:
+            import logging
+            logging.getLogger(__name__).warning(
+                f"Dataset size ({data_bytes / 1e6:.1f} MB) exceeds GPU residency threshold ({max_gpu_bytes / 1e6:.1f} MB). "
+                "Keeping dataset on CPU with pinned memory to avoid OOM."
+            )
+            device = 'cpu'
+            pin_memory = True
+
         # Store in appropriate memory
-        if pin_memory and device == 'cpu':
-            self.data = data.pin_memory()
-            self.targets = targets.pin_memory()
+        if pin_memory and device == 'cpu' and torch.cuda.is_available():
+            self.data = data.pin_memory() if not data.is_pinned() else data
+            self.targets = targets.pin_memory() if not targets.is_pinned() else targets
         else:
             self.data = data.to(device)
             self.targets = targets.to(device)

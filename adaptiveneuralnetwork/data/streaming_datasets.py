@@ -94,16 +94,19 @@ class StreamingDatasetWrapper(UnifiedDatasetInterface, IterableDataset):
         }
 
     def __len__(self) -> int:
-        """Return approximate length."""
+        """Return approximate length without materializing file lists in RAM."""
         if self._length is None:
-            # Try to estimate length
-            if isinstance(self.data_source, (str, Path)):
+            # Check info dict first
+            if isinstance(self._info, dict) and "length" in self._info:
+                self._length = int(self._info["length"])
+            elif isinstance(self.data_source, (str, Path)):
                 data_path = Path(self.data_source)
                 if data_path.is_dir():
-                    # Count files
-                    self._length = len(list(data_path.glob("*.json"))) + len(list(data_path.glob("*.pkl")))
+                    # Count without building full list in memory
+                    count = sum(1 for p in data_path.iterdir() if p.suffix in ('.json', '.pkl'))
+                    self._length = count if count > 0 else 1000
                 else:
-                    self._length = 1000  # Default estimate
+                    self._length = 1000
             else:
                 self._length = 1000
 
@@ -223,13 +226,14 @@ class StreamingDatasetWrapper(UnifiedDatasetInterface, IterableDataset):
 
     def stream(self, shuffle: bool = False) -> Iterator[Any]:
         """Create streaming iterator."""
-        indices = list(range(len(self)))
-
+        total = len(self)
         if shuffle:
-            np.random.shuffle(indices)
-
-        for i in indices:
-            yield self[i]
+            indices = np.random.permutation(total)
+            for i in indices:
+                yield self[int(i)]
+        else:
+            for i in range(total):
+                yield self[i]
 
     def __iter__(self) -> Iterator[Any]:
         """Iterate over dataset."""

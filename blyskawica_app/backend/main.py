@@ -280,10 +280,12 @@ from blyskawica_app.backend.vibe_telemetry_bridge import vibe_telemetry_bridge
 
 @app.get("/api/auth/token")
 async def get_auth_token(x_internal: str = Header(None, alias="X-Internal-Request")):
-    """Token sesyjny dostępny TYLKO dla zapytań z Tauri shell (nagłówek dodawany programatycznie)."""
-    if x_internal != "sparkle-tauri-shell":
+    """Token sesyjny dostępny TYLKO dla zapytań z Tauri shell."""
+    import hmac
+    expected_header = os.environ.get("SPARKLE_SHELL_SECRET", "sparkle-tauri-shell")
+    if not x_internal or not hmac.compare_digest(x_internal.encode("utf-8"), expected_header.encode("utf-8")):
         from fastapi import HTTPException
-        raise HTTPException(status_code=403, detail="Dostęp zabroniony. Token sesji dostępny wyłącznie dla powłoki Sparkle.")
+        raise HTTPException(status_code=403, detail="Dostęp zabroniony. Token sesji dostępny wyłącznie dla autoryzowanej powłoki Sparkle.")
     return {"token": STARTUP_TOKEN}
 
 @app.get("/api/vibe/telemetry")
@@ -1021,16 +1023,16 @@ async def search_internet(query: str):
         url = f"https://html.duckduckgo.com/html/?q={urllib.parse.quote(query)}"
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.0.0 Safari/537.36'}
         
-        with httpx.Client(timeout=5.0, follow_redirects=True) as client:
-            res = client.get(url, headers=headers)
+        async with httpx.AsyncClient(timeout=5.0, follow_redirects=True) as client:
+            res = await client.get(url, headers=headers)
             if res.status_code == 200:
-                html = res.text
+                html_content = res.text
             else:
-                html = ""
+                html_content = ""
             
         # DuckDuckGo HTML format:
-        matches = re.findall(r'<div class="result__body">.*?<a class="result__snippet"[^>]*>(.*?)</a>', html, re.DOTALL)
-        titles = re.findall(r'<a class="result__a"[^>]* href="([^"]+)"[^>]*>(.*?)</a>', html, re.DOTALL)
+        matches = re.findall(r'<div class="result__body">.*?<a class="result__snippet"[^>]*>(.*?)</a>', html_content, re.DOTALL)
+        titles = re.findall(r'<a class="result__a"[^>]* href="([^"]+)"[^>]*>(.*?)</a>', html_content, re.DOTALL)
         
         for i in range(min(5, len(titles), len(matches))):
             url_match, title_html = titles[i]

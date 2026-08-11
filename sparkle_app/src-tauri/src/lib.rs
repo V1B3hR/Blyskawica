@@ -499,7 +499,7 @@ pub fn run() {
         .manage(AppState(Mutex::new(AppStateInner {
             tx: None,
             permission_level: 2, // Standard Workspace by default
-            workspace_path: PathBuf::from(r"C:\Projekty\Blyskawica_V8"),
+            workspace_path: PathBuf::from("."),
             backend_child: None,
         })))
         .invoke_handler(tauri::generate_handler![
@@ -519,6 +519,18 @@ pub fn run() {
             let state = app.state::<AppState>();
             let mut inner = state.0.lock().unwrap();
             
+            // Dynamic workspace resolution: use local repo dir if valid, else fallback to app_data_dir
+            let app_data_dir = app.path().app_data_dir().unwrap_or_else(|_| std::env::temp_dir().join("Blyskawica"));
+            let current_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+            
+            if current_dir.join("adaptiveneuralnetwork").exists() || current_dir.join("blyskawica_core").exists() {
+                inner.workspace_path = current_dir;
+            } else {
+                let _ = std::fs::create_dir_all(&app_data_dir);
+                inner.workspace_path = app_data_dir.clone();
+            }
+            println!("📂 [SPARKLE App]: Working directory set to: {:?}", inner.workspace_path);
+
             let workspace = inner.workspace_path.clone();
             let app_dir = app.path().resource_dir().unwrap_or_default();
             
@@ -557,7 +569,7 @@ pub fn run() {
                     }
                 }
             } else {
-                println!("⚠️ [Tauri Setup]: Brak Sidecar backendu w {:?}. Uruchom serwer ręcznie.", sidecar_path);
+                println!("ℹ️ [Tauri Setup]: Brak pliku wykonywalnego Sidecar backend. Działanie w czystym trybie Wbudowanym (Native Offline Embedded Core).");
             }
             
             Ok(())

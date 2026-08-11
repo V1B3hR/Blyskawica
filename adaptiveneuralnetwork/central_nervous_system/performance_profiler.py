@@ -14,43 +14,56 @@ logger = logging.getLogger(__name__)
 class PerformanceProfiler:
     """
     Profiles the computational and energetic efficiency of the neural network.
+    Uses sampling to avoid per-batch GPU synchronization overhead.
     """
-    def __init__(self, device: str = 'cpu'):
+    def __init__(self, device: str = 'cpu', sample_interval: int = 10):
         self.device = device
+        self.sample_interval = max(1, sample_interval)
+        self.pulse_counter = 0
         self.latency_history: List[float] = []
         self.throughput_history: List[float] = []
         self.energy_per_pulse: List[float] = []
         
         # Hardware context
         self.is_cuda = 'cuda' in device
-        
-    def start_pulse(self) -> float:
-        """Starts timing a conscious pulse."""
-        if self.is_cuda:
-            torch.cuda.synchronize()
-        return time.perf_counter()
 
-    def end_pulse(self, start_time: float, batch_size: int, node_state: Any):
-        """Ends timing and calculates metrics."""
+    def start_pulse(self) -> Dict[str, Any] | None:
+        """Starts timing a conscious pulse. Returns a handle dict if sampled, else None."""
+        self.pulse_counter += 1
+        if self.pulse_counter % self.sample_interval != 0:
+            return None
+
         if self.is_cuda:
             torch.cuda.synchronize()
-        
+        return {"start_time": time.perf_counter(), "sampled": True}
+
+    def end_pulse(self, handle: Dict[str, Any] | None, batch_size: int, node_state: Any):
+        """Ends timing and calculates metrics if sampled."""
+        if handle is None or not handle.get("sampled"):
+            return
+
+        if self.is_cuda:
+            torch.cuda.synchronize()
+
+        start_time = handle["start_time"]
         end_time = time.perf_counter()
-        latency = (end_time - start_time) * 1000 # ms
-        throughput = batch_size / (end_time - start_time) # thoughts/sec
-        
+        elapsed = end_time - start_time
+        if elapsed <= 0:
+            elapsed = 1e-6
+        latency = elapsed * 1000  # ms
+        throughput = batch_size / elapsed  # thoughts/sec
+
         # Energy Approximation (Hardware dependent)
-        # EpJ = sum(abs(activations)) * voltage_surrogate
         activity = getattr(node_state, 'activity', torch.zeros(1, device=self.device))
         if not isinstance(activity, torch.Tensor):
             activity = torch.tensor(activity, device=self.device)
-            
-        energy = torch.sum(torch.abs(activity)).item() * 0.01 
-        
+
+        energy = torch.sum(torch.abs(activity)).item() * 0.01
+
         self.latency_history.append(latency)
         self.throughput_history.append(throughput)
         self.energy_per_pulse.append(energy)
-        
+
         if len(self.latency_history) % 100 == 0:
             self._log_performance(latency, throughput, energy)
 

@@ -375,6 +375,14 @@ class RealTimeInferenceEngine:
             self.cache_hits = 0
             self.cache_misses = 0
 
+        # Processor cache to avoid re-instantiating modules per batch (F-08)
+        self._processors: dict[tuple, SensorDataProcessor] = {}
+
+    def _get_sensor_processor(self, sensor_types: tuple[SensorType, ...]) -> SensorDataProcessor:
+        if sensor_types not in self._processors:
+            self._processors[sensor_types] = SensorDataProcessor(list(sensor_types))
+        return self._processors[sensor_types]
+
     def start_processing(self):
         """Start real-time processing."""
         self.processing_active = True
@@ -435,8 +443,9 @@ class RealTimeInferenceEngine:
 
         # Run inference
         with torch.no_grad():
-            # Convert sensor data to model input
-            sensor_processor = SensorDataProcessor([data.sensor_type for data in sensor_data])
+            # Reuse cached processor (F-08 fix)
+            sensor_types = tuple(data.sensor_type for data in sensor_data)
+            sensor_processor = self._get_sensor_processor(sensor_types)
             processed = sensor_processor(sensor_data)
             model_input = processed['fused_features']
 

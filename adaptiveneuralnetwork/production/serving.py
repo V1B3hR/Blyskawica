@@ -3,6 +3,7 @@ Real-time model serving with FastAPI for sub-100ms latency.
 """
 
 import asyncio
+import hashlib
 import json
 import logging
 import time
@@ -91,8 +92,9 @@ class ModelServer:
         self.model_config = None
         self.start_time = time.time()
         self.executor = ThreadPoolExecutor(max_workers=config.max_workers)
-        self.batch_queue = []
-        self.batch_futures = []
+        self.batch_queue: list[tuple] = []
+        self._batch_lock = asyncio.Lock()
+        self._flush_task: asyncio.Task | None = None
         self.cache = {} if config.enable_caching else None
         self.request_count = 0
         self.total_latency = 0.0
@@ -121,7 +123,7 @@ class ModelServer:
 
             weights_path = model_path / "model.pth"
             if weights_path.exists():
-                state_dict = torch.load(weights_path, map_location="cpu")
+                state_dict = torch.load(weights_path, map_location="cpu", weights_only=True)
                 self.model.load_state_dict(state_dict)
 
             self.model.eval()
@@ -137,14 +139,14 @@ class ModelServer:
             self.logger.error(f"Failed to load model: {e}")
             raise
 
-    def _get_cache_key(self, data: list[list[float]]) -> str:
-        """Generate cache key for input data."""
+    def _get_cache_key(self, data: list[list[float]]) -> str | None:
+        """Generate deterministic cache key for input data."""
         if not self.config.enable_caching:
             return None
 
-        # Simple hash of input data
-        data_str = str(sorted([sorted(row) for row in data]))
-        return str(hash(data_str))
+        # Deterministic hash preserving row/element order
+        data_bytes = json.dumps(data, sort_keys=False).encode("utf-8")
+        return hashlib.sha256(data_bytes).hexdigest()
 
     def _preprocess_input(self, data: list[list[float]]) -> torch.Tensor:
         """Preprocess input data for the model."""
@@ -173,43 +175,45 @@ class ModelServer:
             self.logger.error(f"Postprocessing failed: {e}")
             raise
 
-    async def _predict_batch(self, batch_data: list[list[list[float]]]) -> list[list[list[float]]]:
-        """Process a batch of predictions."""
+    def _run_batch_inference(self, batch_data: list[list[list[float]]]) -> list[list[list[float]]]:
+        """Run batch inference synchronously (called via executor to avoid blocking event loop)."""
         if not self.model:
             raise ValueError("Model not loaded")
 
-        try:
-            # Combine all batch data
-            combined_data = []
-            batch_sizes = []
+        # Combine all batch data
+        combined_data = []
+        batch_sizes = []
 
-            for data in batch_data:
-                combined_data.extend(data)
-                batch_sizes.append(len(data))
+        for data in batch_data:
+            combined_data.extend(data)
+            batch_sizes.append(len(data))
 
-            # Preprocess
-            input_tensor = self._preprocess_input(combined_data)
+        # Preprocess
+        input_tensor = self._preprocess_input(combined_data)
 
-            # Inference
-            with torch.no_grad():
-                output = self.model(input_tensor)
+        # Inference — use inference_mode for better performance than no_grad
+        with torch.inference_mode():
+            output = self.model(input_tensor)
 
-            # Postprocess
-            predictions = self._postprocess_output(output)
+        # Postprocess
+        predictions = self._postprocess_output(output)
 
-            # Split back into original batches
-            results = []
-            start_idx = 0
-            for batch_size in batch_sizes:
-                end_idx = start_idx + batch_size
-                results.append(predictions[start_idx:end_idx])
-                start_idx = end_idx
+        # Split back into original batches
+        results = []
+        start_idx = 0
+        for batch_size in batch_sizes:
+            end_idx = start_idx + batch_size
+            results.append(predictions[start_idx:end_idx])
+            start_idx = end_idx
 
-            return results
+        return results
 
-        except Exception as e:
-            self.logger.error(f"Batch prediction failed: {e}")
-            raise
+    async def _predict_batch(self, batch_data: list[list[list[float]]]) -> list[list[list[float]]]:
+        """Process a batch of predictions, offloading blocking work to thread pool."""
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(
+            self.executor, self._run_batch_inference, batch_data
+        )
 
     async def predict(self, data: list[list[float]], options: dict[str, Any] | None = None) -> dict[str, Any]:
         """Make a prediction with the loaded model."""
@@ -219,33 +223,31 @@ class ModelServer:
             # Check cache first
             cache_key = self._get_cache_key(data)
             if cache_key and cache_key in self.cache:
-                cached_result = self.cache[cache_key]
+                cached_result = self.cache[cache_key].copy()
                 cached_result["latency_ms"] = (time.time() - start_time) * 1000
                 return cached_result
 
             if self.config.enable_batching:
-                # Add to batch queue
+                # Add to batch queue under lock
                 future = asyncio.Future()
-                self.batch_queue.append((data, future, start_time))
-                self.batch_futures.append(future)
+                async with self._batch_lock:
+                    self.batch_queue.append((data, future, start_time))
 
-                # Process batch if conditions are met
-                if (len(self.batch_queue) >= self.config.batch_size or
-                    len(self.batch_queue) > 0 and
-                    (time.time() - self.batch_queue[0][2]) * 1000 > self.config.max_batch_delay_ms):
-
-                    await self._process_batch()
+                    # Flush immediately if batch is full
+                    if len(self.batch_queue) >= self.config.batch_size:
+                        await self._process_batch()
+                    else:
+                        # Schedule a delayed flush so lone requests don't stall
+                        self._schedule_flush()
 
                 # Wait for result
                 predictions = await future
             else:
-                # Direct prediction
-                input_tensor = self._preprocess_input(data)
-
-                with torch.no_grad():
-                    output = self.model(input_tensor)
-
-                predictions = self._postprocess_output(output)
+                # Direct prediction — offload blocking inference to thread pool
+                loop = asyncio.get_event_loop()
+                predictions = await loop.run_in_executor(
+                    self.executor, self._run_direct_inference, data
+                )
 
             latency_ms = (time.time() - start_time) * 1000
 
@@ -278,20 +280,39 @@ class ModelServer:
             self.logger.error(f"Prediction failed: {e}")
             raise
 
+    def _run_direct_inference(self, data: list[list[float]]) -> list[list[float]]:
+        """Run a single direct inference synchronously (called via executor)."""
+        input_tensor = self._preprocess_input(data)
+        with torch.inference_mode():
+            output = self.model(input_tensor)
+        return self._postprocess_output(output)
+
+    def _schedule_flush(self):
+        """Schedule a delayed batch flush so lone requests don't wait forever."""
+        if self._flush_task is not None and not self._flush_task.done():
+            return  # Timer already running
+        self._flush_task = asyncio.ensure_future(self._delayed_flush())
+
+    async def _delayed_flush(self):
+        """Wait for max_batch_delay then flush whatever is queued."""
+        await asyncio.sleep(self.config.max_batch_delay_ms / 1000.0)
+        async with self._batch_lock:
+            await self._process_batch()
+
     async def _process_batch(self):
-        """Process accumulated batch queue."""
+        """Process accumulated batch queue. Caller must hold _batch_lock."""
         if not self.batch_queue:
             return
 
+        # Snapshot and clear queue
+        batch_items = self.batch_queue.copy()
+        self.batch_queue.clear()
+
+        batch_data = [item[0] for item in batch_items]
+        futures = [item[1] for item in batch_items]
+
         try:
-            # Extract batch data and futures
-            batch_items = self.batch_queue.copy()
-            self.batch_queue.clear()
-
-            batch_data = [item[0] for item in batch_items]
-            futures = [item[1] for item in batch_items]
-
-            # Process batch
+            # Process batch — inference runs in thread pool
             results = await self._predict_batch(batch_data)
 
             # Set results for each future
@@ -300,11 +321,10 @@ class ModelServer:
                     future.set_result(result)
 
         except Exception as e:
-            # Set exception for all futures
-            for _, future, _ in self.batch_queue:
+            # Set exception for all futures in the snapshot
+            for future in futures:
                 if not future.done():
                     future.set_exception(e)
-            self.batch_queue.clear()
 
     def get_health_status(self) -> dict[str, Any]:
         """Get server health status."""
@@ -347,13 +367,21 @@ class FastAPIServer:
         self._setup_routes()
 
     def _setup_middleware(self):
-        """Setup FastAPI middleware."""
+        """Setup FastAPI middleware with restricted CORS for production safety."""
+        # Production: restrict to known deployment origins.
+        # Override via ServingConfig or environment variable for custom deployments.
+        import os
+        cors_origins = os.environ.get("ANN_CORS_ORIGINS", "").split(",")
+        cors_origins = [o.strip() for o in cors_origins if o.strip()] or [
+            "http://localhost:8000",
+            "http://127.0.0.1:8000",
+        ]
         self.app.add_middleware(
             CORSMiddleware,
-            allow_origins=["*"],
+            allow_origins=cors_origins,
             allow_credentials=True,
-            allow_methods=["*"],
-            allow_headers=["*"],
+            allow_methods=["GET", "POST"],
+            allow_headers=["Authorization", "Content-Type"],
         )
 
     def _setup_routes(self):

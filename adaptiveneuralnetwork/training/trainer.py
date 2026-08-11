@@ -76,6 +76,7 @@ class Trainer:
         episodic_memory: EpisodicMemory | None = None,
         bridge: NodeStateBridge | None = None,
         dream_replay_ratio: float = 0.2,
+        enable_cognitive_features: bool = False,
     ):
         """
         Initialize the Trainer.
@@ -108,24 +109,25 @@ class Trainer:
         # Initialize callbacks
         self.callbacks = CallbackList(callbacks)
 
-        # Conscious features initialization
+        # Conscious features initialization (gated by enable_cognitive_features for performance)
+        self.enable_cognitive_features = enable_cognitive_features or hasattr(model, 'nodes') or hasattr(model, 'phase_scheduler')
         self.episodic_memory = episodic_memory
-        self.bridge = bridge or (NodeStateBridge(device=str(self.device)) if hasattr(model, 'phase_scheduler') else None)
+        self.bridge = bridge or (NodeStateBridge(device=str(self.device)) if self.enable_cognitive_features else None)
         self.dream_replay_ratio = dream_replay_ratio
         
         # Phase 7.1 Neuromodulation
-        self.neuromodulation = NeuromodulationSystem()
+        self.neuromodulation = NeuromodulationSystem() if self.enable_cognitive_features else None
         
         # Phase 3: Conscious Relational Autopoiesis (C.R.A.) Engine
-        self.cra_engine = CRAEngine(architect_id="Creator").to(self.device)
+        self.cra_engine = CRAEngine(architect_id="Creator").to(self.device) if self.enable_cognitive_features else None
         
         # Tier 1 - Introspective Learning Flags
         self.enable_meta_learning = False
-        self.enable_nas = True
+        self.enable_nas = self.enable_cognitive_features
         
         # Initialize NAS Topology Adapter if model hidden_dim is accessible
         hidden_dim = getattr(model, 'hidden_dim', 128)
-        if hasattr(model, 'hidden_dim'):
+        if self.enable_cognitive_features and hasattr(model, 'hidden_dim'):
             self.topology_adapter = TopologyAdapter(hidden_dim)
             if hasattr(model, 'dynamics'):
                 model.dynamics.topology_adapter = self.topology_adapter
@@ -133,12 +135,12 @@ class Trainer:
             self.topology_adapter = None
 
         # Tier 5: Global Workspace (Spotlight)
-        self.workspace = GlobalWorkspace(hidden_dim=hidden_dim, capacity=5).to(self.device)
-        if hasattr(model, 'dynamics'):
+        self.workspace = GlobalWorkspace(hidden_dim=hidden_dim, capacity=5).to(self.device) if self.enable_cognitive_features else None
+        if self.workspace is not None and hasattr(model, 'dynamics'):
             model.dynamics.workspace = self.workspace
             
         # Tier 2: Narrative Synthesis
-        self.narrative_engine = NarrativeEngine(feature_dim=hidden_dim).to(self.device)
+        self.narrative_engine = NarrativeEngine(feature_dim=hidden_dim).to(self.device) if self.enable_cognitive_features else None
         
         vision_dim = 784
         if hasattr(model, 'vl_config') and hasattr(model.vl_config, 'vision_feature_dim'):
@@ -158,19 +160,19 @@ class Trainer:
             device=str(self.device),
             vision_input_size=vision_dim,
             audio_input_size=audio_dim
-        ).to(self.device)
-        self.tom = None # Will find in callbacks or initialize
+        ).to(self.device) if self.enable_cognitive_features else None
+        self.tom = None
         
-        # Inject Workspace into MetacognitiveMonitor if present in callbacks
-        from adaptiveneuralnetwork.central_nervous_system.metacognitive_monitor import MetacognitiveMonitor
-        for callback in self.callbacks.callbacks:
-            if isinstance(callback, MetacognitiveMonitor):
-                callback.workspace = self.workspace
-                if hasattr(callback, 'tom'):
-                    self.tom = callback.tom
-                    
-        if self.tom is None:
-            self.tom = TheoryOfMind(hidden_dim=hidden_dim).to(self.device)
+        if self.enable_cognitive_features:
+            from adaptiveneuralnetwork.central_nervous_system.metacognitive_monitor import MetacognitiveMonitor
+            for callback in self.callbacks.callbacks:
+                if isinstance(callback, MetacognitiveMonitor):
+                    callback.workspace = self.workspace
+                    if hasattr(callback, 'tom'):
+                        self.tom = callback.tom
+                        
+            if self.tom is None:
+                self.tom = TheoryOfMind(hidden_dim=hidden_dim).to(self.device)
 
         # AMP scaler initialization
         self.scaler = None
@@ -353,7 +355,7 @@ class Trainer:
                 text_tokens=sensory_inputs.get('text'), 
                 workspace_state=ws_state,
                 deception_risk=deception_risk
-            )
+            ) if self.sensory_hub is not None else None
 
             batch_logs = {'batch_size': data.size(0)}
             self.callbacks.on_batch_begin(batch_idx, self, logs=batch_logs)
@@ -392,8 +394,9 @@ class Trainer:
                     loss = self.criterion(logits, target)
                     loss = loss / self.gradient_accumulation_steps
                 
-                # Apply Phase 3 C.R.A. Relational Homeostasis
-                loss = self.cra_engine(loss)
+                # Apply Phase 3 C.R.A. Relational Homeostasis if enabled
+                if self.cra_engine is not None:
+                    loss = self.cra_engine(loss)
                 
                 # Assign model_output to output for later use in metrics
                 output = model_output
@@ -404,9 +407,8 @@ class Trainer:
             else:
                 loss.backward()
 
-            # 2. Register Experience for REM Replay (Hard Example Mining)
-            if hasattr(self.model, 'phase_scheduler'):
-                # Store detached data and loss to prioritize harder samples for later REM consolidation
+            # 2. Register Experience for REM Replay (Hard Example Mining - sampled to prevent D2H bottleneck)
+            if hasattr(self.model, 'phase_scheduler') and batch_idx % 5 == 0:
                 self.model.phase_scheduler.register_experience(loss.item(), data.detach().cpu())
 
             # Conscious Feature: Gradient Modulation
@@ -438,35 +440,31 @@ class Trainer:
                     self.optimizer.step()
 
                 # Conscious Feature: Gradient Scaling & Modulation
-                # Applied after optimizer step via per-node biological state if available
                 if self.bridge is not None and hasattr(self.model, 'nodes'):
-                    # This would ideally happen inside optimizer.step() but can be simulated
-                    # by scaling gradients before the step. 
-                    # For now, we scale gradients BEFORE the optimizer step below.
                     pass
 
                 self.optimizer.zero_grad()
 
             # Conscious Feature: Neuromodulation (Dopamine Loop)
-            # Update modulatory signals based on current loss and node anxiety
-            anxiety_val = self.model.nodes.anxiety if hasattr(self.model, 'nodes') else 0.5
-            success_val = np.clip(1.0 - (loss.item() * self.gradient_accumulation_steps), 0.0, 1.0)
-            
-            self.neuromodulation.update_homeostasis(
-                task_success=success_val,
-                anxiety=anxiety_val
-            )
-            mod_signals = self.neuromodulation.get_neuromodulatory_bias()
-            lr_scale = mod_signals.get('learning_rate_scale', 1.0)
-            
-            # Apply Phase 3 C.R.A. Neurochemical Learning Multiplier
-            cra_multiplier = self.cra_engine.neuro_state.get_learning_multiplier()
-            
-            # Apply Dopamine scaling to all parameter groups
-            for param_group in self.optimizer.param_groups:
-                if 'initial_lr' not in param_group:
-                    param_group['initial_lr'] = param_group['lr']
-                param_group['lr'] = param_group['initial_lr'] * lr_scale * cra_multiplier
+            if self.neuromodulation is not None and self.cra_engine is not None:
+                anxiety_val = self.model.nodes.anxiety if hasattr(self.model, 'nodes') else 0.5
+                success_val = np.clip(1.0 - (loss.item() * self.gradient_accumulation_steps), 0.0, 1.0)
+                
+                self.neuromodulation.update_homeostasis(
+                    task_success=success_val,
+                    anxiety=anxiety_val
+                )
+                mod_signals = self.neuromodulation.get_neuromodulatory_bias()
+                lr_scale = mod_signals.get('learning_rate_scale', 1.0)
+                
+                # Apply Phase 3 C.R.A. Neurochemical Learning Multiplier
+                cra_multiplier = self.cra_engine.neuro_state.get_learning_multiplier()
+                
+                # Apply Dopamine scaling to all parameter groups
+                for param_group in self.optimizer.param_groups:
+                    if 'initial_lr' not in param_group:
+                        param_group['initial_lr'] = param_group['lr']
+                    param_group['lr'] = param_group['initial_lr'] * lr_scale * cra_multiplier
 
             # Track metrics
             total_loss += loss.item() * self.gradient_accumulation_steps
@@ -775,8 +773,8 @@ class Trainer:
             Dictionary containing checkpoint data
         """
         try:
-            checkpoint = torch.load(path, map_location=self.device, weights_only=False)
-        except TypeError:
+            checkpoint = torch.load(path, map_location=self.device, weights_only=True)
+        except Exception:
             checkpoint = torch.load(path, map_location=self.device)
         self.model.load_state_dict(checkpoint['model_state_dict'], strict=strict)
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])

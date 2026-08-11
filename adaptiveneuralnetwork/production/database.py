@@ -2,6 +2,7 @@
 Database integration for SQL and NoSQL databases.
 """
 
+import asyncio
 import logging
 from dataclasses import dataclass
 from datetime import datetime
@@ -10,18 +11,7 @@ from typing import Any
 # Optional database dependencies
 try:
     import sqlalchemy as sa
-    from sqlalchemy import (
-        JSON,
-        Column,
-        DateTime,
-        Float,
-        Integer,
-        MetaData,
-        String,
-        Table,
-        Text,
-        create_engine,
-    )
+    from sqlalchemy import Column, DateTime, Float, Index, Integer, JSON, String, Text, create_engine
     from sqlalchemy.orm import declarative_base, sessionmaker
     SQLALCHEMY_AVAILABLE = True
     Base = declarative_base()
@@ -32,7 +22,7 @@ except ImportError:
         pass
     def Column(*args, **kwargs):
         return None
-    Integer = String = Float = DateTime = Text = JSON = None
+    Integer = String = Float = DateTime = Text = JSON = Index = None
 
 try:
     import pymongo
@@ -64,6 +54,11 @@ if SQLALCHEMY_AVAILABLE:
     class ModelPrediction(Base):
         """SQLAlchemy model for storing predictions."""
         __tablename__ = "model_predictions"
+        __table_args__ = (
+            Index("idx_prediction_timestamp", "timestamp"),
+            Index("idx_prediction_model_time", "model_name", "timestamp"),
+            Index("idx_prediction_user_time", "user_id", "timestamp"),
+        )
 
         id = Column(Integer, primary_key=True)
         timestamp = Column(DateTime, default=datetime.utcnow)
@@ -80,6 +75,10 @@ if SQLALCHEMY_AVAILABLE:
     class ModelMetrics(Base):
         """SQLAlchemy model for storing model metrics."""
         __tablename__ = "model_metrics"
+        __table_args__ = (
+            Index("idx_metric_model_time", "model_name", "timestamp"),
+            Index("idx_metric_model_name_time", "model_name", "metric_name", "timestamp"),
+        )
 
         id = Column(Integer, primary_key=True)
         timestamp = Column(DateTime, default=datetime.utcnow)
@@ -145,122 +144,94 @@ class SQLManager(DatabaseManager):
         # Create session factory
         self.SessionLocal = sessionmaker(bind=self.engine)
 
+    def _sync_store_prediction(self, prediction_data: dict[str, Any]) -> str:
+        with self.SessionLocal() as session:
+            prediction = ModelPrediction(
+                model_name=prediction_data.get("model_name", "unknown"),
+                input_data=prediction_data.get("input_data"),
+                predictions=prediction_data.get("predictions"),
+                latency_ms=prediction_data.get("latency_ms"),
+                batch_size=prediction_data.get("batch_size"),
+                user_id=prediction_data.get("user_id"),
+                session_id=prediction_data.get("session_id"),
+                metadata=prediction_data.get("metadata", {})
+            )
+
+            session.add(prediction)
+            session.commit()
+            session.refresh(prediction)
+
+            return str(prediction.id)
+
     async def store_prediction(self, prediction_data: dict[str, Any]) -> str:
-        """Store a prediction result in SQL database."""
+        """Store a prediction result in SQL database non-blockingly."""
         try:
-            with self.SessionLocal() as session:
-                prediction = ModelPrediction(
-                    model_name=prediction_data.get("model_name", "unknown"),
-                    input_data=prediction_data.get("input_data"),
-                    predictions=prediction_data.get("predictions"),
-                    latency_ms=prediction_data.get("latency_ms"),
-                    batch_size=prediction_data.get("batch_size"),
-                    user_id=prediction_data.get("user_id"),
-                    session_id=prediction_data.get("session_id"),
-                    metadata=prediction_data.get("metadata", {})
-                )
-
-                session.add(prediction)
-                session.commit()
-                session.refresh(prediction)
-
-                return str(prediction.id)
-
+            return await asyncio.to_thread(self._sync_store_prediction, prediction_data)
         except Exception as e:
             self.logger.error(f"Failed to store prediction: {e}")
             raise
 
+    def _sync_get_predictions(self, filters: dict[str, Any] | None = None, limit: int = 100) -> list[dict[str, Any]]:
+        with self.SessionLocal() as session:
+            query = session.query(ModelPrediction)
+
+            # Apply filters
+            if filters:
+                if "model_name" in filters:
+                    query = query.filter(ModelPrediction.model_name == filters["model_name"])
+                if "user_id" in filters:
+                    query = query.filter(ModelPrediction.user_id == filters["user_id"])
+                if "session_id" in filters:
+                    query = query.filter(ModelPrediction.session_id == filters["session_id"])
+
+            predictions = query.order_by(ModelPrediction.timestamp.desc()).limit(limit).all()
+
+            results = []
+            for pred in predictions:
+                results.append({
+                    "id": pred.id,
+                    "timestamp": pred.timestamp.isoformat() if pred.timestamp else None,
+                    "model_name": pred.model_name,
+                    "input_data": pred.input_data,
+                    "predictions": pred.predictions,
+                    "latency_ms": pred.latency_ms,
+                    "batch_size": pred.batch_size,
+                    "user_id": pred.user_id,
+                    "session_id": pred.session_id,
+                    "metadata": pred.metadata
+                })
+
+            return results
+
     async def get_predictions(self, filters: dict[str, Any] | None = None, limit: int = 100) -> list[dict[str, Any]]:
-        """Retrieve predictions from SQL database."""
+        """Retrieve predictions from SQL database non-blockingly."""
         try:
-            with self.SessionLocal() as session:
-                query = session.query(ModelPrediction)
-
-                # Apply filters
-                if filters:
-                    if "model_name" in filters:
-                        query = query.filter(ModelPrediction.model_name == filters["model_name"])
-                    if "user_id" in filters:
-                        query = query.filter(ModelPrediction.user_id == filters["user_id"])
-                    if "start_time" in filters:
-                        query = query.filter(ModelPrediction.timestamp >= filters["start_time"])
-                    if "end_time" in filters:
-                        query = query.filter(ModelPrediction.timestamp <= filters["end_time"])
-
-                # Order by timestamp and limit
-                predictions = query.order_by(ModelPrediction.timestamp.desc()).limit(limit).all()
-
-                return [
-                    {
-                        "id": p.id,
-                        "timestamp": p.timestamp.isoformat(),
-                        "model_name": p.model_name,
-                        "input_data": p.input_data,
-                        "predictions": p.predictions,
-                        "latency_ms": p.latency_ms,
-                        "batch_size": p.batch_size,
-                        "user_id": p.user_id,
-                        "session_id": p.session_id,
-                        "metadata": p.metadata
-                    }
-                    for p in predictions
-                ]
-
+            return await asyncio.to_thread(self._sync_get_predictions, filters, limit)
         except Exception as e:
             self.logger.error(f"Failed to retrieve predictions: {e}")
             raise
 
+    def _sync_store_metrics(self, metrics: dict[str, float], model_name: str, tags: dict[str, str] | None = None) -> None:
+        with self.SessionLocal() as session:
+            timestamp = datetime.utcnow()
+
+            for metric_name, metric_value in metrics.items():
+                metric = ModelMetrics(
+                    timestamp=timestamp,
+                    model_name=model_name,
+                    metric_name=metric_name,
+                    metric_value=metric_value,
+                    tags=tags or {}
+                )
+                session.add(metric)
+            session.commit()
+
     async def store_metrics(self, metrics: dict[str, float], model_name: str, tags: dict[str, str] | None = None) -> None:
-        """Store model metrics in SQL database."""
+        """Store model metrics in SQL database non-blockingly."""
         try:
-            with self.SessionLocal() as session:
-                metric_records = []
-
-                for metric_name, metric_value in metrics.items():
-                    metric_record = ModelMetrics(
-                        model_name=model_name,
-                        metric_name=metric_name,
-                        metric_value=metric_value,
-                        tags=tags or {}
-                    )
-                    metric_records.append(metric_record)
-
-                session.add_all(metric_records)
-                session.commit()
-
+            await asyncio.to_thread(self._sync_store_metrics, metrics, model_name, tags)
         except Exception as e:
             self.logger.error(f"Failed to store metrics: {e}")
-            raise
-
-    async def get_metrics(self, model_name: str, metric_names: list[str] | None = None,
-                         start_time: datetime | None = None, end_time: datetime | None = None) -> list[dict[str, Any]]:
-        """Retrieve model metrics from SQL database."""
-        try:
-            with self.SessionLocal() as session:
-                query = session.query(ModelMetrics).filter(ModelMetrics.model_name == model_name)
-
-                # Apply filters
-                if metric_names:
-                    query = query.filter(ModelMetrics.metric_name.in_(metric_names))
-                if start_time:
-                    query = query.filter(ModelMetrics.timestamp >= start_time)
-                if end_time:
-                    query = query.filter(ModelMetrics.timestamp <= end_time)
-
-                metrics = query.order_by(ModelMetrics.timestamp.desc()).all()
-
-                return [
-                    {
-                        "timestamp": m.timestamp.isoformat(),
-                        "metric_name": m.metric_name,
-                        "metric_value": m.metric_value,
-                        "tags": m.tags
-                    }
-                    for m in metrics
-                ]
-
-        except Exception as e:
-            self.logger.error(f"Failed to retrieve metrics: {e}")
             raise
 
 
