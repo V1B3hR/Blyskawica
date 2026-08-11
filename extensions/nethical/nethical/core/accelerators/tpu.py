@@ -36,7 +36,7 @@ import logging
 import os
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any
 
 import numpy as np
 
@@ -70,7 +70,7 @@ class TPUSpecs:
     version: TPUVersion
     year: int
     tflops: float  # Peak TFLOPS (FP32 unless noted)
-    fp8_tflops: Optional[float]  # FP8 TFLOPS if supported
+    fp8_tflops: float | None  # FP8 TFLOPS if supported
     memory_gb: float
     memory_type: str
     supports_fp8: bool
@@ -80,7 +80,7 @@ class TPUSpecs:
 
 
 # TPU specifications by version
-TPU_SPECS: Dict[TPUVersion, TPUSpecs] = {
+TPU_SPECS: dict[TPUVersion, TPUSpecs] = {
     TPUVersion.TPU_V2: TPUSpecs(
         version=TPUVersion.TPU_V2,
         year=2017,
@@ -160,8 +160,8 @@ log = logging.getLogger(__name__)
 # Check for torch_xla availability
 XLA_AVAILABLE = False
 try:
-    import torch
-    import torch_xla
+    import torch  # noqa: F401
+    import torch_xla  # noqa: F401
     import torch_xla.core.xla_model as xm
 
     XLA_AVAILABLE = True
@@ -169,7 +169,7 @@ except ImportError:
     log.debug("torch_xla not available - TPU acceleration disabled")
 
 
-def detect_tpu_version() -> Optional[TPUVersion]:
+def detect_tpu_version() -> TPUVersion | None:
     """Detect the TPU version from runtime environment.
 
     Returns:
@@ -244,7 +244,7 @@ def is_tpu_available() -> bool:
         return False
 
 
-def get_tpu_info() -> Dict[str, Any]:
+def get_tpu_info() -> dict[str, Any]:
     """Get TPU device information.
 
     Returns:
@@ -315,21 +315,21 @@ class TPUAccelerator(AcceleratorInterface):
             config: Accelerator configuration
         """
         super().__init__(config)
-        self._compiled_models: Dict[int, Any] = {}
-        self._tpu_version: Optional[TPUVersion] = None
-        self._tpu_specs: Optional[TPUSpecs] = None
+        self._compiled_models: dict[int, Any] = {}
+        self._tpu_version: TPUVersion | None = None
+        self._tpu_specs: TPUSpecs | None = None
 
     @property
     def backend(self) -> AcceleratorBackend:
         return AcceleratorBackend.TPU
 
     @property
-    def tpu_version(self) -> Optional[TPUVersion]:
+    def tpu_version(self) -> TPUVersion | None:
         """Get detected TPU version."""
         return self._tpu_version
 
     @property
-    def tpu_specs(self) -> Optional[TPUSpecs]:
+    def tpu_specs(self) -> TPUSpecs | None:
         """Get TPU specifications."""
         return self._tpu_specs
 
@@ -516,7 +516,7 @@ class TPUAccelerator(AcceleratorInterface):
         if self._initialized:
             xm.mark_step()
 
-    def get_memory_info(self) -> Dict[str, float]:
+    def get_memory_info(self) -> dict[str, float]:
         """Get TPU memory usage.
 
         Returns:
@@ -564,7 +564,7 @@ class TPUAccelerator(AcceleratorInterface):
             self._device = None
             log.info("TPU accelerator shutdown")
 
-    def compile_model(self, model: Any, example_inputs: Optional[Any] = None) -> Any:
+    def compile_model(self, model: Any, example_inputs: Any | None = None) -> Any:
         """Compile model for TPU with XLA.
 
         Uses XLA tracing for optimized graph execution.
@@ -609,7 +609,7 @@ class TPUAccelerator(AcceleratorInterface):
         self,
         model: Any,
         inputs: np.ndarray,
-        batch_size: Optional[int] = None,
+        batch_size: int | None = None,
     ) -> np.ndarray:
         """Execute batch inference with TPU-optimized batching.
 

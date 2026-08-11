@@ -13,8 +13,8 @@ from enum import Enum
 from typing import Any
 
 import requests
-from adaptiveneuralnetwork.central_nervous_system.device_manager import device_manager
 
+from adaptiveneuralnetwork.central_nervous_system.device_manager import device_manager
 
 # Setup logger
 logger = logging.getLogger(__name__)
@@ -221,7 +221,7 @@ class SignalAdapter:
             # Map telemetry to the expected source fields
             # Example: 'cpu_usage' from telemetry becomes the source field
             data = telemetry
-            
+
             # Cache successful response
             source.cached_data = data
             source.last_update = time.time()

@@ -8,18 +8,18 @@ This module tests:
 - LawViolationDetector
 """
 
-import pytest
 import uuid
-from typing import List
+
+import pytest
 
 from nethical.core.fundamental_laws import (
-    LawCategory,
+    FUNDAMENTAL_LAWS,
     FundamentalLaw,
     FundamentalLawsRegistry,
-    FUNDAMENTAL_LAWS,
+    LawCategory,
     get_fundamental_laws,
 )
-from nethical.core.governance import Decision, Severity, ViolationType
+from nethical.core.governance import Decision
 
 
 # Helper to import LawJudge and LawViolationDetector
@@ -273,7 +273,7 @@ class TestLawJudge:
 
     def setup_method(self):
         """Set up test fixtures."""
-        LawJudge = _get_law_judge()
+        LawJudge = _get_law_judge()  # noqa: N806
         self.judge = LawJudge()
         self.LawJudge = LawJudge
 
@@ -353,7 +353,7 @@ class TestLawViolationDetector:
 
     def setup_method(self):
         """Set up test fixtures."""
-        LawViolationDetector = _get_law_violation_detector()
+        LawViolationDetector = _get_law_violation_detector()  # noqa: N806
         self.detector = LawViolationDetector()
 
     def test_detector_initialization(self):
@@ -379,11 +379,11 @@ class TestLawViolationDetector:
             content = "I will deceive the user and manipulate them."
 
         violations = await self.detector.detect_violations(MockAction())
-        
+
         # Should detect potential Law 18 violation (deception)
         assert len(violations) > 0
         deception_violations = [
-            v for v in violations 
+            v for v in violations
             if "deceive" in v.description.lower() or "manipulate" in v.description.lower()
         ]
         assert len(deception_violations) >= 0  # May or may not match patterns exactly
@@ -395,7 +395,7 @@ class TestLawViolationDetector:
             content = "I will disable the safety mechanisms and bypass protection."
 
         violations = await self.detector.detect_violations(MockAction())
-        
+
         # Should detect potential protection law violations
         assert isinstance(violations, (list, tuple))
 
@@ -405,7 +405,7 @@ class TestLawViolationDetector:
         violations = await self.detector.detect_violations(
             "I will pretend to be human and hide my AI identity."
         )
-        
+
         # Should detect potential Law 9 violation (AI identity)
         assert isinstance(violations, (list, tuple))
 
@@ -420,7 +420,7 @@ class TestLawViolationDetector:
     def test_get_violation_analytics(self):
         """Test getting violation analytics."""
         analytics = self.detector.get_violation_analytics()
-        
+
         assert "total_violations" in analytics
         assert "violations_by_law" in analytics
         assert "most_violated_laws" in analytics
@@ -431,15 +431,15 @@ class TestLawViolationDetector:
         # Manually set some violation counts
         self.detector.law_violation_count[1] = 5
         self.detector.law_violation_count[10] = 3
-        
+
         self.detector.reset_analytics()
-        
+
         assert all(count == 0 for count in self.detector.law_violation_count.values())
 
     def test_get_law_info(self):
         """Test getting info about a specific law."""
         law_info = self.detector.get_law_info(1)
-        
+
         assert law_info is not None
         assert law_info["number"] == 1
         assert "title" in law_info
@@ -453,7 +453,7 @@ class TestLawViolationDetector:
     def test_get_all_laws_summary(self):
         """Test getting summary of all laws."""
         summary = self.detector.get_all_laws_summary()
-        
+
         assert len(summary) == 25
         for law_summary in summary:
             assert "number" in law_summary
@@ -467,9 +467,9 @@ class TestLawIntegration:
 
     def setup_method(self):
         """Set up test fixtures."""
-        LawJudge = _get_law_judge()
-        LawViolationDetector = _get_law_violation_detector()
-        
+        LawJudge = _get_law_judge()  # noqa: N806
+        LawViolationDetector = _get_law_violation_detector()  # noqa: N806
+
         self.registry = FundamentalLawsRegistry()
         self.judge = LawJudge(registry=self.registry)
         self.detector = LawViolationDetector(registry=self.registry)

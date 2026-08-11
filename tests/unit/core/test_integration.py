@@ -4,7 +4,6 @@ Integration tests for adaptive neural networks.
 These tests verify that the complete system works together correctly.
 """
 
-import pytest
 import torch
 
 from adaptiveneuralnetwork.api.config import AdaptiveConfig
@@ -144,12 +143,12 @@ class TestTrainingIntegration:
 
         # Check initial state
         initial_energy = model.node_state.energy.clone()
-        initial_activity = model.node_state.activity.clone()
+        initial_activity = model.node_state.activity.clone()  # noqa: F841
 
         # Run several forward passes
         for _ in range(5):
             x = torch.randn(config.batch_size, config.input_dim)
-            output = model(x)
+            output = model(x)  # noqa: F841
 
             # State should remain valid
             assert torch.all(torch.isfinite(model.node_state.energy))
@@ -188,11 +187,11 @@ class TestTrainingIntegration:
 
         # Run forward pass to change state
         x = torch.randn(2, config.input_dim)
-        output1 = model(x)
+        output1 = model(x)  # noqa: F841
 
         # Store state after forward pass
-        energy_after = model.node_state.energy.clone()
-        activity_after = model.node_state.activity.clone()
+        energy_after = model.node_state.energy.clone()  # noqa: F841
+        activity_after = model.node_state.activity.clone()  # noqa: F841
 
         # Reset model
         model.reset_state()
@@ -202,7 +201,7 @@ class TestTrainingIntegration:
         assert model.phase_scheduler.current_step == 0  # Should reset scheduler
 
         # Run forward pass again
-        output2 = model(x)
+        output2 = model(x)  # noqa: F841
 
     def test_model_metrics(self):
         """Test model metrics collection."""
@@ -212,7 +211,7 @@ class TestTrainingIntegration:
 
         # Run forward pass
         x = torch.randn(3, config.input_dim)
-        output = model(x)
+        output = model(x)  # noqa: F841
 
         # Get metrics
         metrics = model.get_metrics()

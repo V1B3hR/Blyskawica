@@ -6,8 +6,8 @@ advanced filtering, and analytics on audit logs and governance events.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
 from datetime import datetime, timezone
+from typing import Any
 
 try:
     from elasticsearch import Elasticsearch
@@ -34,9 +34,9 @@ class ElasticsearchAuditStore:
 
     def __init__(
         self,
-        hosts: List[str] = None,
-        username: Optional[str] = None,
-        password: Optional[str] = None,
+        hosts: list[str] = None,
+        username: str | None = None,
+        password: str | None = None,
         index_prefix: str = "nethical",
         enabled: bool = True,
     ):
@@ -156,13 +156,13 @@ class ElasticsearchAuditStore:
         action_id: str,
         agent_id: str,
         decision: str,
-        action_data: Dict[str, Any],
-        violations: Optional[List[Dict[str, Any]]] = None,
-        timestamp: Optional[datetime] = None,
-        region_id: Optional[str] = None,
-        logical_domain: Optional[str] = None,
-        risk_score: Optional[float] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        action_data: dict[str, Any],
+        violations: list[dict[str, Any]] | None = None,
+        timestamp: datetime | None = None,
+        region_id: str | None = None,
+        logical_domain: str | None = None,
+        risk_score: float | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> bool:
         """
         Index an audit log entry.
@@ -216,12 +216,12 @@ class ElasticsearchAuditStore:
         self,
         event_type: str,
         message: str,
-        agent_id: Optional[str] = None,
+        agent_id: str | None = None,
         severity: str = "INFO",
-        timestamp: Optional[datetime] = None,
-        region_id: Optional[str] = None,
-        logical_domain: Optional[str] = None,
-        data: Optional[Dict[str, Any]] = None,
+        timestamp: datetime | None = None,
+        region_id: str | None = None,
+        logical_domain: str | None = None,
+        data: dict[str, Any] | None = None,
     ) -> bool:
         """
         Index an event.
@@ -266,20 +266,20 @@ class ElasticsearchAuditStore:
 
     def search_audit_logs(
         self,
-        query: Optional[str] = None,
-        agent_id: Optional[str] = None,
-        decision: Optional[str] = None,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
-        region_id: Optional[str] = None,
-        logical_domain: Optional[str] = None,
-        violation_types: Optional[List[str]] = None,
-        min_risk_score: Optional[float] = None,
+        query: str | None = None,
+        agent_id: str | None = None,
+        decision: str | None = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
+        region_id: str | None = None,
+        logical_domain: str | None = None,
+        violation_types: list[str] | None = None,
+        min_risk_score: float | None = None,
         size: int = 100,
         from_: int = 0,
         sort_by: str = "timestamp",
         sort_order: str = "desc",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Search audit logs with advanced filtering.
 
@@ -378,10 +378,10 @@ class ElasticsearchAuditStore:
 
     def get_audit_log_statistics(
         self,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
-        region_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
+        region_id: str | None = None,
+    ) -> dict[str, Any]:
         """
         Get audit log statistics and aggregations.
 

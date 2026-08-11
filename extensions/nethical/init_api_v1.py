@@ -17,8 +17,8 @@ Options:
 import argparse
 import sys
 
-from nethical.database import SessionLocal, User, init_db
 from nethical.api.rbac import get_password_hash
+from nethical.database import SessionLocal, User, init_db
 
 
 def create_admin_user(username: str, password: str, email: str) -> bool:
@@ -31,16 +31,16 @@ def create_admin_user(username: str, password: str, email: str) -> bool:
         
     Returns:
         True if successful, False otherwise
-    """
+    """  # noqa: W293
     db = SessionLocal()
-    
+
     try:
         # Check if user already exists
         existing = db.query(User).filter(User.username == username).first()
         if existing:
             print(f"✗ User '{username}' already exists")
             return False
-        
+
         # Create admin user
         admin = User(
             username=username,
@@ -50,23 +50,23 @@ def create_admin_user(username: str, password: str, email: str) -> bool:
             role="admin",
             is_active=True,
         )
-        
+
         db.add(admin)
         db.commit()
         db.refresh(admin)
-        
+
         print(f"✓ Created admin user: {username}")
         print(f"  Email: {email}")
         print(f"  Role: {admin.role}")
         print(f"  ID: {admin.id}")
-        
+
         return True
-    
+
     except Exception as e:
         print(f"✗ Error creating admin user: {e}")
         db.rollback()
         return False
-    
+
     finally:
         db.close()
 
@@ -79,16 +79,16 @@ def create_sample_agent(db_session) -> bool:
         
     Returns:
         True if successful
-    """
+    """  # noqa: W293
     from nethical.database import Agent
-    
+
     try:
         # Check if sample agent exists
         existing = db_session.query(Agent).filter(Agent.agent_id == "sample-gpt4").first()
         if existing:
             print("✓ Sample agent already exists")
             return True
-        
+
         # Create sample agent
         agent = Agent(
             agent_id="sample-gpt4",
@@ -101,13 +101,13 @@ def create_sample_agent(db_session) -> bool:
             meta_data={"environment": "development"},
             created_by="admin",
         )
-        
+
         db_session.add(agent)
         db_session.commit()
-        
+
         print("✓ Created sample agent: sample-gpt4")
         return True
-    
+
     except Exception as e:
         print(f"✗ Error creating sample agent: {e}")
         db_session.rollback()
@@ -122,16 +122,16 @@ def create_sample_policy(db_session) -> bool:
         
     Returns:
         True if successful
-    """
+    """  # noqa: W293
     from nethical.database import Policy
-    
+
     try:
         # Check if sample policy exists
         existing = db_session.query(Policy).filter(Policy.policy_id == "sample-policy").first()
         if existing:
             print("✓ Sample policy already exists")
             return True
-        
+
         # Create sample policy
         policy = Policy(
             policy_id="sample-policy",
@@ -155,13 +155,13 @@ def create_sample_policy(db_session) -> bool:
             meta_data={"category": "security"},
             created_by="admin",
         )
-        
+
         db_session.add(policy)
         db_session.commit()
-        
+
         print("✓ Created sample policy: sample-policy")
         return True
-    
+
     except Exception as e:
         print(f"✗ Error creating sample policy: {e}")
         db_session.rollback()
@@ -175,25 +175,25 @@ def main():
     parser.add_argument("--password", default="admin123", help="Admin password")
     parser.add_argument("--email", default="admin@example.com", help="Admin email")
     parser.add_argument("--no-samples", action="store_true", help="Don't create sample data")
-    
+
     args = parser.parse_args()
-    
+
     print("=" * 60)
     print("  Nethical API v1 Initialization")
     print("=" * 60)
-    
+
     try:
         # Initialize database
         print("\nInitializing database...")
         init_db()
         print("✓ Database initialized")
-        
+
         # Create admin user
         print("\nCreating admin user...")
         if not create_admin_user(args.username, args.password, args.email):
             # User already exists, but that's ok
             pass
-        
+
         # Create sample data
         if not args.no_samples:
             print("\nCreating sample data...")
@@ -203,7 +203,7 @@ def main():
                 create_sample_policy(db)
             finally:
                 db.close()
-        
+
         # Success
         print("\n" + "=" * 60)
         print("  Initialization Complete!")
@@ -218,9 +218,9 @@ def main():
         print("     http://localhost:8000/docs")
         print("\n  4. Run demo:")
         print("     python demo_api_v1.py")
-        
+
         return 0
-    
+
     except Exception as e:
         print(f"\n✗ Initialization failed: {e}")
         import traceback

@@ -9,7 +9,7 @@ import asyncio
 import logging
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any
 
 from .base import (
     ConnectionConfig,
@@ -36,8 +36,8 @@ class OneWebTerminalStatus:
     latency_ms: float = 0.0
 
     # Satellite info
-    connected_satellite_id: Optional[str] = None
-    beam_id: Optional[str] = None
+    connected_satellite_id: str | None = None
+    beam_id: str | None = None
 
 
 class OneWebProvider(SatelliteProvider):
@@ -58,7 +58,7 @@ class OneWebProvider(SatelliteProvider):
     TYPICAL_LATENCY_MS = 32.0
     TYPICAL_BANDWIDTH_MBPS = 50.0
 
-    def __init__(self, config: Optional[ConnectionConfig] = None):
+    def __init__(self, config: ConnectionConfig | None = None):
         """
         Initialize OneWeb provider.
 
@@ -66,7 +66,7 @@ class OneWebProvider(SatelliteProvider):
             config: Connection configuration
         """
         super().__init__(config)
-        self._terminal_status: Optional[OneWebTerminalStatus] = None
+        self._terminal_status: OneWebTerminalStatus | None = None
         self._terminal_address = self.config.provider_options.get(
             "terminal_address", "192.168.1.1"
         )
@@ -123,7 +123,7 @@ class OneWebProvider(SatelliteProvider):
             raise
         except Exception as e:
             self.state = ConnectionState.ERROR
-            raise SatelliteConnectionError(
+            raise SatelliteConnectionError(  # noqa: B904
                 f"OneWeb connection failed: {str(e)}",
                 self.provider_name,
             )
@@ -166,12 +166,12 @@ class OneWebProvider(SatelliteProvider):
             return True
         except Exception as e:
             self._metrics.errors_count += 1
-            raise SatelliteConnectionError(
+            raise SatelliteConnectionError(  # noqa: B904
                 f"Send failed: {str(e)}",
                 self.provider_name,
             )
 
-    async def receive(self, timeout: Optional[float] = None) -> Optional[bytes]:
+    async def receive(self, timeout: float | None = None) -> bytes | None:
         """
         Receive data from OneWeb connection.
 
@@ -193,7 +193,7 @@ class OneWebProvider(SatelliteProvider):
             return None
         except Exception as e:
             self._metrics.errors_count += 1
-            raise SatelliteConnectionError(
+            raise SatelliteConnectionError(  # noqa: B904
                 f"Receive failed: {str(e)}",
                 self.provider_name,
             )
@@ -227,7 +227,7 @@ class OneWebProvider(SatelliteProvider):
             logger.error(f"OneWeb health check failed: {e}")
             return False
 
-    async def get_signal_info(self) -> Dict[str, Any]:
+    async def get_signal_info(self) -> dict[str, Any]:
         """
         Get current OneWeb signal information.
 

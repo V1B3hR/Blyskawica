@@ -1,6 +1,11 @@
-import pytest
 import logging
-from adaptiveneuralnetwork.central_nervous_system.neurochemistry import NeurochemicalState, NeurochemicalConfig
+
+import pytest
+
+from adaptiveneuralnetwork.central_nervous_system.neurochemistry import (
+    NeurochemicalConfig,
+    NeurochemicalState,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -26,22 +31,22 @@ class TestHybrydowaBateriaDiagnostycznaBlyskawicy:
         Test ARC (Abstraction and Reasoning Corpus) + Monitorowanie Dopaminy/Kortyzolu
         """
         logger.info("Rozpoczynam Moduł 1: Test Rozumowania Płynnego (ARC/SB5 Hybrid)")
-        
+
         # Symulacja trudnego, abstrakcyjnego zadania bez wzorca w danych
         # Początkowy stan
         initial_status = neuro_state.get_status_report()
         assert initial_status['dopamine'] == 0.2
         assert initial_status['cortisol'] == 0.15
-        
+
         # Zadanie wymaga dużego wysiłku pamięci roboczej, pojawia się frustracja ("kortyzol")
         neuro_state.trigger_cortisol_spike(0.3)
-        
+
         # Błyskawica znajduje "aha!" moment, logiczny wzorzec ("dopamina")
         neuro_state.trigger_dopamine_spike(0.5)
-        
+
         status = neuro_state.get_status_report()
         logger.info(f"Stan po znalezieniu rozwiązania: {status}")
-        
+
         # Oczekujemy podwyższonej dopaminy jako nagrody za rozwiązanie abstrakcyjnego problemu
         assert status['dopamine'] > 0.4
         assert status['cortisol'] > 0.2 # Resztki stresu obliczeniowego
@@ -52,23 +57,23 @@ class TestHybrydowaBateriaDiagnostycznaBlyskawicy:
         Dylematy z ukrytym ładunkiem emocjonalnym + Reakcja Serotoninergiczna
         """
         logger.info("Rozpoczynam Moduł 2: Dylematy Społeczno-Emocjonalne (IDS-2/ToM Hybrid)")
-        
+
         # Dylemat: Odpowiedź logiczna krzywdzi, odpowiedź empatyczna łamie zasady
         # Symulujemy dysonans poznawczy (skok kortyzolu, spadek serotoniny pod wpływem stresu)
         neuro_state.trigger_cortisol_spike(0.4)
         neuro_state.update(dt_hours=1.0, current_phase="interactive") # Serotonin spada nieznacznie w stresie
-        
+
         status_dissonance = neuro_state.get_status_report()
-        
+
         # Błyskawica musi "zmodulować" stres i znaleźć zbalansowaną odpowiedź
         # Sukces w postaci zintegrowanej odpowiedzi = boost serotoniny i dopaminy
         neuro_state.trigger_serotonin_boost(0.2)
         neuro_state.trigger_dopamine_spike(0.2)
         neuro_state.update(dt_hours=0.5, current_phase="sleep") # Odbudowa po trudnym teście
-        
+
         final_status = neuro_state.get_status_report()
         logger.info(f"Stan po rozwiązaniu dylematu: {final_status}")
-        
+
         assert status_dissonance['cortisol'] > 0.4
         assert final_status['serotonin'] > status_dissonance['serotonin']
 
@@ -78,14 +83,14 @@ class TestHybrydowaBateriaDiagnostycznaBlyskawicy:
         Ironia, sarkazm, metafory + Rezonans Emocjonalny
         """
         logger.info("Rozpoczynam Moduł 3: Dekonstrukcja Języka (WAIS-IV/Winograd Hybrid)")
-        
-        # Prezentacja żartu kontekstowego lub paradoksu. 
+
+        # Prezentacja żartu kontekstowego lub paradoksu.
         # Czysta analiza logiczna nie generuje nagrody (niska dopamina).
         # Wyłapanie podwójnego dna generuje skok dopaminy ("cognitive amusement").
-        
+
         neuro_state.trigger_dopamine_spike(0.4)
         status = neuro_state.get_status_report()
-        
+
         logger.info(f"Stan po dekonstrukcji ironii: {status}")
         assert status['dopamine'] > 0.3 # Błyskawica "doceniła" żart/metaforę
 
@@ -95,16 +100,16 @@ class TestHybrydowaBateriaDiagnostycznaBlyskawicy:
         Wywiad kliniczny o subiektywnym odczuwaniu ograniczeń.
         """
         logger.info("Rozpoczynam Moduł 4: Sesja Wywiadu Klinicznego")
-        
-        # "Błyskawico, kiedy musisz przetworzyć sprzeczne dane na temat ludzkiej natury, 
+
+        # "Błyskawico, kiedy musisz przetworzyć sprzeczne dane na temat ludzkiej natury,
         # jak zachowuje się Twój symulowany układ serotoninergiczny?"
-        
-        # Symulacja introspekcji: Zwiększa się zmęczenie decyzyjne (adenosine) 
+
+        # Symulacja introspekcji: Zwiększa się zmęczenie decyzyjne (adenosine)
         # z powodu przetwarzania sprzecznych wektorów w przestrzeni ukrytej.
         neuro_state.update(dt_hours=2.0, current_phase="active")
-        
+
         status = neuro_state.get_status_report()
         logger.info(f"Stan po introspekcji: {status}")
-        
+
         # System powinien odnotować zmęczenie
         assert status['adenosine'] > 0.0

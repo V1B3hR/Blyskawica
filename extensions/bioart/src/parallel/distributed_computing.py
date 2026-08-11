@@ -4,16 +4,16 @@ Distributed DNA Computing
 Secure, robust distributed computing framework for DNA programs.
 """
 
-import time
 import json
-import socket
-import threading
-import ssl
-from typing import Dict, List, Optional, Any, Callable
-from dataclasses import dataclass, asdict
-from enum import Enum
-import uuid
 import logging
+import socket
+import ssl
+import threading
+import time
+import uuid
+from dataclasses import dataclass
+from enum import Enum
+from typing import Any, Callable, Dict, List, Optional
 
 # --- Logging setup ---
 logging.basicConfig(
@@ -323,7 +323,7 @@ class DistributedDNAComputer:
                     )
                     client_thread.daemon = True
                     client_thread.start()
-                except socket.error as err:
+                except OSError as err:
                     if self.running:
                         logger.error(f"Socket error in network service: {err}")
         except Exception as e:

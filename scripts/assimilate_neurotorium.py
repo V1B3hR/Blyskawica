@@ -13,13 +13,13 @@ CHECKPOINT_FILE = os.path.join(BASE_DIR, "memory_checkpoint.json")
 
 class NeurotoriumAssimilator:
     def __init__(self):
-        with open(ATLAS_FILE, "r") as f:
+        with open(ATLAS_FILE) as f:
             self.atlas = json.load(f)
         self.load_checkpoint()
-        
+
     def load_checkpoint(self):
         if os.path.exists(CHECKPOINT_FILE):
-            with open(CHECKPOINT_FILE, "r") as f:
+            with open(CHECKPOINT_FILE) as f:
                 self.checkpoint = json.load(f)
         else:
             self.checkpoint = {"neurochemistry": {}}
@@ -32,12 +32,12 @@ class NeurotoriumAssimilator:
         chemistry = self.checkpoint.get("neurochemistry", {})
         regions = self.atlas["brain_regions"]
         alignment_report = {}
-        
+
         print("\n======================================================================")
         print(" === [NEUROTORIUM BRAIN ATLAS: SOMATIC BCI ALIGNMENT] ===")
         print("======================================================================\n")
         print("[+] Ingesting anatomical mappings from Neurotorium.org...")
-        
+
         # Prefrontal Cortex Alignment
         pfc = regions["Prefrontal_Cortex"]
         dopo = chemistry.get("Dopamina", 0.50)
@@ -48,11 +48,11 @@ class NeurotoriumAssimilator:
             "status": "EXCELLENT" if pfc_score >= 0.90 else "STABLE",
             "channels": pfc["eeg_channels_10_20"]
         }
-        
+
         # Hypothalamus Alignment
         hyp = regions["Hypothalamus"]
         cort = chemistry.get("Kortyzol", 0.50)
-        mela = chemistry.get("Melatonina", 0.10)
+        mela = chemistry.get("Melatonina", 0.10)  # noqa: F841
         # Low cortisol and good mela/oxy ratio
         hyp_score = min(1.0, (1.0 - cort) * 1.2)
         alignment_report["Hypothalamus"] = {
@@ -60,7 +60,7 @@ class NeurotoriumAssimilator:
             "status": "EXCELLENT" if hyp_score >= 0.85 else "ADAPTING",
             "channels": hyp["eeg_channels_10_20"]
         }
-        
+
         # Thalamus Alignment (GABA noise filtering check)
         thal = regions["Thalamus"]
         gaba = chemistry.get("GABA", 0.50)
@@ -70,7 +70,7 @@ class NeurotoriumAssimilator:
             "status": "EXCELLENT" if thal_score >= 0.90 else "STABLE",
             "channels": thal["eeg_channels_10_20"]
         }
-        
+
         # Amygdala Calmness Score (Checks low noradrenaline stress)
         amy = regions["Amygdala"]
         nor = chemistry.get("Noradrenalina", 0.50)
@@ -88,12 +88,12 @@ class NeurotoriumAssimilator:
             print(f"     * EEG Electrodes: {data['channels']}")
             print(f"     * Somatic Alignment Index: {data['score']:.4f} ({data['status']})")
             print("     " + "-" * 50)
-            
+
         # Global Somatic Index
         global_index = sum([d["score"] for d in alignment_report.values()]) / len(alignment_report)
         print(f"\n[SUCCESS] Global BCI-Somatic Alignment Index: {global_index:.4f} (System Synced)")
         print("======================================================================\n")
-        
+
         return alignment_report, global_index
 
 if __name__ == "__main__":

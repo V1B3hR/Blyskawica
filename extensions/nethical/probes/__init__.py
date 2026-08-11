@@ -8,26 +8,26 @@ Probes mirror the formal specifications defined in Phase 3-6 and provide
 real-time operational visibility into system behavior.
 """
 
+from .anomaly_detector import AlertSystem, AnomalyDetector
 from .base_probe import BaseProbe, ProbeResult, ProbeStatus
-from .invariant_probes import (
-    DeterminismProbe,
-    TerminationProbe,
-    AcyclicityProbe,
-    AuditCompletenessProbe,
-    NonRepudiationProbe,
-)
 from .governance_probes import (
+    DataMinimizationProbe,
     MultiSigProbe,
     PolicyLineageProbe,
-    DataMinimizationProbe,
     TenantIsolationProbe,
+)
+from .invariant_probes import (
+    AcyclicityProbe,
+    AuditCompletenessProbe,
+    DeterminismProbe,
+    NonRepudiationProbe,
+    TerminationProbe,
 )
 from .performance_probes import (
     LatencyProbe,
-    ThroughputProbe,
     ResourceUtilizationProbe,
+    ThroughputProbe,
 )
-from .anomaly_detector import AnomalyDetector, AlertSystem
 
 __all__ = [
     "BaseProbe",

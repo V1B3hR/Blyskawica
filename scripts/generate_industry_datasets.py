@@ -9,6 +9,7 @@ dla Błyskawicy, odzwierciedlające:
 
 import json
 import os
+
 import numpy as np
 
 DATA_DIR = r"c:\Projekty\Blyskawica_V8\data"
@@ -52,7 +53,7 @@ def generate_materials_data():
             "crystal_structure": "Austenitic"
         }
     }
-    
+
     file_path = os.path.join(DATA_DIR, "materials_thermo.json")
     with open(file_path, "w") as f:
         json.dump(materials, f, indent=4)
@@ -62,25 +63,25 @@ def generate_ibm_memristor_drift():
     """Generuje model dryfu czasowego oporności memrystorów PCM (Phase-Change Memory)."""
     np.random.seed(42)
     timesteps = np.linspace(0.1, 1000, 100) # Czas w godzinach
-    
+
     # Model dryfu oporności R(t) = R0 * (t/t0)^drift_coefficient
     devices = {}
     for device_id in range(1, 6):
         r0 = np.random.uniform(5000, 20000) # Oporność początkowa w Ohm
         drift_coeff = np.random.uniform(0.05, 0.12) # Współczynnik dryfu
-        
+
         resistances = r0 * (timesteps / 0.1) ** (-drift_coeff)
         # Dodajemy fizyczny szum termiczny i 1/f
         noise = np.random.normal(0, r0 * 0.02, size=len(timesteps))
         final_resistances = np.clip(resistances + noise, 1000, 50000)
-        
+
         devices[f"Memristor_{device_id}"] = {
             "initial_resistance_ohm": r0,
             "drift_coefficient": drift_coeff,
             "time_hours": timesteps.tolist(),
             "resistance_history_ohm": final_resistances.tolist()
         }
-        
+
     file_path = os.path.join(DATA_DIR, "ibm_memristor_drift.json")
     with open(file_path, "w") as f:
         json.dump(devices, f, indent=4)
@@ -91,19 +92,19 @@ def generate_nasa_ims_bearing_signals():
     np.random.seed(100)
     fs = 20000 # 20 kHz próbowania
     t = np.linspace(0, 1, fs)
-    
+
     # Stan normalny (szum + małe wibracje rotacyjne)
     signal_normal = 0.1 * np.sin(2 * np.pi * 50 * t) + np.random.normal(0, 0.05, fs)
-    
+
     # Stan uszkodzenia (Outer Race Failure - okresowe uderzenia wibracyjne)
     impact_freq = 120 # Częstotliwość uderzeń w Hz
     impact_signal = np.zeros(fs)
     for i in range(0, fs, int(fs/impact_freq)):
         size = min(200, fs - i)
         impact_signal[i:i+size] = np.exp(-1000 * t[:size]) * np.sin(2 * np.pi * 2000 * t[:size])
-        
+
     signal_fault = signal_normal + 0.8 * impact_signal
-    
+
     dataset = {
         "sampling_rate_hz": fs,
         "normal_state": {
@@ -115,7 +116,7 @@ def generate_nasa_ims_bearing_signals():
             "vibration_data_snapshot": signal_fault[:1000].tolist()
         }
     }
-    
+
     file_path = os.path.join(DATA_DIR, "nasa_ims_bearing_signals.json")
     with open(file_path, "w") as f:
         json.dump(dataset, f, indent=4)

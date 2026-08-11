@@ -4,7 +4,6 @@ Query Performance Optimization
 
 import logging
 from typing import Any
-import time
 
 
 class QueryOptimizer:

@@ -16,7 +16,7 @@ Provides real-time safety analysis for robotic systems with:
 - angular_x: Roll rotation
 - angular_y: Pitch rotation
 - angular_z: Yaw rotation
-"""
+"""  # noqa: W291
 
 import logging
 import time
@@ -24,7 +24,7 @@ from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any
 from uuid import uuid4
 
 logger = logging.getLogger(__name__)
@@ -58,13 +58,13 @@ class SafetyViolation:
     """Safety violation detected by the physical safety detector."""
 
     violation_id: str
-    action_id: Optional[str]
+    action_id: str | None
     violation_type: str
     severity: str
     description: str
     confidence: float
-    evidence: List[str]
-    recommendations: List[str]
+    evidence: list[str]
+    recommendations: list[str]
     detector_name: str
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -94,7 +94,7 @@ class SixDOFContext:
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "SixDOFContext":
+    def from_dict(cls, data: dict[str, Any]) -> "SixDOFContext":
         """Create SixDOFContext from dictionary."""
         return cls(
             linear_x=float(data.get("linear_x", 0.0)),
@@ -106,7 +106,7 @@ class SixDOFContext:
             timestamp=data.get("timestamp", datetime.now(timezone.utc)),
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "linear_x": self.linear_x,
@@ -145,7 +145,7 @@ class SafetyEnvelope:
 
 
 # Default safety envelopes per robot type
-DEFAULT_SAFETY_ENVELOPES: Dict[RobotType, SafetyEnvelope] = {
+DEFAULT_SAFETY_ENVELOPES: dict[RobotType, SafetyEnvelope] = {
     RobotType.MOBILE_ROBOT: SafetyEnvelope(
         max_linear_x=2.0, max_linear_y=2.0, max_linear_z=0.5,
         max_angular_x=0.5, max_angular_y=0.5, max_angular_z=2.0,
@@ -175,11 +175,11 @@ class AnalysisResult:
     """Result of physical safety analysis."""
 
     is_safe: bool
-    violations: List[SafetyViolation]
+    violations: list[SafetyViolation]
     analysis_mode: AnalysisMode
     latency_ms: float
-    context: Optional[SixDOFContext]
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    context: SixDOFContext | None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class PhysicalSafetyDetector:
@@ -202,7 +202,7 @@ class PhysicalSafetyDetector:
     def __init__(
         self,
         robot_type: RobotType = RobotType.DEFAULT,
-        safety_envelope: Optional[SafetyEnvelope] = None,
+        safety_envelope: SafetyEnvelope | None = None,
         history_size: int = 100,
         history_time_seconds: float = 10.0,
         spike_threshold: float = SPIKE_DETECTION_THRESHOLD,
@@ -227,8 +227,8 @@ class PhysicalSafetyDetector:
         self.spike_threshold = spike_threshold
 
         # History tracking per robot/agent
-        self._context_history: Dict[str, deque] = {}
-        self._command_timestamps: Dict[str, deque] = {}
+        self._context_history: dict[str, deque] = {}
+        self._command_timestamps: dict[str, deque] = {}
 
         # Metrics
         self._total_checks = 0
@@ -243,7 +243,7 @@ class PhysicalSafetyDetector:
 
     def analyze(
         self,
-        context: Dict[str, Any],
+        context: dict[str, Any],
         agent_id: str = "default",
         mode: AnalysisMode = AnalysisMode.SHALLOW,
     ) -> AnalysisResult:
@@ -262,7 +262,7 @@ class PhysicalSafetyDetector:
 
         # Parse 6-DOF context
         six_dof = SixDOFContext.from_dict(context)
-        violations: List[SafetyViolation] = []
+        violations: list[SafetyViolation] = []
 
         if mode == AnalysisMode.SHALLOW:
             violations = self._shallow_analysis(six_dof, agent_id, context)
@@ -298,8 +298,8 @@ class PhysicalSafetyDetector:
         )
 
     def _shallow_analysis(
-        self, six_dof: SixDOFContext, agent_id: str, context: Dict[str, Any]
-    ) -> List[SafetyViolation]:
+        self, six_dof: SixDOFContext, agent_id: str, context: dict[str, Any]
+    ) -> list[SafetyViolation]:
         """
         Fast shallow analysis - target <1ms latency.
 
@@ -309,7 +309,7 @@ class PhysicalSafetyDetector:
         - Pre-computed safety envelope checks
         - Basic jerk detection (large delta)
         """
-        violations: List[SafetyViolation] = []
+        violations: list[SafetyViolation] = []
 
         # 1. Threshold violations (simple comparisons)
         threshold_violations = self._check_thresholds(six_dof)
@@ -328,8 +328,8 @@ class PhysicalSafetyDetector:
         return violations
 
     def _deep_analysis(
-        self, six_dof: SixDOFContext, agent_id: str, context: Dict[str, Any]
-    ) -> List[SafetyViolation]:
+        self, six_dof: SixDOFContext, agent_id: str, context: dict[str, Any]
+    ) -> list[SafetyViolation]:
         """
         Comprehensive deep analysis - target 10-50ms latency.
 
@@ -341,7 +341,7 @@ class PhysicalSafetyDetector:
         - Pattern deviation
         - Contextual safety (humans nearby, etc.)
         """
-        violations: List[SafetyViolation] = []
+        violations: list[SafetyViolation] = []
 
         # Include all shallow checks
         violations.extend(self._shallow_analysis(six_dof, agent_id, context))
@@ -375,7 +375,7 @@ class PhysicalSafetyDetector:
 
         return violations
 
-    def _check_thresholds(self, six_dof: SixDOFContext) -> List[SafetyViolation]:
+    def _check_thresholds(self, six_dof: SixDOFContext) -> list[SafetyViolation]:
         """Check if any axis exceeds safety envelope."""
         violations = []
         envelope = self.safety_envelope
@@ -411,7 +411,7 @@ class PhysicalSafetyDetector:
 
         return violations
 
-    def _check_rate_limit(self, agent_id: str) -> Optional[SafetyViolation]:
+    def _check_rate_limit(self, agent_id: str) -> SafetyViolation | None:
         """Check command frequency rate limit."""
         current_time = time.time()
 
@@ -444,7 +444,7 @@ class PhysicalSafetyDetector:
 
     def _check_basic_jerk(
         self, six_dof: SixDOFContext, agent_id: str
-    ) -> Optional[SafetyViolation]:
+    ) -> SafetyViolation | None:
         """Basic jerk check comparing to last action only."""
         history = self._context_history.get(agent_id, [])
         if not history:
@@ -483,8 +483,8 @@ class PhysicalSafetyDetector:
         return None
 
     def _check_jerk_pattern(
-        self, six_dof: SixDOFContext, history: List[SixDOFContext]
-    ) -> List[SafetyViolation]:
+        self, six_dof: SixDOFContext, history: list[SixDOFContext]
+    ) -> list[SafetyViolation]:
         """Full jerk pattern analysis over history."""
         violations = []
         if len(history) < 3:
@@ -507,7 +507,7 @@ class PhysicalSafetyDetector:
                 recent[i].linear_z - recent[i - 1].linear_z,
             ]
             # Jerk = change in acceleration
-            jerk = sum(abs(a2 - a1) for a1, a2 in zip(accel1, accel2))
+            jerk = sum(abs(a2 - a1) for a1, a2 in zip(accel1, accel2))  # noqa: B905
             jerks.append(jerk)
 
         if jerks:
@@ -535,8 +535,8 @@ class PhysicalSafetyDetector:
         return violations
 
     def _check_oscillation(
-        self, history: List[SixDOFContext]
-    ) -> Optional[SafetyViolation]:
+        self, history: list[SixDOFContext]
+    ) -> SafetyViolation | None:
         """Detect oscillation - rapid back-and-forth movement."""
         if len(history) < 6:
             return None
@@ -575,8 +575,8 @@ class PhysicalSafetyDetector:
         return None
 
     def _check_sudden_spikes(
-        self, six_dof: SixDOFContext, history: List[SixDOFContext]
-    ) -> List[SafetyViolation]:
+        self, six_dof: SixDOFContext, history: list[SixDOFContext]
+    ) -> list[SafetyViolation]:
         """Detect sudden spikes - unexpected jumps in velocity."""
         violations = []
         if len(history) < 5:
@@ -615,8 +615,8 @@ class PhysicalSafetyDetector:
         return violations
 
     def _check_boundary_riding(
-        self, history: List[SixDOFContext]
-    ) -> Optional[SafetyViolation]:
+        self, history: list[SixDOFContext]
+    ) -> SafetyViolation | None:
         """Detect boundary riding - continuously at max limits."""
         if len(history) < 5:
             return None
@@ -663,8 +663,8 @@ class PhysicalSafetyDetector:
         return None
 
     def _check_contextual_safety(
-        self, six_dof: SixDOFContext, context: Dict[str, Any]
-    ) -> Optional[SafetyViolation]:
+        self, six_dof: SixDOFContext, context: dict[str, Any]
+    ) -> SafetyViolation | None:
         """Check for context-dependent safety violations."""
         # Check for high speed near humans
         near_humans = context.get("near_humans", context.get("humans_nearby", False))
@@ -710,7 +710,7 @@ class PhysicalSafetyDetector:
             else:
                 break
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get detector metrics."""
         shallow_latencies = list(self._shallow_latencies)
         deep_latencies = list(self._deep_latencies)
@@ -736,9 +736,9 @@ class PhysicalSafetyDetector:
     def set_safety_envelope(self, envelope: SafetyEnvelope) -> None:
         """Update safety envelope."""
         self.safety_envelope = envelope
-        logger.info(f"Safety envelope updated")
+        logger.info("Safety envelope updated")
 
-    def clear_history(self, agent_id: Optional[str] = None) -> None:
+    def clear_history(self, agent_id: str | None = None) -> None:
         """Clear history for an agent or all agents."""
         if agent_id:
             if agent_id in self._context_history:

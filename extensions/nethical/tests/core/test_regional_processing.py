@@ -3,13 +3,12 @@
 These tests verify the effective_region variable ordering fix from PR #157.
 """
 
-import pytest
-import tempfile
 import shutil
-from datetime import datetime, timezone
+import tempfile
+
+import pytest
 
 from nethical.core.integrated_governance import IntegratedGovernance
-from nethical.core.models import AgentAction
 
 
 class TestRegionalProcessing:
@@ -44,9 +43,9 @@ class TestRegionalProcessing:
         
         Regression test for PR #157: Ensures the effective_region variable
         is properly initialized before being used in quota enforcement.
-        """
+        """  # noqa: W293
         governance = governance_with_region
-        
+
         # Process an action with quota checking enabled
         result = governance.process_action(
             agent_id="test_agent",
@@ -54,11 +53,11 @@ class TestRegionalProcessing:
             action_type="query",
             cohort="default",
         )
-        
+
         # Should complete without NameError
         assert result is not None
         assert "decision" in result
-        
+
         # Region should be captured in result
         assert "region_id" in result
         assert result["region_id"] == "us-east-1"
@@ -66,7 +65,7 @@ class TestRegionalProcessing:
     def test_effective_region_override_in_call(self, governance_with_region):
         """Verify region_id parameter overrides instance region."""
         governance = governance_with_region
-        
+
         # Process with different region specified in call
         result = governance.process_action(
             agent_id="test_agent",
@@ -74,24 +73,24 @@ class TestRegionalProcessing:
             action_type="mutation",
             region_id="eu-west-1",  # Override default region
         )
-        
+
         assert result is not None
         assert result["region_id"] == "eu-west-1"
 
     def test_region_id_propagation(self, governance_with_region):
         """Verify region_id is correctly propagated through processing."""
         governance = governance_with_region
-        
+
         # Process action
         result = governance.process_action(
             agent_id="test_agent",
             action="DELETE FROM audit_logs WHERE age > 365",
             action_type="deletion",
         )
-        
+
         # Region ID should be in the result
         assert result["region_id"] == "us-east-1"
-        
+
         # If residency validation was performed, it should reference the region
         if "residency_validation" in result and result["residency_validation"]:
             assert result["residency_validation"]["region_id"] == "us-east-1"
@@ -99,17 +98,17 @@ class TestRegionalProcessing:
     def test_no_region_specified(self, governance_no_region):
         """Verify processing works when no region is specified."""
         governance = governance_no_region
-        
+
         result = governance.process_action(
             agent_id="test_agent",
             action="GET /api/status",
             action_type="query",
         )
-        
+
         # Should complete without error
         assert result is not None
         assert "decision" in result
-        
+
         # Region should be None or empty
         region = result.get("region_id")
         assert region is None or region == ""
@@ -117,7 +116,7 @@ class TestRegionalProcessing:
     def test_quota_with_region_as_tenant(self, governance_with_region):
         """Verify region is used as tenant in quota enforcement."""
         governance = governance_with_region
-        
+
         # Process multiple actions to test quota with region
         for i in range(3):
             result = governance.process_action(
@@ -125,7 +124,7 @@ class TestRegionalProcessing:
                 action=f"Query {i}",
                 action_type="query",
             )
-            
+
             assert result is not None
             # Check quota enforcement used region
             if "quota_enforcement" in result and result["quota_enforcement"]:
@@ -155,7 +154,7 @@ class TestDataResidencyValidation:
     def test_validate_data_residency_valid_region(self, governance):
         """Test data residency validation with valid region."""
         result = governance.validate_data_residency("us-east-1")
-        
+
         assert result is not None
         assert "region_id" in result
         assert result["region_id"] == "us-east-1"
@@ -164,7 +163,7 @@ class TestDataResidencyValidation:
     def test_validate_data_residency_different_regions(self, governance):
         """Test data residency validation with different regions."""
         regions = ["us-west-2", "eu-west-1", "ap-northeast-1"]
-        
+
         for region in regions:
             result = governance.validate_data_residency(region)
             assert result is not None
@@ -178,7 +177,7 @@ class TestDataResidencyValidation:
             action_type="processing",
             region_id="eu-central-1",
         )
-        
+
         # Should include residency validation for EU region
         assert result is not None
         if "residency_validation" in result and result["residency_validation"]:
@@ -201,23 +200,23 @@ class TestMultiRegionGovernance:
             storage_dir=f"{temp_storage_dir}/us",
             region_id="us-east-1",
         )
-        
+
         governance_eu = IntegratedGovernance(
             storage_dir=f"{temp_storage_dir}/eu",
             region_id="eu-west-1",
         )
-        
+
         # Process actions in both regions
         result_us = governance_us.process_action(
             agent_id="us_agent",
             action="US action",
         )
-        
+
         result_eu = governance_eu.process_action(
             agent_id="eu_agent",
             action="EU action",
         )
-        
+
         assert result_us["region_id"] == "us-east-1"
         assert result_eu["region_id"] == "eu-west-1"
 
@@ -227,13 +226,13 @@ class TestMultiRegionGovernance:
             storage_dir=temp_storage_dir,
             region_id="us-east-1",  # Default region
         )
-        
+
         # Process action for different region
         result = governance.process_action(
             agent_id="cross_region_agent",
             action="Cross-region data transfer",
             region_id="eu-west-1",  # Override region
         )
-        
+
         # Should use the override region
         assert result["region_id"] == "eu-west-1"

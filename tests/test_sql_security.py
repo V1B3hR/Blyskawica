@@ -13,7 +13,10 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from adaptiveneuralnetwork.central_nervous_system.time_series_tracker import TimeSeriesQuery, TimeSeriesTracker
+from adaptiveneuralnetwork.central_nervous_system.time_series_tracker import (
+    TimeSeriesQuery,
+    TimeSeriesTracker,
+)
 
 
 class TestSQLSecurity(unittest.TestCase):
@@ -38,7 +41,7 @@ class TestSQLSecurity(unittest.TestCase):
         # Clean up temporary database
         try:
             os.unlink(self.db_file.name)
-        except:
+        except:  # noqa: E722
             pass
 
     def test_node_id_type_validation(self):
@@ -111,7 +114,7 @@ class TestSQLSecurity(unittest.TestCase):
                 end_time=9999999999
             )
             self.tracker.query(query)
-        except:
+        except:  # noqa: E722
             pass  # Errors are fine, we just don't want data corruption
 
         # Verify database wasn't corrupted
@@ -159,7 +162,7 @@ class TestSQLSecurity(unittest.TestCase):
             # This should fail or only execute the first statement
             try:
                 cursor.execute("SELECT COUNT(*) FROM time_series; DROP TABLE time_series;")
-                results = cursor.fetchall()
+                results = cursor.fetchall()  # noqa: F841
                 # If it succeeded, verify table still exists
                 cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='time_series'")
                 table_exists = cursor.fetchone()
@@ -175,7 +178,7 @@ class TestSQLSecurity(unittest.TestCase):
                 cursor = conn.cursor()
                 cursor.execute("SELECT COUNT(*) FROM time_series")
                 return cursor.fetchone()[0]
-        except:
+        except:  # noqa: E722
             return 0
 
 

@@ -115,7 +115,7 @@ class TestCognitiveFunctioning(unittest.TestCase):
 
         # Process communication
         initial_queue_size = len(self.node.communication_queue)
-        response = self.node.receive_signal(query_signal)
+        response = self.node.receive_signal(query_signal)  # noqa: F841
 
         # Assert cognitive processing
         self.assertGreater(len(self.node.communication_queue), initial_queue_size)

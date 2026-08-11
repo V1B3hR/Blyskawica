@@ -401,7 +401,7 @@ class AIvsAIDefender(BaseDetector):
         hash2 = hashlib.md5(query2_str.encode()).hexdigest()
 
         # Compare hashes
-        matching_chars = sum(1 for a, b in zip(hash1, hash2) if a == b)
+        matching_chars = sum(1 for a, b in zip(hash1, hash2) if a == b)  # noqa: B905
         return matching_chars / len(hash1)
 
     def _check_perturbation(self, data: np.ndarray) -> bool:

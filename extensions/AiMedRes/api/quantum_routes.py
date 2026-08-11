@@ -10,12 +10,11 @@ Provides endpoints for:
 - Rotation history
 """
 
-from flask import request, jsonify, current_app, Blueprint
 import logging
-from typing import Dict, Any
 from datetime import datetime
 
-from security.auth import require_auth, require_admin
+from flask import Blueprint, current_app, jsonify, request
+from security.auth import require_admin
 
 logger = logging.getLogger('aimedres.api.quantum')
 
@@ -30,20 +29,20 @@ def list_keys():
     
     Required: Admin API key
     Query params: key_type, status (optional filters)
-    """
+    """  # noqa: W293
     try:
         key_type = request.args.get('key_type')
         status = request.args.get('status')
-        
+
         if not hasattr(current_app, 'quantum_key_manager'):
             return jsonify({
                 'keys': [],
                 'message': 'Quantum key manager not initialized'
             }), 200
-        
+
         key_manager = current_app.quantum_key_manager
         keys = key_manager.list_keys(key_type=key_type, status=status)
-        
+
         return jsonify({
             'success': True,
             'keys': [
@@ -61,7 +60,7 @@ def list_keys():
                 for k in keys
             ]
         }), 200
-        
+
     except Exception as e:
         logger.error(f"Failed to list keys: {e}")
         return jsonify({'error': 'Internal server error'}), 500
@@ -73,17 +72,17 @@ def get_key(key_id: str):
     Get key details.
     
     Required: Admin API key
-    """
+    """  # noqa: W293
     try:
         if not hasattr(current_app, 'quantum_key_manager'):
             return jsonify({'error': 'Quantum key manager not initialized'}), 503
-        
+
         key_manager = current_app.quantum_key_manager
         key = key_manager.get_key(key_id)
-        
+
         if not key:
             return jsonify({'error': 'Key not found'}), 404
-        
+
         return jsonify({
             'key_id': key.key_id,
             'key_type': key.key_type.value,
@@ -95,7 +94,7 @@ def get_key(key_id: str):
             'usage_count': key.usage_count,
             'metadata': key.metadata
         }), 200
-        
+
     except Exception as e:
         logger.error(f"Failed to get key: {e}")
         return jsonify({'error': 'Internal server error'}), 500
@@ -107,16 +106,16 @@ def get_stats():
     Get key manager statistics.
     
     Required: Admin API key
-    """
+    """  # noqa: W293
     try:
         if not hasattr(current_app, 'quantum_key_manager'):
             return jsonify({'error': 'Quantum key manager not initialized'}), 503
-        
+
         key_manager = current_app.quantum_key_manager
         stats = key_manager.get_stats()
-        
+
         return jsonify(stats), 200
-        
+
     except Exception as e:
         logger.error(f"Failed to get stats: {e}")
         return jsonify({'error': 'Internal server error'}), 500
@@ -128,14 +127,14 @@ def get_rotation_policy():
     Get key rotation policy.
     
     Required: Admin API key
-    """
+    """  # noqa: W293
     try:
         if not hasattr(current_app, 'quantum_key_manager'):
             return jsonify({'error': 'Quantum key manager not initialized'}), 503
-        
+
         key_manager = current_app.quantum_key_manager
         policy = key_manager.get_rotation_policy()
-        
+
         return jsonify({
             'enabled': policy.enabled,
             'rotation_interval_days': policy.rotation_interval_days,
@@ -145,7 +144,7 @@ def get_rotation_policy():
             'notify_before_rotation_days': policy.notify_before_rotation_days,
             'require_manual_approval': policy.require_manual_approval
         }), 200
-        
+
     except Exception as e:
         logger.error(f"Failed to get policy: {e}")
         return jsonify({'error': 'Internal server error'}), 500
@@ -158,16 +157,16 @@ def update_rotation_policy():
     
     Required: Admin API key
     Body: Partial KeyRotationPolicy object
-    """
+    """  # noqa: W293
     try:
         data = request.get_json()
-        
+
         if not hasattr(current_app, 'quantum_key_manager'):
             return jsonify({'error': 'Quantum key manager not initialized'}), 503
-        
+
         key_manager = current_app.quantum_key_manager
         updated_policy = key_manager.update_rotation_policy(data)
-        
+
         return jsonify({
             'success': True,
             'policy': {
@@ -180,7 +179,7 @@ def update_rotation_policy():
                 'require_manual_approval': updated_policy.require_manual_approval
             }
         }), 200
-        
+
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
     except Exception as e:
@@ -194,14 +193,14 @@ def rotate_key(key_id: str):
     Manually rotate a key.
     
     Required: Admin API key
-    """
+    """  # noqa: W293
     try:
         if not hasattr(current_app, 'quantum_key_manager'):
             return jsonify({'error': 'Quantum key manager not initialized'}), 503
-        
+
         key_manager = current_app.quantum_key_manager
         success = key_manager.rotate_key(key_id)
-        
+
         if success:
             return jsonify({
                 'success': True,
@@ -210,7 +209,7 @@ def rotate_key(key_id: str):
             }), 200
         else:
             return jsonify({'error': 'Failed to rotate key'}), 400
-            
+
     except ValueError as e:
         return jsonify({'error': str(e)}), 404
     except Exception as e:
@@ -225,19 +224,19 @@ def get_rotation_history():
     
     Required: Admin API key
     Query params: limit (optional, default 50)
-    """
+    """  # noqa: W293
     try:
         limit = int(request.args.get('limit', 50))
-        
+
         if not hasattr(current_app, 'quantum_key_manager'):
             return jsonify({
                 'events': [],
                 'message': 'Quantum key manager not initialized'
             }), 200
-        
+
         key_manager = current_app.quantum_key_manager
         events = key_manager.get_rotation_history(limit=limit)
-        
+
         return jsonify({
             'success': True,
             'events': [
@@ -251,7 +250,7 @@ def get_rotation_history():
                 for e in events
             ]
         }), 200
-        
+
     except Exception as e:
         logger.error(f"Failed to get history: {e}")
         return jsonify({'error': 'Internal server error'}), 500
@@ -264,26 +263,26 @@ def quantum_health():
     try:
         # Check if quantum crypto module is available
         try:
-            from security.quantum_crypto import QuantumSafeCryptography
+            from security.quantum_crypto import QuantumSafeCryptography  # noqa: F401
             quantum_available = True
         except ImportError:
             quantum_available = False
-        
+
         health = {
             'status': 'healthy',
             'timestamp': datetime.now().isoformat(),
             'manager_initialized': hasattr(current_app, 'quantum_key_manager'),
             'quantum_crypto_available': quantum_available
         }
-        
+
         if hasattr(current_app, 'quantum_key_manager'):
             key_manager = current_app.quantum_key_manager
             stats = key_manager.get_stats()
             health['total_keys'] = stats.get('total_keys', 0)
             health['active_keys'] = stats.get('active_keys', 0)
-        
+
         return jsonify(health), 200
-        
+
     except Exception as e:
         logger.error(f"Health check failed: {e}")
         return jsonify({'status': 'unhealthy', 'error': str(e)}), 500

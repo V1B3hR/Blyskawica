@@ -1,10 +1,11 @@
 import unittest
-import math
+
 from adaptiveneuralnetwork.central_nervous_system.biological_simulation import (
     GeneticTranslator,
+    MetabolicCell,
     MetabolicSimulator,
-    MetabolicCell
 )
+
 
 class TestBiologicalSimulation(unittest.TestCase):
     def test_transcription(self):
@@ -54,19 +55,19 @@ class TestBiologicalSimulation(unittest.TestCase):
     def test_metabolic_kinetics(self):
         """Tests metabolic pathway fluxes under normal supply conditions."""
         metabolism = MetabolicSimulator(glucose=10.0, oxygen=10.0)
-        initial_atp = metabolism.atp
-        initial_nadh = metabolism.nadh
-        
+        initial_atp = metabolism.atp  # noqa: F841
+        initial_nadh = metabolism.nadh  # noqa: F841
+
         # Run simulator for a few steps with spike frequency
         # Spikes consume ATP, but glycolysis & Krebs Cycle & OxPhos generate it
         for _ in range(50):
             metabolism.tick(dt=0.01, spike_frequency=2.0, input_glucose=1.5, input_oxygen=2.0)
-            
+
         # Verify that pools remain bounded and charge is active
         self.assertGreater(metabolism.atp, 0.0)
         self.assertLessEqual(metabolism.atp, metabolism.atp_adp_pool)
         self.assertTrue(0.0 <= metabolism.atp_ratio <= 1.0)
-        
+
     def test_starvation_behavior(self):
         """Tests that ATP levels drop under glucose/oxygen starvation."""
         # 1. Glucose Starvation
@@ -74,7 +75,7 @@ class TestBiologicalSimulation(unittest.TestCase):
         # Zero glucose input, high spike activity to deplete energy
         for _ in range(1500):
             metabolism.tick(dt=0.01, spike_frequency=10.0, input_glucose=0.0, input_oxygen=2.0)
-            
+
         atp_glucose_starved = metabolism.atp
         self.assertLess(atp_glucose_starved, 4.0)  # Significantly depleted
 
@@ -82,7 +83,7 @@ class TestBiologicalSimulation(unittest.TestCase):
         metabolism_o2 = MetabolicSimulator(glucose=10.0, oxygen=0.0)
         for _ in range(1500):
             metabolism_o2.tick(dt=0.01, spike_frequency=10.0, input_glucose=1.5, input_oxygen=0.0)
-            
+
         atp_o2_starved = metabolism_o2.atp
         self.assertLess(atp_o2_starved, 4.0)
 
@@ -90,27 +91,27 @@ class TestBiologicalSimulation(unittest.TestCase):
         """Tests MetabolicCell translation and functional parameter scaling."""
         # DNA containing hydrophobic start followed by polar and charged
         # Met-Phe-Glu-Ser (AUG-UUU-GAG-UCU)
-        dna = "ATGTTTGAGUCT" # Wait, T is T in DNA, U is RNA, but cleanup/transcribe handles it
+        dna = "ATGTTTGAGUCT" # Wait, T is T in DNA, U is RNA, but cleanup/transcribe handles it  # noqa: F841
         dna_clean = "ATGTTTGAGTCT"
         cell = MetabolicCell(cell_id=0, genome_dna=dna_clean)
-        
+
         # Verify initial configurations translated from DNA
         self.assertEqual(cell.protein, "MFES")
         self.assertGreater(cell.base_energy_capacity, 0.0)
         self.assertGreater(cell.base_calm, 0.0)
-        
+
         # Process stimulus under normal metabolic supply
         energy, anxiety = cell.process_stimulus(
-            external_stimulus=1.0, 
-            spike_frequency=0.0, 
-            input_glucose=1.0, 
-            input_oxygen=1.0, 
+            external_stimulus=1.0,
+            spike_frequency=0.0,
+            input_glucose=1.0,
+            input_oxygen=1.0,
             dt=0.01
         )
         # Verify output values
         self.assertTrue(energy >= 0.0)
         self.assertTrue(anxiety >= 0.0)
-        
+
         # Now trigger starvation
         for _ in range(100):
             cell.process_stimulus(
@@ -120,7 +121,7 @@ class TestBiologicalSimulation(unittest.TestCase):
                 input_oxygen=0.0,   # Starvation
                 dt=0.01
             )
-            
+
         # Verify that Available Energy Capacity and Calm are degraded due to low ATP
         self.assertLess(cell.energy_capacity, cell.base_energy_capacity)
         self.assertLess(cell.calm, cell.base_calm)

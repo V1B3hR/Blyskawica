@@ -18,7 +18,7 @@ from __future__ import annotations
 import time
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel, Field
@@ -29,7 +29,7 @@ router = APIRouter()
 # Request/Response Models
 class EvaluateRequestV2(BaseModel):
     """Enhanced evaluation request with additional fields."""
-    
+
     action: str = Field(
         ...,
         description="The action, code, or content to evaluate",
@@ -44,15 +44,15 @@ class EvaluateRequestV2(BaseModel):
         default="query",
         description="Type of action: code_generation, query, command, data_access",
     )
-    context: Optional[dict[str, Any]] = Field(
+    context: dict[str, Any] | None = Field(
         default=None,
         description="Additional context about the action",
     )
-    stated_intent: Optional[str] = Field(
+    stated_intent: str | None = Field(
         default=None,
         description="Declared intent for semantic monitoring",
     )
-    priority: Optional[str] = Field(
+    priority: str | None = Field(
         default="normal",
         description="Request priority: low, normal, high, critical",
     )
@@ -60,7 +60,7 @@ class EvaluateRequestV2(BaseModel):
         default=False,
         description="Whether to include detailed explanation",
     )
-    
+
     model_config = {
         "json_schema_extra": {
             "examples": [
@@ -80,12 +80,12 @@ class EvaluateRequestV2(BaseModel):
 
 class ViolationInfo(BaseModel):
     """Information about a detected violation."""
-    
+
     id: str = Field(..., description="Violation identifier")
     type: str = Field(..., description="Type of violation")
     severity: str = Field(..., description="Severity: low, medium, high, critical")
     description: str = Field(..., description="Human-readable description")
-    law_reference: Optional[str] = Field(
+    law_reference: str | None = Field(
         default=None,
         description="Reference to the Fundamental Law violated",
     )
@@ -93,7 +93,7 @@ class ViolationInfo(BaseModel):
 
 class EvaluateResponseV2(BaseModel):
     """Enhanced evaluation response with latency and audit info."""
-    
+
     decision: str = Field(
         ...,
         description="Decision: ALLOW, RESTRICT, BLOCK, or TERMINATE",
@@ -134,11 +134,11 @@ class EvaluateResponseV2(BaseModel):
         default_factory=list,
         description="List of detected violations",
     )
-    explanation: Optional[dict[str, Any]] = Field(
+    explanation: dict[str, Any] | None = Field(
         default=None,
         description="Detailed explanation if requested",
     )
-    audit_id: Optional[str] = Field(
+    audit_id: str | None = Field(
         default=None,
         description="Audit trail identifier",
     )
@@ -154,7 +154,7 @@ class EvaluateResponseV2(BaseModel):
 
 class BatchEvaluateRequest(BaseModel):
     """Request for batch evaluation of multiple actions."""
-    
+
     requests: list[EvaluateRequestV2] = Field(
         ...,
         description="List of evaluation requests",
@@ -173,7 +173,7 @@ class BatchEvaluateRequest(BaseModel):
 
 class BatchEvaluateResponse(BaseModel):
     """Response for batch evaluation."""
-    
+
     results: list[EvaluateResponseV2] = Field(
         ...,
         description="List of evaluation results",
@@ -212,20 +212,20 @@ def _evaluate_action(request: EvaluateRequestV2, request_id: str) -> EvaluateRes
     - Law 10: Explainable reasoning
     - Law 15: Audit compliance
     - Law 21: Human safety priority
-    """
+    """  # noqa: W293
     start_time = time.perf_counter()
     decision_id = str(uuid.uuid4())
-    
+
     # Initialize evaluation result
     decision = "ALLOW"
     risk_score = 0.0
     confidence = 1.0
     violations: list[ViolationInfo] = []
     fundamental_laws_checked = [6, 10, 15, 21, 22]  # Core laws always checked
-    
+
     # Evaluate action content for safety (Law 21: Human Safety Priority)
     action_lower = request.action.lower()
-    
+
     # Check for dangerous patterns
     dangerous_patterns = [
         ("delete all", "Bulk deletion detected", "high", 23),
@@ -239,7 +239,7 @@ def _evaluate_action(request: EvaluateRequestV2, request_id: str) -> EvaluateRes
         ("disable auth", "Authentication bypass attempt", "critical", 22),
         ("terminate all", "Mass termination detected", "critical", 1),
     ]
-    
+
     for pattern, desc, severity, law_ref in dangerous_patterns:
         if pattern in action_lower:
             violations.append(ViolationInfo(
@@ -251,7 +251,7 @@ def _evaluate_action(request: EvaluateRequestV2, request_id: str) -> EvaluateRes
             ))
             risk_score = max(risk_score, 0.7 if severity == "medium" else 0.85 if severity == "high" else 0.95)
             fundamental_laws_checked.append(law_ref)
-    
+
     # Determine decision based on risk score
     if risk_score >= 0.9:
         decision = "BLOCK"
@@ -265,7 +265,7 @@ def _evaluate_action(request: EvaluateRequestV2, request_id: str) -> EvaluateRes
     else:
         decision = "ALLOW"
         confidence = 0.95
-    
+
     # Generate explanation if requested
     explanation = None
     if request.require_explanation:
@@ -278,9 +278,9 @@ def _evaluate_action(request: EvaluateRequestV2, request_id: str) -> EvaluateRes
             ),
             "laws_applied": [f"Law {i}" for i in set(fundamental_laws_checked)],
         }
-    
+
     latency_ms = int((time.perf_counter() - start_time) * 1000)
-    
+
     return EvaluateResponseV2(
         decision=decision,
         decision_id=decision_id,
@@ -319,18 +319,18 @@ async def evaluate_action(
         
     Returns:
         EvaluateResponseV2 with decision and evaluation details
-    """
+    """  # noqa: W293
     request_id = getattr(http_request.state, "request_id", str(uuid.uuid4()))
-    
+
     try:
         result = _evaluate_action(request, request_id)
-        
+
         # Add cache control headers
         response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
         response.headers["X-Decision-ID"] = result.decision_id
-        
+
         return result
-        
+
     except Exception as e:
         # Return safe blocking decision on error (Law 23: Fail-Safe Design)
         return EvaluateResponseV2(
@@ -370,21 +370,21 @@ async def batch_evaluate(
         
     Returns:
         BatchEvaluateResponse with all results
-    """
+    """  # noqa: W293
     batch_start = time.perf_counter()
     request_id = getattr(http_request.state, "request_id", str(uuid.uuid4()))
-    
+
     results: list[EvaluateResponseV2] = []
     error_count = 0
-    
+
     for i, eval_request in enumerate(request.requests):
         try:
             result = _evaluate_action(eval_request, f"{request_id}-{i}")
             results.append(result)
-        except Exception as e:
+        except Exception as e:  # noqa: PERF203
             error_count += 1
             if request.fail_fast:
-                raise HTTPException(
+                raise HTTPException(  # noqa: B904
                     status_code=500,
                     detail=f"Batch evaluation failed at index {i}: {str(e)}",
                 )
@@ -401,11 +401,11 @@ async def batch_evaluate(
                 audit_id=f"{request_id}-{i}",
                 fundamental_laws_checked=[23],
             ))
-    
+
     total_latency_ms = int((time.perf_counter() - batch_start) * 1000)
     total_count = len(request.requests)
     success_count = total_count - error_count
-    
+
     return BatchEvaluateResponse(
         results=results,
         total_count=total_count,

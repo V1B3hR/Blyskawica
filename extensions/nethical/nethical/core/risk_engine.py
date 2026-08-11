@@ -7,12 +7,12 @@ This module implements:
 - Elevated tier triggers for advanced detectors
 """
 
-from enum import Enum
-from dataclasses import dataclass, field
-from typing import Dict, List, Any, Tuple
-from datetime import datetime, timezone
-import math
 import json
+import math
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from enum import Enum
+from typing import Any
 
 
 class RiskTier(str, Enum):
@@ -66,9 +66,9 @@ class RiskProfile:
     recency_score: float = 0.0
 
     # Tier transition history
-    tier_history: List[Tuple[datetime, RiskTier]] = field(default_factory=list)
+    tier_history: list[tuple[datetime, RiskTier]] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "agent_id": self.agent_id,
@@ -85,7 +85,7 @@ class RiskProfile:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "RiskProfile":
+    def from_dict(cls, data: dict[str, Any]) -> "RiskProfile":
         """Create from dictionary."""
         tier_history = [
             (datetime.fromisoformat(ts), RiskTier(tier))
@@ -130,13 +130,13 @@ class RiskEngine:
         self.key_prefix = key_prefix
 
         # In-memory cache of risk profiles
-        self.profiles: Dict[str, RiskProfile] = {}
+        self.profiles: dict[str, RiskProfile] = {}
 
         # Weights for multi-factor fusion
         self.weights = {"behavior": 0.3, "severity": 0.3, "frequency": 0.2, "recency": 0.2}
 
     def calculate_risk_score(
-        self, agent_id: str, violation_severity: float, action_context: Dict[str, Any]
+        self, agent_id: str, violation_severity: float, action_context: dict[str, Any]
     ) -> float:
         """Calculate risk score using multi-factor fusion.
 
@@ -202,7 +202,7 @@ class RiskEngine:
 
         return decayed_score
 
-    def _calculate_behavior_score(self, profile: RiskProfile, context: Dict[str, Any]) -> float:
+    def _calculate_behavior_score(self, profile: RiskProfile, context: dict[str, Any]) -> float:
         """Calculate behavior-based risk component."""
         # Simple heuristic: ratio of violations to actions
         if profile.total_actions == 0:

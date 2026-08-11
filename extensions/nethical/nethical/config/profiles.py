@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import logging
 import re
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import date
 from enum import Enum
 from types import MappingProxyType
-from typing import Iterable, Mapping, Optional, Tuple
 
 from nethical.hooks.interfaces import Region
 
@@ -73,17 +73,17 @@ class RegionProfile:
     """
 
     region: Region
-    compliance: Tuple[ComplianceFramework, ...]
-    locales: Tuple[str, ...]
+    compliance: tuple[ComplianceFramework, ...]
+    locales: tuple[str, ...]
     data_residency_required: bool
     export_controls_required: bool
     default_geofencing_policy: GeofencingPolicy = GeofencingPolicy.OPEN
-    last_reviewed_at: Optional[date] = None
-    schema_version: Optional[str] = "1.0"
+    last_reviewed_at: date | None = None
+    schema_version: str | None = "1.0"
 
     def __post_init__(self) -> None:
         # Ensure uniqueness and normalization of locales
-        normalized_locales = tuple(sorted({_normalize_locale(l) for l in self.locales}))
+        normalized_locales = tuple(sorted({_normalize_locale(l) for l in self.locales}))  # noqa: E741
         object.__setattr__(self, "locales", normalized_locales)
 
         # Ensure uniqueness of compliance frameworks
@@ -97,7 +97,7 @@ class RegionProfile:
             )
 
     @property
-    def compliance_codes(self) -> Tuple[str, ...]:
+    def compliance_codes(self) -> tuple[str, ...]:
         """Compatibility helper: return compliance codes as strings."""
         return tuple(cf.value for cf in self.compliance)
 
@@ -134,7 +134,7 @@ def _mk_profile(
     data_residency_required: bool,
     export_controls_required: bool,
     default_geofencing_policy: GeofencingPolicy = GeofencingPolicy.OPEN,
-    last_reviewed_at: Optional[date] = None,
+    last_reviewed_at: date | None = None,
 ) -> RegionProfile:
     return RegionProfile(
         region=region,
@@ -193,7 +193,7 @@ def get_profile(region: Region) -> RegionProfile:
     return REGION_PROFILES[region]
 
 
-def find_regions_by_locale(locale: str) -> Tuple[Region, ...]:
+def find_regions_by_locale(locale: str) -> tuple[Region, ...]:
     """Return regions that list the given locale."""
     normalized = _normalize_locale(locale)
     matches = tuple(r for r, profile in REGION_PROFILES.items() if normalized in profile.locales)
@@ -232,7 +232,7 @@ def load_overrides_from_yaml(path: str) -> Mapping[Region, RegionProfile]:
     except Exception as exc:
         raise RuntimeError("PyYAML is required to use load_overrides_from_yaml") from exc
 
-    with open(path, "r", encoding="utf-8") as fh:
+    with open(path, encoding="utf-8") as fh:
         raw = yaml.safe_load(fh) or {}
 
     if not isinstance(raw, dict):
@@ -253,7 +253,7 @@ def load_overrides_from_yaml(path: str) -> Mapping[Region, RegionProfile]:
 
         def _cf_list(
             values: Iterable[str | ComplianceFramework],
-        ) -> Tuple[ComplianceFramework, ...]:
+        ) -> tuple[ComplianceFramework, ...]:
             out = []
             for v in values:
                 if isinstance(v, ComplianceFramework):
@@ -263,7 +263,7 @@ def load_overrides_from_yaml(path: str) -> Mapping[Region, RegionProfile]:
                         out.append(ComplianceFramework(v))
                     except ValueError as exc:
                         raise ValueError(
-                            f"Unknown compliance framework '{v}' for region '{region_name}'"
+                            f"Unknown compliance framework '{v}' for region '{region_name}'"  # noqa: B023
                         ) from exc
             return tuple(out)
 

@@ -5,8 +5,8 @@ Provides REST API for dashboard frontend to access monitoring data,
 graphs, timelines, and reports.
 """
 
-from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime, timedelta
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -26,7 +26,7 @@ class AssetNode(BaseModel):
     id: str
     type: str = Field(..., description="Type: target, host, service, technology")
     label: str
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class AssetEdge(BaseModel):
@@ -40,8 +40,8 @@ class AssetEdge(BaseModel):
 class AssetGraph(BaseModel):
     """Complete asset graph structure"""
 
-    nodes: List[AssetNode]
-    edges: List[AssetEdge]
+    nodes: list[AssetNode]
+    edges: list[AssetEdge]
 
 
 class TimelineEvent(BaseModel):
@@ -51,7 +51,7 @@ class TimelineEvent(BaseModel):
     event_type: str
     description: str
     severity: str = Field(default="info")
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class LiveMetrics(BaseModel):
@@ -76,7 +76,7 @@ class DashboardAPI:
 
         @self.router.get("/graph", response_model=AssetGraph)
         async def get_asset_graph(
-            target_id: Optional[UUID] = None,
+            target_id: UUID | None = None,
             session=Depends(get_db_session),
         ):
             """
@@ -138,10 +138,10 @@ class DashboardAPI:
 
             return AssetGraph(nodes=nodes, edges=edges)
 
-        @self.router.get("/timeline", response_model=List[TimelineEvent])
+        @self.router.get("/timeline", response_model=list[TimelineEvent])
         async def get_timeline(
-            start_date: Optional[datetime] = None,
-            end_date: Optional[datetime] = None,
+            start_date: datetime | None = None,
+            end_date: datetime | None = None,
             limit: int = Query(100, le=1000),
             session=Depends(get_db_session),
         ):
@@ -151,7 +151,7 @@ class DashboardAPI:
             Returns chronological events including scans, findings, and alerts.
             """
             if not end_date:
-                end_date = datetime.now(timezone.utc)
+                end_date = datetime.now(UTC)
             if not start_date:
                 start_date = end_date - timedelta(days=7)
 
@@ -205,7 +205,7 @@ class DashboardAPI:
             active_scans = sum(1 for job in jobs if job.status.value in ["pending", "running"])
 
             # Count recent findings (last 24 hours)
-            cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+            cutoff = datetime.now(UTC) - timedelta(hours=24)
             all_findings = []
             for target in target_repo.list_all():
                 all_findings.extend(finding_repo.get_by_target(target.id))
@@ -221,7 +221,7 @@ class DashboardAPI:
                 active_scans=active_scans,
                 recent_findings=recent_findings,
                 open_alerts=open_alerts,
-                last_updated=datetime.now(timezone.utc),
+                last_updated=datetime.now(UTC),
             )
 
     def get_router(self) -> APIRouter:

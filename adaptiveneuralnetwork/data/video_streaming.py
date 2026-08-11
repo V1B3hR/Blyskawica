@@ -7,7 +7,7 @@ This module provides comprehensive video frame loading capabilities supporting:
 - Network streams (RTSP/RTMP)
 - Real-time preprocessing and batching
 - Frame skipping and temporal sampling
-"""
+"""  # noqa: W291
 
 import logging
 import queue

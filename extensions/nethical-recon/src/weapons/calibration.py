@@ -4,8 +4,8 @@ Calibrates weapon parameters for optimal performance
 """
 
 import logging
-from typing import Any
 from datetime import datetime
+from typing import Any
 
 
 class WeaponCalibrator:

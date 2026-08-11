@@ -1,7 +1,9 @@
 import asyncio
+
 from nethical.core import IntegratedGovernance
-from nethical.integrations.healthcare_pipeline import HealthcareGuardrails
 from nethical.hooks.interfaces import Region
+from nethical.integrations.healthcare_pipeline import HealthcareGuardrails
+
 
 async def main():
     gov = IntegratedGovernance(
@@ -32,7 +34,7 @@ async def main():
 
     print("Region:", region.value)
     print("Policy decisions:", result["policy"]["decisions"])
-    print("Risk tier:", result["governance"]["phase3"]["risk_tier"]) 
+    print("Risk tier:", result["governance"]["phase3"]["risk_tier"])
     print("Output:", outbound["agent_output"])
 
 if __name__ == "__main__":

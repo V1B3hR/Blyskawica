@@ -1,7 +1,7 @@
 """Snowflake Cortex integration with Nethical governance."""
 
-from typing import Dict, Any, Optional, List
 import logging
+from typing import Any
 
 from .base import CloudMLProvider, ExperimentRun, RunStatus
 
@@ -10,12 +10,12 @@ logger = logging.getLogger(__name__)
 
 class SnowflakeCortexConnector(CloudMLProvider):
     """Snowflake Cortex integration with Nethical governance."""
-    
+
     def __init__(
         self,
         account: str,
         user: str,
-        password: Optional[str] = None,
+        password: str | None = None,
         warehouse: str = "COMPUTE_WH",
         database: str = "GOVERNANCE_DB",
         schema: str = "PUBLIC",
@@ -31,20 +31,20 @@ class SnowflakeCortexConnector(CloudMLProvider):
             database: Database name
             schema: Schema name
             enable_governance: Whether to enable governance checks
-        """
+        """  # noqa: W293
         self.account = account
         self.user = user
         self.warehouse = warehouse
         self.database = database
         self.schema = schema
         self.enable_governance = enable_governance
-        self.active_runs: Dict[str, ExperimentRun] = {}
+        self.active_runs: dict[str, ExperimentRun] = {}
         self.connection = None
         self.available = False
-        
+
         try:
             import snowflake.connector
-            
+
             self.connection = snowflake.connector.connect(
                 account=account,
                 user=user,
@@ -59,7 +59,7 @@ class SnowflakeCortexConnector(CloudMLProvider):
             logger.warning("Snowflake connector not available. Install with: pip install snowflake-connector-python")
         except Exception as e:
             logger.error(f"Failed to initialize Snowflake: {e}")
-        
+
         if enable_governance:
             try:
                 from nethical.core import IntegratedGovernance
@@ -68,20 +68,20 @@ class SnowflakeCortexConnector(CloudMLProvider):
             except Exception as e:
                 logger.warning(f"Could not initialize governance: {e}")
                 self.enable_governance = False
-    
-    def start_run(self, experiment_name: str, run_name: Optional[str] = None) -> str:
+
+    def start_run(self, experiment_name: str, run_name: str | None = None) -> str:
         """Start a Snowflake Cortex experiment run."""
         if not self.available:
             logger.error("Snowflake not available")
             return "unavailable"
-        
+
         try:
             import uuid
             from datetime import datetime
-            
+
             run_id = str(uuid.uuid4())
             run_name = run_name or f"run_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
-            
+
             # Create experiment tracking table if not exists
             cursor = self.connection.cursor()
             cursor.execute("""
@@ -96,39 +96,39 @@ class SnowflakeCortexConnector(CloudMLProvider):
                     metrics VARIANT
                 )
             """)
-            
+
             # Insert new run
             cursor.execute("""
                 INSERT INTO EXPERIMENT_RUNS (
                     run_id, experiment_name, run_name, start_time, status, parameters, metrics
                 ) VALUES (?, ?, ?, CURRENT_TIMESTAMP(), 'RUNNING', PARSE_JSON('{}'), PARSE_JSON('{}'))
             """, (run_id, experiment_name, run_name))
-            
+
             self.connection.commit()
             cursor.close()
-            
+
             self.active_runs[run_id] = ExperimentRun(
                 run_id=run_id,
                 experiment_name=experiment_name,
                 parameters={},
                 metrics={}
             )
-            
+
             logger.info(f"Started Snowflake run: {run_id}")
             return run_id
-            
+
         except Exception as e:
             logger.error(f"Failed to start Snowflake run: {e}")
             return f"error-{e}"
-    
-    def log_parameters(self, run_id: str, parameters: Dict[str, Any]):
+
+    def log_parameters(self, run_id: str, parameters: dict[str, Any]):
         """Log parameters to Snowflake."""
         if not self.available:
             return
-        
+
         if run_id in self.active_runs:
             self.active_runs[run_id].parameters.update(parameters)
-            
+
             try:
                 import json
                 cursor = self.connection.cursor()
@@ -136,21 +136,21 @@ class SnowflakeCortexConnector(CloudMLProvider):
                     UPDATE EXPERIMENT_RUNS 
                     SET parameters = PARSE_JSON(?)
                     WHERE run_id = ?
-                """, (json.dumps(parameters), run_id))
+                """, (json.dumps(parameters), run_id))  # noqa: W291
                 self.connection.commit()
                 cursor.close()
                 logger.debug(f"Logged parameters to Snowflake run {run_id}")
             except Exception as e:
                 logger.error(f"Failed to log parameters: {e}")
-    
-    def log_metrics(self, run_id: str, metrics: Dict[str, float], step: Optional[int] = None):
+
+    def log_metrics(self, run_id: str, metrics: dict[str, float], step: int | None = None):
         """Log metrics to Snowflake."""
         if not self.available:
             return
-        
+
         if run_id in self.active_runs:
             self.active_runs[run_id].metrics.update(metrics)
-            
+
             try:
                 import json
                 cursor = self.connection.cursor()
@@ -158,19 +158,19 @@ class SnowflakeCortexConnector(CloudMLProvider):
                     UPDATE EXPERIMENT_RUNS 
                     SET metrics = PARSE_JSON(?)
                     WHERE run_id = ?
-                """, (json.dumps(metrics), run_id))
+                """, (json.dumps(metrics), run_id))  # noqa: W291
                 self.connection.commit()
                 cursor.close()
                 logger.debug(f"Logged metrics to Snowflake run {run_id}")
             except Exception as e:
                 logger.error(f"Failed to log metrics: {e}")
-    
+
     def complete_with_governance(
         self,
         model_name: str,
         prompt: str,
-        options: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        options: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """Generate completion with Snowflake Cortex LLM and governance.
         
         Args:
@@ -180,10 +180,10 @@ class SnowflakeCortexConnector(CloudMLProvider):
             
         Returns:
             Completion result with governance info
-        """
+        """  # noqa: W293
         if not self.available:
             return {"error": "Snowflake not available"}
-        
+
         try:
             # Pre-check with governance
             if self.enable_governance:
@@ -198,17 +198,17 @@ class SnowflakeCortexConnector(CloudMLProvider):
                         "reason": result.get('reason'),
                         "governance_result": result
                     }
-            
+
             # Generate completion using Cortex
             cursor = self.connection.cursor()
             query = f"SELECT SNOWFLAKE.CORTEX.COMPLETE('{model_name}', ?)"
-            
+
             cursor.execute(query, (prompt,))
             result = cursor.fetchone()
             cursor.close()
-            
+
             completion = result[0] if result else ""
-            
+
             # Post-check with governance
             if self.enable_governance:
                 gov_result = self.governance.process_action(
@@ -221,18 +221,18 @@ class SnowflakeCortexConnector(CloudMLProvider):
                         "completion": "[FILTERED]",
                         "governance": gov_result
                     }
-            
+
             return {"completion": completion}
-            
+
         except Exception as e:
             logger.error(f"Failed to generate completion: {e}")
             return {"error": str(e)}
-    
+
     def classify_with_governance(
         self,
         text: str,
-        categories: List[str]
-    ) -> Dict[str, Any]:
+        categories: list[str]
+    ) -> dict[str, Any]:
         """Classify text with Snowflake Cortex and governance.
         
         Args:
@@ -241,10 +241,10 @@ class SnowflakeCortexConnector(CloudMLProvider):
             
         Returns:
             Classification result with governance info
-        """
+        """  # noqa: W293
         if not self.available:
             return {"error": "Snowflake not available"}
-        
+
         try:
             # Pre-check with governance
             if self.enable_governance:
@@ -258,7 +258,7 @@ class SnowflakeCortexConnector(CloudMLProvider):
                         "error": "Text blocked by governance",
                         "reason": result.get('reason')
                     }
-            
+
             # Classify using Cortex
             cursor = self.connection.cursor()
             cursor.execute(
@@ -267,38 +267,38 @@ class SnowflakeCortexConnector(CloudMLProvider):
             )
             result = cursor.fetchone()
             cursor.close()
-            
+
             return {"classification": result[0] if result else None}
-            
+
         except Exception as e:
             logger.error(f"Failed to classify text: {e}")
             return {"error": str(e)}
-    
+
     def end_run(self, run_id: str, status: str = "completed"):
         """End a Snowflake experiment run."""
         if not self.available:
             return
-        
+
         if run_id in self.active_runs:
             self.active_runs[run_id].status = RunStatus(status)
-            
+
             try:
                 cursor = self.connection.cursor()
                 cursor.execute("""
                     UPDATE EXPERIMENT_RUNS 
                     SET end_time = CURRENT_TIMESTAMP(), status = ?
                     WHERE run_id = ?
-                """, (status, run_id))
+                """, (status, run_id))  # noqa: W291
                 self.connection.commit()
                 cursor.close()
                 logger.info(f"Ended Snowflake run {run_id} with status {status}")
             except Exception as e:
                 logger.error(f"Failed to end run: {e}")
-    
-    def get_run(self, run_id: str) -> Optional[ExperimentRun]:
+
+    def get_run(self, run_id: str) -> ExperimentRun | None:
         """Get run metadata."""
         return self.active_runs.get(run_id)
-    
+
     def close(self):
         """Close Snowflake connection."""
         if self.connection:

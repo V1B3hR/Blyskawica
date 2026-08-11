@@ -89,7 +89,7 @@ class AmassAdapter(ToolPlugin):
 
         for subdomain_entry in parsed_data.get("subdomains", []):
             name = subdomain_entry.get("name", "")
-            domain = subdomain_entry.get("domain", "")
+            domain = subdomain_entry.get("domain", "")  # noqa: F841
             addresses = subdomain_entry.get("addresses", [])
             sources = subdomain_entry.get("sources", [])
             tag = subdomain_entry.get("tag", "")

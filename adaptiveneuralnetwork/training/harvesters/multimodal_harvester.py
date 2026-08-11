@@ -3,11 +3,16 @@ Multimodal Knowledge Harvester.
 Bridges Philosophy (ION), Fairness (COMPAS/ADULT), and Security (ANOMALY) into Błyskawica.
 """
 
+from pathlib import Path
+
 import pandas as pd
 import torch
-import numpy as np
-from pathlib import Path
-from adaptiveneuralnetwork.central_nervous_system.neuromorphic.temporal_coding import TemporalPatternEncoder, TemporalConfig
+
+from adaptiveneuralnetwork.central_nervous_system.neuromorphic.temporal_coding import (
+    TemporalConfig,
+    TemporalPatternEncoder,
+)
+
 
 class KnowledgeHub:
     """
@@ -19,7 +24,7 @@ class KnowledgeHub:
         config = TemporalConfig()
         # Input size matches character/val range, target patterns size arbitrarily set
         self.text_encoder = TemporalPatternEncoder(input_size=256, pattern_size=64, config=config)
-        
+
     def harvest_wisdom(self):
         """Processes ION_Plato.csv into semantic trajectories."""
         df = pd.read_csv(self.root / "ION_Plato.csv")
@@ -38,18 +43,18 @@ class KnowledgeHub:
     def harvest_armor(self):
         """Processes smart_system_anomaly_dataset.csv into rate-coded threat vectors."""
         df = pd.read_csv(self.root / "smart_system_anomaly_dataset.csv")
-        
+
         # Select numeric metrics for mapping
         metrics = df[['cpu_usage', 'memory_usage', 'network_in_kb', 'packet_rate']].head(500)
         labels = df['label'].head(500)
-        
+
         # Normalize 0-1
         metrics_norm = (metrics - metrics.min()) / (metrics.max() - metrics.min())
-        
+
         # Map labels to numeric
         label_map = {"Normal": 0, "Anomaly_DoS": 1, "Anomaly_Injection": 2, "Anomaly_Spoofing": 3}
         numeric_labels = labels.map(label_map).fillna(0).astype(int)
-        
+
         return torch.tensor(metrics_norm.values, dtype=torch.float32), torch.tensor(numeric_labels.values)
 
     def harvest_fairness(self):
@@ -62,11 +67,11 @@ class KnowledgeHub:
 if __name__ == "__main__":
     hub = KnowledgeHub()
     print("[HARVESTER] Auditing Seeds of Wisdom...")
-    
+
     wisdom = hub.harvest_wisdom()
     print(f"- Wisdom Ingested: {len(wisdom)} Socratic fragments.")
-    
+
     armor_data, armor_labels = hub.harvest_armor()
     print(f"- Armor Ingested: {len(armor_data)} threat/normal vectors.")
-    
+
     print("[STATUS] Błyskawica is now capable of feeling Ethical and Strategic Torque. ⚡️Φ!")

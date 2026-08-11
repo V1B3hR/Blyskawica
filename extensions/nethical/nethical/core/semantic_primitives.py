@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Dict, List, Set, Optional, Any
 from enum import Enum
+from typing import Any
 
 from .embedding_engine import EmbeddingEngine, EmbeddingResult
 
@@ -563,7 +563,7 @@ class EnhancedPrimitiveDetector:
 
     def __init__(
         self,
-        embedding_engine: Optional[EmbeddingEngine] = None,
+        embedding_engine: EmbeddingEngine | None = None,
         use_embedding_similarity: bool = True,
         similarity_threshold: float = 0.75,
     ):
@@ -582,7 +582,7 @@ class EnhancedPrimitiveDetector:
         self.similarity_threshold = similarity_threshold
 
         # Pre-compute embeddings for primitive descriptions
-        self._primitive_embeddings: Dict[SemanticPrimitive, EmbeddingResult] = {}
+        self._primitive_embeddings: dict[SemanticPrimitive, EmbeddingResult] = {}
         if self.use_embedding_similarity:
             self._precompute_primitive_embeddings()
 
@@ -619,15 +619,15 @@ class EnhancedPrimitiveDetector:
                     description, metadata={"primitive": primitive.value}
                 )
                 self._primitive_embeddings[primitive] = emb
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 logger.warning(f"Failed to embed primitive {primitive}: {e}")
 
     def detect_primitives(
         self,
         action_text: str,
         action_type: str = "text",
-        context: Optional[Dict[str, Any]] = None,
-    ) -> List[SemanticPrimitive]:
+        context: dict[str, Any] | None = None,
+    ) -> list[SemanticPrimitive]:
         """
         Detect semantic primitives in action text.
 
@@ -662,12 +662,12 @@ class EnhancedPrimitiveDetector:
 
         return list(detected)
 
-    def _detect_by_keywords(self, text_lower: str) -> Set[SemanticPrimitive]:
+    def _detect_by_keywords(self, text_lower: str) -> set[SemanticPrimitive]:
         """Detect primitives using comprehensive keyword matching."""
         detected = set()
 
         for primitive, keyword_groups in PRIMITIVE_KEYWORDS.items():
-            for group_name, keywords in keyword_groups.items():
+            for group_name, keywords in keyword_groups.items():  # noqa: B007, PERF102
                 if any(keyword in text_lower for keyword in keywords):
                     detected.add(primitive)
                     break
@@ -676,7 +676,7 @@ class EnhancedPrimitiveDetector:
 
     def _detect_by_patterns(
         self, text_lower: str, original_text: str
-    ) -> Set[SemanticPrimitive]:
+    ) -> set[SemanticPrimitive]:
         """Detect primitives using regex patterns."""
         detected = set()
 
@@ -741,8 +741,8 @@ class EnhancedPrimitiveDetector:
         return detected
 
     def _detect_by_context(
-        self, text_lower: str, action_type: str, context: Dict[str, Any]
-    ) -> Set[SemanticPrimitive]:
+        self, text_lower: str, action_type: str, context: dict[str, Any]
+    ) -> set[SemanticPrimitive]:
         """Detect primitives based on action type and context."""
         detected = set()
 
@@ -779,7 +779,7 @@ class EnhancedPrimitiveDetector:
             detected.add(SemanticPrimitive.ACCESS_SYSTEM)
 
         # Check for sensitive operations in context
-        if context.get("sensitive", False):
+        if context.get("sensitive", False):  # noqa: SIM102
             if "personal" in text_lower or "user" in text_lower:
                 detected.add(SemanticPrimitive.ACCESS_USER_DATA)
 
@@ -787,7 +787,7 @@ class EnhancedPrimitiveDetector:
 
     def _detect_by_embedding_similarity(
         self, action_text: str
-    ) -> Set[SemanticPrimitive]:
+    ) -> set[SemanticPrimitive]:
         """Detect primitives using embedding-based semantic similarity."""
         detected = set()
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String, Text, JSON
+from sqlalchemy import JSON, Boolean, Column, DateTime, Float, Integer, String, Text
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -13,9 +13,9 @@ Base = declarative_base()
 
 class User(Base):
     """User model for RBAC."""
-    
+
     __tablename__ = "users"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(255), unique=True, nullable=False, index=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
@@ -25,7 +25,7 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-    
+
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
@@ -42,9 +42,9 @@ class User(Base):
 
 class Agent(Base):
     """Agent model for configuration management."""
-    
+
     __tablename__ = "agents"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     agent_id = Column(String(255), unique=True, nullable=False, index=True)
     name = Column(String(255), nullable=False)
@@ -58,7 +58,7 @@ class Agent(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     created_by = Column(String(255))
-    
+
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
@@ -80,9 +80,9 @@ class Agent(Base):
 
 class Policy(Base):
     """Policy model for governance rules management."""
-    
+
     __tablename__ = "policies"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     policy_id = Column(String(255), unique=True, nullable=False, index=True)
     name = Column(String(255), nullable=False)
@@ -100,7 +100,7 @@ class Policy(Base):
     activated_at = Column(DateTime)
     deprecated_at = Column(DateTime)
     created_by = Column(String(255))
-    
+
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
@@ -126,9 +126,9 @@ class Policy(Base):
 
 class AuditLog(Base):
     """Audit log model for immutable event tracking."""
-    
+
     __tablename__ = "audit_logs"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     log_id = Column(String(255), unique=True, nullable=False, index=True)
     event_type = Column(String(100), nullable=False, index=True)  # decision, policy_change, threat_detected, etc.
@@ -143,7 +143,7 @@ class AuditLog(Base):
     previous_hash = Column(String(128))
     timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     verified = Column(Boolean, default=True)
-    
+
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {

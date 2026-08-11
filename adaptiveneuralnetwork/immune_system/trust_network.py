@@ -240,7 +240,7 @@ class TrustNetwork:
             if trust > 0.6  # Only ask those we trust
         ]
 
-        for neighbor in trusted_neighbors[:5]:  # Ask up to 5 trusted neighbors
+        for neighbor in trusted_neighbors[:5]:  # Ask up to 5 trusted neighbors  # noqa: B007
             # This would actually send the request
             # For now, we'll just log it
             # print(f"Requesting trust verification from {neighbor} about {verification_request['subject']}")  # Silenced for cleaner output
@@ -581,7 +581,7 @@ class TrustNetwork:
         successful_detections = 0
         false_positives = 0
 
-        for i in range(num_simulations):
+        for i in range(num_simulations):  # noqa: B007
             # Reset state
             self.trust_network = original_trust_network.copy()
             self.suspicion_alerts = original_alerts.copy()

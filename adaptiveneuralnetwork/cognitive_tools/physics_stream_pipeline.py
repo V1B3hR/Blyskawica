@@ -4,18 +4,17 @@ Cognitive Physics Pipeline for Błyskawica V8 (Stream 2: PINN & Digital Metaboli
 Processes UCI sensor & CPU energy telemetry datasets (archive.ics.uci.edu, CommonCrawl_Physics)
 as a time-series digital metabolism stream. Links Dopamine levels (high compute activity) to power 
 consumption and thermal dissipation via PINNThermalNet, enforcing thermodynamic homeostasis.
-"""
+"""  # noqa: W291
 
-import math
 import logging
-import time
 from dataclasses import dataclass
-from typing import Dict, Any, List, Tuple
+from typing import Any
+
 import torch
 import torch.nn as nn
 
 from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import NeuromodulationState
-from adaptiveneuralnetwork.cognitive_tools.pinn_thermal_engine import PINNTrainer, PINNThermalNet
+from adaptiveneuralnetwork.cognitive_tools.pinn_thermal_engine import PINNTrainer
 
 logger = logging.getLogger("physics_stream")
 
@@ -49,7 +48,7 @@ class CognitivePhysicsEngine(nn.Module):
     """
 
     def __init__(
-        self, 
+        self,
         neuro_state: NeuromodulationState | None = None,
         thermal_ceiling: float = 85.0
     ):
@@ -64,9 +63,9 @@ class CognitivePhysicsEngine(nn.Module):
         self.thermal_volatility = 0.0
 
     def step_metabolism(
-        self, 
-        samples: List[TelemetrySensorSample]
-    ) -> Tuple[torch.Tensor, Dict[str, Any]]:
+        self,
+        samples: list[TelemetrySensorSample]
+    ) -> tuple[torch.Tensor, dict[str, Any]]:
         """
         Processes hardware telemetry samples and updates Błyskawica's digital metabolism.
         High Dopamine + high CPU utilization = rapid temperature rise.
@@ -75,7 +74,7 @@ class CognitivePhysicsEngine(nn.Module):
         feature_tensors = [s.to_tensor() for s in samples]
         batch_tensor = torch.stack(feature_tensors)  # [B, 5]
 
-        avg_clock = batch_tensor[:, 0].mean().item() * 5.0
+        avg_clock = batch_tensor[:, 0].mean().item() * 5.0  # noqa: F841
         avg_util = batch_tensor[:, 1].mean().item() * 100.0
         avg_power = batch_tensor[:, 3].mean().item() * 250.0
 

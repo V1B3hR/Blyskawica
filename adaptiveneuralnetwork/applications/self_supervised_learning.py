@@ -64,7 +64,7 @@ class SignalPredictor(nn.Module):
             
         Returns:
             predictions: Future signal predictions [batch, horizon, input_dim]
-        """
+        """  # noqa: W293
         # Encode context
         _, (hidden, _) = self.context_encoder(context)
 
@@ -123,7 +123,7 @@ class ContrastiveRepresentationLearner(nn.Module):
         Returns:
             embeddings: Signal embeddings [batch, embedding_dim]
             projections: Projected embeddings for contrastive learning
-        """
+        """  # noqa: W293
         embeddings = self.encoder(x)
         projections = self.projection_head(embeddings)
         return embeddings, projections
@@ -199,7 +199,7 @@ class SelfSupervisedLearningSystem(nn.Module):
             
         Returns:
             Dictionary of loss values
-        """
+        """  # noqa: W293
         self.train()
         losses = {}
 

@@ -5,7 +5,7 @@ Integrates with GitHub Security Advisory Database.
 """
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
 import requests
 
@@ -26,7 +26,7 @@ class GitHubAdvisoryConnector:
 
     GITHUB_GRAPHQL_API = "https://api.github.com/graphql"
 
-    def __init__(self, token: Optional[str] = None):
+    def __init__(self, token: str | None = None):
         """
         Initialize GitHub advisory connector.
 
@@ -38,7 +38,7 @@ class GitHubAdvisoryConnector:
         if token:
             self.session.headers.update({"Authorization": f"Bearer {token}"})
 
-    def get_advisory(self, ghsa_id: str) -> Optional[dict[str, Any]]:
+    def get_advisory(self, ghsa_id: str) -> dict[str, Any] | None:
         """
         Get security advisory by GHSA ID.
 
@@ -93,7 +93,7 @@ class GitHubAdvisoryConnector:
             logger.error(f"Failed to fetch advisory from GitHub: {e}")
             return None
 
-    def search_by_cve(self, cve_id: str) -> Optional[dict[str, Any]]:
+    def search_by_cve(self, cve_id: str) -> dict[str, Any] | None:
         """
         Search advisory by CVE ID.
 

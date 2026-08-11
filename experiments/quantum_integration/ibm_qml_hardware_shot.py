@@ -6,18 +6,19 @@ wysylane jako JEDEN job IBM. To wlasciwy sposob uzycia EstimatorV2.
 
 Zamiast 18 sekwencyjnych jobów -> 1 batch job z 18 PUBami.
 """
-import math
 import json
 import logging
+import math
+
 import numpy as np
 
 logging.basicConfig(level=logging.WARNING)
 
-from qiskit import QuantumCircuit
-from qiskit.circuit import ParameterVector
-from qiskit.quantum_info import SparsePauliOp
-from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
-from qiskit_ibm_runtime import QiskitRuntimeService, EstimatorV2 as IBMEstimator
+from qiskit import QuantumCircuit  # noqa: E402
+from qiskit.circuit import ParameterVector  # noqa: E402
+from qiskit.quantum_info import SparsePauliOp  # noqa: E402
+from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager  # noqa: E402
+from qiskit_ibm_runtime import EstimatorV2 as IBMEstimator, QiskitRuntimeService  # noqa: E402
 
 
 def build_pqc(x_params, theta_params):
@@ -39,7 +40,7 @@ def main():
     print("="*60 + "\n")
 
     key_path = r"C:\Projekty\Quantlion\apikey Błyskawica.json"
-    with open(key_path, 'r', encoding='utf-8') as f:
+    with open(key_path, encoding='utf-8') as f:
         api_key = json.load(f).get("apikey")
 
     service = QiskitRuntimeService(channel="ibm_quantum_platform", token=api_key)
@@ -85,7 +86,7 @@ def main():
         pubs = []
         circuit_index_map = []  # Sledzi co kazdy PUB reprezentuje
 
-        for ex_idx, (x_vals, y_target) in enumerate(training_data):
+        for ex_idx, (x_vals, y_target) in enumerate(training_data):  # noqa: B007
             base_dict = {x_params[i]: float(x_vals[i]) for i in range(2)}
 
             # Forward pass (theta bez zmiany)
@@ -111,7 +112,7 @@ def main():
         job_id = job.job_id()
         print(f"    Job ID: {job_id} — czekam na wyniki...")
         results = job.result()
-        print(f"    Wyniki otrzymane!")
+        print("    Wyniki otrzymane!")
 
         # Parsuj wyniki
         evs = [results[i].data.evs for i in range(len(pubs))]
@@ -155,7 +156,7 @@ def main():
     print(f"  Strata poczatkowa: {loss_history[0]:.6f}")
     print(f"  Strata koncowa:    {loss_history[-1]:.6f}")
     print(f"  Redukcja:          {reduction:.1f}%")
-    print(f"  Wagi kwantowe (theta po treningu na IBM):")
+    print("  Wagi kwantowe (theta po treningu na IBM):")
     for i, w in enumerate(theta):
         print(f"    theta[{i}] = {w:.6f}")
 

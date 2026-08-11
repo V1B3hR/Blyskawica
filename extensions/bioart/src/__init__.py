@@ -10,20 +10,20 @@ __license__ = "MIT"
 
 # Import main components for easy access
 from .bioart_language import BioartLanguage, create_bioart_system
-from .core.encoding import DNAEncoder, encode_bytes, decode_dna, encode_string, decode_to_string
-from .vm.virtual_machine import DNAVirtualMachine, create_vm, VMState
-from .vm.instruction_set import DNAInstructionSet, get_instruction, is_valid_instruction
-from .compiler.dna_compiler import DNACompiler
-from .utils.file_manager import DNAFileManager
+from .biological.error_correction import BiologicalErrorCorrection
+from .biological.genetic_tools import GeneticEngineeringInterface
+from .biological.storage_systems import BiologicalStorageManager
 
 # New enhanced modules
 from .biological.synthesis_systems import DNASynthesisManager
-from .biological.storage_systems import BiologicalStorageManager  
-from .biological.genetic_tools import GeneticEngineeringInterface
-from .biological.error_correction import BiologicalErrorCorrection
-from .parallel.dna_threading import DNAThreadManager
-from .parallel.parallel_executor import ParallelDNAExecutor, ExecutionStrategy
+from .compiler.dna_compiler import DNACompiler
+from .core.encoding import DNAEncoder, decode_dna, decode_to_string, encode_bytes, encode_string
 from .parallel.distributed_computing import DistributedDNAComputer, NodeType
+from .parallel.dna_threading import DNAThreadManager
+from .parallel.parallel_executor import ExecutionStrategy, ParallelDNAExecutor
+from .utils.file_manager import DNAFileManager
+from .vm.instruction_set import DNAInstructionSet, get_instruction, is_valid_instruction
+from .vm.virtual_machine import DNAVirtualMachine, VMState, create_vm
 
 # AI Ethics Framework
 try:
@@ -44,14 +44,14 @@ VERSION_INFO = {
         'Biological DNA synthesis and storage integration',
         'CRISPR and genetic engineering tools interface',
         'Multi-threading and parallel execution support',
-        'Distributed computing capabilities', 
+        'Distributed computing capabilities',
         'Advanced error correction for biological environments',
         'Real-time biological constraint simulation',
         'Comprehensive AI Ethics Framework integration'
     ],
     'improvements': [
         'Biological synthesis systems integration',
-        'Real DNA storage and retrieval mechanisms', 
+        'Real DNA storage and retrieval mechanisms',
         'Error correction coding for biological environments',
         'Multi-threading support for parallel DNA execution',
         'Interface with genetic engineering tools',
@@ -95,20 +95,20 @@ def run_dna_program(dna_code: str) -> dict:
 __all__ = [
     # Main classes
     'BioartLanguage',
-    'DNAEncoder', 
+    'DNAEncoder',
     'DNAVirtualMachine',
     'DNAInstructionSet',
     'DNACompiler',
     'DNAFileManager',
-    
+
     # Enums and types
     'VMState',
-    
+
     # Factory functions
     'create_bioart_system',
     'create_vm',
     'create_default_system',
-    
+
     # Convenience functions
     'encode_bytes',
     'decode_dna',
@@ -119,26 +119,26 @@ __all__ = [
     'run_dna_program',
     'get_instruction',
     'is_valid_instruction',
-    
+
     # Enhanced biological components
     'DNASynthesisManager',
     'BiologicalStorageManager',
-    'GeneticEngineeringInterface', 
+    'GeneticEngineeringInterface',
     'BiologicalErrorCorrection',
-    
+
     # Parallel processing components
     'DNAThreadManager',
     'ParallelDNAExecutor',
     'ExecutionStrategy',
     'DistributedDNAComputer',
     'NodeType',
-    
+
     # AI Ethics Framework (if available)
     'ETHICS_AVAILABLE',
-    
+
     # Utility functions
     'get_version_info',
-    
+
     # Version info
     '__version__',
     'VERSION_INFO'
@@ -148,6 +148,6 @@ __all__ = [
 if ETHICS_AVAILABLE:
     __all__.extend([
         'EthicsFramework',
-        'EthicsLevel', 
+        'EthicsLevel',
         'EthicsViolationError'
     ])

@@ -57,7 +57,7 @@ class DynamicBatcher:
             results = await processor(requests)
 
             # Return results to waiting futures
-            for (_, future), result in zip(self._pending_requests, results):
+            for (_, future), result in zip(self._pending_requests, results):  # noqa: B905
                 if not future.done():
                     future.set_result(result)
 
@@ -211,7 +211,7 @@ class RequestOptimizer:
                 batch_results = await processor(uncached_requests)
 
             # Update cache and results
-            for i, request, result in zip(uncached_indices, uncached_requests, batch_results):
+            for i, request, result in zip(uncached_indices, uncached_requests, batch_results):  # noqa: B905
                 results[i] = result
 
                 if enable_cache:

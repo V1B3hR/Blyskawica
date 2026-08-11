@@ -1,17 +1,12 @@
 """Tests for Nethical MCP Server."""
 
-import pytest
-import json
-import asyncio
-import tempfile
 import shutil
-from pathlib import Path
-from unittest.mock import Mock, AsyncMock, patch
+import tempfile
+
+import pytest
 
 from nethical.mcp_server import (
     MCPServer,
-    MCPTool,
-    ToolParameter,
     create_app,
 )
 

@@ -44,7 +44,7 @@ class TemporalPatternEncoder(nn.Module):
     
     Detects and encodes precise temporal sequences and correlations
     in spike trains for pattern-based information processing.
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
@@ -119,7 +119,7 @@ class TemporalPatternEncoder(nn.Module):
             
         Returns:
             Tuple of (pattern_activations, encoding_info)
-        """
+        """  # noqa: W293
         if dt is None:
             dt = 0.001
 
@@ -201,7 +201,7 @@ class PhaseEncoder(nn.Module):
     
     Encodes information in the phase relationship between spikes
     and underlying oscillations (e.g., gamma, theta rhythms).
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
@@ -239,7 +239,7 @@ class PhaseEncoder(nn.Module):
             
         Returns:
             Tuple of (phase_encoded_output, phase_info)
-        """
+        """  # noqa: W293
         if dt is None:
             dt = 0.001
 
@@ -283,7 +283,7 @@ class PhaseEncoder(nn.Module):
         phase_weights = torch.cos(self.current_phases.unsqueeze(-1) -
                                 torch.linspace(0, 2*math.pi, self.config.phase_resolution))
 
-        weighted_output = phase_weights * self.phase_bins
+        weighted_output = phase_weights * self.phase_bins  # noqa: F841
 
         phase_info = {
             'current_phases': self.current_phases.clone(),
@@ -302,7 +302,7 @@ class OscillatoryDynamics(nn.Module):
     
     Implements multiple coupled oscillators representing different
     frequency bands (theta, alpha, beta, gamma) with cross-frequency coupling.
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
@@ -349,7 +349,7 @@ class OscillatoryDynamics(nn.Module):
             
         Returns:
             Tuple of (oscillator_outputs, oscillatory_info)
-        """
+        """  # noqa: W293
         if dt is None:
             dt = 0.001
 
@@ -423,7 +423,7 @@ class SparseDistributedRepresentation(nn.Module):
     
     Implements sparse coding principles with lateral inhibition
     to create distributed but sparse neural representations.
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
@@ -472,7 +472,7 @@ class SparseDistributedRepresentation(nn.Module):
             
         Returns:
             Tuple of (sparse_representation, sparsity_info)
-        """
+        """  # noqa: W293
         if dt is None:
             dt = 0.001
 
@@ -556,7 +556,7 @@ class VisualSpikeEncoder(nn.Module):
     
     Converts visual feature maps or raw images into spike trains where
     higher intensity pixels/features fire earlier in the temporal window.
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
@@ -581,41 +581,41 @@ class VisualSpikeEncoder(nn.Module):
             
         Returns:
             Tuple of (spikes, encoding_info)
-        """
+        """  # noqa: W293
         batch_size = visual_input.size(0)
-        
+
         # Flatten if necessary
         if visual_input.dim() > 2:
             x = visual_input.view(batch_size, -1)
         else:
             x = visual_input
-            
+
         # Normalize input to [0, 1] for latency calculation
         x_min = x.min(dim=1, keepdim=True)[0]
         x_max = x.max(dim=1, keepdim=True)[0]
         x_norm = (x - x_min) / (x_max - x_min + 1e-8)
-        
+
         # Latency coding: higher intensity = lower latency (earlier spike)
         # Latency is in the range [0, pattern_window]
         latencies = self.config.pattern_window * (1.0 - x_norm)
-        
+
         # Convert latencies to binary spikes based on current_time
         # In a real-time loop, a neuron spikes if current_time >= firing_time
         # Here we simulate the spikes within the current window
         time_within_window = current_time % self.config.pattern_window
-        
+
         # A spike is active if the current time matches the latency (with some tolerance)
         tolerance = self.config.pattern_window / self.temporal_resolution
-        spikes = ((time_within_window >= latencies) & 
+        spikes = ((time_within_window >= latencies) &
                   (time_within_window < latencies + tolerance)).float()
-        
+
         encoding_info = {
             'latencies': latencies.clone(),
             'normalized_input': x_norm.clone(),
             'spike_threshold': tolerance,
             'time_within_window': time_within_window
         }
-        
+
         return spikes, encoding_info
 
 
@@ -626,7 +626,7 @@ class AudioSpikeEncoder(nn.Module):
     Converts frequency bins (e.g. from a spectrogram) into spike patterns
     where the timing of the spike relative to an internal oscillation
     represents the energy in that frequency band.
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
@@ -636,9 +636,9 @@ class AudioSpikeEncoder(nn.Module):
         super().__init__()
         self.config = config
         self.num_frequency_bins = num_frequency_bins
-        
+
         # Map frequencies to target phases for oscillatory binding
-        self.register_buffer('target_phases', 
+        self.register_buffer('target_phases',
                            torch.linspace(0, 2 * torch.pi, num_frequency_bins))
 
     def forward(
@@ -655,41 +655,41 @@ class AudioSpikeEncoder(nn.Module):
             
         Returns:
             Tuple of (spikes, encoding_info)
-        """
-        batch_size = audio_spectrum.size(0)
-        
+        """  # noqa: W293
+        batch_size = audio_spectrum.size(0)  # noqa: F841
+
         # 1. Normalize spectrum
         spec_min = audio_spectrum.min(dim=1, keepdim=True)[0]
         spec_max = audio_spectrum.max(dim=1, keepdim=True)[0]
         spec_norm = (audio_spectrum - spec_min) / (spec_max - spec_min + 1e-8)
-        
+
         # 2. Phase Coding: Map intensity to a spike timing within the oscillation
         # We simulate a global oscillation of frequency config.oscillation_frequencies[0]
         # (Defaulting to 40Hz / Gamma if not present)
         base_freq = self.config.oscillation_frequencies[0] if self.config.oscillation_frequencies else 40.0
         cycle_period = 1.0 / base_freq
-        
+
         # Time within current cycle
         time_in_cycle = current_time % cycle_period
         relative_phase = (time_in_cycle / cycle_period) * 2 * torch.pi
-        
+
         # 3. Spike if the current phase matches the "intensity-shifted" phase
         # Higher intensity frequency bins shift the spike earlier in the phase
         intensities = spec_norm # [B, N]
-        
+
         # Phase shift: 0 to pi based on intensity
         phase_shifts = intensities * torch.pi
         spike_phases = (self.target_phases.unsqueeze(0) - phase_shifts) % (2 * torch.pi)
-        
+
         # Spike detection with a small phase window
         phase_window = (2 * torch.pi) / 50 # 50 discrete phase bins
-        spikes = ((relative_phase >= spike_phases) & 
+        spikes = ((relative_phase >= spike_phases) &
                   (relative_phase < spike_phases + phase_window)).float()
-        
+
         encoding_info = {
             'spectrum_norm': spec_norm.clone(),
             'relative_phase': relative_phase,
             'spike_phases': spike_phases.clone()
         }
-        
+
         return spikes, encoding_info

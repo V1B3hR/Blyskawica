@@ -20,7 +20,7 @@ import re
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 # Optional YAML support
 try:
@@ -75,11 +75,11 @@ class DetectorPack:
     pack_id: str
     name: str
     description: str
-    detectors: List[str]
-    configuration: Dict[str, Any]
-    industry: Optional[Industry] = None
-    use_cases: List[str] = field(default_factory=list)
-    tags: Set[str] = field(default_factory=set)
+    detectors: list[str]
+    configuration: dict[str, Any]
+    industry: Industry | None = None
+    use_cases: list[str] = field(default_factory=list)
+    tags: set[str] = field(default_factory=set)
 
     # Optional metadata
     version: str = "1.0.0"
@@ -100,7 +100,7 @@ class DetectorPack:
         self.tags = {normalize_tag(t) for t in self.tags}
         self.use_cases = [normalize_tag(u) for u in self.use_cases]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to a JSON-friendly dict."""
         data = asdict(self)
         # Convert Enums and datetime
@@ -108,11 +108,11 @@ class DetectorPack:
             data["industry"] = self.industry.value
         data["created_at"] = self.created_at.isoformat()
         # Sets -> lists
-        data["tags"] = sorted(list(self.tags))
+        data["tags"] = sorted(list(self.tags))  # noqa: C414
         return data
 
     @staticmethod
-    def from_dict(data: Dict[str, Any]) -> "DetectorPack":
+    def from_dict(data: dict[str, Any]) -> DetectorPack:
         """Deserialize from a dict."""
         industry_val = data.get("industry")
         industry = Industry(industry_val) if industry_val in {i.value for i in Industry} else None
@@ -148,11 +148,11 @@ class IndustryPack:
     """Industry-specific detector pack."""
 
     industry: Industry
-    packs: List[DetectorPack]
-    compliance_standards: List[str] = field(default_factory=list)
-    best_practices: List[str] = field(default_factory=list)
+    packs: list[DetectorPack]
+    compliance_standards: list[str] = field(default_factory=list)
+    best_practices: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "industry": self.industry.value,
             "packs": [p.to_dict() for p in self.packs],
@@ -169,15 +169,15 @@ class UseCaseTemplate:
     name: str
     description: str
     detector_pack_id: str
-    configuration: Dict[str, Any]
+    configuration: dict[str, Any]
     example_code: str = ""
-    example_code_language: Optional[str] = None
+    example_code_language: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
     @staticmethod
-    def from_dict(data: Dict[str, Any]) -> "UseCaseTemplate":
+    def from_dict(data: dict[str, Any]) -> UseCaseTemplate:
         return UseCaseTemplate(
             template_id=data["template_id"],
             name=data["name"],
@@ -206,7 +206,7 @@ def _contains(text: str, needle: str) -> bool:
     return needle.lower() in text.lower()
 
 
-def _score_match(pack: DetectorPack, query: Optional[str], use_case: Optional[str]) -> int:
+def _score_match(pack: DetectorPack, query: str | None, use_case: str | None) -> int:
     """Compute a relevance score for a pack given optional query and use_case."""
     if query is None and use_case is None:
         return 0
@@ -251,9 +251,9 @@ class DetectorPackRegistry:
 
     def __init__(self):
         """Initialize detector pack registry."""
-        self._packs: Dict[str, DetectorPack] = {}
-        self._industry_packs: Dict[Industry, IndustryPack] = {}
-        self._templates: Dict[str, UseCaseTemplate] = {}
+        self._packs: dict[str, DetectorPack] = {}
+        self._industry_packs: dict[Industry, IndustryPack] = {}
+        self._templates: dict[str, UseCaseTemplate] = {}
         self._initialize_default_packs()
         self._initialize_default_templates()
 
@@ -304,7 +304,7 @@ class DetectorPackRegistry:
     def has_pack(self, pack_id: str) -> bool:
         return pack_id in self._packs
 
-    def get_pack(self, pack_id: str) -> Optional[DetectorPack]:
+    def get_pack(self, pack_id: str) -> DetectorPack | None:
         """Get a detector pack by ID.
 
         Args:
@@ -315,7 +315,7 @@ class DetectorPackRegistry:
         """
         return self._packs.get(pack_id)
 
-    def list_packs(self) -> List[DetectorPack]:
+    def list_packs(self) -> list[DetectorPack]:
         """List all available detector packs.
 
         Returns:
@@ -329,7 +329,7 @@ class DetectorPackRegistry:
 
     # ------------- Industry -------------
 
-    def get_industry_pack(self, industry: Industry) -> Optional[IndustryPack]:
+    def get_industry_pack(self, industry: Industry) -> IndustryPack | None:
         """Get industry-specific detector packs.
 
         Args:
@@ -340,7 +340,7 @@ class DetectorPackRegistry:
         """
         return self._industry_packs.get(industry)
 
-    def list_industries(self) -> List[Industry]:
+    def list_industries(self) -> list[Industry]:
         """List industries that have at least one pack."""
         return sorted(self._industry_packs.keys(), key=lambda i: i.value)
 
@@ -354,7 +354,7 @@ class DetectorPackRegistry:
         """
         self._templates[template.template_id] = template
 
-    def get_use_case_template(self, template_id: str) -> Optional[UseCaseTemplate]:
+    def get_use_case_template(self, template_id: str) -> UseCaseTemplate | None:
         """Get use case template.
 
         Args:
@@ -365,7 +365,7 @@ class DetectorPackRegistry:
         """
         return self._templates.get(template_id)
 
-    def list_templates(self) -> List[UseCaseTemplate]:
+    def list_templates(self) -> list[UseCaseTemplate]:
         """List all registered templates."""
         return sorted(self._templates.values(), key=lambda t: t.name.lower())
 
@@ -373,16 +373,16 @@ class DetectorPackRegistry:
 
     def search_packs(
         self,
-        industry: Optional[Industry] = None,
-        tags: Optional[Set[str]] = None,
-        use_case: Optional[str] = None,
-        query: Optional[str] = None,
+        industry: Industry | None = None,
+        tags: set[str] | None = None,
+        use_case: str | None = None,
+        query: str | None = None,
         *,
         match_any_tag: bool = False,
-        limit: Optional[int] = None,
+        limit: int | None = None,
         sort_by: str = "relevance",  # "relevance" | "name"
         include_deprecated: bool = False,
-    ) -> List[DetectorPack]:
+    ) -> list[DetectorPack]:
         """Search for detector packs.
 
         Args:
@@ -398,12 +398,12 @@ class DetectorPackRegistry:
         Returns:
             List of matching packs
         """
-        norm_tags: Optional[Set[str]] = None
+        norm_tags: set[str] | None = None
         if tags:
             norm_tags = {normalize_tag(t) for t in tags}
         norm_use_case = normalize_tag(use_case) if use_case else None
 
-        scored: List[Tuple[int, DetectorPack]] = []
+        scored: list[tuple[int, DetectorPack]] = []
         for pack in self._packs.values():
             if not include_deprecated and pack.deprecated:
                 continue
@@ -432,22 +432,22 @@ class DetectorPackRegistry:
             results = results[:limit]
         return results
 
-    def find_packs_by_detector(self, detector_identifier: str) -> List[DetectorPack]:
+    def find_packs_by_detector(self, detector_identifier: str) -> list[DetectorPack]:
         """Find packs that include a specific detector by id/name."""
         needle = detector_identifier.lower().strip()
         return [p for p in self._packs.values() if any(needle in d.lower() for d in p.detectors)]
 
     # ------------- Import / Export -------------
 
-    def export_packs(self) -> List[Dict[str, Any]]:
+    def export_packs(self) -> list[dict[str, Any]]:
         """Export all packs to a list of dicts."""
         return [p.to_dict() for p in self.list_packs()]
 
-    def export_templates(self) -> List[Dict[str, Any]]:
+    def export_templates(self) -> list[dict[str, Any]]:
         """Export all templates to a list of dicts."""
         return [t.to_dict() for t in self.list_templates()]
 
-    def to_json(self, *, indent: Optional[int] = 2) -> str:
+    def to_json(self, *, indent: int | None = 2) -> str:
         """Export registry packs and templates to JSON string."""
         payload = {
             "packs": self.export_packs(),
@@ -472,10 +472,10 @@ class DetectorPackRegistry:
         if path.lower().endswith((".yaml", ".yml")):
             if not _HAS_YAML:
                 raise RegistryError("PyYAML is required to load YAML files.")
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 payload = yaml.safe_load(f) or {}  # type: ignore[name-defined]
         else:
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 payload = json.load(f)
 
         for p in payload.get("packs", []) or []:

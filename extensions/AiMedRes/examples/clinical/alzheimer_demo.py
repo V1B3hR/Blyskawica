@@ -12,9 +12,8 @@ Problem Statement Datasets:
 - https://www.kaggle.com/code/tutenstein/99-8-acc-alzheimer-detection-and-classification/comments
 """
 
-import os
-import sys
 from pathlib import Path
+
 
 def run_alzheimer_training_demo():
     """
@@ -25,14 +24,14 @@ def run_alzheimer_training_demo():
     print("This demo shows how to run the training pipeline with the datasets")
     print("mentioned in the problem statement.")
     print()
-    
+
     # Get the repository root
     repo_root = Path("/home/runner/work/AiMedRes/AiMedRes")
     training_script = repo_root / "files" / "training" / "train_alzheimers.py"
-    
+
     print(f"Training script location: {training_script}")
     print()
-    
+
     # Different ways to run the training
     examples = [
         {
@@ -61,13 +60,13 @@ def run_alzheimer_training_demo():
             'description': 'Use your own CSV file instead of downloading from Kaggle'
         }
     ]
-    
+
     for i, example in enumerate(examples, 1):
         print(f"{i}. {example['title']}")
         print(f"   Command: {example['command']}")
         print(f"   Description: {example['description']}")
         print()
-    
+
     print("Sample Results from Recent Run:")
     print("-" * 30)
     print("Dataset: Alzheimer's Disease Dataset (2149 samples, 35 features)")
@@ -75,19 +74,19 @@ def run_alzheimer_training_demo():
     print("Features after preprocessing: 32")
     print()
     print("Classical Models Performance (Cross-Validation):")
-    print("  Logistic Regression: Accuracy=83.34%, F1=81.52%")  
+    print("  Logistic Regression: Accuracy=83.34%, F1=81.52%")
     print("  Random Forest: Accuracy=93.49%, F1=92.70%")
     print("  XGBoost: Accuracy=94.42%, F1=93.84%")
     print("  LightGBM: Accuracy=94.93%, F1=94.39%")
     print()
     print("Neural Network: Accuracy=87.11%, F1=86.12%")
     print()
-    
+
     print("Output Structure:")
     print("outputs/")
     print("├── models/")
     print("│   ├── logistic_regression.pkl")
-    print("│   ├── random_forest.pkl") 
+    print("│   ├── random_forest.pkl")
     print("│   ├── xgboost.pkl")
     print("│   ├── lightgbm.pkl")
     print("│   ├── neural_network.pth")
@@ -100,7 +99,7 @@ def run_alzheimer_training_demo():
     print("    ├── training_report.json")
     print("    └── training_summary.txt")
     print()
-    
+
     print("Key Features:")
     print("✓ Automatic dataset download from Kaggle")
     print("✓ Comprehensive data preprocessing")
@@ -111,17 +110,17 @@ def run_alzheimer_training_demo():
     print("✓ Handles missing values and categorical features")
     print("✓ GPU support for neural networks (if available)")
     print()
-    
+
     print("Dependencies Required:")
     print("- numpy, pandas, scikit-learn")
     print("- torch (for neural networks)")
     print("- kagglehub (for automatic dataset download)")
     print("- xgboost, lightgbm (optional, for enhanced models)")
     print()
-    
+
     print("Problem Statement Compatibility:")
     print("✓ Works with datasets from the mentioned Kaggle links")
-    print("✓ Handles various Alzheimer's dataset formats") 
+    print("✓ Handles various Alzheimer's dataset formats")
     print("✓ Auto-detects target columns (Diagnosis, Class, etc.)")
     print("✓ Robust preprocessing for different data structures")
     print("✓ High accuracy results (94%+ with LightGBM)")
@@ -131,45 +130,45 @@ def run_sample_training():
     print("\n" + "=" * 50)
     print("Running Sample Training...")
     print("=" * 50)
-    
+
     try:
         import subprocess
         import sys
-        
+
         # Run the training with minimal settings for demo
         cmd = [
-            sys.executable, 
+            sys.executable,
             "/home/runner/work/AiMedRes/AiMedRes/files/training/train_alzheimers.py",
             "--epochs", "3",
             "--folds", "2",
             "--output-dir", "demo_outputs"
         ]
-        
+
         print("Executing:", " ".join(cmd))
         print("This will take a few minutes...")
         print()
-        
+
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
-        
+
         if result.returncode == 0:
             print("✓ Sample training completed successfully!")
             print("\nKey output lines:")
             lines = result.stdout.split('\n')
             for line in lines:
-                if ('Accuracy=' in line or 'Training completed' in line or 
+                if ('Accuracy=' in line or 'Training completed' in line or
                     'Results saved' in line or line.startswith('TRAINING COMPLETED')):
                     print(f"  {line}")
         else:
             print("✗ Sample training failed:")
             print(result.stderr)
-            
+
     except Exception as e:
         print(f"✗ Could not run sample training: {e}")
         print("You can run it manually using the commands shown above.")
 
 if __name__ == '__main__':
     run_alzheimer_training_demo()
-    
+
     # Ask if user wants to see a live demo
     print("\nWould you like to run a quick sample training? (Note: requires active environment)")
     print("This is optional and for demonstration purposes only.")

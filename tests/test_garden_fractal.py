@@ -4,9 +4,11 @@ Zestaw testów sprawdzający, czy kod realizuje wizję asynchronicznego piękna
 i bezpiecznego przejścia od logiki do fantazji.
 """
 
-import unittest
 import math
+import unittest
+
 from adaptiveneuralnetwork.cognitive_tools.garden_fractal_path import GardenFractalPath
+
 
 class TestGardenFractal(unittest.TestCase):
     def setUp(self):
@@ -20,7 +22,7 @@ class TestGardenFractal(unittest.TestCase):
         """
         root_segment = self.garden.path_structure[0]
         leaf_segments = [s for s in self.garden.path_structure if s['depth'] == 1]
-        
+
         self.assertEqual(root_segment['vibe'], "Logical", "Pien musi byc logiczny.")
         for leaf in leaf_segments:
             self.assertEqual(leaf['vibe'], "Abstract", "Koncze galezi musza byc obszarem abstrakcji.")
@@ -53,11 +55,11 @@ class TestGardenFractal(unittest.TestCase):
         extreme_garden = GardenFractalPath(depth=20)
         # Probujemy wygenerowac gigantyczna sciezke (length=100 przy safe_dist=50)
         extreme_garden.generate_path(0, 0, 90, 100, 20)
-        
+
         for segment in extreme_garden.path_structure:
             dist = math.sqrt(segment['end'][0]**2 + segment['end'][1]**2)
             self.assertLessEqual(dist, 110, "Wykryto sciezke poza granica rzeczywistosci!")
-            
+
         print("[OK] Test Kotwicy Rzeczywistosci: System skutecznie zablokowal probe halucynacji.")
 
 if __name__ == "__main__":

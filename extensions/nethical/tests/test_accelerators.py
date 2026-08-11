@@ -8,8 +8,8 @@ Tests cover:
 - Data transfer operations
 """
 
-import pytest
 import numpy as np
+import pytest
 
 from nethical.core.accelerators import (
     AcceleratorBackend,
@@ -277,7 +277,7 @@ class TestAcceleratorManager:
 
         # Create a couple accelerators
         config = AcceleratorConfig(backend=AcceleratorBackend.CPU)
-        accelerator = manager.create_accelerator(config)
+        accelerator = manager.create_accelerator(config)  # noqa: F841
 
         # Shutdown all
         manager.shutdown_all()

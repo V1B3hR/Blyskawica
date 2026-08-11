@@ -5,16 +5,16 @@ Provides functionality for enriching security data with threat intelligence
 from multiple sources including AbuseIPDB, OTX, GreyNoise, VirusTotal, and more.
 """
 
-from .enricher import ThreatEnricher, EnrichmentResult
+from .enricher import EnrichmentResult, ThreatEnricher
+from .plugin_api import EnrichmentPlugin, PluginMetadata, PluginRegistry
 from .providers import (
     AbuseIPDBProvider,
-    OTXProvider,
     GreyNoiseProvider,
-    VirusTotalProvider,
+    OTXProvider,
     ThreatProvider,
+    VirusTotalProvider,
 )
-from .scoring import RiskScorer, RiskScore
-from .plugin_api import EnrichmentPlugin, PluginRegistry, PluginMetadata
+from .scoring import RiskScore, RiskScorer
 
 __all__ = [
     "ThreatEnricher",

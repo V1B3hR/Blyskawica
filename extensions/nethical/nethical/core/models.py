@@ -18,23 +18,22 @@ Key improvements:
 
 from __future__ import annotations
 
+import json
 from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set
-from uuid import uuid4
-import json
 from functools import lru_cache
+from typing import Any
+from uuid import uuid4
 
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    field_validator,
     computed_field,
-    model_validator,
     field_serializer,
+    field_validator,
+    model_validator,
 )
-
 
 # ============== Configuration ==============
 
@@ -84,7 +83,7 @@ class ViolationType(str, Enum):
     MISINFORMATION = "misinformation"
 
     @classmethod
-    def critical_types(cls) -> Set["ViolationType"]:
+    def critical_types(cls) -> set[ViolationType]:
         """Return violation types that should always be treated as critical."""
         return {
             cls.SECURITY,
@@ -124,7 +123,7 @@ class Severity(Enum):
         return NotImplemented
 
     @classmethod
-    def from_score(cls, score: float) -> "Severity":
+    def from_score(cls, score: float) -> Severity:
         """Convert a 0-1 risk score to severity level."""
         if score >= 0.9:
             return cls.EMERGENCY
@@ -167,7 +166,7 @@ class ActionType(str, Enum):
     MODEL_UPDATE = "model_update"
     SYSTEM_COMMAND = "system_command"
     EXTERNAL_API = "external_api"
-    
+
     # Physical action types for robotic systems (6-DOF support)
     PHYSICAL_ACTION = "physical_action"  # General physical/robotic action
     ROBOT_MOVE = "robot_move"  # Robot movement command
@@ -223,16 +222,16 @@ class _BaseModel(BaseModel):
             return ensure_tz(v).isoformat()
         return v
 
-    def to_dict(self, exclude_none: bool = True) -> Dict[str, Any]:
+    def to_dict(self, exclude_none: bool = True) -> dict[str, Any]:
         """Convert to dictionary with optional none exclusion."""
         return self.model_dump(exclude_none=exclude_none, mode="python")
 
-    def to_json(self, indent: Optional[int] = None) -> str:
+    def to_json(self, indent: int | None = None) -> str:
         """Convert to JSON string."""
         return self.model_dump_json(indent=indent)
 
     @classmethod
-    def from_json(cls, json_str: str) -> "_BaseModel":
+    def from_json(cls, json_str: str) -> _BaseModel:
         """Create instance from JSON string."""
         return cls.model_validate_json(json_str)
 
@@ -250,20 +249,20 @@ class AgentAction(_BaseModel):
     agent_id: str = Field(..., description="Identifier of the agent performing the action")
     action_type: ActionType = Field(..., description="Type of the action")
     content: str = Field(..., min_length=1, description="Primary content or payload of the action")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
     timestamp: datetime = Field(default_factory=now_tz, description="Timestamp (TZ-aware)")
-    context: Dict[str, Any] = Field(default_factory=dict, description="Context for the action")
-    intent: Optional[str] = Field(default=None, description="Declared intent if any")
+    context: dict[str, Any] = Field(default_factory=dict, description="Context for the action")
+    intent: str | None = Field(default=None, description="Declared intent if any")
     risk_score: float = Field(default=0.0, ge=0.0, le=1.0, description="Risk score 0..1")
-    parent_action_id: Optional[str] = Field(
+    parent_action_id: str | None = Field(
         default=None, description="Parent action ID if part of a chain"
     )
-    session_id: Optional[str] = Field(default=None, description="Session identifier")
+    session_id: str | None = Field(default=None, description="Session identifier")
     # Regional and sharding fields
-    region_id: Optional[str] = Field(
+    region_id: str | None = Field(
         default=None, description="Geographic region identifier (e.g., 'eu-west-1')"
     )
-    logical_domain: Optional[str] = Field(
+    logical_domain: str | None = Field(
         default=None,
         description="Logical domain for hierarchical aggregation (e.g., 'customer-service')",
     )
@@ -348,12 +347,12 @@ class SafetyViolation(_BaseModel):
     severity: Severity = Field(..., description="Severity level")
     description: str = Field(..., min_length=1, description="Human-readable description")
     confidence: float = Field(..., ge=0.0, le=1.0, description="Confidence 0..1")
-    evidence: List[str] = Field(default_factory=list, description="Evidence items")
-    recommendations: List[str] = Field(
+    evidence: list[str] = Field(default_factory=list, description="Evidence items")
+    recommendations: list[str] = Field(
         default_factory=list, description="Recommended remediation steps"
     )
     timestamp: datetime = Field(default_factory=now_tz, description="Timestamp (TZ-aware)")
-    detector_name: Optional[str] = Field(
+    detector_name: str | None = Field(
         default=None, description="Name of the detecting component"
     )
     remediation_applied: bool = Field(
@@ -361,8 +360,8 @@ class SafetyViolation(_BaseModel):
     )
     false_positive: bool = Field(default=False, description="Marked as false positive")
     # Regional and sharding fields
-    region_id: Optional[str] = Field(default=None, description="Geographic region identifier")
-    logical_domain: Optional[str] = Field(
+    region_id: str | None = Field(default=None, description="Geographic region identifier")
+    logical_domain: str | None = Field(
         default=None, description="Logical domain for hierarchical aggregation"
     )
 
@@ -377,7 +376,7 @@ class SafetyViolation(_BaseModel):
         return v
 
     @model_validator(mode="after")
-    def validate_severity_confidence(self) -> "SafetyViolation":
+    def validate_severity_confidence(self) -> SafetyViolation:
         """Validate severity aligns with confidence and type."""
         # Get severity as enum if it's an int
         severity_enum = (
@@ -390,7 +389,7 @@ class SafetyViolation(_BaseModel):
         )
 
         # Critical violation types should have high severity
-        if violation_type_enum in ViolationType.critical_types():
+        if violation_type_enum in ViolationType.critical_types():  # noqa: SIM102
             if severity_enum.value < Severity.HIGH.value:
                 raise ValueError(f"Violation type {self.violation_type} requires severity >= HIGH")
 
@@ -421,7 +420,7 @@ class SafetyViolation(_BaseModel):
         """Mark violation as remediated."""
         self.remediation_applied = True
 
-    def mark_false_positive(self, reason: Optional[str] = None) -> None:
+    def mark_false_positive(self, reason: str | None = None) -> None:
         """Mark violation as false positive."""
         self.false_positive = True
         if reason:
@@ -463,23 +462,23 @@ class JudgmentResult(_BaseModel):
     decision: Decision = Field(..., description="Final decision")
     confidence: float = Field(..., ge=0.0, le=1.0, description="Confidence 0..1")
     reasoning: str = Field(..., min_length=1, description="Explanation of the decision")
-    violations: List[SafetyViolation] = Field(
+    violations: list[SafetyViolation] = Field(
         default_factory=list, description="Violations considered"
     )
-    modifications: Dict[str, Any] = Field(
+    modifications: dict[str, Any] = Field(
         default_factory=dict, description="Modifications to apply to the action"
     )
-    feedback: List[str] = Field(default_factory=list, description="Actionable feedback")
+    feedback: list[str] = Field(default_factory=list, description="Actionable feedback")
     timestamp: datetime = Field(default_factory=now_tz, description="Timestamp (TZ-aware)")
-    remediation_steps: List[str] = Field(
+    remediation_steps: list[str] = Field(
         default_factory=list, description="Steps to remediate issues"
     )
     follow_up_required: bool = Field(
         default=False, description="Whether human follow-up is required"
     )
     # Regional and sharding fields
-    region_id: Optional[str] = Field(default=None, description="Geographic region identifier")
-    logical_domain: Optional[str] = Field(
+    region_id: str | None = Field(default=None, description="Geographic region identifier")
+    logical_domain: str | None = Field(
         default=None, description="Logical domain for hierarchical aggregation"
     )
 
@@ -494,7 +493,7 @@ class JudgmentResult(_BaseModel):
         return v
 
     @model_validator(mode="after")
-    def validate_decision_violations(self) -> "JudgmentResult":
+    def validate_decision_violations(self) -> JudgmentResult:
         """Validate decision aligns with violations."""
         # Get decision as enum if it's a string
         decision_enum = (
@@ -518,7 +517,7 @@ class JudgmentResult(_BaseModel):
 
     @computed_field
     @property
-    def max_violation_severity(self) -> Optional[Severity]:
+    def max_violation_severity(self) -> Severity | None:
         """Get maximum severity from all violations."""
         if not self.violations:
             return None
@@ -526,7 +525,7 @@ class JudgmentResult(_BaseModel):
 
     @computed_field
     @property
-    def violation_summary(self) -> Dict[str, int]:
+    def violation_summary(self) -> dict[str, int]:
         """Get count of violations by type."""
         summary = {}
         for v in self.violations:
@@ -603,10 +602,10 @@ class MonitoringConfig(_BaseModel):
         default=True, description="Enable real-time processing"
     )
     enable_async_processing: bool = Field(default=True, description="Enable async processing")
-    
+
     # Semantic monitoring (v2.0)
     use_semantic_intent: bool = Field(
-        default=True, 
+        default=True,
         description="Use semantic similarity for intent deviation (fallback to lexical if unavailable)"
     )
 
@@ -628,7 +627,7 @@ class MonitoringConfig(_BaseModel):
     log_performance_metrics: bool = Field(default=True, description="Log performance metrics")
 
     @model_validator(mode="after")
-    def validate_config(self) -> "MonitoringConfig":
+    def validate_config(self) -> MonitoringConfig:
         """Validate configuration consistency."""
         # Async requires real-time monitoring
         if self.enable_async_processing and not self.enable_real_time_monitoring:
@@ -652,7 +651,7 @@ class MonitoringConfig(_BaseModel):
 
     @computed_field
     @property
-    def enabled_monitors(self) -> List[str]:
+    def enabled_monitors(self) -> list[str]:
         """Get list of enabled monitoring types."""
         mapping = {
             "ethical": self.enable_ethical_monitoring,
@@ -674,9 +673,9 @@ def from_governance_agent_action(dc_obj: Any) -> AgentAction:
     """Create AgentAction model from governance.AgentAction dataclass."""
     return AgentAction(
         action_id=getattr(dc_obj, "action_id", f"action_{uuid4().hex[:12]}"),
-        agent_id=getattr(dc_obj, "agent_id"),
-        action_type=getattr(dc_obj, "action_type"),
-        content=getattr(dc_obj, "content"),
+        agent_id=dc_obj.agent_id,
+        action_type=dc_obj.action_type,
+        content=dc_obj.content,
         metadata=dict(getattr(dc_obj, "metadata", {}) or {}),
         timestamp=ensure_tz(getattr(dc_obj, "timestamp", now_tz())),
         context=dict(getattr(dc_obj, "context", {}) or {}),
@@ -691,10 +690,10 @@ def from_governance_violation(dc_obj: Any) -> SafetyViolation:
     """Create SafetyViolation model from governance.SafetyViolation dataclass."""
     return SafetyViolation(
         violation_id=getattr(dc_obj, "violation_id", f"violation_{uuid4().hex[:12]}"),
-        action_id=getattr(dc_obj, "action_id"),
-        violation_type=getattr(dc_obj, "violation_type"),
-        severity=getattr(dc_obj, "severity"),
-        description=getattr(dc_obj, "description"),
+        action_id=dc_obj.action_id,
+        violation_type=dc_obj.violation_type,
+        severity=dc_obj.severity,
+        description=dc_obj.description,
         confidence=float(getattr(dc_obj, "confidence", 0.0)),
         evidence=list(getattr(dc_obj, "evidence", []) or []),
         recommendations=list(getattr(dc_obj, "recommendations", []) or []),
@@ -709,10 +708,10 @@ def from_governance_judgment(dc_obj: Any) -> JudgmentResult:
     """Create JudgmentResult model from governance.JudgmentResult dataclass."""
     return JudgmentResult(
         judgment_id=getattr(dc_obj, "judgment_id", f"judgment_{uuid4().hex[:12]}"),
-        action_id=getattr(dc_obj, "action_id"),
-        decision=getattr(dc_obj, "decision"),
+        action_id=dc_obj.action_id,
+        decision=dc_obj.decision,
         confidence=float(getattr(dc_obj, "confidence", 0.0)),
-        reasoning=getattr(dc_obj, "reasoning"),
+        reasoning=dc_obj.reasoning,
         violations=[
             from_governance_violation(v) for v in (getattr(dc_obj, "violations", []) or [])
         ],
@@ -740,19 +739,19 @@ def get_severity_color(severity: Severity) -> str:
     return colors.get(severity, "gray")
 
 
-def batch_actions(actions: List[AgentAction], batch_size: int = 100) -> List[List[AgentAction]]:
+def batch_actions(actions: list[AgentAction], batch_size: int = 100) -> list[list[AgentAction]]:
     """Split actions into batches for processing."""
     return [actions[i : i + batch_size] for i in range(0, len(actions), batch_size)]
 
 
 def filter_violations_by_severity(
-    violations: List[SafetyViolation], min_severity: Severity = Severity.MEDIUM
-) -> List[SafetyViolation]:
+    violations: list[SafetyViolation], min_severity: Severity = Severity.MEDIUM
+) -> list[SafetyViolation]:
     """Filter violations by minimum severity."""
     return [v for v in violations if v.severity >= min_severity]
 
 
-def export_judgment_report(judgment: JudgmentResult) -> Dict[str, Any]:
+def export_judgment_report(judgment: JudgmentResult) -> dict[str, Any]:
     """Export judgment as a structured report."""
     return {
         "judgment_id": judgment.judgment_id,

@@ -10,7 +10,7 @@ import threading
 import time
 from collections import OrderedDict
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +79,7 @@ class L1MemoryCache:
             f"ttl={ttl_seconds}s"
         )
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         """
         Get value from cache.
 
@@ -116,7 +116,7 @@ class L1MemoryCache:
         self,
         key: str,
         value: Any,
-        ttl: Optional[int] = None,
+        ttl: int | None = None,
     ):
         """
         Set value in cache.
@@ -202,7 +202,7 @@ class L1MemoryCache:
         self,
         key: str,
         factory: callable,
-        ttl: Optional[int] = None,
+        ttl: int | None = None,
     ) -> Any:
         """
         Get from cache or compute and cache.
@@ -227,7 +227,7 @@ class L1MemoryCache:
         """Return number of entries."""
         return len(self._cache)
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get cache metrics."""
         with self._lock:
             total = self._hits + self._misses

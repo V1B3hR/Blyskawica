@@ -207,7 +207,7 @@ class RealtimeThreatDetector:
                 "max_threat_score": 0.0,
             }
 
-            for (detector_name, _), result in zip(detection_tasks, results):
+            for (detector_name, _), result in zip(detection_tasks, results):  # noqa: B905
                 if isinstance(result, Exception):
                     combined_result["detectors"][detector_name] = {
                         "status": "error",
@@ -238,7 +238,7 @@ class RealtimeThreatDetector:
                     combined_result["max_threat_score"] = max(
                         combined_result["max_threat_score"], result.get("threat_score", 0.0)
                     )
-                except Exception as e:
+                except Exception as e:  # noqa: PERF203
                     combined_result["detectors"][detector_name] = {
                         "status": "error",
                         "message": str(e),

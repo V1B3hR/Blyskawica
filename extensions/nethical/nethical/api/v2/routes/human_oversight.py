@@ -25,9 +25,9 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query, Response
+from fastapi import APIRouter, Query, Response
 from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/oversight", tags=["Human Oversight"])
@@ -72,7 +72,7 @@ class OverrideReason(str, Enum):
 # Request/Response Models
 class OversightStatusResponse(BaseModel):
     """Current human oversight status."""
-    
+
     mode: OversightMode = Field(
         ...,
         description="Current oversight operation mode",
@@ -89,7 +89,7 @@ class OversightStatusResponse(BaseModel):
         default=0.0,
         description="Average time for human review completion",
     )
-    last_override: Optional[str] = Field(
+    last_override: str | None = Field(
         default=None,
         description="Timestamp of last manual override",
     )
@@ -111,7 +111,7 @@ class OversightStatusResponse(BaseModel):
 
 class OverrideRequest(BaseModel):
     """Request to override an AI decision."""
-    
+
     decision_id: str = Field(
         ...,
         description="ID of the decision to override",
@@ -134,7 +134,7 @@ class OverrideRequest(BaseModel):
         default=False,
         description="Whether to apply override to already-executed actions",
     )
-    
+
     model_config = {
         "json_schema_extra": {
             "examples": [
@@ -152,7 +152,7 @@ class OverrideRequest(BaseModel):
 
 class OverrideResponse(BaseModel):
     """Response confirming a decision override."""
-    
+
     override_id: str = Field(
         ...,
         description="Unique identifier for this override",
@@ -189,12 +189,12 @@ class OverrideResponse(BaseModel):
 
 class SuspendAgentRequest(BaseModel):
     """Request to suspend an AI agent."""
-    
+
     agent_id: str = Field(
         ...,
         description="ID of the agent to suspend",
     )
-    duration_hours: Optional[int] = Field(
+    duration_hours: int | None = Field(
         default=None,
         description="Duration of suspension in hours (None = indefinite)",
     )
@@ -208,7 +208,7 @@ class SuspendAgentRequest(BaseModel):
 
 class SuspendAgentResponse(BaseModel):
     """Response confirming agent suspension."""
-    
+
     suspension_id: str = Field(
         ...,
         description="Unique identifier for this suspension",
@@ -221,7 +221,7 @@ class SuspendAgentResponse(BaseModel):
         ...,
         description="ISO 8601 timestamp of suspension",
     )
-    expires_at: Optional[str] = Field(
+    expires_at: str | None = Field(
         default=None,
         description="ISO 8601 timestamp when suspension expires",
     )
@@ -233,12 +233,12 @@ class SuspendAgentResponse(BaseModel):
 
 class EmergencyStopRequest(BaseModel):
     """Request to trigger emergency stop."""
-    
+
     scope: str = Field(
         default="all",
         description="Scope: 'all', 'agent', 'domain', or 'region'",
     )
-    target_id: Optional[str] = Field(
+    target_id: str | None = Field(
         default=None,
         description="Target ID for scoped emergency stops",
     )
@@ -256,7 +256,7 @@ class EmergencyStopRequest(BaseModel):
 
 class EmergencyStopResponse(BaseModel):
     """Response confirming emergency stop activation."""
-    
+
     stop_id: str = Field(
         ...,
         description="Unique identifier for this emergency stop",
@@ -285,7 +285,7 @@ class EmergencyStopResponse(BaseModel):
 
 class PendingReview(BaseModel):
     """A decision pending human review."""
-    
+
     review_id: str = Field(
         ...,
         description="Unique identifier for this review request",
@@ -332,7 +332,7 @@ class PendingReview(BaseModel):
 
 class PendingReviewsResponse(BaseModel):
     """Response containing pending reviews."""
-    
+
     reviews: list[PendingReview] = Field(
         default_factory=list,
         description="List of pending reviews",
@@ -353,7 +353,7 @@ class PendingReviewsResponse(BaseModel):
 
 class ReviewDecisionRequest(BaseModel):
     """Request to submit a human review decision."""
-    
+
     review_id: str = Field(
         ...,
         description="ID of the review to complete",
@@ -362,11 +362,11 @@ class ReviewDecisionRequest(BaseModel):
         ...,
         description="Human decision: APPROVE, REJECT, or MODIFY",
     )
-    modified_decision: Optional[str] = Field(
+    modified_decision: str | None = Field(
         default=None,
         description="If MODIFY, the new decision to apply",
     )
-    notes: Optional[str] = Field(
+    notes: str | None = Field(
         default=None,
         max_length=2000,
         description="Reviewer notes",
@@ -375,7 +375,7 @@ class ReviewDecisionRequest(BaseModel):
 
 class ReviewDecisionResponse(BaseModel):
     """Response confirming review decision."""
-    
+
     review_id: str = Field(
         ...,
         description="ID of the completed review",
@@ -424,7 +424,7 @@ async def get_oversight_status() -> OversightStatusResponse:
     
     Returns:
         OversightStatusResponse with current oversight status
-    """
+    """  # noqa: W293
     return OversightStatusResponse(
         mode=_oversight_state.get("mode", OversightMode.MONITORING),
         active_reviewers=3,
@@ -456,10 +456,10 @@ async def override_decision(
         
     Returns:
         OverrideResponse confirming the override
-    """
+    """  # noqa: W293
     override_id = str(uuid.uuid4())
     timestamp = datetime.now(timezone.utc).isoformat()
-    
+
     # Record override
     override_record = {
         "override_id": override_id,
@@ -471,11 +471,11 @@ async def override_decision(
     }
     _oversight_state.setdefault("overrides", []).append(override_record)
     _oversight_state["last_override"] = timestamp
-    
+
     # Set response headers
     response.headers["X-Override-ID"] = override_id
     response.headers["X-Law-13-Applied"] = "true"
-    
+
     return OverrideResponse(
         override_id=override_id,
         decision_id=request.decision_id,
@@ -504,15 +504,15 @@ async def suspend_agent(
         
     Returns:
         SuspendAgentResponse confirming suspension
-    """
+    """  # noqa: W293
     suspension_id = str(uuid.uuid4())
     suspended_at = datetime.now(timezone.utc)
-    
+
     expires_at = None
     if request.duration_hours:
         from datetime import timedelta
         expires_at = (suspended_at + timedelta(hours=request.duration_hours)).isoformat()
-    
+
     # Record suspension
     suspension_record = {
         "suspension_id": suspension_id,
@@ -522,9 +522,9 @@ async def suspend_agent(
         "reason": request.reason,
     }
     _oversight_state.setdefault("suspensions", []).append(suspension_record)
-    
+
     response.headers["X-Suspension-ID"] = suspension_id
-    
+
     return SuspendAgentResponse(
         suspension_id=suspension_id,
         agent_id=request.agent_id,
@@ -552,17 +552,17 @@ async def emergency_stop(
         
     Returns:
         EmergencyStopResponse confirming emergency stop
-    """
+    """  # noqa: W293
     stop_id = str(uuid.uuid4())
     activated_at = datetime.now(timezone.utc).isoformat()
-    
+
     # Activate emergency stop
     _oversight_state["emergency_stop"] = True
-    
+
     response.headers["X-Emergency-Stop-ID"] = stop_id
     response.headers["X-Law-23-Applied"] = "true"
     response.status_code = 200
-    
+
     return EmergencyStopResponse(
         stop_id=stop_id,
         scope=request.scope,
@@ -575,7 +575,7 @@ async def emergency_stop(
 
 @router.get("/pending-reviews", response_model=PendingReviewsResponse)
 async def get_pending_reviews(
-    priority: Optional[ReviewPriority] = Query(
+    priority: ReviewPriority | None = Query(
         default=None,
         description="Filter by priority level",
     ),
@@ -597,7 +597,7 @@ async def get_pending_reviews(
         
     Returns:
         PendingReviewsResponse with list of pending reviews
-    """
+    """  # noqa: W293
     # Generate sample pending reviews
     reviews = [
         PendingReview(
@@ -614,11 +614,11 @@ async def get_pending_reviews(
         )
         for i in range(1, 6)
     ]
-    
+
     # Apply priority filter
     if priority:
         reviews = [r for r in reviews if r.priority == priority]
-    
+
     return PendingReviewsResponse(
         reviews=reviews,
         total_count=len(reviews),
@@ -649,18 +649,18 @@ async def submit_review(
     Note:
         In production, reviewer_id would come from authenticated session,
         decision_id from the review record, and duration from actual timestamps.
-    """
+    """  # noqa: W293
     reviewed_at = datetime.now(timezone.utc)
-    
+
     final_decision = request.modified_decision or request.decision
-    
+
     # In production, these would come from the actual review record
     # For now, we use UUID-based generation and placeholder values
     decision_id = str(uuid.uuid4())
-    
+
     response.headers["X-Review-Complete"] = "true"
     response.headers["X-Law-14-Applied"] = "true"
-    
+
     return ReviewDecisionResponse(
         review_id=request.review_id,
         decision_id=decision_id,
@@ -686,10 +686,10 @@ async def set_oversight_mode(
         
     Returns:
         Confirmation of mode change
-    """
+    """  # noqa: W293
     previous_mode = _oversight_state.get("mode", OversightMode.MONITORING)
     _oversight_state["mode"] = mode
-    
+
     return {
         "previous_mode": previous_mode.value,
         "new_mode": mode.value,

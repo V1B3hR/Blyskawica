@@ -10,9 +10,9 @@ Centralized type definitions used across multiple GCS modules:
 """
 
 import time
-from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
 
 
 class SafetyLevel(Enum):
@@ -67,10 +67,10 @@ class Intent:
     description: str
     action_type: ActionType
     expected_outcome: str
-    safety_constraints: List[str]
+    safety_constraints: list[str]
     confidence: float = 1.0
     timestamp: float = None
-    
+
     def __post_init__(self):
         if self.timestamp is None:
             self.timestamp = time.time()
@@ -81,10 +81,10 @@ class Action:
     """Represents an actual action being performed"""
     description: str
     action_type: ActionType
-    actual_parameters: Dict[str, Any]
-    observed_effects: List[str]
+    actual_parameters: dict[str, Any]
+    observed_effects: list[str]
     timestamp: float = None
-    
+
     def __post_init__(self):
         if self.timestamp is None:
             self.timestamp = time.time()
@@ -99,6 +99,6 @@ class CollaborationContext:
     trust_level: float  # 0.0 to 1.0
     urgency_level: int  # 1-5, 5 being most urgent
     domain: str
-    stakeholders: List[str] = field(default_factory=list)
-    constraints: List[str] = field(default_factory=list)
+    stakeholders: list[str] = field(default_factory=list)
+    constraints: list[str] = field(default_factory=list)
     timestamp: float = field(default_factory=time.time)

@@ -6,9 +6,10 @@ Integrates Google Research GoEmotions (27 fine-grained emotion categories) with 
 """
 
 import logging
+from typing import Any
+
 import torch
 import torch.nn as nn
-from typing import Dict, Any, List
 
 logger = logging.getLogger(__name__)
 
@@ -104,9 +105,9 @@ class AffectiveCognitiveEvaluator:
         self.neuro_state = neuro_state
         self.mapper = GoEmotionsNeuromorphicMapper()
 
-    def analyze_and_update(self, text: str, emotion_dict: Dict[str, float] = None) -> Dict[str, Any]:
+    def analyze_and_update(self, text: str, emotion_dict: dict[str, float] = None) -> dict[str, Any]:
         probs = torch.zeros(1, len(GOEMOTIONS_TAXONOMY))
-        
+
         if emotion_dict:
             for em, p in emotion_dict.items():
                 if em in GOEMOTIONS_TAXONOMY:

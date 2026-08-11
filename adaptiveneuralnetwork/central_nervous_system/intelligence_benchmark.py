@@ -3,17 +3,18 @@
 
 import sys
 from pathlib import Path
+
 project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-import json
-import time
-import unittest
-from datetime import datetime
-from typing import Any
+import json  # noqa: E402
+import time  # noqa: E402
+import unittest  # noqa: E402
+from datetime import datetime  # noqa: E402
+from typing import Any  # noqa: E402
 
-import numpy as np
+import numpy as np  # noqa: E402
 
 # --- Ethics Framework Utility ---
 ALL_ETHICS_RULES = [
@@ -56,7 +57,10 @@ def enforce_ethics_compliance(decision_dict):
     result = audit_decision(decision_dict)
     if not result["compliant"]:
         raise RuntimeError(f"Ethics violation: {result['violations']}")
-from adaptiveneuralnetwork.immune_system.robustness_validator import RobustnessValidator
+from adaptiveneuralnetwork.immune_system.robustness_validator import (  # noqa: E402
+    RobustnessValidator,  # noqa: E402
+)
+
 
 # --- Main Intelligence Benchmark Class ---
 class IntelligenceBenchmark:

@@ -9,7 +9,6 @@ import unittest
 
 import numpy as np
 
-from adaptiveneuralnetwork.configs.network_config import load_network_config
 from adaptiveneuralnetwork.central_nervous_system.alive_node import AliveLoopNode
 from adaptiveneuralnetwork.central_nervous_system.capacitor import CapacitorInSpace
 from adaptiveneuralnetwork.central_nervous_system.spatial_utils import (
@@ -20,6 +19,7 @@ from adaptiveneuralnetwork.central_nervous_system.spatial_utils import (
     validate_spatial_dimensions,
     zero_vector,
 )
+from adaptiveneuralnetwork.configs.network_config import load_network_config
 
 
 class TestSpatialDimensions(unittest.TestCase):

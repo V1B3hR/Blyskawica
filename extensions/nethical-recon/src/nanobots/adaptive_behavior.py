@@ -4,9 +4,8 @@ Learns from feedback and adapts behavior
 """
 
 import logging
-from typing import Any
 from datetime import datetime
-from collections import defaultdict
+from typing import Any
 
 
 class BehaviorProfile:

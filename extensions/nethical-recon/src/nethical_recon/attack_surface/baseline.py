@@ -7,12 +7,12 @@ and tracking over time.
 
 import json
 import logging
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from .mapper import AttackSurfaceSnapshot, Asset
+from .mapper import Asset, AttackSurfaceSnapshot
 
 
 @dataclass
@@ -80,7 +80,7 @@ class BaselineManager:
             return None
 
         try:
-            with open(baseline_file, "r") as f:
+            with open(baseline_file) as f:
                 data = json.load(f)
                 snapshot = self._deserialize_snapshot(data)
                 self.baselines[name] = snapshot

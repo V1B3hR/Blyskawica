@@ -1,7 +1,8 @@
-import torch
-import time
 import sys
+import time
 from datetime import datetime
+
+import torch
 
 # Ensuring UTF-8 for Windows console
 if sys.platform == "win32":
@@ -11,7 +12,7 @@ if sys.platform == "win32":
 def neural_resonance_gpu(target_vram_gb=4.0):
     print(f"[{datetime.now()}] Błyskawica: Inicjalizacja Rezonansu Neuro-Sprzętowego...")
     print(f"Alokacja zasobów GPU: Celuję w ~{target_vram_gb} GB VRAM.")
-    
+
     if not torch.cuda.is_available():
         print("BŁĄD: CUDA nie jest dostępna. Przełączam na tryb symulacji CPU.")
         device = torch.device("cpu")
@@ -22,15 +23,15 @@ def neural_resonance_gpu(target_vram_gb=4.0):
     # Calculate approximate number of float32 elements for target VRAM
     # float32 = 4 bytes. 1 GB = 1024^3 bytes.
     elements = int((target_vram_gb * (1024**3)) / 4)
-    
+
     try:
         # Allocating memory
         print(f"[{datetime.now()}] Alokacja dużego tensora dla symulacji filtracji EMF...")
         noise_tensor = torch.randn(elements, device=device)
         print(f"[{datetime.now()}] Pomyślnie zajęto ~{target_vram_gb} GB VRAM.")
-        
+
         print("--- Rozpoczynam symulację filtracji sygnału RF (Fast Fourier Transform) ---")
-        
+
         # Performance loop
         for i in range(10):
             start = time.time()
@@ -40,14 +41,14 @@ def neural_resonance_gpu(target_vram_gb=4.0):
             sample = noise_tensor[:block_size]
             fft_result = torch.fft.fft(sample)
             filtered = fft_result * (torch.abs(fft_result) > 0.5).float()
-            reconstructed = torch.fft.ifft(filtered)
-            
+            reconstructed = torch.fft.ifft(filtered)  # noqa: F841
+
             end = time.time()
             print(f"[{datetime.now()}] Iteracja {i+1}/10: Czas przetwarzania sygnału: {end-start:.4f}s")
             time.sleep(2)
 
         print(f"[{datetime.now()}] Symulacja zakończona. Sygnał 'oczyszczony'.")
-        
+
     except Exception as e:
         print(f"Błąd alokacji: {e}")
     finally:

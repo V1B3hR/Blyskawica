@@ -18,7 +18,7 @@ import pandas as pd
 try:
     from sklearn.base import BaseEstimator, TransformerMixin
     from sklearn.model_selection import train_test_split
-    from sklearn.pipeline import Pipeline
+    from sklearn.pipeline import Pipeline  # noqa: F401
     HAS_SKLEARN = True
 except ImportError:
     warnings.warn("scikit-learn not available. Some pipeline features will be limited.", stacklevel=2)
@@ -445,7 +445,7 @@ class AutoMLWorkflow:
             
         Returns:
             Complete workflow results
-        """
+        """  # noqa: W293
         logger.info("Starting complete AutoML workflow")
 
         workflow_start_time = pd.Timestamp.now()

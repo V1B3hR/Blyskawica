@@ -6,15 +6,15 @@ Includes:
 - NeuralHealthMonitor: Assessment of biological stability and burnout risk.
 """
 
+
 import torch
-import torch.nn as nn
-from typing import Dict, Any, Optional
+
 
 class PhiCalculator:
     """
     Calculates an approximation of Integrated Information (Φ) 
     based on information sharing between conscious threads.
-    """
+    """  # noqa: W291
     def __init__(self, num_threads: int = 4):
         self.num_threads = num_threads
 
@@ -38,19 +38,19 @@ class PhiCalculator:
         if weights is None:
             weights = torch.eye(self.num_threads * 2)
         W = weights.detach()
-        
+
         # [batch, nodes, features] or [batch, features]
         if activations is None:
             activations = torch.zeros(1, W.size(-1), device=W.device)
         A = activations.detach()
-        
+
         if A.dim() == 3:
             A = A.mean(dim=0) # [nodes, features]
         elif A.dim() == 2:
-            # Treat batch as time/samples and features as individual "nodes" 
+            # Treat batch as time/samples and features as individual "nodes"
             # to calculate differentiation across the population
             A = A.T # [nodes, batch/time]
-            
+
         # Ensure A has the same feature dimension as W
         # If A was transposed, W's first dimension matches A's nodes
         target_features = W.size(0) if A.dim() == 2 else W.size(-1)
@@ -72,9 +72,9 @@ class PhiCalculator:
             p = (s**2) / (torch.sum(s**2) + 1e-8)
             spectral_entropy = -torch.sum(p * torch.log(p + 1e-8)) / torch.log(torch.tensor(max(W.shape)).float() + 1e-8)
             integration = 1.0 - spectral_entropy.item()
-        except:
+        except:  # noqa: E722
             integration = 0.5
-            
+
         # 2. Differentiation: Spatial diversity of activations
         # We need a meaningful differentiation measure
         try:
@@ -83,9 +83,9 @@ class PhiCalculator:
             A_norm = A / (torch.norm(A, dim=-1, keepdim=True) + 1e-8)
             corr = torch.matmul(A_norm, A_norm.T).mean().item()
             differentiation = 1.0 - abs(corr)
-        except:
+        except:  # noqa: E722
             differentiation = 0.5
-        
+
         phi = 4.0 * integration * differentiation
         return float(torch.clamp(torch.tensor(phi), 0.0, 1.0))
 
@@ -96,11 +96,11 @@ class NeuralHealthMonitor:
     def __init__(self):
         self.health_history = []
 
-    def calculate_health_index(self, 
-                               activity: torch.Tensor | float, 
-                               energy: torch.Tensor | float, 
+    def calculate_health_index(self,
+                               activity: torch.Tensor | float,
+                               energy: torch.Tensor | float,
                                anxiety: torch.Tensor | float,
-                               waste: Optional[torch.Tensor] = None) -> float:
+                               waste: torch.Tensor | None = None) -> float:
         """
         Computes a composite Neural Health Score [0.0 - 1.0].
         """
@@ -111,27 +111,27 @@ class NeuralHealthMonitor:
             energy = torch.tensor([energy])
         if not isinstance(anxiety, torch.Tensor):
             anxiety = torch.tensor([anxiety])
-            
+
         # A. Excitation/Inhibition Balance (Avoid Saturation or Silence)
         # Optimal variance: activity should be distributed, not binary.
         if activity.numel() > 1:
             ei_balance = 1.0 - torch.abs(activity.std() - 0.25) / 0.25
         else:
             ei_balance = 1.0 # Default for single node
-            
+
         # B. Metabolic Reserves
         # Low energy = High stress
         metabolic_score = torch.clamp(energy.mean() / 10.0, 0.0, 1.0)
-        
+
         # C. Emotional Load
         # High anxiety = Low health
         anxiety_load = 1.0 - torch.clamp(anxiety.mean() / 5.0, 0.0, 1.0)
-        
+
         # D. Waste factor (Glimphatic load)
         waste_penalty = 1.0
         if waste is not None:
             waste_penalty = 1.0 - torch.clamp(waste.mean() / 2.0, 0.0, 1.0)
-            
+
         # Composite Health Index
         health_idx = (ei_balance + metabolic_score + anxiety_load + waste_penalty) / 4.0
         return float(torch.clamp(health_idx, 0.0, 1.0))

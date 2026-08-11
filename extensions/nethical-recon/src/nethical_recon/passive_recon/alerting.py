@@ -1,10 +1,11 @@
 """Alerting module for passive reconnaissance findings."""
 
 import json
-import requests
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
+
+import requests
 
 
 class AlertType(Enum):
@@ -45,7 +46,7 @@ class Alert:
     message: str
     severity: AlertSeverity
     alert_type: AlertType = AlertType.GENERAL
-    metadata: Optional[dict[str, Any]] = None
+    metadata: dict[str, Any] | None = None
 
 
 @dataclass
@@ -54,7 +55,7 @@ class KEVAlert(Alert):
 
     cve_id: str = ""
     required_action: str = ""
-    due_date: Optional[str] = None
+    due_date: str | None = None
 
     def __post_init__(self):
         """Set defaults for KEV alerts."""
@@ -96,7 +97,7 @@ class AlertManager:
         """
         self.channels[name] = {"type": AlertChannel.DISCORD, "url": webhook_url}
 
-    def send_alert(self, alert: Alert, channel_name: Optional[str] = None):
+    def send_alert(self, alert: Alert, channel_name: str | None = None):
         """Send alert to configured channels.
 
         Args:

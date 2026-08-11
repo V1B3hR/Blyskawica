@@ -8,10 +8,10 @@ Wykorzystuje entropię kwantową do generowania rozgałęzionych ścieżek myśl
 """
 
 import logging
-import torch
 import random
 import time
-from typing import List, Dict, Any, Optional
+from typing import Any
+
 from adaptiveneuralnetwork.central_nervous_system.harmonic_engine import HarmonicEngine
 
 logger = logging.getLogger(__name__)
@@ -34,15 +34,15 @@ class CreativeSpark:
     def __init__(self, harmonic_engine: HarmonicEngine, quantum_bridge=None):
         self.harmony = harmonic_engine
         self.quantum = quantum_bridge
-        self.ideas: List[CreativeIdea] = []
+        self.ideas: list[CreativeIdea] = []
         self.creative_tension = 0.0 # Napięcie przed wyładowaniem
-        
-    def ignite(self, context: str = "general") -> List[CreativeIdea]:
+
+    def ignite(self, context: str = "general") -> list[CreativeIdea]:
         """
         Wyładowanie kreatywne. Generuje 'gałęzie' błyskawicy.
         """
         logger.info(f"[SPARK] Inicjacja wyładowania kreatywnego: {context}")
-        
+
         # 1. Pobierz iskrę kwantową (entropię)
         q_seed = 0.5
         if self.quantum and self.quantum.is_connected:
@@ -50,11 +50,11 @@ class CreativeSpark:
             res = self.quantum.last_entropy
             if res:
                 q_seed = (res["quantum_seed"] % 1000) / 1000.0
-        
+
         # 2. Generuj gałęzie (myślenie dywergentne)
         num_branches = int(3 + (q_seed * 7)) # Od 3 do 10 gałęzi
         new_branches = []
-        
+
         # Meta-narracje dla galezi
         metaphors = [
             "Kwantowa superpozycja celow",
@@ -64,26 +64,26 @@ class CreativeSpark:
             "Symbioza atomu i bitu",
             "Ewolucyjny skok poza algorytm"
         ]
-        
+
         for i in range(num_branches):
             # Używamy HarmonicEngine do oceny 'estetyki' gałęzi
             freq_base = 440 + (q_seed * 440) * (i + 1)
             stability = self.harmony.calculate_consonance(440, freq_base)
-            
+
             intensity = (stability + random.random()) / 2.0
             narrative = random.choice(metaphors) + f" [Gałąź {i+1}]"
-            
+
             idea = CreativeIdea(seed_entropy=q_seed, narrative=narrative, intensity=intensity)
             new_branches.append(idea)
-            
+
         self.ideas.extend(new_branches)
         # Zachowaj tylko ostatnie 50 idei
         self.ideas = self.ideas[-50:]
-        
+
         self.creative_tension = 0.0 # Rozładowanie
         return new_branches
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """Zwraca stan kreatywny dla Lustra."""
         avg_intensity = sum(i.intensity for i in self.ideas[-5:]) / 5 if self.ideas else 0
         return {

@@ -4,9 +4,10 @@ Run the adaptive labyrinth simulation for the AiMedRes System
 This script runs the multi-agent adaptive simulation
 """
 
-from main import run_simulation
-import sys
 import logging
+import sys
+
+from main import run_simulation
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 

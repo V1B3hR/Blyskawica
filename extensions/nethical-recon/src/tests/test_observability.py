@@ -1,7 +1,5 @@
 """Tests for observability module."""
 
-import pytest
-from prometheus_client import REGISTRY
 
 from nethical_recon.observability import (
     configure_logging,
@@ -13,7 +11,11 @@ from nethical_recon.observability import (
     track_findings,
     track_tool_run,
 )
-from nethical_recon.observability.metrics import get_metrics, update_active_workers, update_queue_depth
+from nethical_recon.observability.metrics import (
+    get_metrics,
+    update_active_workers,
+    update_queue_depth,
+)
 
 
 class TestLogging:
@@ -67,7 +69,7 @@ class TestMetrics:
     def test_track_tool_run_error(self):
         """Test tracking failed tool run."""
         try:
-            with track_tool_run("test_tool") as metrics:
+            with track_tool_run("test_tool") as metrics:  # noqa: F841
                 raise ValueError("Test error")
         except ValueError:
             pass

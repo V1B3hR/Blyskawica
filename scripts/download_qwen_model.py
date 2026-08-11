@@ -6,7 +6,6 @@ Downloads Qwen 2.5 Coder 1.5B Instruct GGUF and its tokenizer.json
 directly into the model/ directory for offline native Rust inference.
 """
 
-import os
 import sys
 import urllib.request
 from pathlib import Path
@@ -47,10 +46,10 @@ def main():
     print("=" * 60)
     print("⚡ Błyskawica Native Model Downloader (Qwen 2.5 Coder)")
     print("=" * 60)
-    
+
     download_file(TOKENIZER_URL, TOKENIZER_DEST)
     download_file(MODEL_URL, MODEL_DEST)
-    
+
     print("\n✅ Wszystkie pliki modelu są gotowe w katalogu model/")
     print("Błyskawica może teraz działać w 100% natywnie i offline!")
 

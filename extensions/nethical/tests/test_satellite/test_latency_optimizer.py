@@ -1,14 +1,14 @@
 """Tests for latency optimizer."""
 
-import pytest
-from datetime import datetime
 from unittest.mock import MagicMock
+
+import pytest
 
 from nethical.connectivity.satellite.latency_optimizer import (
     LatencyOptimizer,
+    LatencyOptimizerConfig,
     LatencyProfile,
     RequestPriority,
-    LatencyOptimizerConfig,
 )
 
 

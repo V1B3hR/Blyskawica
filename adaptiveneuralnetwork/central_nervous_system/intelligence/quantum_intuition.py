@@ -10,16 +10,17 @@ Naprawione w v2 (Sonnet):
 - Spójna integracja z istniejącym QuantumBridge (jedno połączenie IBM)
 - Dodana metoda run_outreach_audit() dla sesji strategicznych
 """
-import logging
-import json
 import hashlib
+import json
+import logging
 import math
-import time
 import random
-from typing import Dict, Any, List
+import time
+from typing import Any
 
 try:
     import torch
+
     from adaptiveneuralnetwork.cognitive_tools.ground_loop_isolator import GroundLoopIsolator
     _TORCH_AVAILABLE = True
 except ImportError:
@@ -44,7 +45,6 @@ except ImportError:
     _AER_AVAILABLE = False
 
 def get_workspace_root():
-    import os
     from pathlib import Path
     current = Path(__file__).resolve()
     for parent in current.parents:
@@ -55,13 +55,13 @@ def get_workspace_root():
 WORKSPACE_ROOT = get_workspace_root()
 
 
-def _dilemma_to_angles(dilemma_text: str, num_qubits: int) -> List[float]:
+def _dilemma_to_angles(dilemma_text: str, num_qubits: int) -> list[float]:
     """
     Mapuje tekst dylematu na UNIKALNE kąty obrotu dla każdego kubitu.
     
     Używamy SHA-256 w wielu "oknach" aby każdy kubit dostał swój własny
     fragment entropii semantycznej. To klucz do prawdziwej superpozycji.
-    """
+    """  # noqa: W293
     angles = []
     for i in range(num_qubits):
         # Każdy kubit dostaje unikalny hash (tekst + indeks kubitu)
@@ -73,13 +73,13 @@ def _dilemma_to_angles(dilemma_text: str, num_qubits: int) -> List[float]:
     return angles
 
 
-def _interpret_counts(counts: Dict[str, int], total_shots: int, num_qubits: int) -> Dict[str, Any]:
+def _interpret_counts(counts: dict[str, int], total_shots: int, num_qubits: int) -> dict[str, Any]:
     """
     Interpretuje wyniki z Qiskit (little-endian) na intuicję Błyskawicy.
     
     Stan zwrócony przez Qiskit: rightmost bit = q[0], leftmost = q[num_qubits-1]
     Używamy rozkładu prawdopodobieństwa zamiast tylko dominant state.
-    """
+    """  # noqa: W293
     # Policz ile razy każdy kubit q[0] wypadł jako '1'
     # q[0] to OSTATNI znak w stringu Qiskit (little-endian)
     ones_per_qubit = [0] * num_qubits
@@ -142,7 +142,7 @@ class QuantumIntuition:
     
     Używa istniejącego połączenia IBM (przez QuantumBridge lub bezpośrednio).
     Każdy dylemat jest kodowany jako unikalny, wielowymiarowy obwód kwantowy.
-    """
+    """  # noqa: W293
     NUM_QUBITS = 5
     SHOTS = 512  # Więcej shots = lepsze statystyki
 
@@ -155,7 +155,7 @@ class QuantumIntuition:
         """
         self.service = service
         self.api_key_path = api_key_path
-        self.results_log: List[Dict] = []
+        self.results_log: list[dict] = []
 
         # Inicjalizacja Asynchronicznej Izolacji Galwanicznej (Ground Loop Isolator)
         if _TORCH_AVAILABLE:
@@ -173,7 +173,7 @@ class QuantumIntuition:
             logger.error("[QuantumIntuition] Qiskit niedostępny.")
             return
         try:
-            with open(self.api_key_path, 'r', encoding='utf-8') as f:
+            with open(self.api_key_path, encoding='utf-8') as f:
                 key_data = json.load(f)
                 api_key = key_data.get("apikey")
             self.service = QiskitRuntimeService(
@@ -183,7 +183,7 @@ class QuantumIntuition:
         except Exception as e:
             logger.error(f"[QuantumIntuition] Błąd inicjalizacji: {e}")
 
-    def update_asynchronous_phases(self, target_angles: List[float], dt: float = 1.0) -> List[float]:
+    def update_asynchronous_phases(self, target_angles: list[float], dt: float = 1.0) -> list[float]:
         """
         Aktualizuje fazy kubitów asynchronicznie, przepuszczając je przez
         GroundLoopIsolator, aby zapobiec pętlom sprzężenia zwrotnego i cyklom granicznym.
@@ -202,17 +202,17 @@ class QuantumIntuition:
 
         # Konwersja wejścia do tensora
         target_tensor = torch.tensor(target_angles, dtype=torch.float32)
-        
+
         # Asynchroniczne opóźnienia i skoki fazy dla każdego kubitu
         delays = torch.tensor([i * 0.1 for i in range(self.NUM_QUBITS)], dtype=torch.float32)
         step_factor = torch.clamp(torch.tensor(dt) - delays, min=0.01, max=1.0)
-        
+
         # Krok asynchroniczny
         raw_phases = self.current_phases + (target_tensor - self.current_phases) * step_factor
-        
+
         # Filtrowanie i izolacja przy użyciu uziemienia i odcięcia autograd (.detach() w GLI)
         clean_phases = self.gli(raw_phases)
-        
+
         # Zapisanie stanu wewnętrznego i zwrot w formacie listy
         self.current_phases = clean_phases
         return clean_phases.tolist()
@@ -244,14 +244,14 @@ class QuantumIntuition:
         return qc
 
     def evaluate_dilemma(self, dilemma_text: str,
-                          context: Dict[str, Any] = None) -> Dict[str, Any]:
+                          context: dict[str, Any] = None) -> dict[str, Any]:
         """
         Ocenia dylemat na prawdziwym procesorze kwantowym IBM, lokalnym symulatorze
         lub klasycznej emulacji VQC.
         
         Returns:
             Słownik z intuicją, pewnością, entropią i pełną analizą.
-        """
+        """  # noqa: W293
         logger.info(f"[QuantumIntuition] Evaluating: '{dilemma_text[:60]}...'")
 
         # Określenie backendu i sposobu uruchomienia
@@ -264,7 +264,7 @@ class QuantumIntuition:
                 backend_name = "emulated_VQC"
                 raw_angles = _dilemma_to_angles(dilemma_text, self.NUM_QUBITS)
                 angles = self.update_asynchronous_phases(raw_angles, dt=1.0)
-                
+
                 # Symulacja prawdopodobieństw z szumem i splątaniem CNOT
                 probs = []
                 for i, angle in enumerate(angles):
@@ -273,7 +273,7 @@ class QuantumIntuition:
                         p = 0.7 * p + 0.3 * (math.sin(angles[i - 1] / 2.0) ** 2)
                     p = 0.9 * p + 0.05
                     probs.append(p)
-                
+
                 counts = {}
                 for _ in range(self.SHOTS):
                     bits = ["1" if random.random() < p else "0" for p in probs]
@@ -321,7 +321,7 @@ class QuantumIntuition:
             logger.error(f"[QuantumIntuition] Błąd wykonania: {e}")
             return {"status": "error", "message": str(e)}
 
-    def run_outreach_audit(self, targets: List[Dict[str, str]]) -> List[Dict[str, Any]]:
+    def run_outreach_audit(self, targets: list[dict[str, str]]) -> list[dict[str, Any]]:
         """
         Przeprowadza kwantowy audyt gotowości dla listy celów outreach.
         
@@ -330,7 +330,7 @@ class QuantumIntuition:
         
         Returns:
             Lista wyników dla każdego celu.
-        """
+        """  # noqa: W293
         print(f"\n{'='*60}")
         print("  KWANTOWY AUDYT GOTOWOŚCI — Błyskawica v5.1")
         print(f"{'='*60}\n")
@@ -355,7 +355,6 @@ class QuantumIntuition:
 
 
 if __name__ == "__main__":
-    import sys
 
     logging.basicConfig(level=logging.WARNING)
 

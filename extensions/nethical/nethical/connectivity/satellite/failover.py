@@ -8,14 +8,13 @@ connection quality scoring.
 
 import asyncio
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 from .base import (
-    ConnectionConfig,
-    ConnectionState,
     SatelliteProvider,
 )
 
@@ -50,7 +49,7 @@ class FailoverEvent:
     from_connection: ConnectionType
     to_connection: ConnectionType
     reason: FailoverReason
-    details: Dict[str, Any] = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
     duration_ms: float = 0.0
     success: bool = True
 
@@ -94,8 +93,8 @@ class FailoverManager:
 
     def __init__(
         self,
-        config: Optional[FailoverConfig] = None,
-        satellite_provider: Optional[SatelliteProvider] = None,
+        config: FailoverConfig | None = None,
+        satellite_provider: SatelliteProvider | None = None,
     ):
         """
         Initialize failover manager.
@@ -109,7 +108,7 @@ class FailoverManager:
 
         self._active_connection = self.config.preferred_connection
         self._is_monitoring = False
-        self._monitor_task: Optional[asyncio.Task] = None
+        self._monitor_task: asyncio.Task | None = None
 
         # Connection states
         self._terrestrial_healthy = True
@@ -122,19 +121,19 @@ class FailoverManager:
         self._satellite_consecutive_failures = 0
 
         # Event history
-        self._failover_events: List[FailoverEvent] = []
+        self._failover_events: list[FailoverEvent] = []
         self._max_events = 100
 
         # Callbacks
-        self._callbacks: Dict[str, List[Callable]] = {
+        self._callbacks: dict[str, list[Callable]] = {
             "on_failover": [],
             "on_failback": [],
             "on_quality_change": [],
         }
 
         # Timing
-        self._last_failover: Optional[datetime] = None
-        self._last_failback: Optional[datetime] = None
+        self._last_failover: datetime | None = None
+        self._last_failback: datetime | None = None
 
     @property
     def active_connection(self) -> ConnectionType:
@@ -152,7 +151,7 @@ class FailoverManager:
         return self._active_connection == ConnectionType.TERRESTRIAL
 
     @property
-    def failover_events(self) -> List[FailoverEvent]:
+    def failover_events(self) -> list[FailoverEvent]:
         """Get failover event history."""
         return self._failover_events.copy()
 
@@ -170,7 +169,7 @@ class FailoverManager:
         self._is_monitoring = False
         if self._monitor_task:
             self._monitor_task.cancel()
-            try:
+            try:  # noqa: SIM105
                 await self._monitor_task
             except asyncio.CancelledError:
                 pass
@@ -183,7 +182,7 @@ class FailoverManager:
                 await self._perform_health_checks()
                 await self._evaluate_failover()
                 await asyncio.sleep(self.config.health_check_interval_seconds)
-            except asyncio.CancelledError:
+            except asyncio.CancelledError:  # noqa: PERF203
                 break
             except Exception as e:
                 logger.error(f"Error in failover monitoring: {e}")
@@ -282,7 +281,7 @@ class FailoverManager:
                 )
 
         # Check if we should fail back to terrestrial
-        elif self.is_on_satellite and self.config.auto_failback:
+        elif self.is_on_satellite and self.config.auto_failback:  # noqa: SIM102
             if self._terrestrial_healthy:
                 # Check minimum time on backup
                 if self._last_failover:
@@ -310,7 +309,7 @@ class FailoverManager:
         from_conn: ConnectionType,
         to_conn: ConnectionType,
         reason: FailoverReason,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ):
         """Execute failover."""
         start_time = datetime.utcnow()
@@ -320,7 +319,7 @@ class FailoverManager:
             logger.info(f"Initiating failover: {from_conn.value} -> {to_conn.value}")
 
             # Activate satellite if failing over to it
-            if to_conn == ConnectionType.SATELLITE and self._satellite_provider:
+            if to_conn == ConnectionType.SATELLITE and self._satellite_provider:  # noqa: SIM102
                 if not self._satellite_provider.is_connected:
                     await self._satellite_provider.connect()
 
@@ -441,7 +440,7 @@ class FailoverManager:
         if event in self._callbacks:
             self._callbacks[event].append(callback)
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """
         Get failover manager status.
 

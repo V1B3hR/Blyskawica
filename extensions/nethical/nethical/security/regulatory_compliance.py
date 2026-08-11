@@ -15,8 +15,8 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional
 from pathlib import Path
+from typing import Any
 
 
 class AIRiskLevel(str, Enum):
@@ -77,9 +77,9 @@ class RegulatoryRequirement:
     mandatory: bool = True
     high_risk_only: bool = False
     implementation_status: ComplianceStatus = ComplianceStatus.PENDING_REVIEW
-    code_modules: List[str] = field(default_factory=list)
-    test_evidence: List[str] = field(default_factory=list)
-    documentation: List[str] = field(default_factory=list)
+    code_modules: list[str] = field(default_factory=list)
+    test_evidence: list[str] = field(default_factory=list)
+    documentation: list[str] = field(default_factory=list)
     remediation_notes: str = ""
 
 
@@ -109,15 +109,15 @@ class EUAIActCompliance:
     - Article 13: Transparency and information to users
     - Article 14: Human oversight
     - Article 15: Accuracy, robustness and cybersecurity
-    """
-    
+    """  # noqa: W293
+
     def __init__(self) -> None:
-        self.requirements: Dict[str, RegulatoryRequirement] = {}
+        self.requirements: dict[str, RegulatoryRequirement] = {}
         self._initialize_requirements()
-    
+
     def _initialize_requirements(self) -> None:
         """Initialize EU AI Act requirements"""
-        
+
         # Article 9: Risk Management System
         self.requirements["EU-AI-9.1"] = RegulatoryRequirement(
             id="EU-AI-9.1",
@@ -132,7 +132,7 @@ class EUAIActCompliance:
             test_evidence=["tests/test_governance_features.py"],
             documentation=["docs/compliance/NIST_RMF_MAPPING.md"]
         )
-        
+
         self.requirements["EU-AI-9.2"] = RegulatoryRequirement(
             id="EU-AI-9.2",
             framework=RegulatoryFramework.EU_AI_ACT,
@@ -146,7 +146,7 @@ class EUAIActCompliance:
             test_evidence=["tests/test_anomaly_classifier.py"],
             documentation=["docs/security/threat_model.md"]
         )
-        
+
         self.requirements["EU-AI-9.3"] = RegulatoryRequirement(
             id="EU-AI-9.3",
             framework=RegulatoryFramework.EU_AI_ACT,
@@ -160,7 +160,7 @@ class EUAIActCompliance:
             test_evidence=["tests/test_phase3.py"],
             documentation=["docs/security/mitigations.md"]
         )
-        
+
         # Article 10: Data and Data Governance
         self.requirements["EU-AI-10.1"] = RegulatoryRequirement(
             id="EU-AI-10.1",
@@ -175,7 +175,7 @@ class EUAIActCompliance:
             test_evidence=["tests/test_privacy_features.py"],
             documentation=["docs/privacy/DPIA_template.md"]
         )
-        
+
         self.requirements["EU-AI-10.2"] = RegulatoryRequirement(
             id="EU-AI-10.2",
             framework=RegulatoryFramework.EU_AI_ACT,
@@ -189,7 +189,7 @@ class EUAIActCompliance:
             test_evidence=["tests/test_regionalization.py"],
             documentation=["governance/fairness_recalibration_report.md"]
         )
-        
+
         # Article 11: Technical Documentation
         self.requirements["EU-AI-11.1"] = RegulatoryRequirement(
             id="EU-AI-11.1",
@@ -204,7 +204,7 @@ class EUAIActCompliance:
             test_evidence=[],
             documentation=["ARCHITECTURE.md", "docs/API_USAGE.md", "docs/EXPLAINABILITY_GUIDE.md"]
         )
-        
+
         # Article 12: Record-keeping
         self.requirements["EU-AI-12.1"] = RegulatoryRequirement(
             id="EU-AI-12.1",
@@ -219,7 +219,7 @@ class EUAIActCompliance:
             test_evidence=["tests/test_train_audit_logging.py"],
             documentation=["docs/AUDIT_LOGGING_GUIDE.md"]
         )
-        
+
         # Article 13: Transparency
         self.requirements["EU-AI-13.1"] = RegulatoryRequirement(
             id="EU-AI-13.1",
@@ -230,12 +230,12 @@ class EUAIActCompliance:
             category=ControlCategory.TRANSPARENCY,
             mandatory=True,
             high_risk_only=True,
-            code_modules=["nethical/explainability/transparency_report.py", 
+            code_modules=["nethical/explainability/transparency_report.py",
                          "nethical/explainability/quarterly_transparency.py"],
             test_evidence=["tests/test_explainability/"],
             documentation=["docs/transparency/"]
         )
-        
+
         self.requirements["EU-AI-13.2"] = RegulatoryRequirement(
             id="EU-AI-13.2",
             framework=RegulatoryFramework.EU_AI_ACT,
@@ -249,7 +249,7 @@ class EUAIActCompliance:
             test_evidence=[],
             documentation=["README.md", "docs/API_USAGE.md"]
         )
-        
+
         # Article 14: Human Oversight
         self.requirements["EU-AI-14.1"] = RegulatoryRequirement(
             id="EU-AI-14.1",
@@ -264,7 +264,7 @@ class EUAIActCompliance:
             test_evidence=["tests/test_governance_features.py"],
             documentation=["docs/governance/governance_drivers.md"]
         )
-        
+
         self.requirements["EU-AI-14.2"] = RegulatoryRequirement(
             id="EU-AI-14.2",
             framework=RegulatoryFramework.EU_AI_ACT,
@@ -278,7 +278,7 @@ class EUAIActCompliance:
             test_evidence=["tests/test_advanced_explainability.py"],
             documentation=["docs/ADVANCED_EXPLAINABILITY_GUIDE.md"]
         )
-        
+
         # Article 15: Accuracy, Robustness and Cybersecurity
         self.requirements["EU-AI-15.1"] = RegulatoryRequirement(
             id="EU-AI-15.1",
@@ -293,7 +293,7 @@ class EUAIActCompliance:
             test_evidence=["tests/test_performance_benchmarks.py"],
             documentation=["docs/BENCHMARK_PLAN.md"]
         )
-        
+
         self.requirements["EU-AI-15.2"] = RegulatoryRequirement(
             id="EU-AI-15.2",
             framework=RegulatoryFramework.EU_AI_ACT,
@@ -307,7 +307,7 @@ class EUAIActCompliance:
             test_evidence=["tests/adversarial/"],
             documentation=["docs/security/AI_ML_SECURITY_GUIDE.md"]
         )
-        
+
         self.requirements["EU-AI-15.3"] = RegulatoryRequirement(
             id="EU-AI-15.3",
             framework=RegulatoryFramework.EU_AI_ACT,
@@ -321,8 +321,8 @@ class EUAIActCompliance:
             test_evidence=["tests/test_phase5_penetration_testing.py", "tests/test_phase5_threat_modeling.py"],
             documentation=["docs/SECURITY_HARDENING_GUIDE.md"]
         )
-    
-    def classify_risk_level(self, system_characteristics: Dict[str, Any]) -> AIRiskLevel:
+
+    def classify_risk_level(self, system_characteristics: dict[str, Any]) -> AIRiskLevel:
         """
         Classify AI system risk level according to EU AI Act.
         
@@ -331,7 +331,7 @@ class EUAIActCompliance:
         
         Returns:
             AIRiskLevel classification
-        """
+        """  # noqa: W293
         # Unacceptable risk criteria (Article 5)
         if system_characteristics.get("social_scoring", False):
             return AIRiskLevel.UNACCEPTABLE
@@ -339,7 +339,7 @@ class EUAIActCompliance:
             return AIRiskLevel.UNACCEPTABLE
         if system_characteristics.get("real_time_biometric_public", False):
             return AIRiskLevel.UNACCEPTABLE
-        
+
         # High risk criteria (Annex III)
         high_risk_domains = [
             "biometric_identification",
@@ -351,10 +351,10 @@ class EUAIActCompliance:
             "migration_asylum",
             "justice_democratic"
         ]
-        
+
         if any(system_characteristics.get(domain, False) for domain in high_risk_domains):
             return AIRiskLevel.HIGH
-        
+
         # Limited risk (transparency obligations)
         limited_risk_types = [
             "chatbot",
@@ -362,26 +362,24 @@ class EUAIActCompliance:
             "biometric_categorization",
             "deep_fake"
         ]
-        
+
         if any(system_characteristics.get(t, False) for t in limited_risk_types):
             return AIRiskLevel.LIMITED
-        
+
         return AIRiskLevel.MINIMAL
-    
-    def get_applicable_requirements(self, risk_level: AIRiskLevel) -> List[RegulatoryRequirement]:
+
+    def get_applicable_requirements(self, risk_level: AIRiskLevel) -> list[RegulatoryRequirement]:
         """Get requirements applicable to a given risk level"""
         if risk_level == AIRiskLevel.UNACCEPTABLE:
             return []  # System should not be deployed
-        
+
         requirements = []
         for req in self.requirements.values():
-            if risk_level == AIRiskLevel.HIGH:
-                requirements.append(req)
-            elif not req.high_risk_only:
-                requirements.append(req)
-        
+            if risk_level == AIRiskLevel.HIGH or not req.high_risk_only:
+                requirements.append(req)  # noqa: PERF401
+
         return requirements
-    
+
     def assess_requirement(
         self,
         requirement_id: str,
@@ -391,7 +389,7 @@ class EUAIActCompliance:
         """Update compliance status for a requirement"""
         if requirement_id not in self.requirements:
             return False
-        
+
         self.requirements[requirement_id].implementation_status = status
         self.requirements[requirement_id].remediation_notes = notes
         return True
@@ -405,15 +403,15 @@ class UKLawCompliance:
     - UK GDPR (retained EU law)
     - DPA 2018 (Data Protection Act 2018)
     - NHS DSPT (Data Security and Protection Toolkit)
-    """
-    
+    """  # noqa: W293
+
     def __init__(self) -> None:
-        self.requirements: Dict[str, RegulatoryRequirement] = {}
+        self.requirements: dict[str, RegulatoryRequirement] = {}
         self._initialize_requirements()
-    
+
     def _initialize_requirements(self) -> None:
         """Initialize UK law requirements"""
-        
+
         # UK GDPR Requirements
         self.requirements["UK-GDPR-5"] = RegulatoryRequirement(
             id="UK-GDPR-5",
@@ -427,7 +425,7 @@ class UKLawCompliance:
             test_evidence=["tests/test_privacy_features.py"],
             documentation=["docs/privacy/DPIA_template.md"]
         )
-        
+
         self.requirements["UK-GDPR-6"] = RegulatoryRequirement(
             id="UK-GDPR-6",
             framework=RegulatoryFramework.UK_GDPR,
@@ -440,7 +438,7 @@ class UKLawCompliance:
             test_evidence=["tests/test_privacy_features.py"],
             documentation=["docs/privacy/DPIA_template.md"]
         )
-        
+
         self.requirements["UK-GDPR-12-22"] = RegulatoryRequirement(
             id="UK-GDPR-12-22",
             framework=RegulatoryFramework.UK_GDPR,
@@ -453,7 +451,7 @@ class UKLawCompliance:
             test_evidence=["tests/test_privacy_features.py"],
             documentation=["docs/privacy/DSR_runbook.md"]
         )
-        
+
         self.requirements["UK-GDPR-25"] = RegulatoryRequirement(
             id="UK-GDPR-25",
             framework=RegulatoryFramework.UK_GDPR,
@@ -466,7 +464,7 @@ class UKLawCompliance:
             test_evidence=["tests/test_privacy_features.py"],
             documentation=["docs/F3_PRIVACY_GUIDE.md"]
         )
-        
+
         self.requirements["UK-GDPR-32"] = RegulatoryRequirement(
             id="UK-GDPR-32",
             framework=RegulatoryFramework.UK_GDPR,
@@ -479,7 +477,7 @@ class UKLawCompliance:
             test_evidence=["tests/test_security_hardening.py"],
             documentation=["docs/SECURITY_HARDENING_GUIDE.md"]
         )
-        
+
         self.requirements["UK-GDPR-33-34"] = RegulatoryRequirement(
             id="UK-GDPR-33-34",
             framework=RegulatoryFramework.UK_GDPR,
@@ -492,7 +490,7 @@ class UKLawCompliance:
             test_evidence=["tests/test_phase4_operational_security.py"],
             documentation=["docs/security/red_team_report_template.md"]
         )
-        
+
         self.requirements["UK-GDPR-35"] = RegulatoryRequirement(
             id="UK-GDPR-35",
             framework=RegulatoryFramework.UK_GDPR,
@@ -505,7 +503,7 @@ class UKLawCompliance:
             test_evidence=[],
             documentation=["docs/privacy/DPIA_template.md"]
         )
-        
+
         # DPA 2018 Specific Requirements
         self.requirements["UK-DPA-35"] = RegulatoryRequirement(
             id="UK-DPA-35",
@@ -519,7 +517,7 @@ class UKLawCompliance:
             test_evidence=["tests/test_phase3.py"],
             documentation=["policies/common/data_classification.yaml"]
         )
-        
+
         self.requirements["UK-DPA-64"] = RegulatoryRequirement(
             id="UK-DPA-64",
             framework=RegulatoryFramework.UK_DPA_2018,
@@ -532,7 +530,7 @@ class UKLawCompliance:
             test_evidence=["tests/test_advanced_explainability.py"],
             documentation=["docs/EXPLAINABILITY_GUIDE.md"]
         )
-        
+
         # NHS DSPT Requirements
         self.requirements["NHS-DSPT-1"] = RegulatoryRequirement(
             id="NHS-DSPT-1",
@@ -546,7 +544,7 @@ class UKLawCompliance:
             test_evidence=["tests/test_privacy_features.py"],
             documentation=["docs/privacy/DPIA_template.md"]
         )
-        
+
         self.requirements["NHS-DSPT-3"] = RegulatoryRequirement(
             id="NHS-DSPT-3",
             framework=RegulatoryFramework.UK_NHS_DSPT,
@@ -559,7 +557,7 @@ class UKLawCompliance:
             test_evidence=[],
             documentation=["docs/TRAINING_GUIDE.md"]
         )
-        
+
         self.requirements["NHS-DSPT-7"] = RegulatoryRequirement(
             id="NHS-DSPT-7",
             framework=RegulatoryFramework.UK_NHS_DSPT,
@@ -572,7 +570,7 @@ class UKLawCompliance:
             test_evidence=["tests/test_security_hardening.py"],
             documentation=["docs/security/SSO_SAML_GUIDE.md"]
         )
-        
+
         self.requirements["NHS-DSPT-8"] = RegulatoryRequirement(
             id="NHS-DSPT-8",
             framework=RegulatoryFramework.UK_NHS_DSPT,
@@ -585,7 +583,7 @@ class UKLawCompliance:
             test_evidence=[],
             documentation=["docs/SUPPLY_CHAIN_SECURITY_GUIDE.md"]
         )
-        
+
         self.requirements["NHS-DSPT-10"] = RegulatoryRequirement(
             id="NHS-DSPT-10",
             framework=RegulatoryFramework.UK_NHS_DSPT,
@@ -608,15 +606,15 @@ class USStandardsCompliance:
     - NIST AI RMF (AI Risk Management Framework)
     - HIPAA (Health Insurance Portability and Accountability Act)
     - SOC2 (System and Organization Controls 2)
-    """
-    
+    """  # noqa: W293
+
     def __init__(self) -> None:
-        self.requirements: Dict[str, RegulatoryRequirement] = {}
+        self.requirements: dict[str, RegulatoryRequirement] = {}
         self._initialize_requirements()
-    
+
     def _initialize_requirements(self) -> None:
         """Initialize US standards requirements"""
-        
+
         # NIST AI RMF - GOVERN Function
         self.requirements["NIST-RMF-GV1"] = RegulatoryRequirement(
             id="NIST-RMF-GV1",
@@ -630,7 +628,7 @@ class USStandardsCompliance:
             test_evidence=["tests/test_governance_features.py"],
             documentation=["docs/governance/governance_drivers.md"]
         )
-        
+
         self.requirements["NIST-RMF-GV2"] = RegulatoryRequirement(
             id="NIST-RMF-GV2",
             framework=RegulatoryFramework.US_NIST_AI_RMF,
@@ -643,7 +641,7 @@ class USStandardsCompliance:
             test_evidence=["tests/test_integrated_governance.py"],
             documentation=["docs/compliance/NIST_RMF_MAPPING.md"]
         )
-        
+
         # NIST AI RMF - MAP Function
         self.requirements["NIST-RMF-MP1"] = RegulatoryRequirement(
             id="NIST-RMF-MP1",
@@ -657,7 +655,7 @@ class USStandardsCompliance:
             test_evidence=["tests/test_regionalization.py"],
             documentation=["docs/REGIONAL_DEPLOYMENT_GUIDE.md"]
         )
-        
+
         self.requirements["NIST-RMF-MP3"] = RegulatoryRequirement(
             id="NIST-RMF-MP3",
             framework=RegulatoryFramework.US_NIST_AI_RMF,
@@ -670,7 +668,7 @@ class USStandardsCompliance:
             test_evidence=["tests/test_advanced_explainability.py"],
             documentation=["docs/EXPLAINABILITY_GUIDE.md"]
         )
-        
+
         # NIST AI RMF - MEASURE Function
         self.requirements["NIST-RMF-MS1"] = RegulatoryRequirement(
             id="NIST-RMF-MS1",
@@ -684,7 +682,7 @@ class USStandardsCompliance:
             test_evidence=["tests/test_performance_benchmarks.py"],
             documentation=["docs/BENCHMARK_PLAN.md"]
         )
-        
+
         self.requirements["NIST-RMF-MS2"] = RegulatoryRequirement(
             id="NIST-RMF-MS2",
             framework=RegulatoryFramework.US_NIST_AI_RMF,
@@ -697,7 +695,7 @@ class USStandardsCompliance:
             test_evidence=["tests/adversarial/", "tests/test_performance_benchmarks.py"],
             documentation=["docs/Benchmark_plan.md"]
         )
-        
+
         # NIST AI RMF - MANAGE Function
         self.requirements["NIST-RMF-MG1"] = RegulatoryRequirement(
             id="NIST-RMF-MG1",
@@ -711,7 +709,7 @@ class USStandardsCompliance:
             test_evidence=["tests/test_phase3.py"],
             documentation=["docs/security/mitigations.md"]
         )
-        
+
         self.requirements["NIST-RMF-MG3"] = RegulatoryRequirement(
             id="NIST-RMF-MG3",
             framework=RegulatoryFramework.US_NIST_AI_RMF,
@@ -724,7 +722,7 @@ class USStandardsCompliance:
             test_evidence=["tests/test_phase4_operational_security.py"],
             documentation=["docs/security/red_team_report_template.md"]
         )
-        
+
         # SOC2 Trust Service Criteria
         self.requirements["SOC2-CC6.1"] = RegulatoryRequirement(
             id="SOC2-CC6.1",
@@ -738,7 +736,7 @@ class USStandardsCompliance:
             test_evidence=["tests/test_security_hardening.py"],
             documentation=["docs/security/SSO_SAML_GUIDE.md"]
         )
-        
+
         self.requirements["SOC2-CC6.6"] = RegulatoryRequirement(
             id="SOC2-CC6.6",
             framework=RegulatoryFramework.US_SOC2,
@@ -751,7 +749,7 @@ class USStandardsCompliance:
             test_evidence=["tests/test_phase4_operational_security.py"],
             documentation=["docs/security/threat_model.md"]
         )
-        
+
         self.requirements["SOC2-CC7.1"] = RegulatoryRequirement(
             id="SOC2-CC7.1",
             framework=RegulatoryFramework.US_SOC2,
@@ -764,7 +762,7 @@ class USStandardsCompliance:
             test_evidence=["tests/test_train_governance.py"],
             documentation=["docs/versioning.md"]
         )
-        
+
         self.requirements["SOC2-CC7.4"] = RegulatoryRequirement(
             id="SOC2-CC7.4",
             framework=RegulatoryFramework.US_SOC2,
@@ -785,31 +783,31 @@ class RegulatoryMappingGenerator:
     
     Creates auto-generated tables showing which Nethical component
     (code, doc, test) fulfills each compliance requirement.
-    """
-    
+    """  # noqa: W293
+
     def __init__(self) -> None:
         self.eu_ai_act = EUAIActCompliance()
         self.uk_law = UKLawCompliance()
         self.us_standards = USStandardsCompliance()
-        self.mappings: List[RegulatoryMapping] = []
-    
-    def _collect_all_requirements(self) -> List[RegulatoryRequirement]:
+        self.mappings: list[RegulatoryMapping] = []
+
+    def _collect_all_requirements(self) -> list[RegulatoryRequirement]:
         """Collect all requirements from all frameworks"""
         requirements = []
         requirements.extend(self.eu_ai_act.requirements.values())
         requirements.extend(self.uk_law.requirements.values())
         requirements.extend(self.us_standards.requirements.values())
         return requirements
-    
-    def generate_mapping_table(self) -> Dict[str, Any]:
+
+    def generate_mapping_table(self) -> dict[str, Any]:
         """
         Generate comprehensive regulatory mapping table.
         
         Returns:
             Dictionary containing the complete mapping table
-        """
+        """  # noqa: W293
         requirements = self._collect_all_requirements()
-        
+
         mapping_table = {
             "metadata": {
                 "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -824,7 +822,7 @@ class RegulatoryMappingGenerator:
             },
             "requirements": []
         }
-        
+
         # Process each requirement
         for req in requirements:
             req_entry = {
@@ -843,34 +841,34 @@ class RegulatoryMappingGenerator:
                 "remediation_notes": req.remediation_notes
             }
             mapping_table["requirements"].append(req_entry)
-            
+
             # Update summaries
             framework = req.framework.value
             category = req.category.value
             status = req.implementation_status.value
-            
+
             mapping_table["summary"]["by_framework"][framework] = \
                 mapping_table["summary"]["by_framework"].get(framework, 0) + 1
             mapping_table["summary"]["by_category"][category] = \
                 mapping_table["summary"]["by_category"].get(category, 0) + 1
             mapping_table["summary"]["by_status"][status] = \
                 mapping_table["summary"]["by_status"].get(status, 0) + 1
-        
+
         return mapping_table
-    
+
     def generate_markdown_report(self) -> str:
         """
         Generate regulatory mapping table in Markdown format.
         
         Returns:
             Markdown formatted string
-        """
+        """  # noqa: W293
         mapping = self.generate_mapping_table()
-        
+
         md = "# Regulatory Compliance Mapping Table\n\n"
         md += f"**Generated:** {mapping['metadata']['generated_at']}\n\n"
         md += f"**Total Requirements:** {mapping['metadata']['total_requirements']}\n\n"
-        
+
         # Summary by Framework
         md += "## Summary by Framework\n\n"
         md += "| Framework | Requirements |\n"
@@ -878,7 +876,7 @@ class RegulatoryMappingGenerator:
         for framework, count in mapping["summary"]["by_framework"].items():
             md += f"| {framework} | {count} |\n"
         md += "\n"
-        
+
         # Summary by Status
         md += "## Compliance Status Summary\n\n"
         md += "| Status | Count |\n"
@@ -886,19 +884,19 @@ class RegulatoryMappingGenerator:
         for status, count in mapping["summary"]["by_status"].items():
             md += f"| {status} | {count} |\n"
         md += "\n"
-        
+
         # Detailed Requirements by Framework
         for framework in RegulatoryFramework:
-            framework_reqs = [r for r in mapping["requirements"] 
+            framework_reqs = [r for r in mapping["requirements"]
                            if r["framework"] == framework.value]
-            
+
             if not framework_reqs:
                 continue
-            
+
             md += f"## {framework.value.upper().replace('_', ' ')}\n\n"
             md += "| ID | Article | Title | Status | Code Modules | Tests | Docs |\n"
             md += "|----|---------|-------|--------|--------------|-------|------|\n"
-            
+
             for req in framework_reqs:
                 code = ", ".join(req["code_modules"][:2]) if req["code_modules"] else "-"
                 if len(req["code_modules"]) > 2:
@@ -909,7 +907,7 @@ class RegulatoryMappingGenerator:
                 docs = ", ".join(req["documentation"][:2]) if req["documentation"] else "-"
                 if len(req["documentation"]) > 2:
                     docs += "..."
-                
+
                 status_icon = {
                     "compliant": "✅",
                     "partial": "🟡",
@@ -917,18 +915,18 @@ class RegulatoryMappingGenerator:
                     "not_applicable": "N/A",
                     "pending_review": "🔄"
                 }.get(req["status"], "❓")
-                
+
                 md += f"| {req['id']} | {req['article']} | {req['title']} | "
                 md += f"{status_icon} | {code} | {tests} | {docs} |\n"
-            
+
             md += "\n"
-        
+
         # Cross-Reference Matrix
         md += "## Cross-Reference Matrix\n\n"
         md += "This matrix shows which controls satisfy multiple frameworks.\n\n"
         md += "| Category | EU AI Act | UK GDPR | UK DPA 2018 | NHS DSPT | NIST AI RMF | SOC2 |\n"
         md += "|----------|-----------|---------|-------------|----------|-------------|------|\n"
-        
+
         for category in ControlCategory:
             row = [category.value]
             for framework in [RegulatoryFramework.EU_AI_ACT, RegulatoryFramework.UK_GDPR,
@@ -938,16 +936,16 @@ class RegulatoryMappingGenerator:
                           if r["framework"] == framework.value and r["category"] == category.value)
                 row.append(str(count) if count > 0 else "-")
             md += "| " + " | ".join(row) + " |\n"
-        
+
         md += "\n"
-        
+
         # Footer
         md += "---\n"
         md += f"Last Updated: {datetime.now(timezone.utc).strftime('%Y-%m-%d')}\n"
-        
+
         return md
-    
-    def generate_json_report(self, output_path: Optional[str] = None) -> str:
+
+    def generate_json_report(self, output_path: str | None = None) -> str:
         """
         Generate regulatory mapping table in JSON format.
         
@@ -956,16 +954,16 @@ class RegulatoryMappingGenerator:
         
         Returns:
             JSON formatted string
-        """
+        """  # noqa: W293
         mapping = self.generate_mapping_table()
         json_str = json.dumps(mapping, indent=2)
-        
+
         if output_path:
             Path(output_path).write_text(json_str)
-        
+
         return json_str
-    
-    def generate_audit_report(self, auditor_name: str = "System") -> Dict[str, Any]:
+
+    def generate_audit_report(self, auditor_name: str = "System") -> dict[str, Any]:
         """
         Generate audit report for compliance assessment.
         
@@ -974,17 +972,17 @@ class RegulatoryMappingGenerator:
         
         Returns:
             Audit report dictionary
-        """
+        """  # noqa: W293
         mapping = self.generate_mapping_table()
-        
+
         # Calculate compliance scores
         total = len(mapping["requirements"])
         compliant = mapping["summary"]["by_status"].get("compliant", 0)
         partial = mapping["summary"]["by_status"].get("partial", 0)
         non_compliant = mapping["summary"]["by_status"].get("non_compliant", 0)
-        
+
         compliance_score = ((compliant + (partial * 0.5)) / total * 100) if total > 0 else 0
-        
+
         audit_report = {
             "report_id": f"AUDIT-{uuid.uuid4().hex[:8].upper()}",
             "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -1001,7 +999,7 @@ class RegulatoryMappingGenerator:
             "findings": [],
             "recommendations": []
         }
-        
+
         # Add findings for non-compliant items
         for req in mapping["requirements"]:
             if req["status"] in ["non_compliant", "partial"]:
@@ -1013,7 +1011,7 @@ class RegulatoryMappingGenerator:
                     "category": req["category"],
                     "remediation": req["remediation_notes"] or "Review and implement required controls"
                 })
-        
+
         # Add recommendations
         if non_compliant > 0:
             audit_report["recommendations"].append(
@@ -1027,11 +1025,11 @@ class RegulatoryMappingGenerator:
             audit_report["recommendations"].append(
                 "Achieve 90% compliance score for certification readiness"
             )
-        
+
         return audit_report
 
 
-def generate_regulatory_mapping_table(output_dir: str = "docs/compliance") -> Dict[str, str]:
+def generate_regulatory_mapping_table(output_dir: str = "docs/compliance") -> dict[str, str]:
     """
     Generate regulatory mapping table and save to files.
     
@@ -1040,26 +1038,26 @@ def generate_regulatory_mapping_table(output_dir: str = "docs/compliance") -> Di
     
     Returns:
         Dictionary with paths to generated files
-    """
+    """  # noqa: W293
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
-    
+
     generator = RegulatoryMappingGenerator()
-    
+
     # Generate all formats
     md_content = generator.generate_markdown_report()
     json_content = generator.generate_json_report()
     audit_report = generator.generate_audit_report()
-    
+
     # Save files
     md_path = output_path / "REGULATORY_MAPPING_TABLE.md"
     json_path = output_path / "regulatory_mapping.json"
     audit_path = output_path / "audit_report.json"
-    
+
     md_path.write_text(md_content)
     json_path.write_text(json_content)
     audit_path.write_text(json.dumps(audit_report, indent=2))
-    
+
     return {
         "markdown": str(md_path),
         "json": str(json_path),

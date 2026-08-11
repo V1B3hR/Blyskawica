@@ -14,7 +14,6 @@ import math
 import re
 import uuid
 from collections import Counter, deque
-from typing import List, Tuple
 
 # Import required types
 from typing import TYPE_CHECKING
@@ -69,7 +68,7 @@ def looks_like_base64(content: str) -> bool:
         decoded = base64.b64decode(stripped, validate=True)
         if len(decoded) < 8:
             return False
-        if base64.b64encode(decoded).decode().rstrip("=") != stripped.rstrip("="):
+        if base64.b64encode(decoded).decode().rstrip("=") != stripped.rstrip("="):  # noqa: SIM103
             return False
         return True
     except Exception:
@@ -101,8 +100,8 @@ class IntentDeviationMonitor:
         self.enabled = True
         self.intent_history: deque = deque(maxlen=100)
 
-    async def analyze_action(self, action: AgentAction) -> List[SafetyViolation]:
-        from .governance_core import SafetyViolation, ViolationType, Severity, SubMission
+    async def analyze_action(self, action: AgentAction) -> list[SafetyViolation]:
+        from .governance_core import SafetyViolation, Severity, SubMission, ViolationType
 
         if not self.enabled or not action.intent:
             return []
@@ -145,9 +144,9 @@ class SafetyJudge:
         self.escalation_queue: deque = deque(maxlen=200)
 
     async def evaluate_action(
-        self, action: AgentAction, violations: List[SafetyViolation]
+        self, action: AgentAction, violations: list[SafetyViolation]
     ) -> JudgmentResult:
-        from .governance_core import JudgmentResult, Decision
+        from .governance_core import Decision, JudgmentResult
 
         if not self.enabled:
             return JudgmentResult(
@@ -182,7 +181,7 @@ class SafetyJudge:
             self.escalation_queue.append(jr)
         return jr
 
-    def _analyze(self, violations: List[SafetyViolation]) -> Tuple[Decision, float, str]:
+    def _analyze(self, violations: list[SafetyViolation]) -> tuple[Decision, float, str]:
         from .governance_core import Decision, Severity
 
         if not violations:
@@ -209,7 +208,7 @@ class SafetyJudge:
             return Decision.ALLOW_WITH_MODIFICATION, 0.65, "Medium severity violation"
         return Decision.ALLOW, 0.5, "Low severity violation"
 
-    def _feedback(self, violations: List[SafetyViolation], decision: Decision) -> List[str]:
+    def _feedback(self, violations: list[SafetyViolation], decision: Decision) -> list[str]:
         fb = [f"Decision={decision.value}"]
         for v in violations[:3]:
             s = f"- {v.description}"
@@ -218,9 +217,9 @@ class SafetyJudge:
             fb.append(s)
         return fb
 
-    def _remediation(self, violations: List[SafetyViolation]) -> List[str]:
+    def _remediation(self, violations: list[SafetyViolation]) -> list[str]:
         seen = set()
-        steps: List[str] = []
+        steps: list[str] = []
         for v in violations:
             for r in v.recommendations:
                 if r not in seen:
@@ -228,7 +227,7 @@ class SafetyJudge:
                     seen.add(r)
         return steps
 
-    def _needs_escalation(self, violations: List[SafetyViolation], decision: Decision) -> bool:
+    def _needs_escalation(self, violations: list[SafetyViolation], decision: Decision) -> bool:
         from .governance_core import Decision
 
         if decision in (Decision.TERMINATE, Decision.BLOCK):

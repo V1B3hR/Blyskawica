@@ -5,13 +5,12 @@ Manages plugin submission, review, approval, and rejection workflow.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Dict, List, Optional
 from uuid import UUID, uuid4
 
 
-class SubmissionStatus(str, Enum):
+class SubmissionStatus(str, Enum):  # noqa: UP042
     """Status of plugin submission"""
 
     SUBMITTED = "submitted"
@@ -23,7 +22,7 @@ class SubmissionStatus(str, Enum):
     PUBLISHED = "published"
 
 
-class ReviewCheckType(str, Enum):
+class ReviewCheckType(str, Enum):  # noqa: UP042
     """Types of review checks"""
 
     SECURITY_SCAN = "security_scan"
@@ -40,8 +39,8 @@ class ReviewCheck:
     check_type: ReviewCheckType
     passed: bool
     notes: str = ""
-    checked_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    reviewer: Optional[str] = None
+    checked_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    reviewer: str | None = None
 
 
 @dataclass
@@ -53,10 +52,10 @@ class Submission:
     plugin_name: str = ""
     plugin_version: str = ""
     author: str = ""
-    submitted_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    submitted_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     status: SubmissionStatus = SubmissionStatus.SUBMITTED
-    checks: List[ReviewCheck] = field(default_factory=list)
-    reviewer_notes: List[str] = field(default_factory=list)
+    checks: list[ReviewCheck] = field(default_factory=list)
+    reviewer_notes: list[str] = field(default_factory=list)
     changelog: str = ""
     source_url: str = ""
     documentation_url: str = ""
@@ -71,8 +70,8 @@ class ApprovalWorkflow:
     """
 
     def __init__(self):
-        self.submissions: Dict[UUID, Submission] = {}
-        self.published_plugins: Dict[UUID, Submission] = {}
+        self.submissions: dict[UUID, Submission] = {}
+        self.published_plugins: dict[UUID, Submission] = {}
 
     def submit_plugin(
         self,
@@ -124,7 +123,7 @@ class ApprovalWorkflow:
         check_type: ReviewCheckType,
         passed: bool,
         notes: str = "",
-        reviewer: Optional[str] = None,
+        reviewer: str | None = None,
     ):
         """Add review check result"""
         if submission_id not in self.submissions:
@@ -195,7 +194,7 @@ class ApprovalWorkflow:
         submission.plugin_version = new_version
         submission.changelog = changelog
         submission.status = SubmissionStatus.SUBMITTED
-        submission.submitted_at = datetime.now(timezone.utc)
+        submission.submitted_at = datetime.now(UTC)
         submission.reviewer_notes.append(f"Resubmitted with version {new_version}")
 
     def approve(self, submission_id: UUID, reviewer: str, notes: str = ""):
@@ -242,11 +241,11 @@ class ApprovalWorkflow:
         submission.status = SubmissionStatus.PUBLISHED
         self.published_plugins[submission.plugin_id] = submission
 
-    def get_submission(self, submission_id: UUID) -> Optional[Submission]:
+    def get_submission(self, submission_id: UUID) -> Submission | None:
         """Get submission by ID"""
         return self.submissions.get(submission_id)
 
-    def list_submissions(self, status: Optional[SubmissionStatus] = None) -> List[Submission]:
+    def list_submissions(self, status: SubmissionStatus | None = None) -> list[Submission]:
         """List submissions, optionally filtered by status"""
         submissions = list(self.submissions.values())
 
@@ -258,14 +257,14 @@ class ApprovalWorkflow:
 
         return submissions
 
-    def get_pending_reviews(self) -> List[Submission]:
+    def get_pending_reviews(self) -> list[Submission]:
         """Get submissions pending review"""
         return self.list_submissions(SubmissionStatus.SUBMITTED)
 
-    def get_approved_plugins(self) -> List[Submission]:
+    def get_approved_plugins(self) -> list[Submission]:
         """Get approved plugins ready for publication"""
         return self.list_submissions(SubmissionStatus.APPROVED)
 
-    def get_published_plugins(self) -> List[Submission]:
+    def get_published_plugins(self) -> list[Submission]:
         """Get published plugins"""
         return list(self.published_plugins.values())

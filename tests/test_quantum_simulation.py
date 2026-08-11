@@ -1,15 +1,15 @@
-import os
 import json
+import os
 import unittest
-import time
 from unittest.mock import patch
+
 from scripts.ibm_quantum_emergence import (
+    analyze_and_report_results,
     perform_quantum_emergence,
     run_local_qec_simulation,
-    analyze_and_report_results,
-    HAS_QISKIT
 )
 from scripts.quantum_badminton_phononics import simulate_badminton_phonon_coupling
+
 
 class TestQuantumSimulation(unittest.TestCase):
     def setUp(self):
@@ -42,30 +42,30 @@ class TestQuantumSimulation(unittest.TestCase):
         target_state = 1
         noise_rate = 0.10
         shots = 1000
-        
+
         run_local_qec_simulation(target_state, noise_rate=noise_rate, shots=shots)
-        
+
         # Verify report generation
         report_found = False
         report_data = None
         for p in self.report_paths:
             if os.path.exists(p):
                 report_found = True
-                with open(p, 'r', encoding='utf-8') as f:
+                with open(p, encoding='utf-8') as f:
                     report_data = json.load(f)
                 break
-                
+
         self.assertTrue(report_found, "Report JSON was not created by the local QEC simulation.")
         self.assertIsNotNone(report_data)
-        
+
         # Check required keys
         required_keys = [
-            "timestamp", "backend", "job_id", "target_state", 
+            "timestamp", "backend", "job_id", "target_state",
             "raw_fidelity_percent", "corrected_survival_percent", "status"
         ]
         for key in required_keys:
             self.assertIn(key, report_data)
-            
+
         self.assertEqual(report_data["target_state"], target_state)
         self.assertEqual(report_data["backend"], "local_simulation")
 
@@ -73,21 +73,21 @@ class TestQuantumSimulation(unittest.TestCase):
         """Verifies correct majority-vote calculations for clean and fully-noisy channels."""
         # 1. Clean Channel (noise = 0)
         counts_clean = {"111": 1000}
-        
+
         # We capture report generation using mocked write
-        with patch("builtins.open", create=True) as mock_open:
+        with patch("builtins.open", create=True) as mock_open:  # noqa: F841
             analyze_and_report_results(target_state=1, counts=counts_clean, backend_name="test_clean", job_id="1")
-            
+
             # The function should print statistics and try to dump JSON.
             # Let's verify by checking the logic directly instead of mock details.
-            
+
         # 2. Let's do the manual check of QEC math in our test
         # 0 flips (111) -> success
         # 1 flip (110, 101, 011) -> corrected
         # 2 or 3 flips (100, 010, 001, 000) -> fatal
-        target = 1
+        target = 1  # noqa: F841
         expected_majority = "1"
-        
+
         test_cases = [
             ("111", True, True),   # Perfect match
             ("110", True, False),  # Corrected (ones > zeros)
@@ -96,15 +96,15 @@ class TestQuantumSimulation(unittest.TestCase):
             ("100", False, False), # Fatal (zeros > ones)
             ("000", False, False), # Fatal (zeros > ones)
         ]
-        
+
         for state, expected_survived, expected_perfect in test_cases:
             ones = state.count('1')
             zeros = state.count('0')
             majority = "1" if ones > zeros else "0"
-            
+
             survived = (majority == expected_majority)
             perfect = (state == expected_majority * 3)
-            
+
             self.assertEqual(survived, expected_survived, f"Failed survival check for state {state}")
             self.assertEqual(perfect, expected_perfect, f"Failed perfect check for state {state}")
 
@@ -112,7 +112,7 @@ class TestQuantumSimulation(unittest.TestCase):
         """Verifies that perform_quantum_emergence runs successfully and triggers fallback."""
         # Even if HAS_QISKIT is true, perform_quantum_emergence should handle absence of API key file and fall back
         perform_quantum_emergence()
-        
+
         # Verify a report file was created
         report_found = False
         for p in self.report_paths:
@@ -126,11 +126,11 @@ class TestQuantumSimulation(unittest.TestCase):
         res = simulate_badminton_phonon_coupling(birdie_velocity_mps=10.0, impact_freq_hz=2200.0, shots=500)
         self.assertIsInstance(res, tuple)
         self.assertEqual(len(res), 2)
-        
+
         final_coherence, qec_survival_rate = res
         self.assertTrue(0.0 <= final_coherence <= 1.0)
         self.assertTrue(0.0 <= qec_survival_rate <= 1.0)
-        
+
         # Mathematically, for error rate p = 1 - coherence, if coherence > 0.5, QEC survival rate should be >= coherence
         if final_coherence > 0.5:
             # Theoretical formula: P_surv = p_phy^3 + 3 * p_phy^2 * (1 - p_phy)

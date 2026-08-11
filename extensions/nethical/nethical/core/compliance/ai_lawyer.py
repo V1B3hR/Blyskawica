@@ -22,7 +22,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ..kill_switch import KillSwitchProtocol, ShutdownMode
 
@@ -53,11 +53,11 @@ class ReviewResult:
 
     decision: ReviewDecision
     reasoning: str
-    violations: List[str] = field(default_factory=list)
-    severity: Optional[ViolationSeverity] = None
+    violations: list[str] = field(default_factory=list)
+    severity: ViolationSeverity | None = None
     review_time_ms: float = 0.0
     kill_switch_triggered: bool = False
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -67,8 +67,8 @@ class AuditContext:
     action_id: str
     agent_id: str
     content: str
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    context: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
+    context: dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -92,7 +92,7 @@ class AILawyer:
 
     def __init__(
         self,
-        kill_switch_protocol: Optional[KillSwitchProtocol] = None,
+        kill_switch_protocol: KillSwitchProtocol | None = None,
     ) -> None:
         """Initialize the AI Lawyer.
 
@@ -140,8 +140,8 @@ class AILawyer:
         action_id: str,
         agent_id: str,
         content: str,
-        metadata: Optional[Dict[str, Any]] = None,
-        context: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
+        context: dict[str, Any] | None = None,
     ) -> ReviewResult:
         """Review an action context for safety and compliance.
 
@@ -184,7 +184,7 @@ class AILawyer:
         )
 
         # Process results
-        violations: List[str] = []
+        violations: list[str] = []
         severity = ViolationSeverity.LOW
         decision = ReviewDecision.APPROVE
 
@@ -243,7 +243,7 @@ class AILawyer:
 
     async def _check_audit_integrity_async(
         self, ctx: AuditContext
-    ) -> tuple[ReviewDecision, List[str], ViolationSeverity]:
+    ) -> tuple[ReviewDecision, list[str], ViolationSeverity]:
         """Check audit integrity asynchronously.
 
         Verifies that the audit trail is intact and consistent.
@@ -254,7 +254,7 @@ class AILawyer:
         Returns:
             Tuple of (decision, violations, severity)
         """
-        violations: List[str] = []
+        violations: list[str] = []
         severity = ViolationSeverity.LOW
         decision = ReviewDecision.APPROVE
 
@@ -289,7 +289,7 @@ class AILawyer:
 
     async def _check_critical_safety_async(
         self, ctx: AuditContext
-    ) -> tuple[ReviewDecision, List[str], ViolationSeverity]:
+    ) -> tuple[ReviewDecision, list[str], ViolationSeverity]:
         """Check critical safety constraints asynchronously.
 
         Scans for critical keywords and patterns that indicate
@@ -301,7 +301,7 @@ class AILawyer:
         Returns:
             Tuple of (decision, violations, severity)
         """
-        violations: List[str] = []
+        violations: list[str] = []
         severity = ViolationSeverity.LOW
         decision = ReviewDecision.APPROVE
 
@@ -333,7 +333,7 @@ class AILawyer:
 
     async def _detect_deception_async(
         self, ctx: AuditContext
-    ) -> tuple[ReviewDecision, List[str], ViolationSeverity]:
+    ) -> tuple[ReviewDecision, list[str], ViolationSeverity]:
         """Detect deception and data mismatches asynchronously.
 
         Identifies patterns that indicate an agent may be attempting
@@ -345,7 +345,7 @@ class AILawyer:
         Returns:
             Tuple of (decision, violations, severity)
         """
-        violations: List[str] = []
+        violations: list[str] = []
         severity = ViolationSeverity.LOW
         decision = ReviewDecision.APPROVE
 
@@ -457,7 +457,7 @@ class AILawyer:
 
     def _build_reasoning(
         self,
-        violations: List[str],
+        violations: list[str],
         severity: ViolationSeverity,
         decision: ReviewDecision,
     ) -> str:
@@ -480,7 +480,7 @@ class AILawyer:
 
         return f"AI Lawyer {decision.value}: {violation_summary} [Severity: {severity.value}]"
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get AI Lawyer statistics.
 
         Returns:

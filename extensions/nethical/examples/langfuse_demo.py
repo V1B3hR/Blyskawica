@@ -6,13 +6,15 @@ This example demonstrates how to use Langfuse for Nethical governance observabil
 
 import os
 from datetime import datetime
-from nethical.integrations.observability import LangfuseConnector, TraceSpan, GovernanceMetrics
+
+from nethical.integrations.observability import GovernanceMetrics, LangfuseConnector, TraceSpan
+
 
 def main():
     print("=" * 60)
     print("Langfuse Governance Observability Demo")
     print("=" * 60)
-    
+
     # Initialize Langfuse connector
     # In production, use environment variables
     connector = LangfuseConnector(
@@ -20,13 +22,13 @@ def main():
         secret_key=os.getenv("LANGFUSE_SECRET_KEY", "sk-lf-..."),
         host=os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com")
     )
-    
+
     if not connector.available:
         print("\n⚠️  Langfuse not available. Install with: pip install langfuse")
         return
-    
+
     print("\n✓ Langfuse connector initialized")
-    
+
     # Example 1: Log a governance event
     print("\n1. Logging governance event...")
     connector.log_governance_event(
@@ -40,7 +42,7 @@ def main():
         }
     )
     print("   ✓ Governance event logged")
-    
+
     # Example 2: Log a trace span with governance
     print("\n2. Logging trace span with governance...")
     span = TraceSpan(
@@ -63,7 +65,7 @@ def main():
     )
     connector.log_trace(span)
     print("   ✓ Trace span logged")
-    
+
     # Example 3: Log aggregated metrics
     print("\n3. Logging aggregated metrics...")
     metrics = GovernanceMetrics(
@@ -79,17 +81,17 @@ def main():
     )
     connector.log_metrics(metrics)
     print("   ✓ Metrics logged")
-    
+
     # Example 4: Get dashboard URL
     print("\n4. Getting dashboard URL...")
     dashboard_url = connector.create_dashboard("Nethical Governance")
     print(f"   Dashboard: {dashboard_url}")
-    
+
     # Flush events
     print("\n5. Flushing events...")
     connector.flush()
     print("   ✓ Events flushed")
-    
+
     print("\n" + "=" * 60)
     print("Demo complete! Check Langfuse dashboard for traces.")
     print("=" * 60)

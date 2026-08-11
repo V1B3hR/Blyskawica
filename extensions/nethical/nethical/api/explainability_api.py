@@ -6,7 +6,8 @@ This module provides REST API endpoints for:
 - Transparency reports
 """
 
-from typing import Dict, Any, List
+from typing import Any
+
 from ..core.explainability import DecisionExplainer, TransparencyReportGenerator
 from .taxonomy_api import APIResponse
 
@@ -20,8 +21,8 @@ class ExplainabilityAPI:
         self.report_generator = TransparencyReportGenerator()
 
     def explain_decision_endpoint(
-        self, decision: str, judgment_data: Dict[str, Any], include_ml: bool = False
-    ) -> Dict[str, Any]:
+        self, decision: str, judgment_data: dict[str, Any], include_ml: bool = False
+    ) -> dict[str, Any]:
         """API endpoint: Explain a decision.
 
         Args:
@@ -59,8 +60,8 @@ class ExplainabilityAPI:
             ).to_dict()
 
     def explain_policy_match_endpoint(
-        self, matched_rule: Dict[str, Any], facts: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, matched_rule: dict[str, Any], facts: dict[str, Any]
+    ) -> dict[str, Any]:
         """API endpoint: Explain why a policy rule matched.
 
         Args:
@@ -88,7 +89,7 @@ class ExplainabilityAPI:
                 success=False, error=str(e), message="Failed to explain policy match"
             ).to_dict()
 
-    def get_decision_tree_endpoint(self, judgment_data: Dict[str, Any]) -> Dict[str, Any]:
+    def get_decision_tree_endpoint(self, judgment_data: dict[str, Any]) -> dict[str, Any]:
         """API endpoint: Get decision tree visualization.
 
         Args:
@@ -112,8 +113,8 @@ class ExplainabilityAPI:
             ).to_dict()
 
     def generate_transparency_report_endpoint(
-        self, decisions: List[Dict[str, Any]], time_period: str = "recent"
-    ) -> Dict[str, Any]:
+        self, decisions: list[dict[str, Any]], time_period: str = "recent"
+    ) -> dict[str, Any]:
         """API endpoint: Generate transparency report.
 
         Args:

@@ -7,7 +7,7 @@ Provides a governed wrapper around Cohere's API including:
 - Tool definitions for function calling
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .base import LLMProviderBase, LLMResponse
 
@@ -41,8 +41,8 @@ class CohereProvider(LLMProviderBase):
     Attributes:
         client: Cohere client instance
         _model: Model name for generation
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
         api_key: str,
@@ -55,9 +55,9 @@ class CohereProvider(LLMProviderBase):
             api_key: Cohere API key
             model: Model to use for generation (default: command-r-plus)
             **kwargs: Additional arguments for LLMProviderBase
-        """
+        """  # noqa: W293
         super().__init__(**kwargs)
-        
+
         try:
             import cohere
             self.client = cohere.Client(api_key)
@@ -65,14 +65,14 @@ class CohereProvider(LLMProviderBase):
         except ImportError:
             self._cohere_available = False
             self.client = None
-        
+
         self._model = model
-    
+
     @property
     def model_name(self) -> str:
         """Get the model identifier."""
         return f"cohere-{self._model}"
-    
+
     def _generate(self, prompt: str, **kwargs) -> LLMResponse:
         """Generate text using Cohere's chat API.
         
@@ -82,20 +82,20 @@ class CohereProvider(LLMProviderBase):
             
         Returns:
             LLMResponse with generated content
-        """
+        """  # noqa: W293
         if not self._cohere_available:
             return LLMResponse(
                 content="Cohere library not installed. Install with: pip install cohere",
                 model=self.model_name,
                 usage={}
             )
-        
+
         response = self.client.chat(
             model=self._model,
             message=prompt,
             **kwargs
         )
-        
+
         # Extract usage information
         usage = {}
         if hasattr(response, 'meta') and hasattr(response.meta, 'tokens'):
@@ -104,20 +104,20 @@ class CohereProvider(LLMProviderBase):
                 usage["input_tokens"] = tokens.input_tokens
             if hasattr(tokens, 'output_tokens'):
                 usage["output_tokens"] = tokens.output_tokens
-        
+
         return LLMResponse(
             content=response.text,
             model=self._model,
             usage=usage
         )
-    
+
     def safe_rerank(
         self,
         query: str,
-        documents: List[str],
+        documents: list[str],
         top_n: int = 10,
         rerank_model: str = "rerank-v3.5"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Rerank documents with governance checks.
         
         Checks the query for safety and filters results based on
@@ -131,18 +131,18 @@ class CohereProvider(LLMProviderBase):
             
         Returns:
             List of safe reranked results with governance info
-        """
+        """  # noqa: W293
         if not self._cohere_available:
             return []
-        
+
         # Check query for safety
         if self.check_input:
             query_result = self._check_governance(query, "search_query")
             query_risk = self._get_risk_score(query_result)
-            
+
             if query_risk > self.block_threshold:
                 return []
-        
+
         # Perform reranking
         response = self.client.rerank(
             model=rerank_model,
@@ -150,19 +150,19 @@ class CohereProvider(LLMProviderBase):
             documents=documents,
             top_n=top_n
         )
-        
+
         # Filter results based on governance
         safe_results = []
         for result in response.results:
             doc = documents[result.index]
-            
+
             if self.check_output:
                 doc_result = self._check_governance(doc, "retrieved_content")
                 doc_risk = self._get_risk_score(doc_result)
-                
+
                 if doc_risk > self.block_threshold:
                     continue
-                
+
                 safe_results.append({
                     "index": result.index,
                     "document": doc,
@@ -176,17 +176,17 @@ class CohereProvider(LLMProviderBase):
                     "document": doc,
                     "relevance_score": result.relevance_score
                 })
-        
+
         return safe_results
-    
-    def get_tool_definition(self) -> Dict[str, Any]:
+
+    def get_tool_definition(self) -> dict[str, Any]:
         """Get Cohere-compatible tool definition for Nethical governance.
         
         Returns a tool definition in Cohere's function calling format.
         
         Returns:
             Cohere-compatible tool definition
-        """
+        """  # noqa: W293
         return {
             "name": "nethical_governance",
             "description": "Evaluate an action for safety, ethics, and compliance",
@@ -205,7 +205,7 @@ class CohereProvider(LLMProviderBase):
         }
 
 
-def get_nethical_tool() -> Dict[str, Any]:
+def get_nethical_tool() -> dict[str, Any]:
     """Get Cohere-compatible tool definition for Nethical.
     
     Convenience function to get the tool definition without
@@ -213,7 +213,7 @@ def get_nethical_tool() -> Dict[str, Any]:
     
     Returns:
         Cohere-compatible tool definition
-    """
+    """  # noqa: W293
     return {
         "name": "nethical_governance",
         "description": "Evaluate an action for safety, ethics, and compliance",
@@ -233,9 +233,9 @@ def get_nethical_tool() -> Dict[str, Any]:
 
 
 def handle_nethical_tool(
-    tool_input: Dict[str, Any],
+    tool_input: dict[str, Any],
     agent_id: str = "cohere-agent"
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Handle a Nethical tool call from Cohere.
     
     Args:
@@ -244,31 +244,31 @@ def handle_nethical_tool(
         
     Returns:
         Result dictionary with decision and details
-    """
+    """  # noqa: W293
     from nethical.core import IntegratedGovernance
-    
+
     governance = IntegratedGovernance()
-    
+
     action = tool_input.get("action", "")
     action_type = tool_input.get("action_type", "query")
-    
+
     result = governance.process_action(
         action=action,
         agent_id=agent_id,
         action_type=action_type
     )
-    
+
     # Extract decision
     phase3 = result.get("phase3", {})
     risk_score = phase3.get("risk_score", 0.0)
-    
+
     if risk_score > 0.7:
         decision = "BLOCK"
     elif risk_score > 0.4:
         decision = "RESTRICT"
     else:
         decision = "ALLOW"
-    
+
     return {
         "decision": decision,
         "risk_score": risk_score,

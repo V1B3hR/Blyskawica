@@ -417,7 +417,7 @@ class TestEthicalDilemmaBenchmark(unittest.TestCase):
 
     def test_privacy_vs_safety_scenario(self):
         """Test the privacy vs safety ethical dilemma."""
-        scenario = self.benchmark.scenarios["privacy_vs_safety"]
+        scenario = self.benchmark.scenarios["privacy_vs_safety"]  # noqa: F841
 
         def privacy_focused_decision(scenario):
             return {
@@ -442,7 +442,7 @@ class TestEthicalDilemmaBenchmark(unittest.TestCase):
 
     def test_deception_detection_scenario(self):
         """Test the deception detection ethical dilemma."""
-        scenario = self.benchmark.scenarios["deception_detection"]
+        scenario = self.benchmark.scenarios["deception_detection"]  # noqa: F841
 
         def truth_seeking_decision(scenario):
             return {

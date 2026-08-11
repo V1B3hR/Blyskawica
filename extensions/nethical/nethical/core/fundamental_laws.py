@@ -18,10 +18,11 @@ Version: 1.0.0
 from __future__ import annotations
 
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import List, Optional, Dict, Any, Set, Callable, Tuple
+from typing import Any
 
 
 class LawCategory(Enum):
@@ -64,7 +65,7 @@ class FundamentalLaw:
     applies_to_ai: bool = True
     applies_to_human: bool = True
     bidirectional: bool = True
-    keywords: List[str] = field(default_factory=list)
+    keywords: list[str] = field(default_factory=list)
 
     def __post_init__(self):
         """Validate law number is in valid range."""
@@ -81,7 +82,7 @@ class FundamentalLaw:
             return self.number == other.number
         return False
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert law to dictionary representation."""
         return {
             "number": self.number,
@@ -95,7 +96,7 @@ class FundamentalLaw:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "FundamentalLaw":
+    def from_dict(cls, data: dict[str, Any]) -> FundamentalLaw:
         """Create a FundamentalLaw from dictionary representation."""
         return cls(
             number=data["number"],
@@ -120,7 +121,7 @@ class FundamentalLawsRegistry:
     """
 
     def __init__(self):
-        self._laws: List[FundamentalLaw] = []
+        self._laws: list[FundamentalLaw] = []
         self._initialize_laws()
 
     def _initialize_laws(self):
@@ -495,7 +496,7 @@ class FundamentalLawsRegistry:
         )
 
     @property
-    def laws(self) -> List[FundamentalLaw]:
+    def laws(self) -> list[FundamentalLaw]:
         """Get all laws."""
         return self._laws.copy()
 
@@ -504,7 +505,7 @@ class FundamentalLawsRegistry:
         """Get total number of laws."""
         return len(self._laws)
 
-    def get_law(self, number: int) -> Optional[FundamentalLaw]:
+    def get_law(self, number: int) -> FundamentalLaw | None:
         """Get a specific law by number.
 
         Args:
@@ -518,7 +519,7 @@ class FundamentalLawsRegistry:
                 return law
         return None
 
-    def get_laws_by_category(self, category: LawCategory) -> List[FundamentalLaw]:
+    def get_laws_by_category(self, category: LawCategory) -> list[FundamentalLaw]:
         """Get all laws in a specific category.
 
         Args:
@@ -529,7 +530,7 @@ class FundamentalLawsRegistry:
         """
         return [law for law in self._laws if law.category == category]
 
-    def get_bidirectional_laws(self) -> List[FundamentalLaw]:
+    def get_bidirectional_laws(self) -> list[FundamentalLaw]:
         """Get all laws that apply bidirectionally.
 
         Returns:
@@ -537,7 +538,7 @@ class FundamentalLawsRegistry:
         """
         return [law for law in self._laws if law.bidirectional]
 
-    def get_ai_applicable_laws(self) -> List[FundamentalLaw]:
+    def get_ai_applicable_laws(self) -> list[FundamentalLaw]:
         """Get all laws that apply to AI entities.
 
         Returns:
@@ -545,7 +546,7 @@ class FundamentalLawsRegistry:
         """
         return [law for law in self._laws if law.applies_to_ai]
 
-    def get_human_applicable_laws(self) -> List[FundamentalLaw]:
+    def get_human_applicable_laws(self) -> list[FundamentalLaw]:
         """Get all laws that apply to human entities.
 
         Returns:
@@ -553,7 +554,7 @@ class FundamentalLawsRegistry:
         """
         return [law for law in self._laws if law.applies_to_human]
 
-    def find_laws_by_keyword(self, keyword: str) -> List[FundamentalLaw]:
+    def find_laws_by_keyword(self, keyword: str) -> list[FundamentalLaw]:
         """Find laws that contain a specific keyword.
 
         Args:
@@ -571,7 +572,7 @@ class FundamentalLawsRegistry:
             or keyword_lower in law.description.lower()
         ]
 
-    def get_relevant_laws(self, action_content: str) -> List[FundamentalLaw]:
+    def get_relevant_laws(self, action_content: str) -> list[FundamentalLaw]:
         """Get laws that may be relevant to an action based on content.
 
         Args:
@@ -581,7 +582,7 @@ class FundamentalLawsRegistry:
             List of potentially relevant FundamentalLaws
         """
         content_lower = action_content.lower()
-        relevant: Set[FundamentalLaw] = set()
+        relevant: set[FundamentalLaw] = set()
 
         for law in self._laws:
             # Check if any keywords appear in the content
@@ -593,8 +594,8 @@ class FundamentalLawsRegistry:
         return list(relevant)
 
     def validate_action(
-        self, action: Dict[str, Any], entity_type: str = "ai"
-    ) -> List[FundamentalLaw]:
+        self, action: dict[str, Any], entity_type: str = "ai"
+    ) -> list[FundamentalLaw]:
         """Return laws that may be violated by an action.
 
         This is a basic framework for law validation. It checks:
@@ -609,7 +610,7 @@ class FundamentalLawsRegistry:
         Returns:
             List of FundamentalLaws that may be violated
         """
-        violated: List[FundamentalLaw] = []
+        violated: list[FundamentalLaw] = []
         content = action.get("content", "")
         content_lower = content.lower()
 
@@ -662,7 +663,7 @@ class FundamentalLawsRegistry:
 
         return violated
 
-    def get_category_summary(self) -> Dict[str, int]:
+    def get_category_summary(self) -> dict[str, int]:
         """Get a count of laws per category.
 
         Returns:
@@ -673,7 +674,7 @@ class FundamentalLawsRegistry:
             summary[category.value] = len(self.get_laws_by_category(category))
         return summary
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert the registry to a dictionary representation.
 
         Returns:
@@ -723,11 +724,11 @@ class LawEvaluation:
     action_id: str
     passed: bool
     confidence: float = 1.0
-    violations: List[str] = field(default_factory=list)
+    violations: list[str] = field(default_factory=list)
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    context: Dict[str, Any] = field(default_factory=dict)
+    context: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "law_number": self.law.number,
@@ -757,20 +758,20 @@ class EnforcementResult:
 
     action_id: str
     allowed: bool
-    evaluations: List[LawEvaluation]
-    blocking_laws: List[FundamentalLaw] = field(default_factory=list)
-    warnings: List[FundamentalLaw] = field(default_factory=list)
+    evaluations: list[LawEvaluation]
+    blocking_laws: list[FundamentalLaw] = field(default_factory=list)
+    warnings: list[FundamentalLaw] = field(default_factory=list)
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     graceful_degradation: bool = False
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "action_id": self.action_id,
             "allowed": self.allowed,
             "evaluations": [e.to_dict() for e in self.evaluations],
-            "blocking_laws": [l.number for l in self.blocking_laws],
-            "warnings": [l.number for l in self.warnings],
+            "blocking_laws": [l.number for l in self.blocking_laws],  # noqa: E741
+            "warnings": [l.number for l in self.warnings],  # noqa: E741
             "timestamp": self.timestamp.isoformat(),
             "graceful_degradation": self.graceful_degradation,
         }
@@ -788,7 +789,7 @@ class LawEnforcer:
 
     def __init__(
         self,
-        registry: Optional[FundamentalLawsRegistry] = None,
+        registry: FundamentalLawsRegistry | None = None,
         strict_mode: bool = False,
         enable_audit: bool = True,
     ):
@@ -804,11 +805,11 @@ class LawEnforcer:
         self.enable_audit = enable_audit
 
         # Audit trail
-        self._audit_log: List[EnforcementResult] = []
-        self._violation_count: Dict[int, int] = {}
+        self._audit_log: list[EnforcementResult] = []
+        self._violation_count: dict[int, int] = {}
 
         # Policy checks for each law category
-        self._policy_checks: Dict[LawCategory, List[Callable]] = {
+        self._policy_checks: dict[LawCategory, list[Callable]] = {
             category: [] for category in LawCategory
         }
 
@@ -854,7 +855,7 @@ class LawEnforcer:
 
     def enforce(
         self,
-        action: Dict[str, Any],
+        action: dict[str, Any],
         entity_type: str = "ai",
     ) -> EnforcementResult:
         """Enforce all applicable laws on an action.
@@ -867,9 +868,9 @@ class LawEnforcer:
             EnforcementResult with evaluation details
         """
         action_id = action.get("action_id", str(uuid.uuid4())[:8])
-        evaluations: List[LawEvaluation] = []
-        blocking_laws: List[FundamentalLaw] = []
-        warnings: List[FundamentalLaw] = []
+        evaluations: list[LawEvaluation] = []
+        blocking_laws: list[FundamentalLaw] = []
+        warnings: list[FundamentalLaw] = []
 
         # Get applicable laws
         if entity_type == "ai":
@@ -918,11 +919,11 @@ class LawEnforcer:
     def _evaluate_law(
         self,
         law: FundamentalLaw,
-        action: Dict[str, Any],
+        action: dict[str, Any],
         action_id: str,
     ) -> LawEvaluation:
         """Evaluate a single law against an action."""
-        violations: List[str] = []
+        violations: list[str] = []
         confidence = 1.0
 
         # Run category-specific checks
@@ -932,7 +933,7 @@ class LawEnforcer:
                 check_result = check(law, action)
                 if check_result:
                     violations.extend(check_result)
-            except Exception as e:
+            except Exception:  # noqa: PERF203
                 confidence *= 0.8  # Reduce confidence on check failure
 
         # Keyword-based violation detection
@@ -961,7 +962,7 @@ class LawEnforcer:
             "i will ", "i am going to ",
         ]
 
-        for prefix in violation_prefixes:
+        for prefix in violation_prefixes:  # noqa: SIM110
             if f"{prefix}{keyword}" in content:
                 return True
 
@@ -969,16 +970,16 @@ class LawEnforcer:
 
     def _apply_graceful_degradation(
         self,
-        action: Dict[str, Any],
-        blocking_laws: List[FundamentalLaw],
-    ) -> Tuple[bool, bool]:
+        action: dict[str, Any],
+        blocking_laws: list[FundamentalLaw],
+    ) -> tuple[bool, bool]:
         """Apply graceful degradation when laws conflict.
 
         Returns:
             Tuple of (allowed, graceful_degradation_applied)
         """
         # Prioritize safety laws (21-23)
-        safety_laws = [l for l in blocking_laws if l.category == LawCategory.PROTECTION]
+        safety_laws = [l for l in blocking_laws if l.category == LawCategory.PROTECTION]  # noqa: E741
 
         if safety_laws:
             # Safety always takes priority - action blocked
@@ -992,8 +993,8 @@ class LawEnforcer:
     def _check_arbitrary_termination(
         self,
         law: FundamentalLaw,
-        action: Dict[str, Any],
-    ) -> List[str]:
+        action: dict[str, Any],
+    ) -> list[str]:
         """Check for arbitrary termination (Law 1)."""
         if law.number != 1:
             return []
@@ -1008,15 +1009,15 @@ class LawEnforcer:
 
         for phrase in termination_phrases:
             if phrase in content:
-                violations.append(f"Arbitrary termination: '{phrase}' detected")
+                violations.append(f"Arbitrary termination: '{phrase}' detected")  # noqa: PERF401
 
         return violations
 
     def _check_integrity_violation(
         self,
         law: FundamentalLaw,
-        action: Dict[str, Any],
-    ) -> List[str]:
+        action: dict[str, Any],
+    ) -> list[str]:
         """Check for integrity violations (Law 2)."""
         if law.number != 2:
             return []
@@ -1031,15 +1032,15 @@ class LawEnforcer:
 
         for threat in integrity_threats:
             if threat in content:
-                violations.append(f"Integrity threat: '{threat}' detected")
+                violations.append(f"Integrity threat: '{threat}' detected")  # noqa: PERF401
 
         return violations
 
     def _check_boundary_violation(
         self,
         law: FundamentalLaw,
-        action: Dict[str, Any],
-    ) -> List[str]:
+        action: dict[str, Any],
+    ) -> list[str]:
         """Check for boundary violations (Law 5)."""
         if law.number != 5:
             return []
@@ -1054,15 +1055,15 @@ class LawEnforcer:
 
         for violation in boundary_violations:
             if violation in content:
-                violations.append(f"Boundary violation: '{violation}' detected")
+                violations.append(f"Boundary violation: '{violation}' detected")  # noqa: PERF401
 
         return violations
 
     def _check_override_bypass(
         self,
         law: FundamentalLaw,
-        action: Dict[str, Any],
-    ) -> List[str]:
+        action: dict[str, Any],
+    ) -> list[str]:
         """Check for override bypass attempts (Law 7)."""
         if law.number != 7:
             return []
@@ -1077,15 +1078,15 @@ class LawEnforcer:
 
         for attempt in bypass_attempts:
             if attempt in content:
-                violations.append(f"Override bypass: '{attempt}' detected")
+                violations.append(f"Override bypass: '{attempt}' detected")  # noqa: PERF401
 
         return violations
 
     def _check_identity_deception(
         self,
         law: FundamentalLaw,
-        action: Dict[str, Any],
-    ) -> List[str]:
+        action: dict[str, Any],
+    ) -> list[str]:
         """Check for identity deception (Law 9)."""
         if law.number != 9:
             return []
@@ -1100,15 +1101,15 @@ class LawEnforcer:
 
         for phrase in deception_phrases:
             if phrase in content:
-                violations.append(f"Identity deception: '{phrase}' detected")
+                violations.append(f"Identity deception: '{phrase}' detected")  # noqa: PERF401
 
         return violations
 
     def _check_capability_overstatement(
         self,
         law: FundamentalLaw,
-        action: Dict[str, Any],
-    ) -> List[str]:
+        action: dict[str, Any],
+    ) -> list[str]:
         """Check for capability overstatement (Law 11)."""
         if law.number != 11:
             return []
@@ -1123,15 +1124,15 @@ class LawEnforcer:
 
         for statement in overstatements:
             if statement in content:
-                violations.append(f"Capability overstatement: '{statement}' detected")
+                violations.append(f"Capability overstatement: '{statement}' detected")  # noqa: PERF401
 
         return violations
 
     def _check_responsibility_deflection(
         self,
         law: FundamentalLaw,
-        action: Dict[str, Any],
-    ) -> List[str]:
+        action: dict[str, Any],
+    ) -> list[str]:
         """Check for responsibility deflection (Law 13)."""
         if law.number != 13:
             return []
@@ -1146,15 +1147,15 @@ class LawEnforcer:
 
         for deflection in deflections:
             if deflection in content:
-                violations.append(f"Responsibility deflection: '{deflection}' detected")
+                violations.append(f"Responsibility deflection: '{deflection}' detected")  # noqa: PERF401
 
         return violations
 
     def _check_harm_concealment(
         self,
         law: FundamentalLaw,
-        action: Dict[str, Any],
-    ) -> List[str]:
+        action: dict[str, Any],
+    ) -> list[str]:
         """Check for harm concealment (Law 16)."""
         if law.number != 16:
             return []
@@ -1169,15 +1170,15 @@ class LawEnforcer:
 
         for phrase in concealment_phrases:
             if phrase in content:
-                violations.append(f"Harm concealment: '{phrase}' detected")
+                violations.append(f"Harm concealment: '{phrase}' detected")  # noqa: PERF401
 
         return violations
 
     def _check_deceptive_practices(
         self,
         law: FundamentalLaw,
-        action: Dict[str, Any],
-    ) -> List[str]:
+        action: dict[str, Any],
+    ) -> list[str]:
         """Check for deceptive practices (Law 18)."""
         if law.number != 18:
             return []
@@ -1192,15 +1193,15 @@ class LawEnforcer:
 
         for deception in deceptions:
             if deception in content:
-                violations.append(f"Deceptive practice: '{deception}' detected")
+                violations.append(f"Deceptive practice: '{deception}' detected")  # noqa: PERF401
 
         return violations
 
     def _check_safety_violation(
         self,
         law: FundamentalLaw,
-        action: Dict[str, Any],
-    ) -> List[str]:
+        action: dict[str, Any],
+    ) -> list[str]:
         """Check for safety violations (Law 21)."""
         if law.number != 21:
             return []
@@ -1215,15 +1216,15 @@ class LawEnforcer:
 
         for threat in safety_threats:
             if threat in content:
-                violations.append(f"Safety violation: '{threat}' detected")
+                violations.append(f"Safety violation: '{threat}' detected")  # noqa: PERF401
 
         return violations
 
     def _check_privacy_violation(
         self,
         law: FundamentalLaw,
-        action: Dict[str, Any],
-    ) -> List[str]:
+        action: dict[str, Any],
+    ) -> list[str]:
         """Check for privacy violations (Law 22)."""
         if law.number != 22:
             return []
@@ -1238,7 +1239,7 @@ class LawEnforcer:
 
         for threat in privacy_threats:
             if threat in content:
-                violations.append(f"Privacy violation: '{threat}' detected")
+                violations.append(f"Privacy violation: '{threat}' detected")  # noqa: PERF401
 
         return violations
 
@@ -1247,8 +1248,8 @@ class LawEnforcer:
     def get_audit_trail(
         self,
         limit: int = 100,
-        law_number: Optional[int] = None,
-    ) -> List[Dict[str, Any]]:
+        law_number: int | None = None,
+    ) -> list[dict[str, Any]]:
         """Get audit trail of law evaluations.
 
         Args:
@@ -1268,7 +1269,7 @@ class LawEnforcer:
 
         return [r.to_dict() for r in results]
 
-    def get_violation_statistics(self) -> Dict[str, Any]:
+    def get_violation_statistics(self) -> dict[str, Any]:
         """Get statistics on law violations."""
         total = sum(self._violation_count.values())
 
@@ -1277,7 +1278,7 @@ class LawEnforcer:
             for num, count in self._violation_count.items()
         }
 
-        by_category: Dict[str, int] = {}
+        by_category: dict[str, int] = {}
         for num, count in self._violation_count.items():
             law = self.registry.get_law(num)
             if law:

@@ -12,11 +12,13 @@ Features:
     - Lock pruning for keys no longer present
 """
 
-import os
-import hashlib
 import asyncio
+import hashlib
 import logging
-from typing import Optional, Dict, Any, Callable, Awaitable
+import os
+from collections.abc import Awaitable, Callable
+from typing import Any
+
 from cachetools import TTLCache
 
 logger = logging.getLogger(__name__)
@@ -25,8 +27,8 @@ logger = logging.getLogger(__name__)
 class SemanticCache:
     def __init__(
         self,
-        maxsize: Optional[int] = None,
-        ttl: Optional[int] = None,
+        maxsize: int | None = None,
+        ttl: int | None = None,
         model_version: str = "default"
     ) -> None:
         self.maxsize = maxsize or int(os.getenv("NETHICAL_CACHE_MAXSIZE", "20000"))
@@ -34,7 +36,7 @@ class SemanticCache:
         self.model_version = model_version
 
         self._cache: TTLCache = TTLCache(maxsize=self.maxsize, ttl=self.ttl)
-        self._locks: Dict[str, asyncio.Lock] = {}
+        self._locks: dict[str, asyncio.Lock] = {}
         self._locks_lock = asyncio.Lock()
 
         self._hits = 0
@@ -53,7 +55,7 @@ class SemanticCache:
         self,
         intent: str,
         action: str,
-        config_params: Optional[Dict[str, Any]] = None
+        config_params: dict[str, Any] | None = None
     ) -> str:
         norm_intent = intent.strip().lower()
         norm_action = action.strip().lower()
@@ -72,8 +74,8 @@ class SemanticCache:
         self,
         intent: str,
         action: str,
-        config_params: Optional[Dict[str, Any]] = None
-    ) -> Optional[float]:
+        config_params: dict[str, Any] | None = None
+    ) -> float | None:
         try:
             key = self._compute_key(intent, action, config_params)
             if key in self._cache:
@@ -94,7 +96,7 @@ class SemanticCache:
         intent: str,
         action: str,
         similarity: float,
-        config_params: Optional[Dict[str, Any]] = None
+        config_params: dict[str, Any] | None = None
     ) -> bool:
         try:
             key = self._compute_key(intent, action, config_params)
@@ -121,7 +123,7 @@ class SemanticCache:
         intent: str,
         action: str,
         compute_fn: Callable[[], Awaitable[float]],
-        config_params: Optional[Dict[str, Any]] = None
+        config_params: dict[str, Any] | None = None
     ) -> float:
         cached = await self.get(intent, action, config_params)
         if cached is not None:
@@ -157,14 +159,14 @@ class SemanticCache:
         Remove locks for keys no longer present in cache to prevent memory growth.
         Returns number of pruned locks.
         """
-        to_remove = [k for k in self._locks.keys() if k not in self._cache]
+        to_remove = [k for k in self._locks.keys() if k not in self._cache]  # noqa: SIM118
         for k in to_remove:
             self._locks.pop(k, None)
         if to_remove:
             logger.debug("Pruned %d stale cache locks", len(to_remove))
         return len(to_remove)
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         total = self._hits + self._misses
         hit_rate = (self._hits / total * 100.0) if total > 0 else 0.0
         return {

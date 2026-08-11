@@ -1,5 +1,5 @@
 import logging
-import torch
+
 from adaptiveneuralnetwork.cognitive_tools.polymathic_hub import PolymathicHub
 
 # Setup logging
@@ -45,9 +45,9 @@ class FinalMasteryAudit:
         print("="*80)
 
 if __name__ == "__main__":
-    import sys
     import os
+    import sys
     sys.path.insert(0, os.getcwd())
-    
+
     audit = FinalMasteryAudit()
     audit.run_universal_audit()

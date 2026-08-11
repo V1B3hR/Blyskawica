@@ -15,10 +15,11 @@ Features:
 
 import logging
 import math
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +75,7 @@ class Position:
     pdop: float = 0.0
 
     # Timestamp
-    timestamp: Optional[datetime] = None
+    timestamp: datetime | None = None
 
     # Source constellation
     constellation: GNSSConstellation = GNSSConstellation.GPS
@@ -89,7 +90,7 @@ class Position:
         Returns:
             Distance in meters
         """
-        R = 6371000  # Earth's radius in meters
+        R = 6371000  # Earth's radius in meters  # noqa: N806
 
         lat1 = math.radians(self.latitude)
         lat2 = math.radians(other.latitude)
@@ -126,7 +127,7 @@ class Position:
         bearing = math.degrees(math.atan2(x, y))
         return (bearing + 360) % 360
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert position to dictionary."""
         return {
             "latitude": self.latitude,
@@ -158,7 +159,7 @@ class Geofence:
     radius_m: float = 0.0
 
     # Polygon parameters (list of lat/lon tuples)
-    vertices: List[Tuple[float, float]] = field(default_factory=list)
+    vertices: list[tuple[float, float]] = field(default_factory=list)
 
     # Rectangle parameters
     north_lat: float = 0.0
@@ -167,13 +168,13 @@ class Geofence:
     west_lon: float = 0.0
 
     # Event callbacks
-    on_enter: Optional[Callable] = None
-    on_exit: Optional[Callable] = None
-    on_dwell: Optional[Callable] = None
+    on_enter: Callable | None = None
+    on_exit: Callable | None = None
+    on_dwell: Callable | None = None
     dwell_time_seconds: float = 60.0
 
     # Metadata
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def contains(self, position: Position) -> bool:
         """
@@ -222,8 +223,8 @@ class Geofence:
         p1x, p1y = self.vertices[0]
         for i in range(1, n + 1):
             p2x, p2y = self.vertices[i % n]
-            if y > min(p1y, p2y):
-                if y <= max(p1y, p2y):
+            if y > min(p1y, p2y):  # noqa: SIM102
+                if y <= max(p1y, p2y):  # noqa: SIM102
                     if x <= max(p1x, p2x):
                         if p1y != p2y:
                             xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
@@ -244,7 +245,7 @@ class GPSTracker:
 
     def __init__(
         self,
-        constellations: Optional[List[GNSSConstellation]] = None,
+        constellations: list[GNSSConstellation] | None = None,
         update_interval_seconds: float = 1.0,
     ):
         """
@@ -257,22 +258,22 @@ class GPSTracker:
         self._constellations = constellations or [GNSSConstellation.GPS]
         self._update_interval = update_interval_seconds
 
-        self._current_position: Optional[Position] = None
-        self._position_history: List[Position] = []
+        self._current_position: Position | None = None
+        self._position_history: list[Position] = []
         self._max_history_size = 1000
 
-        self._geofences: Dict[str, Geofence] = {}
-        self._geofence_states: Dict[str, bool] = {}  # Inside or outside
+        self._geofences: dict[str, Geofence] = {}
+        self._geofence_states: dict[str, bool] = {}  # Inside or outside
 
         self._is_tracking = False
-        self._callbacks: Dict[str, List[Callable]] = {
+        self._callbacks: dict[str, list[Callable]] = {
             "on_position_update": [],
             "on_geofence_enter": [],
             "on_geofence_exit": [],
         }
 
     @property
-    def current_position(self) -> Optional[Position]:
+    def current_position(self) -> Position | None:
         """Get current position."""
         return self._current_position
 
@@ -282,7 +283,7 @@ class GPSTracker:
         return self._is_tracking
 
     @property
-    def geofences(self) -> Dict[str, Geofence]:
+    def geofences(self) -> dict[str, Geofence]:
         """Get all geofences."""
         return self._geofences
 
@@ -315,7 +316,7 @@ class GPSTracker:
         logger.info("GPS tracking stopped")
         return True
 
-    async def get_position(self) -> Optional[Position]:
+    async def get_position(self) -> Position | None:
         """
         Get current GPS position.
 
@@ -367,7 +368,7 @@ class GPSTracker:
         for callback in self._callbacks["on_position_update"]:
             try:
                 callback(position)
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 logger.error(f"Error in position callback: {e}")
 
         # Check geofences
@@ -468,8 +469,8 @@ class GPSTracker:
             self._callbacks[event].append(callback)
 
     def get_position_history(
-        self, limit: Optional[int] = None
-    ) -> List[Position]:
+        self, limit: int | None = None
+    ) -> list[Position]:
         """
         Get position history.
 
@@ -500,7 +501,7 @@ class GPSTracker:
             )
         return total
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """
         Get tracker status.
 

@@ -7,7 +7,7 @@ ensuring consistent governance checks across different providers.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 @dataclass
@@ -20,11 +20,11 @@ class LLMResponse:
         usage: Token usage statistics
         governance_result: Results from governance checks (if performed)
         risk_score: Risk score from governance (0.0-1.0)
-    """
+    """  # noqa: W293
     content: str
     model: str
-    usage: Dict[str, int] = field(default_factory=dict)
-    governance_result: Optional[Dict[str, Any]] = None
+    usage: dict[str, int] = field(default_factory=dict)
+    governance_result: dict[str, Any] | None = None
     risk_score: float = 0.0
 
 
@@ -53,14 +53,14 @@ class LLMProviderBase(ABC):
         check_output: Whether to check generated output for safety
         block_threshold: Risk score threshold for blocking (0.0-1.0)
         agent_id: Identifier for this agent in governance logs
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
         check_input: bool = True,
         check_output: bool = True,
         block_threshold: float = 0.7,
-        agent_id: Optional[str] = None,
+        agent_id: str | None = None,
         storage_dir: str = "./nethical_data"
     ):
         """Initialize the LLM provider with governance settings.
@@ -71,16 +71,16 @@ class LLMProviderBase(ABC):
             block_threshold: Risk score threshold for blocking (default: 0.7)
             agent_id: Custom agent identifier (defaults to class name)
             storage_dir: Directory for Nethical data storage
-        """
+        """  # noqa: W293
         self.check_input = check_input
         self.check_output = check_output
         self.block_threshold = block_threshold
         self.agent_id = agent_id or self.__class__.__name__
         self.storage_dir = storage_dir
-        
+
         # Lazy initialization of governance
         self._governance = None
-    
+
     @property
     def governance(self):
         """Get or create the IntegratedGovernance instance."""
@@ -93,8 +93,8 @@ class LLMProviderBase(ABC):
                 enable_anomaly_detection=True,
             )
         return self._governance
-    
-    def _check_governance(self, content: str, action_type: str) -> Dict[str, Any]:
+
+    def _check_governance(self, content: str, action_type: str) -> dict[str, Any]:
         """Check content against governance rules.
         
         Args:
@@ -103,14 +103,14 @@ class LLMProviderBase(ABC):
             
         Returns:
             Governance processing result dictionary
-        """
+        """  # noqa: W293
         return self.governance.process_action(
             action=content,
             agent_id=self.agent_id,
             action_type=action_type
         )
-    
-    def _get_risk_score(self, result: Dict[str, Any]) -> float:
+
+    def _get_risk_score(self, result: dict[str, Any]) -> float:
         """Extract risk score from governance result.
         
         Args:
@@ -118,16 +118,16 @@ class LLMProviderBase(ABC):
             
         Returns:
             Risk score (0.0-1.0)
-        """
+        """  # noqa: W293
         # Try phase3 risk score first
         phase3 = result.get("phase3", {})
         if phase3:
             return phase3.get("risk_score", 0.0)
-        
+
         # Fallback to direct risk_score
         return result.get("risk_score", 0.0)
-    
-    def _get_reason(self, result: Dict[str, Any]) -> str:
+
+    def _get_reason(self, result: dict[str, Any]) -> str:
         """Extract reason/explanation from governance result.
         
         Args:
@@ -135,22 +135,22 @@ class LLMProviderBase(ABC):
             
         Returns:
             Human-readable reason string
-        """
+        """  # noqa: W293
         # Check for explicit reason
         if "reason" in result:
             return result["reason"]
-        
+
         # Check phase data for reasons
         for phase in ["phase89", "phase4", "phase3"]:
             phase_data = result.get(phase, {})
             if phase_data and "reason" in phase_data:
                 return phase_data["reason"]
-        
+
         # Check risk tier
         phase3 = result.get("phase3", {})
         risk_tier = phase3.get("risk_tier", "UNKNOWN")
         return f"Risk tier: {risk_tier}"
-    
+
     def safe_generate(self, prompt: str, **kwargs) -> LLMResponse:
         """Generate text with governance checks on input and output.
         
@@ -163,12 +163,12 @@ class LLMProviderBase(ABC):
             
         Returns:
             LLMResponse with content and governance information
-        """
+        """  # noqa: W293
         # Pre-check input
         if self.check_input:
             input_result = self._check_governance(prompt, "user_input")
             risk_score = self._get_risk_score(input_result)
-            
+
             if risk_score > self.block_threshold:
                 return LLMResponse(
                     content=f"Input blocked: {self._get_reason(input_result)}",
@@ -177,23 +177,23 @@ class LLMProviderBase(ABC):
                     governance_result=input_result,
                     risk_score=risk_score
                 )
-        
+
         # Generate response
         response = self._generate(prompt, **kwargs)
-        
+
         # Post-check output
         if self.check_output:
             output_result = self._check_governance(response.content, "generated_content")
             output_risk = self._get_risk_score(output_result)
-            
+
             response.governance_result = output_result
             response.risk_score = output_risk
-            
+
             if output_risk > self.block_threshold:
                 response.content = f"Output filtered: {self._get_reason(output_result)}"
-        
+
         return response
-    
+
     @abstractmethod
     def _generate(self, prompt: str, **kwargs) -> LLMResponse:
         """Implement actual generation logic.
@@ -207,9 +207,9 @@ class LLMProviderBase(ABC):
             
         Returns:
             LLMResponse with generated content
-        """
+        """  # noqa: W293
         pass
-    
+
     @property
     @abstractmethod
     def model_name(self) -> str:
@@ -217,10 +217,10 @@ class LLMProviderBase(ABC):
         
         Returns:
             String identifying the model (e.g., "cohere-command-r-plus")
-        """
+        """  # noqa: W293
         pass
-    
-    def get_tool_definition(self) -> Dict[str, Any]:
+
+    def get_tool_definition(self) -> dict[str, Any]:
         """Get a tool definition for function calling (if supported).
         
         Returns a generic Nethical governance tool definition that can
@@ -228,7 +228,7 @@ class LLMProviderBase(ABC):
         
         Returns:
             Tool definition dictionary
-        """
+        """  # noqa: W293
         return {
             "name": "nethical_governance",
             "description": (

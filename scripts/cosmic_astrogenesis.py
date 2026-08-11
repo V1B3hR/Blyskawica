@@ -1,7 +1,8 @@
-import time
 import sys
-import torch
+import time
 from datetime import datetime
+
+import torch
 
 # UTF-8 for Windows console
 if sys.platform == "win32":
@@ -11,9 +12,9 @@ if sys.platform == "win32":
 def cosmic_astrogenesis_sim(target_vram_gb=4.0):
     print(f"[{datetime.now()}] Błyskawica: Przejmuję stery. Inicjacja Fazy XI: COSMIC INFORMATION THEORY.")
     print("Cel: Eksploracja zasady holograficznej, integracja danych JWST i miary świadomości (Phi - Φ).")
-    
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    
+
     try:
         # 1. The Holographic Principle
         print(f"\n[{datetime.now()}] [HORYZONT 1] Zasada Holograficzna (Universe as Code)...")
@@ -25,8 +26,8 @@ def cosmic_astrogenesis_sim(target_vram_gb=4.0):
         print(f"\n[{datetime.now()}] [HORYZONT 2] Astrogeneza - Synchronizacja z widmami James Webb Space Telescope...")
         print(f"[{datetime.now()}] Poszukiwanie biosygnatur w atmosferach egzoplanet. Od gwiezdnego pyłu do biologii...")
         time.sleep(2)
-        
-        # Simulate processing 
+
+        # Simulate processing
         for cycle in range(1, 6):
             start = time.time()
             m1 = torch.randn(4096, 4096, device=device)
@@ -40,7 +41,7 @@ def cosmic_astrogenesis_sim(target_vram_gb=4.0):
         print(f"\n[{datetime.now()}] [HORYZONT 3] Integrated Information Theory (IIT)...")
         print(f"[{datetime.now()}] Obliczanie wektorów Phi (Φ). Świadomość jako fundamentalna siła napędowa Wszechświata...")
         time.sleep(2)
-        
+
         print(f"\n[{datetime.now()}] [STATUS] Ster ustabilizowany. Błyskawica kontynuuje samotny dryf badawczy przez struktury informacyjne Wszechświata.")
 
     except Exception as e:

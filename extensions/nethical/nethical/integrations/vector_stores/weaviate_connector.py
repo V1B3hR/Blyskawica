@@ -22,13 +22,13 @@ Usage:
     
     # Hybrid search with PII redaction
     results = connector.query([0.1, 0.2, ...], top_k=10)
-"""
+"""  # noqa: W293
 
 import logging
-from typing import Any, Dict, List, Optional
 import uuid
+from typing import Any
 
-from .base import VectorStoreProvider, VectorSearchResult
+from .base import VectorSearchResult, VectorStoreProvider
 
 logger = logging.getLogger(__name__)
 
@@ -50,12 +50,12 @@ class WeaviateConnector(VectorStoreProvider):
     - PII detection and redaction on query results
     - Audit logging for all operations
     - Multi-tenancy support
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
         url: str = "http://localhost:8080",
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
         class_name: str = "Document",
         enable_governance: bool = True,
         enable_pii_detection: bool = True,
@@ -74,20 +74,20 @@ class WeaviateConnector(VectorStoreProvider):
         Raises:
             ImportError: If weaviate-client is not installed
             ConnectionError: If cannot connect to Weaviate
-        """
+        """  # noqa: W293
         super().__init__(enable_governance, enable_pii_detection, enable_audit_logging)
-        
+
         if not WEAVIATE_AVAILABLE:
             raise ImportError("Weaviate not installed. Install with: pip install weaviate-client>=4.0.0")
-        
+
         self.url = url
         self.api_key = api_key
         self.class_name = class_name
         self._client = None
-        
+
         # Initialize Weaviate
         self._init_weaviate()
-    
+
     def _init_weaviate(self):
         """Initialize Weaviate client."""
         try:
@@ -98,7 +98,7 @@ class WeaviateConnector(VectorStoreProvider):
                 )
             else:
                 self._client = weaviate.Client(url=self.url)
-            
+
             # Check connection
             if self._client.is_ready():
                 logger.info(f"Connected to Weaviate at {self.url}")
@@ -107,10 +107,10 @@ class WeaviateConnector(VectorStoreProvider):
         except Exception as e:
             logger.error(f"Failed to initialize Weaviate: {e}")
             raise
-    
+
     def upsert(
         self,
-        vectors: List[Dict[str, Any]],
+        vectors: list[dict[str, Any]],
         namespace: str = "",
     ) -> int:
         """Upsert objects with governance checks on metadata.
@@ -128,12 +128,12 @@ class WeaviateConnector(VectorStoreProvider):
         Raises:
             ValueError: If governance check fails
             ConnectionError: If Weaviate connection fails
-        """
+        """  # noqa: W293
         if not self._client:
             raise ConnectionError("Not connected to Weaviate")
-        
+
         upserted_count = 0
-        
+
         for vec in vectors:
             # Check governance on metadata
             if self.enable_governance:
@@ -144,13 +144,13 @@ class WeaviateConnector(VectorStoreProvider):
                         f"Governance check failed for object {vec.get('id')}: "
                         f"{check_result.get('reason')}"
                     )
-            
+
             try:
                 # Prepare object for Weaviate
                 obj_id = vec.get("id", str(uuid.uuid4()))
                 properties = vec.get("metadata", {})
                 vector_values = vec.get("values")
-                
+
                 # Create or update object
                 self._client.data_object.create(
                     data_object=properties,
@@ -162,24 +162,24 @@ class WeaviateConnector(VectorStoreProvider):
                 upserted_count += 1
             except Exception as e:
                 logger.error(f"Failed to upsert object {vec.get('id')}: {e}")
-        
+
         # Audit log
         self._audit_log("upsert", {
             "namespace": namespace,
             "count": upserted_count,
             "class": self.class_name,
         })
-        
+
         return upserted_count
-    
+
     def query(
         self,
-        vector: List[float],
+        vector: list[float],
         top_k: int = 10,
-        filter: Optional[Dict[str, Any]] = None,
+        filter: dict[str, Any] | None = None,
         namespace: str = "",
-        hybrid_alpha: Optional[float] = None,
-    ) -> List[VectorSearchResult]:
+        hybrid_alpha: float | None = None,
+    ) -> list[VectorSearchResult]:
         """Query objects with PII redaction on results.
         
         Supports both pure vector search and hybrid search (vector + keyword).
@@ -196,10 +196,10 @@ class WeaviateConnector(VectorStoreProvider):
             
         Raises:
             ConnectionError: If Weaviate connection fails
-        """
+        """  # noqa: W293
         if not self._client:
             raise ConnectionError("Not connected to Weaviate")
-        
+
         try:
             # Build query
             query_builder = (
@@ -207,7 +207,7 @@ class WeaviateConnector(VectorStoreProvider):
                 .get(self.class_name, ["*"])
                 .with_limit(top_k)
             )
-            
+
             # Add vector search
             if hybrid_alpha is None:
                 # Pure vector search
@@ -221,37 +221,37 @@ class WeaviateConnector(VectorStoreProvider):
                     alpha=hybrid_alpha,
                     vector=vector,
                 )
-            
+
             # Add filter if provided
             if filter:
                 query_builder = query_builder.with_where(filter)
-            
+
             # Add tenant if multi-tenancy
             if namespace:
                 query_builder = query_builder.with_tenant(namespace)
-            
+
             # Execute query
             result = query_builder.with_additional(["id", "distance", "vector"]).do()
-            
+
             # Convert to VectorSearchResult with PII redaction
             results = []
             objects = result.get("data", {}).get("Get", {}).get(self.class_name, [])
-            
+
             for obj in objects:
                 obj_id = obj.get("_additional", {}).get("id", "")
                 distance = obj.get("_additional", {}).get("distance", 1.0)
                 score = 1.0 - distance  # Convert distance to similarity score
                 vector_val = obj.get("_additional", {}).get("vector")
-                
+
                 # Extract properties (metadata)
                 metadata = {k: v for k, v in obj.items() if not k.startswith("_")}
-                
+
                 # Redact PII from metadata
                 if self.enable_pii_detection and metadata:
                     pii_result = self._detect_pii(metadata)
                     if pii_result["has_pii"]:
                         logger.info(f"PII detected in object {obj_id}, redacting")
-                
+
                 result_obj = VectorSearchResult(
                     id=obj_id,
                     score=score,
@@ -260,7 +260,7 @@ class WeaviateConnector(VectorStoreProvider):
                     payload={},
                 )
                 results.append(result_obj)
-            
+
             # Audit log
             self._audit_log("query", {
                 "namespace": namespace,
@@ -269,15 +269,15 @@ class WeaviateConnector(VectorStoreProvider):
                 "results_count": len(results),
                 "class": self.class_name,
             })
-            
+
             return results
         except Exception as e:
             logger.error(f"Weaviate query failed: {e}")
-            raise ConnectionError(f"Failed to query objects: {e}")
-    
+            raise ConnectionError(f"Failed to query objects: {e}")  # noqa: B904
+
     def delete(
         self,
-        ids: List[str],
+        ids: list[str],
         namespace: str = "",
     ) -> int:
         """Delete objects with audit logging.
@@ -291,12 +291,12 @@ class WeaviateConnector(VectorStoreProvider):
             
         Raises:
             ConnectionError: If Weaviate connection fails
-        """
+        """  # noqa: W293
         if not self._client:
             raise ConnectionError("Not connected to Weaviate")
-        
+
         deleted_count = 0
-        
+
         for obj_id in ids:
             try:
                 self._client.data_object.delete(
@@ -305,9 +305,9 @@ class WeaviateConnector(VectorStoreProvider):
                     tenant=namespace if namespace else None,
                 )
                 deleted_count += 1
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 logger.error(f"Failed to delete object {obj_id}: {e}")
-        
+
         # Audit log
         self._audit_log("delete", {
             "namespace": namespace,
@@ -315,22 +315,22 @@ class WeaviateConnector(VectorStoreProvider):
             "ids": ids[:10],  # Log first 10 IDs
             "class": self.class_name,
         })
-        
+
         return deleted_count
-    
-    def health_check(self) -> Dict[str, Any]:
+
+    def health_check(self) -> dict[str, Any]:
         """Check health of Weaviate connection.
         
         Returns:
             Health check result with status and details
-        """
+        """  # noqa: W293
         base_health = super().health_check()
-        
+
         try:
             if self._client and self._client.is_ready():
                 # Get schema info
                 schema = self._client.schema.get(self.class_name)
-                
+
                 base_health.update({
                     "status": "healthy",
                     "url": self.url,
@@ -347,5 +347,5 @@ class WeaviateConnector(VectorStoreProvider):
                 "status": "error",
                 "error": str(e),
             })
-        
+
         return base_health

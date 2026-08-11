@@ -139,7 +139,7 @@ class DeepfakeDetector(BaseDetector):
         scores = []
         evidence = []
 
-        for i, result in enumerate(results):
+        for i, result in enumerate(results):  # noqa: B007
             if isinstance(result, Exception):
                 continue
             if result:

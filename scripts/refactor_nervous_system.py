@@ -1,6 +1,5 @@
-import os
-import shutil
 import re
+import shutil
 from pathlib import Path
 
 # Ścieżka bazowa
@@ -31,16 +30,16 @@ def create_tree():
 
 def move_files():
     print("[DEBUG] 3. Przenoszenie narządów do nowych gałęzi")
-    
+
     # Mapowanie plików do nowych lokalizacji
     mapping = {
         "peripheral_nervous_system": ["sensory_hub.py", "social_comm.py", "social_learning.py"],
         "cognitive_tools": ["diamond_yantra.py", "polymathic_hub.py"],
         "immune_system": ["wolf_teeth.py", "epistemic_defense.py", "trust_network.py", "robustness_validator.py"]
     }
-    
+
     moved_tracker = {}
-    
+
     # Przenieś zdefiniowane pliki
     for new_dir, files in mapping.items():
         for file in files:
@@ -50,7 +49,7 @@ def move_files():
                 shutil.move(src, dst)
                 moved_tracker[file] = new_dir
                 print(f"  -> Przeniesiono: {file} -> {new_dir}")
-                
+
     # Pozostałe pliki z 'core' (tylko na najwyższym poziomie) idą do central_nervous_system
     for item in CORE_DIR.iterdir():
         if item.is_file() and item.suffix == ".py" and item.name != "__init__.py":
@@ -58,7 +57,7 @@ def move_files():
             shutil.move(item, dst)
             moved_tracker[item.name] = "central_nervous_system"
             print(f"  -> Przeniesiono (domyślnie CNS): {item.name}")
-            
+
     # Podkatalogi z 'core' (np. intelligence, ecosystem) przenosimy do CNS
     for item in CORE_DIR.iterdir():
         if item.is_dir() and item.name != "__pycache__":
@@ -70,34 +69,34 @@ def move_files():
 
 def update_imports(moved_tracker):
     print("[DEBUG] 4. Aktualizacja ścieżek nerwowych (Importy)")
-    
+
     # Musimy zaktualizować wszystkie pliki .py w całym projekcie
     project_root = Path(__file__).resolve().parent.parent
-    
+
     for py_file in project_root.rglob("*.py"):
         # Omijamy foldery venv_orbital i core_backup
         if "venv_orbital" in py_file.parts or "core_backup" in py_file.parts:
             continue
-            
-        with open(py_file, 'r', encoding='utf-8') as f:
+
+        with open(py_file, encoding='utf-8') as f:
             content = f.read()
-            
+
         original_content = content
-        
+
         # 1. Zmiana bezwzględnych importów (np. from adaptiveneuralnetwork.central_nervous_system.alive_node import)
         for filename, target_dir in moved_tracker.items():
             mod_name = filename.replace(".py", "")
-            
+
             # Wzorzec: adaptiveneuralnetwork.core.module -> adaptiveneuralnetwork.target_dir.module
             content = content.replace(
                 f"adaptiveneuralnetwork.core.{mod_name}",
                 f"adaptiveneuralnetwork.{target_dir}.{mod_name}"
             )
-            
+
         # 2. Naprawa względnych importów w samych przeniesionych plikach!
         # Jeśli plik był w core/ i został przeniesiony do np. peripheral_nervous_system,
         # jego "from . module" mogło się popsuć.
-        # Zamieniamy wszystkie względne importy w tych plikach na BEZWZGLĘDNE, 
+        # Zamieniamy wszystkie względne importy w tych plikach na BEZWZGLĘDNE,
         # bo to najbezpieczniejsze rozwiązanie w Pythonie.
         if py_file.parent.name in ["central_nervous_system", "peripheral_nervous_system", "cognitive_tools", "immune_system"]:
             # Znajdź linie "from .xxx import yyy" lub "from . import xxx"
@@ -112,7 +111,7 @@ def update_imports(moved_tracker):
                     # Trafiło to do central_nervous_system
                     return f"from adaptiveneuralnetwork.central_nervous_system.{import_target} import"
                 return match.group(0) # Zostaw bez zmian jeśli to coś dziwnego
-                
+
             content = re.sub(r"from \.([a-zA-Z0-9_]+) import", relative_replacer, content)
 
         if content != original_content:

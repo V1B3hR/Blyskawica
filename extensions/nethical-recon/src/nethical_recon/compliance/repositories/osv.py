@@ -5,7 +5,7 @@ Integrates with OSV.dev for open source vulnerability data.
 """
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
 import requests
 
@@ -30,7 +30,7 @@ class OSVConnector:
         """Initialize OSV connector."""
         self.session = requests.Session()
 
-    def get_vulnerability(self, vuln_id: str) -> Optional[dict[str, Any]]:
+    def get_vulnerability(self, vuln_id: str) -> dict[str, Any] | None:
         """
         Get vulnerability by ID.
 
@@ -57,7 +57,7 @@ class OSVConnector:
         self,
         package_name: str,
         ecosystem: str,
-        version: Optional[str] = None,
+        version: str | None = None,
     ) -> list[dict[str, Any]]:
         """
         Query vulnerabilities for a package.

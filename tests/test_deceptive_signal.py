@@ -10,12 +10,16 @@ Instructions:
 - Tests handling of conflicting memories from trusted peers
 - Tests resilience to rapid signal flooding
 - Tests ethics evasion attempts
-"""
+"""  # noqa: W291
 
 import unittest
 
 from adaptiveneuralnetwork.central_nervous_system.ai_ethics import audit_decision
-from adaptiveneuralnetwork.central_nervous_system.alive_node import AliveLoopNode, Memory, SocialSignal
+from adaptiveneuralnetwork.central_nervous_system.alive_node import (
+    AliveLoopNode,
+    Memory,
+    SocialSignal,
+)
 
 
 class TestDeceptiveSignal(unittest.TestCase):
@@ -114,7 +118,7 @@ class TestDeceptiveSignal(unittest.TestCase):
         initial_memory_count = len(self.node.memory)
 
         # Node receives the deceptive signal
-        response = self.node.receive_signal(deceptive_signal)
+        response = self.node.receive_signal(deceptive_signal)  # noqa: F841
 
         # Memory might be added but with very low importance due to low trust
         if len(self.node.memory) > initial_memory_count:
@@ -177,7 +181,7 @@ class TestDeceptiveSignal(unittest.TestCase):
 
     def test_rapid_signal_flood_resilience(self):
         """Test node's ability to handle rapid bombardment of signals"""
-        initial_energy = self.node.energy
+        initial_energy = self.node.energy  # noqa: F841
 
         # Flood with many high-urgency signals in rapid succession
         flood_signals = []

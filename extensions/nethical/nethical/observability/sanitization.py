@@ -9,10 +9,11 @@ Supports detection and redaction of:
 
 from __future__ import annotations
 
-import re
-from typing import Dict, Any, List, Optional, Pattern
-from dataclasses import dataclass
 import hashlib
+import re
+from dataclasses import dataclass
+from re import Pattern
+from typing import Any
 
 
 @dataclass
@@ -26,7 +27,7 @@ class RedactionPattern:
 
 class LogSanitizer:
     """Sanitizes logs by redacting PII and sensitive information."""
-    
+
     # Predefined patterns for common PII
     PATTERNS = {
         'ssn': RedactionPattern(
@@ -90,10 +91,10 @@ class LogSanitizer:
             description='JWT token'
         ),
     }
-    
-    def __init__(self, 
-                enabled_patterns: Optional[List[str]] = None,
-                custom_patterns: Optional[List[RedactionPattern]] = None,
+
+    def __init__(self,
+                enabled_patterns: list[str] | None = None,
+                custom_patterns: list[RedactionPattern] | None = None,
                 hash_redacted: bool = False):
         """Initialize log sanitizer.
         
@@ -101,23 +102,23 @@ class LogSanitizer:
             enabled_patterns: List of pattern names to enable (None = all)
             custom_patterns: Additional custom patterns
             hash_redacted: Whether to include hash of redacted value for debugging
-        """
+        """  # noqa: W293
         self.hash_redacted = hash_redacted
-        
+
         # Select patterns
         if enabled_patterns is None:
             self.patterns = list(self.PATTERNS.values())
         else:
             self.patterns = [
-                self.PATTERNS[name] for name in enabled_patterns 
+                self.PATTERNS[name] for name in enabled_patterns
                 if name in self.PATTERNS
             ]
-        
+
         # Add custom patterns
         if custom_patterns:
             self.patterns.extend(custom_patterns)
-    
-    def sanitize(self, text: str, context: Optional[Dict[str, Any]] = None) -> str:
+
+    def sanitize(self, text: str, context: dict[str, Any] | None = None) -> str:
         """Sanitize text by redacting PII and sensitive information.
         
         Args:
@@ -126,39 +127,39 @@ class LogSanitizer:
             
         Returns:
             Sanitized text with PII redacted
-        """
+        """  # noqa: W293
         if not text:
             return text
-        
+
         sanitized = text
         redactions = []
-        
+
         for pattern_def in self.patterns:
             matches = list(pattern_def.pattern.finditer(sanitized))
-            
+
             for match in reversed(matches):  # Reverse to maintain string positions
                 original = match.group(0)
-                
+
                 if self.hash_redacted:
                     # Include hash for debugging
                     hash_val = hashlib.sha256(original.encode()).hexdigest()[:8]
                     replacement = f"{pattern_def.replacement}-{hash_val}"
                 else:
                     replacement = pattern_def.replacement
-                
+
                 sanitized = sanitized[:match.start()] + replacement + sanitized[match.end():]
-                
+
                 redactions.append({
                     'type': pattern_def.name,
                     'position': match.start(),
                     'description': pattern_def.description
                 })
-        
+
         return sanitized
-    
-    def sanitize_dict(self, data: Dict[str, Any], 
+
+    def sanitize_dict(self, data: dict[str, Any],
                      recursive: bool = True,
-                     sensitive_keys: Optional[List[str]] = None) -> Dict[str, Any]:
+                     sensitive_keys: list[str] | None = None) -> dict[str, Any]:
         """Sanitize dictionary values.
         
         Args:
@@ -168,20 +169,20 @@ class LogSanitizer:
             
         Returns:
             Sanitized dictionary
-        """
+        """  # noqa: W293
         sensitive_keys = sensitive_keys or []
         sensitive_keys_lower = [k.lower() for k in sensitive_keys]
-        
+
         # Common sensitive key names
-        default_sensitive = ['password', 'passwd', 'pwd', 'secret', 'token', 
+        default_sensitive = ['password', 'passwd', 'pwd', 'secret', 'token',
                            'api_key', 'apikey', 'auth', 'authorization',
                            'ssn', 'credit_card', 'cvv']
-        
+
         result = {}
-        
+
         for key, value in data.items():
             key_lower = key.lower()
-            
+
             # Check if key itself is sensitive
             if any(sensitive in key_lower for sensitive in default_sensitive + sensitive_keys_lower):
                 result[key] = '[REDACTED]'
@@ -198,17 +199,17 @@ class LogSanitizer:
                 ]
             else:
                 result[key] = value
-        
+
         return result
-    
+
     def add_pattern(self, pattern: RedactionPattern) -> None:
         """Add a custom redaction pattern.
         
         Args:
             pattern: RedactionPattern to add
-        """
+        """  # noqa: W293
         self.patterns.append(pattern)
-    
+
     def remove_pattern(self, pattern_name: str) -> bool:
         """Remove a redaction pattern by name.
         
@@ -217,17 +218,17 @@ class LogSanitizer:
             
         Returns:
             True if pattern was found and removed
-        """
+        """  # noqa: W293
         original_len = len(self.patterns)
         self.patterns = [p for p in self.patterns if p.name != pattern_name]
         return len(self.patterns) < original_len
-    
-    def list_patterns(self) -> List[Dict[str, str]]:
+
+    def list_patterns(self) -> list[dict[str, str]]:
         """List all active patterns.
         
         Returns:
             List of pattern information
-        """
+        """  # noqa: W293
         return [
             {
                 'name': p.name,
@@ -239,11 +240,11 @@ class LogSanitizer:
 
 
 # Global singleton
-_log_sanitizer: Optional[LogSanitizer] = None
+_log_sanitizer: LogSanitizer | None = None
 
 
-def get_sanitizer(enabled_patterns: Optional[List[str]] = None,
-                 custom_patterns: Optional[List[RedactionPattern]] = None) -> LogSanitizer:
+def get_sanitizer(enabled_patterns: list[str] | None = None,
+                 custom_patterns: list[RedactionPattern] | None = None) -> LogSanitizer:
     """Get or create global log sanitizer.
     
     Args:
@@ -252,19 +253,19 @@ def get_sanitizer(enabled_patterns: Optional[List[str]] = None,
         
     Returns:
         LogSanitizer instance
-    """
+    """  # noqa: W293
     global _log_sanitizer
-    
+
     if _log_sanitizer is None:
         _log_sanitizer = LogSanitizer(
             enabled_patterns=enabled_patterns,
             custom_patterns=custom_patterns
         )
-    
+
     return _log_sanitizer
 
 
-def sanitize_log(text: str, context: Optional[Dict[str, Any]] = None) -> str:
+def sanitize_log(text: str, context: dict[str, Any] | None = None) -> str:
     """Sanitize a log message (convenience function).
     
     Args:
@@ -273,14 +274,14 @@ def sanitize_log(text: str, context: Optional[Dict[str, Any]] = None) -> str:
         
     Returns:
         Sanitized text
-    """
+    """  # noqa: W293
     sanitizer = get_sanitizer()
     return sanitizer.sanitize(text, context)
 
 
-def sanitize_dict(data: Dict[str, Any], 
+def sanitize_dict(data: dict[str, Any],
                  recursive: bool = True,
-                 sensitive_keys: Optional[List[str]] = None) -> Dict[str, Any]:
+                 sensitive_keys: list[str] | None = None) -> dict[str, Any]:
     """Sanitize a dictionary (convenience function).
     
     Args:
@@ -290,7 +291,7 @@ def sanitize_dict(data: Dict[str, Any],
         
     Returns:
         Sanitized dictionary
-    """
+    """  # noqa: W293
     sanitizer = get_sanitizer()
     return sanitizer.sanitize_dict(data, recursive, sensitive_keys)
 
@@ -298,7 +299,7 @@ def sanitize_dict(data: Dict[str, Any],
 if __name__ == '__main__':
     # Demo usage
     sanitizer = LogSanitizer()
-    
+
     # Test cases
     test_strings = [
         "My SSN is 123-45-6789",
@@ -308,16 +309,16 @@ if __name__ == '__main__':
         "Authorization: Bearer example.jwt.token",
         "My password is super_secret_123",
     ]
-    
+
     print("Log Sanitization Demo")
     print("=" * 60)
-    
+
     for original in test_strings:
         sanitized = sanitizer.sanitize(original)
         print(f"Original:  {original}")
         print(f"Sanitized: {sanitized}")
         print()
-    
+
     # Test dictionary sanitization
     test_dict = {
         'user': 'john.doe@example.com',
@@ -329,7 +330,7 @@ if __name__ == '__main__':
             'safe_data': 'This is fine'
         }
     }
-    
+
     print("Dictionary Sanitization:")
     print("Original:", test_dict)
     sanitized_dict = sanitizer.sanitize_dict(test_dict)

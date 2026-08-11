@@ -1,6 +1,5 @@
 """Passive subdomain enumeration module."""
 
-from typing import Optional
 import requests
 
 
@@ -36,7 +35,7 @@ class SubdomainEnumerator:
         except Exception:
             pass
 
-        return sorted(list(subdomains))
+        return sorted(list(subdomains))  # noqa: C414
 
     def enumerate(self, domain: str) -> list[str]:
         """Enumerate subdomains using multiple passive sources.
@@ -53,4 +52,4 @@ class SubdomainEnumerator:
         crtsh_results = self.enumerate_from_crtsh(domain)
         subdomains.update(crtsh_results)
 
-        return sorted(list(subdomains))
+        return sorted(list(subdomains))  # noqa: C414

@@ -280,7 +280,7 @@ class ContinualLearningTrainer:
             correct = 0
             total = 0
 
-            for batch_idx, (data, target) in enumerate(dataloader):
+            for batch_idx, (data, target) in enumerate(dataloader):  # noqa: B007
                 data, target = data.to(self.device), target.to(self.device)
 
                 self.optimizer.zero_grad()
@@ -425,7 +425,7 @@ def create_enhanced_continual_scenario(
         
     Returns:
         Configured ProgressiveDomainShift instance
-    """
+    """  # noqa: W293
 
     # Load base dataset
     if dataset_name.lower() == "mnist":

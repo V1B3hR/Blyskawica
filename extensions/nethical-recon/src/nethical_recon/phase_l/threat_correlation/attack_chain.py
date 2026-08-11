@@ -177,7 +177,6 @@ class AttackChainDetector:
 
     def _build_chains(self, classified: dict[KillChainStage, list[AttackChainNode]]) -> list[AttackChain]:
         """Build attack chains from classified findings"""
-        from datetime import timedelta
         from uuid import uuid4
 
         chains: list[AttackChain] = []

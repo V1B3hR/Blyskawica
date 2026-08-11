@@ -3,7 +3,11 @@ Test suite for production signal processing features
 """
 import unittest
 
-from adaptiveneuralnetwork.central_nervous_system.alive_node import AliveLoopNode, Memory, SocialSignal
+from adaptiveneuralnetwork.central_nervous_system.alive_node import (
+    AliveLoopNode,
+    Memory,
+    SocialSignal,
+)
 from adaptiveneuralnetwork.central_nervous_system.time_manager import get_timestamp
 
 
@@ -39,7 +43,7 @@ class TestProductionSignalProcessing(unittest.TestCase):
         )
 
         # First signal should be processed
-        response1 = self.node1.receive_signal(signal)
+        response1 = self.node1.receive_signal(signal)  # noqa: F841
         initial_memory_count = len(self.node1.memory)
 
         # Second signal with same idempotency key should be ignored
@@ -51,7 +55,7 @@ class TestProductionSignalProcessing(unittest.TestCase):
             idempotency_key="unique_test_key_123"  # Same key
         )
 
-        response2 = self.node1.receive_signal(signal2)
+        response2 = self.node1.receive_signal(signal2)  # noqa: F841
         final_memory_count = len(self.node1.memory)
 
         # Memory count should not increase on duplicate
@@ -120,7 +124,7 @@ class TestProductionSignalProcessing(unittest.TestCase):
     def test_circuit_breaker(self):
         """Test circuit breaker functionality"""
         # Trigger multiple errors to open circuit breaker
-        for i in range(6):  # More than failure threshold (5)
+        for i in range(6):  # More than failure threshold (5)  # noqa: B007
             signal = SocialSignal(
                 content="test",
                 signal_type="invalid_type",

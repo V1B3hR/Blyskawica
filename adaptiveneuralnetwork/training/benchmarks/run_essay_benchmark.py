@@ -48,7 +48,7 @@ def load_kaggle_dataset(data_path: str, dataset_type: str = "auto") -> EssayData
         
     Returns:
         EssayDataset instance
-    """
+    """  # noqa: W293
     from adaptiveneuralnetwork.data import (
         load_annomi_dataset,
         load_mental_health_faqs_dataset,

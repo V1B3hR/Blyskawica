@@ -20,9 +20,12 @@ logger = logging.getLogger("continual_benchmark")
 # Add project root to sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from adaptiveneuralnetwork.api.config import AdaptiveConfig
-from adaptiveneuralnetwork.api.model import AdaptiveModel
-from adaptiveneuralnetwork.training.continual import split_mnist_benchmark, ablation_study_sleep_phases
+from adaptiveneuralnetwork.api.config import AdaptiveConfig  # noqa: E402
+from adaptiveneuralnetwork.api.model import AdaptiveModel  # noqa: E402
+from adaptiveneuralnetwork.training.continual import (  # noqa: E402
+    ablation_study_sleep_phases,
+    split_mnist_benchmark,
+)
 
 
 def run_benchmark():
@@ -62,7 +65,7 @@ def run_benchmark():
         json.dump(combined_results, f, indent=2)
 
     logger.info("=" * 70)
-    logger.info(f"Split-MNIST Benchmark Completed!")
+    logger.info("Split-MNIST Benchmark Completed!")
     logger.info(f"Final Average Accuracy: {results.get('final_average_accuracy', 0.0):.4f}")
     logger.info(f"Total Forgetting Rate:  {results.get('total_forgetting', 0.0):.4f}")
     logger.info(f"Benchmark Saved To:     {out_file}")

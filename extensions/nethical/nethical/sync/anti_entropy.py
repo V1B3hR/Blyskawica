@@ -22,13 +22,12 @@ import hashlib
 import logging
 import time
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from typing import Any
 
-from .crdt import PolicyCRDT, PolicyDelta, PolicyState, CRDTMergeResult
-from .vector_clock import HybridLogicalClock
-
+from .crdt import CRDTMergeResult, PolicyCRDT, PolicyDelta, PolicyState
 
 logger = logging.getLogger(__name__)
 
@@ -71,9 +70,9 @@ class DigestNode:
     level: int = 0
     start_key: str = ""
     end_key: str = ""
-    children: List[str] = field(default_factory=list)
+    children: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "hash": self.hash,
@@ -84,7 +83,7 @@ class DigestNode:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "DigestNode":
+    def from_dict(cls, data: dict[str, Any]) -> "DigestNode":
         """Create from dictionary."""
         return cls(
             hash=data.get("hash", ""),
@@ -116,10 +115,10 @@ class MerkleTree:
             branching_factor: Number of children per internal node
         """
         self.branching_factor = branching_factor
-        self.root: Optional[DigestNode] = None
-        self.leaves: Dict[str, DigestNode] = {}
+        self.root: DigestNode | None = None
+        self.leaves: dict[str, DigestNode] = {}
 
-    def build(self, policies: Dict[str, PolicyState]) -> DigestNode:
+    def build(self, policies: dict[str, PolicyState]) -> DigestNode:
         """
         Build the Merkle tree from policy states.
 
@@ -178,7 +177,7 @@ class MerkleTree:
         self.root = current_level[0]
         return self.root
 
-    def get_differences(self, other_tree: "MerkleTree") -> Set[str]:
+    def get_differences(self, other_tree: "MerkleTree") -> set[str]:
         """
         Find policy IDs that differ between trees.
 
@@ -227,7 +226,7 @@ class MerkleTree:
         """Return hash for empty tree."""
         return hashlib.sha256(b"empty").hexdigest()[:16]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "root": self.root.to_dict() if self.root else None,
@@ -236,7 +235,7 @@ class MerkleTree:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "MerkleTree":
+    def from_dict(cls, data: dict[str, Any]) -> "MerkleTree":
         """Create from dictionary."""
         tree = cls(branching_factor=data.get("branching_factor", 16))
         if data.get("root"):
@@ -284,7 +283,7 @@ class SyncSession:
             return (time.time() - self.started_at) * 1000
         return 0.0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "session_id": self.session_id,
@@ -341,15 +340,15 @@ class AntiEntropyProtocol:
         self.max_delta_batch_size = max_delta_batch_size
 
         # Sync state
-        self.active_sessions: Dict[str, SyncSession] = {}
-        self.completed_sessions: List[SyncSession] = []
+        self.active_sessions: dict[str, SyncSession] = {}
+        self.completed_sessions: list[SyncSession] = []
         self.max_completed_history = 100
 
         # Merkle tree for efficient comparison
         self.merkle_tree = MerkleTree()
 
         # Known peers
-        self.peers: Set[str] = set()
+        self.peers: set[str] = set()
 
         # Statistics
         self.total_syncs = 0
@@ -357,8 +356,8 @@ class AntiEntropyProtocol:
         self.failed_syncs = 0
 
         # Callbacks
-        self._on_sync_complete: Optional[Callable[[SyncSession], None]] = None
-        self._on_conflict: Optional[Callable[[str, PolicyState, PolicyState], None]] = None
+        self._on_sync_complete: Callable[[SyncSession], None] | None = None
+        self._on_conflict: Callable[[str, PolicyState, PolicyState], None] | None = None
 
         logger.info(f"AntiEntropyProtocol initialized for node {node_id}")
 
@@ -454,7 +453,7 @@ class AntiEntropyProtocol:
         self,
         peer_merkle_tree: MerkleTree,
         session: SyncSession,
-    ) -> List[PolicyDelta]:
+    ) -> list[PolicyDelta]:
         """
         Get deltas to send to a peer based on their Merkle tree.
 
@@ -495,7 +494,7 @@ class AntiEntropyProtocol:
 
     def apply_deltas(
         self,
-        deltas: List[PolicyDelta],
+        deltas: list[PolicyDelta],
         session: SyncSession,
     ) -> CRDTMergeResult:
         """
@@ -522,7 +521,7 @@ class AntiEntropyProtocol:
                     else:
                         result.updated_policies.append(delta.policy_id)
                     result.merged_count += 1
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 logger.error(f"Error applying delta for {delta.policy_id}: {e}")
                 result.conflict_count += 1
                 result.conflicts.append(delta.policy_id)
@@ -583,7 +582,7 @@ class AntiEntropyProtocol:
         """Set callback for conflict detection."""
         self._on_conflict = callback
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get synchronization statistics."""
         return {
             "total_syncs": self.total_syncs,
@@ -627,17 +626,17 @@ class AntiEntropyProtocol:
                             )
                             logger.debug(f"Started sync session {session.session_id} with {peer_id}")
 
-                    except Exception as e:
+                    except Exception as e:  # noqa: PERF203
                         logger.warning(f"Failed to sync with peer {peer_id}: {e}")
 
                 # Wait for next sync interval
                 await asyncio.sleep(self.sync_interval_sec)
 
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 logger.error(f"Error in background sync: {e}")
                 await asyncio.sleep(self.sync_interval_sec)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "node_id": self.node_id,

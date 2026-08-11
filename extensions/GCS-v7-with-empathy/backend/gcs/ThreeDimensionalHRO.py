@@ -8,13 +8,14 @@ The 3-Dimensional Human-Robot Optimization (HRO) system that manages:
 """
 
 import logging
-import numpy as np
-from typing import Dict, List, Tuple, Any, Optional
-from enum import Enum
 import time
+from enum import Enum
+from typing import Any
+
+import numpy as np
 
 try:
-    import torch
+    import torch  # noqa: F401
     PYTORCH_AVAILABLE = True
 except ImportError:
     PYTORCH_AVAILABLE = False
@@ -46,8 +47,8 @@ class ThreeDimensionalHRO:
     """
     Core 3NGIN3 architecture component implementing the three-dimensional optimization system.
     """
-    
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+
+    def __init__(self, config: dict[str, Any] | None = None):
         self.config = config or {}
         self.current_config = (
             ReasoningMode.SEQUENTIAL,
@@ -56,30 +57,30 @@ class ThreeDimensionalHRO:
         )
         self.meta_controller = MetaController(self.config)
         self._execution_history = []
-        
+
         logging.info("ThreeDimensionalHRO initialized with default configuration")
-        
+
     def set_configuration(self, x_mode: ReasoningMode, y_backend: ComputeBackend, z_strategy: OptimizationStrategy):
         """Set the current (X, Y, Z) configuration"""
         self.current_config = (x_mode, y_backend, z_strategy)
         logging.info(f"Configuration updated to: {x_mode.value}, {y_backend.value}, {z_strategy.value}")
-        
-    def execute_task(self, task_data: Dict[str, Any]) -> Dict[str, Any]:
+
+    def execute_task(self, task_data: dict[str, Any]) -> dict[str, Any]:
         """Execute a task using the current (X, Y, Z) configuration"""
         start_time = time.time()
         x_mode, y_backend, z_strategy = self.current_config
-        
+
         # X-Axis: Apply reasoning mode
         reasoning_result = self._apply_reasoning_mode(x_mode, task_data)
-        
+
         # Y-Axis: Apply compute backend
         compute_result = self._apply_compute_backend(y_backend, reasoning_result)
-        
+
         # Z-Axis: Apply optimization strategy
         final_result = self._apply_optimization_strategy(z_strategy, compute_result)
-        
+
         execution_time = time.time() - start_time
-        
+
         result = {
             "output": final_result,
             "execution_time": execution_time,
@@ -94,11 +95,11 @@ class ThreeDimensionalHRO:
                 "optimization_complexity": z_strategy.value
             }
         }
-        
+
         self._execution_history.append(result)
         return result
-        
-    def _apply_reasoning_mode(self, mode: ReasoningMode, data: Dict[str, Any]) -> Dict[str, Any]:
+
+    def _apply_reasoning_mode(self, mode: ReasoningMode, data: dict[str, Any]) -> dict[str, Any]:
         """Apply the selected reasoning mode (X-Axis)"""
         if mode == ReasoningMode.SEQUENTIAL:
             return self._sequential_reasoning(data)
@@ -108,8 +109,8 @@ class ThreeDimensionalHRO:
             return self._hybrid_reasoning(data)
         else:
             raise ValueError(f"Unknown reasoning mode: {mode}")
-            
-    def _apply_compute_backend(self, backend: ComputeBackend, data: Dict[str, Any]) -> Dict[str, Any]:
+
+    def _apply_compute_backend(self, backend: ComputeBackend, data: dict[str, Any]) -> dict[str, Any]:
         """Apply the selected compute backend (Y-Axis)"""
         if backend == ComputeBackend.LOCAL:
             return self._local_compute(data)
@@ -119,8 +120,8 @@ class ThreeDimensionalHRO:
             return self._quantum_compute(data)
         else:
             raise ValueError(f"Unknown compute backend: {backend}")
-            
-    def _apply_optimization_strategy(self, strategy: OptimizationStrategy, data: Dict[str, Any]) -> Any:
+
+    def _apply_optimization_strategy(self, strategy: OptimizationStrategy, data: dict[str, Any]) -> Any:
         """Apply the selected optimization strategy (Z-Axis)"""
         if strategy == OptimizationStrategy.SIMPLE:
             return self._simple_optimization(data)
@@ -130,9 +131,9 @@ class ThreeDimensionalHRO:
             return self._adaptive_optimization(data)
         else:
             raise ValueError(f"Unknown optimization strategy: {strategy}")
-            
+
     # X-Axis Implementation: Reasoning Modes
-    def _sequential_reasoning(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _sequential_reasoning(self, data: dict[str, Any]) -> dict[str, Any]:
         """Sequential logic-based reasoning"""
         # Simple logic-based problem solving
         if "problem" in data:
@@ -151,24 +152,24 @@ class ThreeDimensionalHRO:
                 else:
                     result = None
                 return {"reasoning_output": result, "method": "sequential_logic"}
-        
+
         return {"reasoning_output": data, "method": "sequential_passthrough"}
-        
-    def _neural_reasoning(self, data: Dict[str, Any]) -> Dict[str, Any]:
+
+    def _neural_reasoning(self, data: dict[str, Any]) -> dict[str, Any]:
         """Neural network-based reasoning"""
         if PYTORCH_AVAILABLE and "patterns" in data:
             # Detect non-linear patterns using simple neural approach
             patterns = np.array(data["patterns"])
             if len(patterns.shape) == 1:
                 patterns = patterns.reshape(-1, 1)
-                
+
             # Simple pattern detection - look for non-linear relationships
             variance = np.var(patterns)
             mean = np.mean(patterns)
-            
+
             # If variance is high relative to mean, activate neural mode
             neural_activated = variance > (abs(mean) * 0.5) if mean != 0 else variance > 1.0
-            
+
             return {
                 "reasoning_output": {
                     "neural_activated": neural_activated,
@@ -185,12 +186,12 @@ class ThreeDimensionalHRO:
                 "method": "neural_fallback",
                 "pytorch_available": PYTORCH_AVAILABLE
             }
-            
-    def _hybrid_reasoning(self, data: Dict[str, Any]) -> Dict[str, Any]:
+
+    def _hybrid_reasoning(self, data: dict[str, Any]) -> dict[str, Any]:
         """Hybrid reasoning combining sequential and neural"""
         sequential_result = self._sequential_reasoning(data)
         neural_result = self._neural_reasoning(data)
-        
+
         # Blend the outputs
         blended_output = {
             "sequential": sequential_result["reasoning_output"],
@@ -198,11 +199,11 @@ class ThreeDimensionalHRO:
             "blend_weight": 0.6,  # 60% sequential, 40% neural
             "hybrid_decision": "combined_analysis"
         }
-        
+
         return {"reasoning_output": blended_output, "method": "hybrid"}
-        
+
     # Y-Axis Implementation: Compute Backends
-    def _local_compute(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _local_compute(self, data: dict[str, Any]) -> dict[str, Any]:
         """Local computation backend"""
         # Execute on local machine
         return {
@@ -211,8 +212,8 @@ class ThreeDimensionalHRO:
             "execution_location": "local_machine",
             "success": True
         }
-        
-    def _distributed_compute(self, data: Dict[str, Any]) -> Dict[str, Any]:
+
+    def _distributed_compute(self, data: dict[str, Any]) -> dict[str, Any]:
         """Distributed computation backend (simulated)"""
         # Simulate distributed execution with formatting
         formatted_task = {
@@ -221,7 +222,7 @@ class ThreeDimensionalHRO:
             "nodes": ["node_1", "node_2", "node_3"],
             "coordination": "master_worker"
         }
-        
+
         return {
             "compute_output": data["reasoning_output"],
             "backend": "distributed",
@@ -229,8 +230,8 @@ class ThreeDimensionalHRO:
             "simulated": True,
             "success": True
         }
-        
-    def _quantum_compute(self, data: Dict[str, Any]) -> Dict[str, Any]:
+
+    def _quantum_compute(self, data: dict[str, Any]) -> dict[str, Any]:
         """Quantum computation backend (simulated)"""
         # Simulate quantum computation with proper formatting
         quantum_circuit = {
@@ -239,7 +240,7 @@ class ThreeDimensionalHRO:
             "measurement": "computational_basis",
             "shots": 1024
         }
-        
+
         return {
             "compute_output": data["reasoning_output"],
             "backend": "quantum",
@@ -247,16 +248,16 @@ class ThreeDimensionalHRO:
             "simulated": True,
             "success": True
         }
-        
+
     # Z-Axis Implementation: Optimization Strategies
-    def _simple_optimization(self, data: Dict[str, Any]) -> Any:
+    def _simple_optimization(self, data: dict[str, Any]) -> Any:
         """Simple optimization strategy"""
         compute_output = data.get("compute_output", data)
-        
+
         # Handle case where compute_output is not a dict
         if not isinstance(compute_output, dict):
             return compute_output
-            
+
         if "search_space" in compute_output:
             search_space = compute_output["search_space"]
             # Simple exhaustive search for small spaces
@@ -267,17 +268,17 @@ class ThreeDimensionalHRO:
                     "method": "exhaustive_search",
                     "iterations": len(search_space)
                 }
-        
+
         return compute_output
-        
-    def _complex_optimization(self, data: Dict[str, Any]) -> Any:
+
+    def _complex_optimization(self, data: dict[str, Any]) -> Any:
         """Complex optimization strategy for QUBO problems"""
         compute_output = data.get("compute_output", data)
-        
+
         # Handle case where compute_output is not a dict
         if not isinstance(compute_output, dict):
             return compute_output
-        
+
         # Check if this is a QUBO problem
         if "qubo_matrix" in compute_output or "optimization_type" in compute_output:
             # Simulate complex QUBO optimization
@@ -288,17 +289,17 @@ class ThreeDimensionalHRO:
                 "iterations": 1000,
                 "convergence": True
             }
-            
+
         return compute_output
-        
-    def _adaptive_optimization(self, data: Dict[str, Any]) -> Any:
+
+    def _adaptive_optimization(self, data: dict[str, Any]) -> Any:
         """Adaptive optimization strategy"""
         compute_output = data.get("compute_output", data)
-        
+
         # Handle case where compute_output is not a dict
         if not isinstance(compute_output, dict):
             return compute_output
-        
+
         # Determine problem complexity and choose appropriate method
         if "search_space" in compute_output:
             search_space = compute_output["search_space"]
@@ -314,8 +315,8 @@ class ThreeDimensionalHRO:
         else:
             # Default to simple
             return self._simple_optimization(data)
-    
-    def get_execution_history(self) -> List[Dict[str, Any]]:
+
+    def get_execution_history(self) -> list[dict[str, Any]]:
         """Get the execution history for analysis"""
         return self._execution_history.copy()
 
@@ -324,17 +325,17 @@ class MetaController:
     """
     Meta-Controller for autonomous (X, Y, Z) configuration selection
     """
-    
-    def __init__(self, config: Dict[str, Any]):
+
+    def __init__(self, config: dict[str, Any]):
         self.config = config
         self.decision_history = []
-        
-    def select_optimal_configuration(self, dataset: Dict[str, Any]) -> Tuple[ReasoningMode, ComputeBackend, OptimizationStrategy]:
+
+    def select_optimal_configuration(self, dataset: dict[str, Any]) -> tuple[ReasoningMode, ComputeBackend, OptimizationStrategy]:
         """
         Autonomously select the optimal (X, Y, Z) configuration for a given dataset
         """
         dataset_type = self._analyze_dataset(dataset)
-        
+
         # Decision logic based on dataset characteristics
         if dataset_type == "image":
             # Image classification typically needs neural reasoning
@@ -351,16 +352,16 @@ class MetaController:
         else:
             # Default configuration
             config = (ReasoningMode.SEQUENTIAL, ComputeBackend.LOCAL, OptimizationStrategy.SIMPLE)
-            
+
         self.decision_history.append({
             "dataset_type": dataset_type,
             "selected_config": config,
             "reasoning": f"Selected {config} for {dataset_type} dataset"
         })
-        
+
         return config
-        
-    def _analyze_dataset(self, dataset: Dict[str, Any]) -> str:
+
+    def _analyze_dataset(self, dataset: dict[str, Any]) -> str:
         """Analyze dataset to determine its type"""
         if "images" in dataset or "pixel_data" in dataset:
             return "image"
@@ -372,7 +373,7 @@ class MetaController:
             return "tabular"
         else:
             return "unknown"
-            
-    def get_decision_history(self) -> List[Dict[str, Any]]:
+
+    def get_decision_history(self) -> list[dict[str, Any]]:
         """Get the decision history for evaluation"""
         return self.decision_history.copy()

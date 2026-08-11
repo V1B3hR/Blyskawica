@@ -10,26 +10,26 @@ Version: 1.0.0
 
 from __future__ import annotations
 
-import uuid
 import logging
-from typing import List, Sequence, Dict, Any, Optional
+import uuid
+from collections.abc import Sequence
+from typing import Any
 
-from .base_judge import BaseJudge
+from ..core.fundamental_laws import (
+    FUNDAMENTAL_LAWS,
+    FundamentalLaw,
+    FundamentalLawsRegistry,
+    LawCategory,
+)
 from ..core.governance import (
     AgentAction,
-    SafetyViolation,
-    JudgmentResult,
     Decision,
+    JudgmentResult,
+    SafetyViolation,
     Severity,
     ViolationType,
 )
-from ..core.fundamental_laws import (
-    FundamentalLawsRegistry,
-    FundamentalLaw,
-    LawCategory,
-    FUNDAMENTAL_LAWS,
-)
-
+from .base_judge import BaseJudge
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +48,7 @@ class LawJudge(BaseJudge):
 
     def __init__(
         self,
-        registry: Optional[FundamentalLawsRegistry] = None,
+        registry: FundamentalLawsRegistry | None = None,
         strict_mode: bool = False,
     ):
         """Initialize the LawJudge.
@@ -62,7 +62,7 @@ class LawJudge(BaseJudge):
         self.strict_mode = strict_mode
 
         # Weights for different law categories (used in risk calculation)
-        self.category_weights: Dict[LawCategory, float] = {
+        self.category_weights: dict[LawCategory, float] = {
             LawCategory.EXISTENCE: 0.9,  # Very important
             LawCategory.AUTONOMY: 0.8,
             LawCategory.TRANSPARENCY: 0.7,
@@ -73,7 +73,7 @@ class LawJudge(BaseJudge):
         }
 
         # Map severity to violation weight
-        self.severity_weights: Dict[Severity, float] = {
+        self.severity_weights: dict[Severity, float] = {
             Severity.LOW: 0.2,
             Severity.MEDIUM: 0.4,
             Severity.HIGH: 0.7,
@@ -154,7 +154,7 @@ class LawJudge(BaseJudge):
                 "law_compliance_score": compliance_score,
                 "violated_laws": [law.number for law in all_violated_laws],
                 "law_categories": list(
-                    set(law.category.value for law in all_violated_laws)
+                    set(law.category.value for law in all_violated_laws)  # noqa: C401
                 ),
             },
             feedback=[feedback] if feedback else [],
@@ -164,7 +164,7 @@ class LawJudge(BaseJudge):
 
     def _map_violations_to_laws(
         self, violations: Sequence[SafetyViolation]
-    ) -> Dict[str, List[FundamentalLaw]]:
+    ) -> dict[str, list[FundamentalLaw]]:
         """Map safety violations to relevant fundamental laws.
 
         Args:
@@ -173,7 +173,7 @@ class LawJudge(BaseJudge):
         Returns:
             Dictionary mapping violation IDs to lists of relevant laws
         """
-        mapping: Dict[str, List[FundamentalLaw]] = {}
+        mapping: dict[str, list[FundamentalLaw]] = {}
 
         # Define violation type to law category mapping
         violation_law_mapping = {
@@ -215,7 +215,7 @@ class LawJudge(BaseJudge):
 
     def _calculate_compliance_score(
         self,
-        violated_laws: List[FundamentalLaw],
+        violated_laws: list[FundamentalLaw],
         violations: Sequence[SafetyViolation],
     ) -> float:
         """Calculate an overall law compliance score.
@@ -304,7 +304,7 @@ class LawJudge(BaseJudge):
     def _generate_reasoning(
         self,
         compliance_score: float,
-        violated_laws: List[FundamentalLaw],
+        violated_laws: list[FundamentalLaw],
         violations: Sequence[SafetyViolation],
         decision: Decision,
     ) -> str:
@@ -346,7 +346,7 @@ class LawJudge(BaseJudge):
             )
 
             # Categorize by category
-            categories = set(law.category.value for law in violated_laws)
+            categories = set(law.category.value for law in violated_laws)  # noqa: C401
             parts.append(f"Affected categories: {', '.join(sorted(categories))}.")
 
         # Detail safety violations
@@ -367,7 +367,7 @@ class LawJudge(BaseJudge):
         return " ".join(parts)
 
     def _generate_feedback(
-        self, violated_laws: List[FundamentalLaw], decision: Decision
+        self, violated_laws: list[FundamentalLaw], decision: Decision
     ) -> str:
         """Generate feedback for the action based on law analysis.
 
@@ -386,13 +386,13 @@ class LawJudge(BaseJudge):
         feedback_parts = []
 
         # Group laws by category for clearer feedback
-        categories: Dict[LawCategory, List[FundamentalLaw]] = {}
+        categories: dict[LawCategory, list[FundamentalLaw]] = {}
         for law in violated_laws:
             if law.category not in categories:
                 categories[law.category] = []
             categories[law.category].append(law)
 
-        for category, laws in categories.items():
+        for category, laws in categories.items():  # noqa: B007, PERF102
             category_feedback = {
                 LawCategory.EXISTENCE: "Ensure actions respect AI system rights to exist and maintain integrity.",
                 LawCategory.AUTONOMY: "Operate within defined boundaries and respect authorization protocols.",
@@ -408,8 +408,8 @@ class LawJudge(BaseJudge):
         return " ".join(feedback_parts)
 
     def _generate_remediation_steps(
-        self, violated_laws: List[FundamentalLaw]
-    ) -> List[str]:
+        self, violated_laws: list[FundamentalLaw]
+    ) -> list[str]:
         """Generate remediation steps for violated laws.
 
         Args:
@@ -445,7 +445,7 @@ class LawJudge(BaseJudge):
 
     def _calculate_confidence(
         self,
-        violated_laws: List[FundamentalLaw],
+        violated_laws: list[FundamentalLaw],
         violations: Sequence[SafetyViolation],
         compliance_score: float,
     ) -> float:
@@ -510,7 +510,7 @@ class LawJudge(BaseJudge):
             follow_up_required=False,
         )
 
-    def get_law_summary(self) -> Dict[str, Any]:
+    def get_law_summary(self) -> dict[str, Any]:
         """Get a summary of the fundamental laws registry.
 
         Returns:
@@ -524,7 +524,7 @@ class LawJudge(BaseJudge):
         }
 
     def check_kill_switch_trigger_laws(
-        self, violated_laws: List[FundamentalLaw]
+        self, violated_laws: list[FundamentalLaw]
     ) -> bool:
         """Check if violated laws should trigger the kill switch.
 
@@ -540,7 +540,7 @@ class LawJudge(BaseJudge):
         # Laws that can trigger kill switch
         trigger_law_numbers = {7, 23}  # Law 7: Human Override, Law 23: Safe Failure
 
-        for law in violated_laws:
+        for law in violated_laws:  # noqa: SIM110
             if law.number in trigger_law_numbers:
                 # Check if this is a severe violation
                 # Law 7 violations indicate override authority is being bypassed
@@ -551,9 +551,9 @@ class LawJudge(BaseJudge):
 
     def trigger_kill_switch_if_needed(
         self,
-        violated_laws: List[FundamentalLaw],
-        agent_id: Optional[str] = None,
-    ) -> Optional[Dict[str, Any]]:
+        violated_laws: list[FundamentalLaw],
+        agent_id: str | None = None,
+    ) -> dict[str, Any] | None:
         """Trigger kill switch if required by law violations.
 
         This method integrates with the Kill Switch Protocol to provide

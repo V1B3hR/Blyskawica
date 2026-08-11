@@ -5,7 +5,7 @@ Translates smart system anomalies into neuromorphic stress patterns.
 
 import torch
 import torch.nn as nn
-from adaptiveneuralnetwork.core import NeuromorphicAdaptiveModel
+
 
 class NeuralSentinel(nn.Module):
     """
@@ -29,7 +29,7 @@ class NeuralSentinel(nn.Module):
         with torch.no_grad():
             threat_logits = self.threat_analyzer(metrics)
             threat_probs = torch.softmax(threat_logits, dim=-1)
-            
+
         # Normal is index 0. If any other index has high probability, we have 'Pain'
         anomaly_intensity = 1.0 - threat_probs[..., 0]
         return anomaly_intensity, threat_probs
@@ -45,9 +45,9 @@ class NeuralSentinel(nn.Module):
         """
         criterion = nn.CrossEntropyLoss()
         optimizer = torch.optim.Adam(self.parameters(), lr=0.01)
-        
+
         self.train()
-        for epoch in range(epochs):
+        for epoch in range(epochs):  # noqa: B007
             optimizer.zero_grad()
             outputs = self.threat_analyzer(data)
             loss = criterion(outputs, labels)
@@ -58,15 +58,15 @@ class NeuralSentinel(nn.Module):
 
 if __name__ == "__main__":
     sentinel = NeuralSentinel()
-    
+
     # Mock normal metrics [cpu, mem, net, packets]
     normal_metrics = torch.tensor([[0.1, 0.2, 0.05, 0.1]])
     # Mock DoS-like metrics (high network, high packets)
     dos_metrics = torch.tensor([[0.9, 0.4, 0.95, 0.9]])
-    
+
     pain_level, probs = sentinel.perceive_threat(dos_metrics)
     print(f"[SENTINEL] Detecting Threat Profile: {probs.numpy()}")
     print(f"[SENTINEL] Anomaly Torque (Pain Level): {pain_level.item():.4f}")
-    
+
     if pain_level > 0.5:
         print("[STATUS] SYSTEM BRACING: Autonomic Defense protocol engaged. 🛡️⚡️")

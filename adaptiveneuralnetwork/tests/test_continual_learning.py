@@ -232,7 +232,7 @@ class TestAnxietyRestorativeAnalysis:
         progression = high_loss_scenario['anxiety_progression']
 
         # Should have data for baseline, stress, and recovery phases
-        phases_seen = set(entry['phase'] for entry in progression)
+        phases_seen = set(entry['phase'] for entry in progression)  # noqa: C401
         assert 'baseline' in phases_seen
         assert 'stress' in phases_seen
         assert 'recovery' in phases_seen
@@ -281,7 +281,7 @@ class TestEnhancedPhaseScheduler:
         anxiety = torch.tensor([[[1.0], [6.0], [2.0], [8.0], [4.0]]])  # High anxiety for some nodes
 
         # Step with anxiety information
-        phases = scheduler.step(energy, activity, anxiety)
+        phases = scheduler.step(energy, activity, anxiety)  # noqa: F841
 
         # Check that anxiety stats are available
         anxiety_stats = scheduler.get_anxiety_stats()

@@ -20,15 +20,15 @@ Key Features:
 - Equity and fairness monitoring across demographics
 """
 
+import json
 import logging
 import time
 import uuid
-from datetime import datetime, timedelta
-from typing import Dict, Any, Optional, List, Tuple
-from enum import Enum
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from enum import Enum
 from pathlib import Path
-import json
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -79,14 +79,14 @@ class PilotSite:
     enrolled_participants: int = 0
     active_participants: int = 0
     status: PilotStatus = PilotStatus.PLANNING
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
     irb_approval: bool = False
-    irb_approval_date: Optional[datetime] = None
+    irb_approval_date: datetime | None = None
     compliance_officer: str = ""
     technical_contact: str = ""
-    professional_oversight: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    professional_oversight: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -95,14 +95,14 @@ class ParticipantProfile:
     participant_id: str
     site_id: str
     enrollment_date: datetime
-    demographic_data: Dict[str, Any]
+    demographic_data: dict[str, Any]
     consent_given: bool
-    consent_date: Optional[datetime]
-    baseline_measurements: Dict[str, float]
-    longitudinal_data: List[Dict[str, Any]] = field(default_factory=list)
+    consent_date: datetime | None
+    baseline_measurements: dict[str, float]
+    longitudinal_data: list[dict[str, Any]] = field(default_factory=list)
     status: str = "active"
-    withdrawal_date: Optional[datetime] = None
-    privacy_preferences: Dict[str, bool] = field(default_factory=dict)
+    withdrawal_date: datetime | None = None
+    privacy_preferences: dict[str, bool] = field(default_factory=dict)
 
 
 @dataclass
@@ -122,7 +122,7 @@ class PilotMetrics:
     latency_p95_ms: float
     fairness_score: float
     incidents: int
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -134,11 +134,11 @@ class Incident:
     severity: IncidentSeverity
     category: str
     description: str
-    affected_participants: List[str]
-    response_actions: List[str]
-    resolution_time_min: Optional[float] = None
+    affected_participants: list[str]
+    response_actions: list[str]
+    resolution_time_min: float | None = None
     resolved: bool = False
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class SocietalPilotManager:
@@ -152,18 +152,18 @@ class SocietalPilotManager:
     - Incident response and escalation
     - Compliance and ethics oversight
     - Longitudinal data collection
-    """
-    
-    def __init__(self, data_dir: Optional[Path] = None):
+    """  # noqa: W293
+
+    def __init__(self, data_dir: Path | None = None):
         """Initialize pilot management system"""
         self.data_dir = data_dir or Path("/tmp/gcs_pilots")
         self.data_dir.mkdir(parents=True, exist_ok=True)
-        
-        self.sites: Dict[str, PilotSite] = {}
-        self.participants: Dict[str, ParticipantProfile] = {}
-        self.metrics_history: List[PilotMetrics] = []
-        self.incidents: List[Incident] = []
-        
+
+        self.sites: dict[str, PilotSite] = {}
+        self.participants: dict[str, ParticipantProfile] = {}
+        self.metrics_history: list[PilotMetrics] = []
+        self.incidents: list[Incident] = []
+
         # Monitoring thresholds
         self.alert_thresholds = {
             'min_uptime_percent': 99.0,
@@ -173,9 +173,9 @@ class SocietalPilotManager:
             'max_crisis_rate_per_hour': 10,
             'min_user_satisfaction': 4.0
         }
-        
+
         logger.info("SocietalPilotManager initialized")
-    
+
     def register_pilot_site(self, site: PilotSite) -> str:
         """
         Register a new pilot site.
@@ -185,29 +185,29 @@ class SocietalPilotManager:
             
         Returns:
             site_id of registered site
-        """
+        """  # noqa: W293
         if site.site_id in self.sites:
             raise ValueError(f"Site {site.site_id} already registered")
-        
+
         self.sites[site.site_id] = site
-        
+
         # Create site directory
         site_dir = self.data_dir / site.site_id
         site_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Save site configuration
         self._save_site_config(site)
-        
+
         logger.info(f"Registered pilot site: {site.site_name} ({site.site_id}) - "
                    f"Context: {site.context.value}, Target: {site.target_participants} participants")
-        
+
         return site.site_id
-    
-    def enroll_participant(self, 
+
+    def enroll_participant(self,
                           site_id: str,
-                          demographic_data: Dict[str, Any],
+                          demographic_data: dict[str, Any],
                           consent_given: bool,
-                          baseline_measurements: Optional[Dict[str, float]] = None) -> str:
+                          baseline_measurements: dict[str, float] | None = None) -> str:
         """
         Enroll a participant in a pilot site.
         
@@ -219,16 +219,16 @@ class SocietalPilotManager:
             
         Returns:
             participant_id of enrolled participant
-        """
+        """  # noqa: W293
         if site_id not in self.sites:
             raise ValueError(f"Site {site_id} not found")
-        
+
         if not consent_given:
             raise ValueError("Cannot enroll participant without informed consent")
-        
+
         # Generate anonymous participant ID
         participant_id = f"{site_id}_P{str(uuid.uuid4())[:8]}"
-        
+
         participant = ParticipantProfile(
             participant_id=participant_id,
             site_id=site_id,
@@ -243,30 +243,30 @@ class SocietalPilotManager:
                 'professional_contact': True
             }
         )
-        
+
         self.participants[participant_id] = participant
         self.sites[site_id].enrolled_participants += 1
         self.sites[site_id].active_participants += 1
-        
+
         # Save participant data
         self._save_participant_data(participant)
-        
+
         logger.info(f"Enrolled participant {participant_id} at site {site_id}")
-        
+
         return participant_id
-    
+
     def record_pilot_metrics(self, metrics: PilotMetrics):
         """
         Record real-time pilot metrics.
         
         Args:
             metrics: PilotMetrics snapshot
-        """
+        """  # noqa: W293
         self.metrics_history.append(metrics)
-        
+
         # Check for anomalies and alert if needed
         alerts = self._check_metric_thresholds(metrics)
-        
+
         if alerts:
             for alert in alerts:
                 logger.warning(f"PILOT ALERT [{metrics.site_id}]: {alert}")
@@ -276,36 +276,36 @@ class SocietalPilotManager:
                     category="performance_threshold",
                     description=alert
                 )
-        
+
         # Periodic save
         if len(self.metrics_history) % 100 == 0:
             self._save_metrics_batch()
-    
-    def _check_metric_thresholds(self, metrics: PilotMetrics) -> List[str]:
+
+    def _check_metric_thresholds(self, metrics: PilotMetrics) -> list[str]:
         """Check if metrics violate thresholds"""
         alerts = []
-        
+
         if metrics.system_uptime_percent < self.alert_thresholds['min_uptime_percent']:
             alerts.append(f"System uptime below threshold: {metrics.system_uptime_percent:.1f}%")
-        
+
         if metrics.latency_p95_ms > self.alert_thresholds['max_latency_p95_ms']:
             alerts.append(f"Latency P95 above threshold: {metrics.latency_p95_ms:.1f}ms")
-        
+
         if metrics.emotion_recognition_accuracy < self.alert_thresholds['min_accuracy']:
             alerts.append(f"Accuracy below threshold: {metrics.emotion_recognition_accuracy:.3f}")
-        
+
         if metrics.fairness_score < self.alert_thresholds['min_fairness_score']:
             alerts.append(f"Fairness score below threshold: {metrics.fairness_score:.3f}")
-        
+
         if metrics.user_satisfaction < self.alert_thresholds['min_user_satisfaction']:
             alerts.append(f"User satisfaction below threshold: {metrics.user_satisfaction:.2f}/5.0")
-        
+
         return alerts
-    
+
     def create_crisis_escalation(self,
                                 site_id: str,
                                 participant_id: str,
-                                crisis_data: Dict[str, Any]) -> str:
+                                crisis_data: dict[str, Any]) -> str:
         """
         Create crisis escalation for professional intervention.
         
@@ -318,7 +318,7 @@ class SocietalPilotManager:
             
         Returns:
             incident_id for tracking
-        """
+        """  # noqa: W293
         incident_id = self._create_incident(
             site_id=site_id,
             severity=IncidentSeverity.CRITICAL,
@@ -327,24 +327,24 @@ class SocietalPilotManager:
             affected_participants=[participant_id],
             metadata=crisis_data
         )
-        
+
         # Trigger professional alert
         self._alert_professional_oversight(site_id, incident_id, crisis_data)
-        
+
         logger.critical(f"Crisis escalation created: {incident_id} at site {site_id}")
-        
+
         return incident_id
-    
+
     def _create_incident(self,
                         site_id: str,
                         severity: IncidentSeverity,
                         category: str,
                         description: str,
-                        affected_participants: Optional[List[str]] = None,
-                        metadata: Optional[Dict[str, Any]] = None) -> str:
+                        affected_participants: list[str] | None = None,
+                        metadata: dict[str, Any] | None = None) -> str:
         """Create and log an incident"""
         incident_id = f"INC_{str(uuid.uuid4())[:8]}"
-        
+
         incident = Incident(
             incident_id=incident_id,
             site_id=site_id,
@@ -356,16 +356,16 @@ class SocietalPilotManager:
             response_actions=[],
             metadata=metadata or {}
         )
-        
+
         self.incidents.append(incident)
         self._save_incident(incident)
-        
+
         return incident_id
-    
-    def _alert_professional_oversight(self, 
+
+    def _alert_professional_oversight(self,
                                      site_id: str,
                                      incident_id: str,
-                                     crisis_data: Dict[str, Any]):
+                                     crisis_data: dict[str, Any]):
         """
         Alert professional oversight team.
         
@@ -373,12 +373,12 @@ class SocietalPilotManager:
         - Send notifications to on-call professionals
         - Create tickets in oversight system
         - Trigger emergency protocols if needed
-        """
+        """  # noqa: W293
         site = self.sites.get(site_id)
         if not site:
             logger.error(f"Site {site_id} not found for professional alert")
             return
-        
+
         alert_message = {
             'incident_id': incident_id,
             'site_id': site_id,
@@ -388,12 +388,12 @@ class SocietalPilotManager:
             'professional_contacts': site.professional_oversight,
             'action_required': 'immediate_response'
         }
-        
+
         logger.info(f"Professional alert sent: {json.dumps(alert_message, indent=2)}")
-        
+
         # In production: send actual notifications (email, SMS, pager, etc.)
-    
-    def get_pilot_dashboard(self, site_id: Optional[str] = None) -> Dict[str, Any]:
+
+    def get_pilot_dashboard(self, site_id: str | None = None) -> dict[str, Any]:
         """
         Get comprehensive pilot dashboard data.
         
@@ -402,22 +402,22 @@ class SocietalPilotManager:
             
         Returns:
             Dashboard data with key metrics and status
-        """
+        """  # noqa: W293
         if site_id:
             sites_to_report = [self.sites[site_id]] if site_id in self.sites else []
         else:
             sites_to_report = list(self.sites.values())
-        
+
         # Aggregate metrics
         total_enrolled = sum(s.enrolled_participants for s in sites_to_report)
         total_active = sum(s.active_participants for s in sites_to_report)
-        
+
         # Recent metrics (last 24 hours)
         recent_cutoff = datetime.now() - timedelta(hours=24)
-        recent_metrics = [m for m in self.metrics_history 
-                         if m.timestamp > recent_cutoff and 
+        recent_metrics = [m for m in self.metrics_history
+                         if m.timestamp > recent_cutoff and
                          (not site_id or m.site_id == site_id)]
-        
+
         avg_accuracy = (sum(m.emotion_recognition_accuracy for m in recent_metrics) / len(recent_metrics)
                        if recent_metrics else 0)
         avg_latency = (sum(m.latency_p95_ms for m in recent_metrics) / len(recent_metrics)
@@ -426,21 +426,21 @@ class SocietalPilotManager:
                            if recent_metrics else 0)
         avg_fairness = (sum(m.fairness_score for m in recent_metrics) / len(recent_metrics)
                        if recent_metrics else 0)
-        
+
         # Incidents
-        recent_incidents = [i for i in self.incidents 
-                           if i.timestamp > recent_cutoff and 
+        recent_incidents = [i for i in self.incidents
+                           if i.timestamp > recent_cutoff and
                            (not site_id or i.site_id == site_id)]
-        
-        critical_incidents = [i for i in recent_incidents 
+
+        critical_incidents = [i for i in recent_incidents
                              if i.severity in [IncidentSeverity.CRITICAL, IncidentSeverity.EMERGENCY]]
-        
+
         dashboard = {
             'timestamp': datetime.now().isoformat(),
             'sites': {
                 'total': len(sites_to_report),
                 'active': len([s for s in sites_to_report if s.status == PilotStatus.ACTIVE]),
-                'contexts': list(set(s.context.value for s in sites_to_report))
+                'contexts': list(set(s.context.value for s in sites_to_report))  # noqa: C401
             },
             'participants': {
                 'total_enrolled': total_enrolled,
@@ -456,7 +456,7 @@ class SocietalPilotManager:
             'safety': {
                 'incidents_24h': len(recent_incidents),
                 'critical_incidents_24h': len(critical_incidents),
-                'crisis_escalations_24h': len([i for i in recent_incidents 
+                'crisis_escalations_24h': len([i for i in recent_incidents
                                                if i.category == 'crisis_escalation'])
             },
             'phase20_exit_criteria': {
@@ -474,12 +474,12 @@ class SocietalPilotManager:
                 'target_critical_incidents': 0
             }
         }
-        
+
         return dashboard
-    
-    def generate_longitudinal_report(self, 
+
+    def generate_longitudinal_report(self,
                                     participant_id: str,
-                                    metric_name: str = "well_being_score") -> Dict[str, Any]:
+                                    metric_name: str = "well_being_score") -> dict[str, Any]:
         """
         Generate longitudinal analysis for a participant.
         
@@ -491,22 +491,22 @@ class SocietalPilotManager:
             
         Returns:
             Longitudinal report with trend analysis
-        """
+        """  # noqa: W293
         if participant_id not in self.participants:
             raise ValueError(f"Participant {participant_id} not found")
-        
+
         participant = self.participants[participant_id]
-        
+
         # Get baseline
         baseline_value = participant.baseline_measurements.get(metric_name, 0)
-        
+
         # Get longitudinal data
         measurements = [
             (entry['timestamp'], entry['metrics'].get(metric_name, 0))
             for entry in participant.longitudinal_data
             if 'metrics' in entry and metric_name in entry['metrics']
         ]
-        
+
         if not measurements:
             return {
                 'participant_id': participant_id,
@@ -514,12 +514,12 @@ class SocietalPilotManager:
                 'status': 'insufficient_data',
                 'baseline': baseline_value
             }
-        
+
         # Calculate trend
         current_value = measurements[-1][1] if measurements else baseline_value
         change = current_value - baseline_value
         percent_change = (change / baseline_value * 100) if baseline_value != 0 else 0
-        
+
         report = {
             'participant_id': participant_id,
             'metric': metric_name,
@@ -533,14 +533,14 @@ class SocietalPilotManager:
             'phase20_target': 20.0,  # 20% improvement
             'meets_target': percent_change >= 20.0
         }
-        
+
         return report
-    
+
     def _save_site_config(self, site: PilotSite):
         """Save site configuration to disk"""
         site_file = self.data_dir / site.site_id / "site_config.json"
         site_file.parent.mkdir(parents=True, exist_ok=True)
-        
+
         site_data = {
             'site_id': site.site_id,
             'site_name': site.site_name,
@@ -551,38 +551,38 @@ class SocietalPilotManager:
             'status': site.status.value,
             'irb_approval': site.irb_approval
         }
-        
+
         with open(site_file, 'w') as f:
             json.dump(site_data, f, indent=2)
-    
+
     def _save_participant_data(self, participant: ParticipantProfile):
         """Save participant data with privacy protection"""
-        participant_file = (self.data_dir / participant.site_id / 
+        participant_file = (self.data_dir / participant.site_id /
                            "participants" / f"{participant.participant_id}.json")
         participant_file.parent.mkdir(parents=True, exist_ok=True)
-        
+
         # Only save anonymized data
         participant_data = {
             'participant_id': participant.participant_id,
             'site_id': participant.site_id,
             'enrollment_date': participant.enrollment_date.isoformat(),
             'demographic_summary': {
-                k: v for k, v in participant.demographic_data.items() 
+                k: v for k, v in participant.demographic_data.items()
                 if k in ['age_range', 'gender', 'ethnicity']
             },
             'consent_given': participant.consent_given,
             'status': participant.status
         }
-        
+
         with open(participant_file, 'w') as f:
             json.dump(participant_data, f, indent=2)
-    
+
     def _save_incident(self, incident: Incident):
         """Save incident record"""
-        incident_file = (self.data_dir / incident.site_id / 
+        incident_file = (self.data_dir / incident.site_id /
                         "incidents" / f"{incident.incident_id}.json")
         incident_file.parent.mkdir(parents=True, exist_ok=True)
-        
+
         incident_data = {
             'incident_id': incident.incident_id,
             'site_id': incident.site_id,
@@ -592,18 +592,18 @@ class SocietalPilotManager:
             'description': incident.description,
             'resolved': incident.resolved
         }
-        
+
         with open(incident_file, 'w') as f:
             json.dump(incident_data, f, indent=2)
-    
+
     def _save_metrics_batch(self):
         """Save batch of metrics to disk"""
         metrics_file = self.data_dir / "metrics" / f"batch_{int(time.time())}.json"
         metrics_file.parent.mkdir(parents=True, exist_ok=True)
-        
+
         # Save last 100 metrics
         recent_metrics = self.metrics_history[-100:]
-        
+
         metrics_data = [
             {
                 'site_id': m.site_id,
@@ -616,7 +616,7 @@ class SocietalPilotManager:
             }
             for m in recent_metrics
         ]
-        
+
         with open(metrics_file, 'w') as f:
             json.dump(metrics_data, f, indent=2)
 
@@ -624,7 +624,7 @@ class SocietalPilotManager:
 # Global instance
 _pilot_manager = None
 
-def get_pilot_manager(data_dir: Optional[Path] = None) -> SocietalPilotManager:
+def get_pilot_manager(data_dir: Path | None = None) -> SocietalPilotManager:
     """Get global pilot manager instance"""
     global _pilot_manager
     if _pilot_manager is None:

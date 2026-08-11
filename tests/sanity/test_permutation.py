@@ -19,7 +19,7 @@ def test_permutation_degrades_performance(make_loader):
     
     This verifies that the model learns meaningful feature relationships
     rather than just memorizing input-output mappings.
-    """
+    """  # noqa: W293
     # Create a simple model
     class SimpleModel(nn.Module):
         def __init__(self, input_dim: int = 32, num_classes: int = 5):
@@ -71,7 +71,7 @@ def test_permutation_degrades_performance(make_loader):
 
         # Train
         model.train()
-        for epoch in range(15):  # Sufficient epochs to learn pattern
+        for epoch in range(15):  # Sufficient epochs to learn pattern  # noqa: B007
             for batch_x, batch_y in train_loader:
                 optimizer.zero_grad()
                 output = model(batch_x)
@@ -153,7 +153,7 @@ def test_multiple_permutations_consistency(make_loader):
     
     This ensures the permutation effect is robust and not due to a lucky/unlucky
     specific permutation.
-    """
+    """  # noqa: W293
     # Create a simple model class (reuse from above)
     class SimpleModel(nn.Module):
         def __init__(self, input_dim: int = 32, num_classes: int = 5):
@@ -205,8 +205,8 @@ def test_multiple_permutations_consistency(make_loader):
     X_val, y_val = create_structured_data_v2(60, seed=200)
 
     # Test with multiple different permutations
-    original_loader = DataLoader(TensorDataset(X_train, y_train), batch_size=32, shuffle=True)
-    val_loader = DataLoader(TensorDataset(X_val, y_val), batch_size=32)
+    original_loader = DataLoader(TensorDataset(X_train, y_train), batch_size=32, shuffle=True)  # noqa: F841
+    val_loader = DataLoader(TensorDataset(X_val, y_val), batch_size=32)  # noqa: F841
 
     permuted_accuracies = []
 
@@ -233,7 +233,7 @@ def test_multiple_permutations_consistency(make_loader):
         criterion = nn.CrossEntropyLoss()
 
         model.train()
-        for epoch in range(10):
+        for epoch in range(10):  # noqa: B007
             for batch_x, batch_y in perm_train_loader:
                 optimizer.zero_grad()
                 output = model(batch_x)
@@ -265,7 +265,7 @@ def test_multiple_permutations_consistency(make_loader):
         f"Permuted accuracies too variable: {permuted_accuracies} (range: {consistency_range:.3f})"
 
     # All should be reasonably close to chance level, indicating structure was broken
-    chance_level = 0.2
+    chance_level = 0.2  # noqa: F841
     for i, acc in enumerate(permuted_accuracies):
         assert acc < 0.6, \
             f"Permutation {i} accuracy {acc:.3f} too high - structure not properly broken"

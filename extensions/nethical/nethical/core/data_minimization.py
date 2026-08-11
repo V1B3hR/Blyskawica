@@ -4,13 +4,13 @@ This module provides automatic data retention policies, minimal data collection,
 anonymization pipelines, and GDPR right-to-be-forgotten support.
 """
 
-from typing import Dict, List, Optional, Any
+import hashlib
+import json
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-import hashlib
-import json
 from pathlib import Path
+from typing import Any
 
 
 class DataCategory(Enum):
@@ -54,10 +54,10 @@ class DataRecord:
     category: DataCategory
     created_at: datetime
     expires_at: datetime
-    data: Dict[str, Any]
+    data: dict[str, Any]
     anonymized: bool = False
     deleted: bool = False
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -67,11 +67,11 @@ class DeletionRequest:
     request_id: str
     user_id: str
     requested_at: datetime
-    data_categories: List[DataCategory]
+    data_categories: list[DataCategory]
     status: str  # "pending", "processing", "completed", "failed"
-    completed_at: Optional[datetime] = None
+    completed_at: datetime | None = None
     records_deleted: int = 0
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class DataMinimization:
@@ -132,7 +132,7 @@ class DataMinimization:
     def __init__(
         self,
         storage_dir: str = "./data_minimization",
-        custom_policies: Optional[Dict[DataCategory, RetentionRule]] = None,
+        custom_policies: dict[DataCategory, RetentionRule] | None = None,
         enable_auto_deletion: bool = True,
         anonymization_enabled: bool = True,
     ):
@@ -156,8 +156,8 @@ class DataMinimization:
         self.anonymization_enabled = anonymization_enabled
 
         # Storage
-        self.records: Dict[str, DataRecord] = {}
-        self.deletion_requests: Dict[str, DeletionRequest] = {}
+        self.records: dict[str, DataRecord] = {}
+        self.deletion_requests: dict[str, DeletionRequest] = {}
 
         # Statistics
         self.stats = {
@@ -170,9 +170,9 @@ class DataMinimization:
 
     def store_data(
         self,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         category: DataCategory,
-        user_id: Optional[str] = None,
+        user_id: str | None = None,
         minimal_fields_only: bool = True,
     ) -> DataRecord:
         """Store data with minimal necessary information.
@@ -222,7 +222,7 @@ class DataMinimization:
 
     def anonymize_data(
         self, record_id: str, anonymization_level: str = "standard"
-    ) -> Optional[DataRecord]:
+    ) -> DataRecord | None:
         """Anonymize a data record.
 
         Args:
@@ -252,7 +252,7 @@ class DataMinimization:
 
         return record
 
-    def process_retention_policy(self) -> Dict[str, Any]:
+    def process_retention_policy(self) -> dict[str, Any]:
         """Process retention policies and delete/anonymize expired records.
 
         Returns:
@@ -302,7 +302,7 @@ class DataMinimization:
         }
 
     def request_data_deletion(
-        self, user_id: str, categories: Optional[List[DataCategory]] = None
+        self, user_id: str, categories: list[DataCategory] | None = None
     ) -> DeletionRequest:
         """Request deletion of user data (right-to-be-forgotten).
 
@@ -346,7 +346,7 @@ class DataMinimization:
         deleted_count = 0
 
         # Find and delete user records
-        for record_id, record in self.records.items():
+        for record_id, record in self.records.items():  # noqa: B007, PERF102
             if record.deleted:
                 continue
 
@@ -371,8 +371,8 @@ class DataMinimization:
         self.stats["active_deletion_requests"] -= 1
 
     def _extract_minimal_fields(
-        self, data: Dict[str, Any], category: DataCategory
-    ) -> Dict[str, Any]:
+        self, data: dict[str, Any], category: DataCategory
+    ) -> dict[str, Any]:
         """Extract only minimal necessary fields from data.
 
         Args:
@@ -397,7 +397,7 @@ class DataMinimization:
 
         # Extract only required fields
         minimal = {}
-        for field in required:
+        for field in required:  # noqa: F402
             if field in data:
                 minimal[field] = data[field]
 
@@ -408,8 +408,8 @@ class DataMinimization:
         return minimal if minimal else data
 
     def _anonymize_fields(
-        self, data: Dict[str, Any], category: DataCategory, level: str
-    ) -> Dict[str, Any]:
+        self, data: dict[str, Any], category: DataCategory, level: str
+    ) -> dict[str, Any]:
         """Anonymize data fields based on category and level.
 
         Args:
@@ -431,7 +431,7 @@ class DataMinimization:
 
         fields_to_anonymize = sensitive_fields.get(category, [])
 
-        for field in fields_to_anonymize:
+        for field in fields_to_anonymize:  # noqa: F402
             if field in anonymized:
                 if level == "aggressive":
                     # Remove field entirely
@@ -457,7 +457,7 @@ class DataMinimization:
             Generalized value
         """
         # Email: keep domain
-        if "email" in field_name.lower() and isinstance(value, str):
+        if "email" in field_name.lower() and isinstance(value, str):  # noqa: SIM102
             if "@" in value:
                 return f"***@{value.split('@')[1]}"
 
@@ -483,7 +483,7 @@ class DataMinimization:
         # Default: hash
         return hashlib.sha256(str(value).encode()).hexdigest()[:8]
 
-    def _generate_record_id(self, data: Dict[str, Any], user_id: Optional[str]) -> str:
+    def _generate_record_id(self, data: dict[str, Any], user_id: str | None) -> str:
         """Generate unique record ID."""
         # Convert datetime objects to strings for JSON serialization
         serializable_data = {}
@@ -498,7 +498,7 @@ class DataMinimization:
         combined = f"{user_id}{content}{timestamp}"
         return hashlib.sha256(combined.encode()).hexdigest()[:16]
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get data minimization statistics."""
         return {
             "total_records": self.stats["total_records"],
@@ -512,7 +512,7 @@ class DataMinimization:
             },
         }
 
-    def validate_compliance(self) -> Dict[str, Any]:
+    def validate_compliance(self) -> dict[str, Any]:
         """Validate compliance with data minimization principles.
 
         Returns:
@@ -575,7 +575,7 @@ class DataMinimization:
 
         return validation
 
-    def generate_retention_report(self) -> Dict[str, Any]:
+    def generate_retention_report(self) -> dict[str, Any]:
         """Generate comprehensive retention policy report.
 
         Returns:

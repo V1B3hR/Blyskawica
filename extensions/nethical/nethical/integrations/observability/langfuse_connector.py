@@ -1,15 +1,16 @@
 """Langfuse integration for Nethical governance observability."""
 
-from .base import ObservabilityProvider, TraceSpan, GovernanceMetrics
-from typing import Dict, Any, Optional
 import logging
+from typing import Any
+
+from .base import GovernanceMetrics, ObservabilityProvider, TraceSpan
 
 logger = logging.getLogger(__name__)
 
 
 class LangfuseConnector(ObservabilityProvider):
     """Langfuse integration for Nethical governance observability."""
-    
+
     def __init__(
         self,
         public_key: str,
@@ -22,7 +23,7 @@ class LangfuseConnector(ObservabilityProvider):
             public_key: Langfuse public API key
             secret_key: Langfuse secret API key
             host: Langfuse host URL
-        """
+        """  # noqa: W293
         try:
             from langfuse import Langfuse
             self.langfuse = Langfuse(
@@ -36,19 +37,19 @@ class LangfuseConnector(ObservabilityProvider):
             logger.warning("Langfuse not available. Install with: pip install langfuse")
             self.langfuse = None
             self.available = False
-    
+
     def log_trace(self, span: TraceSpan) -> None:
         """Log a trace span with governance data."""
         if not self.available:
             return
-            
+
         try:
             trace = self.langfuse.trace(
                 id=span.trace_id,
                 name=span.name,
                 metadata=span.attributes
             )
-            
+
             trace.span(
                 id=span.span_id,
                 parent_observation_id=span.parent_span_id,
@@ -62,22 +63,22 @@ class LangfuseConnector(ObservabilityProvider):
             )
         except Exception as e:
             logger.error(f"Failed to log trace to Langfuse: {e}")
-    
+
     def log_governance_event(
         self,
         action: str,
         decision: str,
         risk_score: float,
-        metadata: Dict[str, Any]
+        metadata: dict[str, Any]
     ) -> None:
         """Log a governance evaluation event."""
         if not self.available:
             return
-            
+
         try:
             # Truncate action for storage limits
             truncated_action = action[:500] if len(action) > 500 else action
-            
+
             self.langfuse.event(
                 name="nethical_governance",
                 metadata={
@@ -90,12 +91,12 @@ class LangfuseConnector(ObservabilityProvider):
             )
         except Exception as e:
             logger.error(f"Failed to log governance event to Langfuse: {e}")
-    
+
     def log_metrics(self, metrics: GovernanceMetrics) -> None:
         """Log aggregated governance metrics."""
         if not self.available:
             return
-            
+
         try:
             # Langfuse doesn't have native metrics, log as event
             self.langfuse.event(
@@ -114,19 +115,19 @@ class LangfuseConnector(ObservabilityProvider):
             )
         except Exception as e:
             logger.error(f"Failed to log metrics to Langfuse: {e}")
-    
+
     def create_dashboard(self, name: str) -> str:
         """Create a governance dashboard."""
         if not self.available:
             return "Langfuse not available"
-            
+
         # Langfuse dashboards are created in UI
         # Return project URL
         try:
             return f"https://cloud.langfuse.com/project/{self.langfuse.project_id}"
-        except:
+        except:  # noqa: E722
             return "https://cloud.langfuse.com"
-    
+
     def flush(self) -> None:
         """Flush buffered events."""
         if self.available and self.langfuse:
@@ -138,16 +139,16 @@ class LangfuseConnector(ObservabilityProvider):
 
 class NethicalLangfuseCallback:
     """Callback handler for automatic Langfuse logging."""
-    
+
     def __init__(self, connector: LangfuseConnector):
         """Initialize callback handler.
         
         Args:
             connector: LangfuseConnector instance
-        """
+        """  # noqa: W293
         self.connector = connector
-        self._current_trace_id: Optional[str] = None
-    
+        self._current_trace_id: str | None = None
+
     def on_governance_start(self, action: str, agent_id: str) -> str:
         """Called when governance evaluation starts.
         
@@ -157,16 +158,16 @@ class NethicalLangfuseCallback:
             
         Returns:
             Trace ID for this evaluation
-        """
+        """  # noqa: W293
         import uuid
         self._current_trace_id = str(uuid.uuid4())
         return self._current_trace_id
-    
+
     def on_governance_end(
         self,
         trace_id: str,
         action: str,
-        result: Dict[str, Any],
+        result: dict[str, Any],
         duration_ms: float
     ) -> None:
         """Called when governance evaluation completes.
@@ -176,7 +177,7 @@ class NethicalLangfuseCallback:
             action: The action that was evaluated
             result: Governance evaluation result
             duration_ms: Evaluation duration in milliseconds
-        """
+        """  # noqa: W293
         self.connector.log_governance_event(
             action=action,
             decision=result.get('decision', 'UNKNOWN'),

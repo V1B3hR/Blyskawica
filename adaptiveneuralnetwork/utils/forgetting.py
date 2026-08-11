@@ -28,7 +28,7 @@ def forgetting_matrix(evals_by_task: list[dict[int, float]]) -> np.ndarray:
         evals = [{0: 0.95}, {0: 0.85, 1: 0.92}, {0: 0.80, 1: 0.88, 2: 0.94}]
         matrix = forgetting_matrix(evals)
         # matrix[1, 0] = 0.85 (accuracy on task 0 after learning task 1)
-    """
+    """  # noqa: W293
     if not evals_by_task:
         return np.array([])
 
@@ -67,7 +67,7 @@ def compute_forgetting_metrics(matrix: np.ndarray) -> dict[str, float]:
         - average_forgetting: Average amount of forgetting across all tasks
         - maximum_forgetting: Maximum forgetting experienced by any task
         - final_average_accuracy: Average accuracy on all tasks at the end
-    """
+    """  # noqa: W293
     if matrix.size == 0:
         return {
             'average_forgetting': 0.0,

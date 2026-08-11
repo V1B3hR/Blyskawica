@@ -5,8 +5,9 @@ without raising exceptions, as specified in issue #204.
 """
 
 import pytest
+
+from nethical.core.governance_core import ActionType, AgentAction
 from nethical.core.governance_detectors import AdversarialDetector
-from nethical.core.governance_core import AgentAction, ActionType
 
 
 class TestBase64ErrorHandling:

@@ -34,7 +34,7 @@ import logging
 import os
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any
 
 import numpy as np
 
@@ -67,8 +67,8 @@ class TrainiumSpecs:
     version: TrainiumVersion
     year: int
     tflops: float  # Peak TFLOPS
-    fp8_pflops: Optional[float]  # FP8 PFLOPs if supported
-    int8_tops: Optional[float]  # INT8 TOPS for Inferentia
+    fp8_pflops: float | None  # FP8 PFLOPs if supported
+    int8_tops: float | None  # INT8 TOPS for Inferentia
     memory_gb: float
     memory_type: str
     supports_training: bool
@@ -79,7 +79,7 @@ class TrainiumSpecs:
 
 
 # Trainium/Inferentia specifications by version
-TRAINIUM_SPECS: Dict[TrainiumVersion, TrainiumSpecs] = {
+TRAINIUM_SPECS: dict[TrainiumVersion, TrainiumSpecs] = {
     TrainiumVersion.INFERENTIA_1: TrainiumSpecs(
         version=TrainiumVersion.INFERENTIA_1,
         year=2019,
@@ -157,15 +157,15 @@ log = logging.getLogger(__name__)
 # Check for Neuron availability
 NEURON_AVAILABLE = False
 try:
-    import torch
-    import torch_neuronx
+    import torch  # noqa: F401
+    import torch_neuronx  # noqa: F401
 
     NEURON_AVAILABLE = True
 except ImportError:
     log.debug("torch-neuronx not available - Trainium acceleration disabled")
 
 
-def detect_trainium_version() -> Optional[TrainiumVersion]:
+def detect_trainium_version() -> TrainiumVersion | None:
     """Detect the Trainium/Inferentia version from runtime environment.
 
     Returns:
@@ -177,7 +177,7 @@ def detect_trainium_version() -> Optional[TrainiumVersion]:
     try:
         # Check environment variables first
         instance_type = os.environ.get("AWS_INSTANCE_TYPE", "").lower()
-        neuron_device = os.environ.get("NEURON_RT_VISIBLE_CORES", "")
+        neuron_device = os.environ.get("NEURON_RT_VISIBLE_CORES", "")  # noqa: F841
 
         # Match against known instance type patterns
         if "trn3" in instance_type:
@@ -269,7 +269,7 @@ def is_trainium_available() -> bool:
             return False
 
 
-def get_trainium_info() -> Dict[str, Any]:
+def get_trainium_info() -> dict[str, Any]:
     """Get Trainium device information.
 
     Returns:
@@ -282,7 +282,7 @@ def get_trainium_info() -> Dict[str, Any]:
         import torch_neuronx
 
         device_count = 1  # Default
-        try:
+        try:  # noqa: SIM105
             device_count = torch_neuronx.xla_impl.data_parallel.device_count()
         except Exception:
             pass
@@ -332,22 +332,22 @@ class TrainiumAccelerator(AcceleratorInterface):
             config: Accelerator configuration
         """
         super().__init__(config)
-        self._compiled_models: Dict[int, Any] = {}
-        self._neuron_device: Optional[str] = None
-        self._trainium_version: Optional[TrainiumVersion] = None
-        self._trainium_specs: Optional[TrainiumSpecs] = None
+        self._compiled_models: dict[int, Any] = {}
+        self._neuron_device: str | None = None
+        self._trainium_version: TrainiumVersion | None = None
+        self._trainium_specs: TrainiumSpecs | None = None
 
     @property
     def backend(self) -> AcceleratorBackend:
         return AcceleratorBackend.TRAINIUM
 
     @property
-    def trainium_version(self) -> Optional[TrainiumVersion]:
+    def trainium_version(self) -> TrainiumVersion | None:
         """Get detected Trainium/Inferentia version."""
         return self._trainium_version
 
     @property
-    def trainium_specs(self) -> Optional[TrainiumSpecs]:
+    def trainium_specs(self) -> TrainiumSpecs | None:
         """Get Trainium specifications."""
         return self._trainium_specs
 
@@ -559,7 +559,7 @@ class TrainiumAccelerator(AcceleratorInterface):
             except ImportError:
                 pass
 
-    def get_memory_info(self) -> Dict[str, float]:
+    def get_memory_info(self) -> dict[str, float]:
         """Get Trainium memory usage.
 
         Returns:
@@ -594,7 +594,7 @@ class TrainiumAccelerator(AcceleratorInterface):
     def compile_model(
         self,
         model: Any,
-        example_inputs: Optional[Any] = None,
+        example_inputs: Any | None = None,
         dynamic_batch_size: bool = False,
     ) -> Any:
         """Compile model for Trainium with Neuron SDK.
@@ -616,7 +616,6 @@ class TrainiumAccelerator(AcceleratorInterface):
             log.warning("Example inputs required for Neuron compilation")
             return model
 
-        import torch
         import torch_neuronx
 
         try:
@@ -652,7 +651,7 @@ class TrainiumAccelerator(AcceleratorInterface):
         self,
         model: Any,
         inputs: np.ndarray,
-        batch_size: Optional[int] = None,
+        batch_size: int | None = None,
     ) -> np.ndarray:
         """Execute batch inference with Trainium-optimized batching.
 

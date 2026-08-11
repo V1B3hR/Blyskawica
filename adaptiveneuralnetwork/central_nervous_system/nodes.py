@@ -30,7 +30,7 @@ class NodeConfig:
     # Learning parameters
     learning_rate: float = 0.001
     adaptation_rate: float = 0.1
-    
+
     # Personality Traits (Tier 2/Phase 7.1)
     # Bravery: resilience to anxiety inhibition (0.0-1.0)
     bravery: float = 0.5
@@ -72,7 +72,7 @@ class NodeState:
         # Phase-specific state (will be set by PhaseScheduler)
         self.phase_mask = torch.zeros(1, config.num_nodes, 1, dtype=torch.bool, device=self.device)
         self.prediction_error = torch.zeros(1, config.num_nodes, 1, dtype=config.dtype, device=self.device)
-        
+
         # Identity and Personality (Self-Awareness)
         self.self_context = torch.zeros(1, config.num_nodes, config.hidden_dim, dtype=config.dtype, device=self.device)
         self.bravery = torch.ones(1, config.num_nodes, 1, dtype=config.dtype, device=self.device) * config.bravery
@@ -176,7 +176,7 @@ class NodeState:
         This is important for training to avoid keeping the full computational
         graph across batches, which would cause memory issues and prevent
         proper gradient computation.
-        """
+        """  # noqa: W293
         self.hidden_state = self.hidden_state.detach()
         self.energy = self.energy.detach()
         self.activity = self.activity.detach()

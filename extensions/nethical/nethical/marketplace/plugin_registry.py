@@ -17,16 +17,16 @@ Features:
 import hashlib
 import json
 import logging
-from dataclasses import dataclass, field, asdict
+import sqlite3
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Any
-import sqlite3
+from typing import Any
 
+from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
-from cryptography.exceptions import InvalidSignature
 
 logger = logging.getLogger(__name__)
 
@@ -66,27 +66,27 @@ class PluginRegistration:
     # Security
     security_status: PluginSecurityStatus = PluginSecurityStatus.PENDING
     trust_level: PluginTrustLevel = PluginTrustLevel.UNKNOWN
-    signature: Optional[str] = None
-    checksum: Optional[str] = None
-    public_key_pem: Optional[str] = None
-    manifest_hash: Optional[str] = None
+    signature: str | None = None
+    checksum: str | None = None
+    public_key_pem: str | None = None
+    manifest_hash: str | None = None
 
     # Metadata
     requires_nethical_version: str = ">=0.1.0"
-    dependencies: List[str] = field(default_factory=list)
-    tags: Set[str] = field(default_factory=set)
+    dependencies: list[str] = field(default_factory=list)
+    tags: set[str] = field(default_factory=set)
     homepage: str = ""
     repository: str = ""
     license: str = ""
 
     # Tracking
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
     downloads: int = 0
     rating: float = 0.0
     review_count: int = 0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
         data = asdict(self)
         data["security_status"] = self.security_status.value
@@ -107,10 +107,10 @@ class SecurityScanResult:
     scan_date: datetime
     scanner: str
     status: str
-    vulnerabilities: List[Dict[str, Any]] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
+    vulnerabilities: list[dict[str, Any]] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
     score: float = 0.0
-    details: Dict[str, Any] = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
 
 
 class PluginRegistry:
@@ -282,7 +282,7 @@ class PluginRegistry:
             logger.error(f"Failed to register plugin: {e}")
             return False
 
-    def get_plugin(self, plugin_id: str) -> Optional[PluginRegistration]:
+    def get_plugin(self, plugin_id: str) -> PluginRegistration | None:
         """
         Get plugin by ID.
 
@@ -312,9 +312,9 @@ class PluginRegistry:
         self,
         query: str = "",
         plugin_type: str = "",
-        tags: List[str] = None,
+        tags: list[str] = None,
         min_trust_level: PluginTrustLevel = PluginTrustLevel.UNKNOWN,
-    ) -> List[PluginRegistration]:
+    ) -> list[PluginRegistration]:
         """
         Search for plugins.
 
@@ -595,7 +595,7 @@ class PluginRegistry:
     def _row_to_registration(self, row: tuple, description: list) -> PluginRegistration:
         """Convert database row to PluginRegistration"""
         columns = [col[0] for col in description]
-        data = dict(zip(columns, row))
+        data = dict(zip(columns, row))  # noqa: B905
 
         return PluginRegistration(
             plugin_id=data["plugin_id"],
@@ -641,7 +641,7 @@ class PluginRegistry:
             parts1 = [int(x) for x in v1_clean.split(".")]
             parts2 = [int(x) for x in v2_clean.split(".")]
 
-            for p1, p2 in zip(parts1, parts2):
+            for p1, p2 in zip(parts1, parts2):  # noqa: B905
                 if p1 < p2:
                     return -1
                 elif p1 > p2:

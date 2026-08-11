@@ -18,8 +18,12 @@ logger = logging.getLogger("goemotions_benchmark")
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import NeuromodulationState
-from adaptiveneuralnetwork.central_nervous_system.fine_grained_emotion_engine import AffectiveCognitiveEvaluator, GOEMOTIONS_TAXONOMY
+from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import (  # noqa: E402
+    NeuromodulationState,  # noqa: E402
+)
+from adaptiveneuralnetwork.central_nervous_system.fine_grained_emotion_engine import (  # noqa: E402
+    AffectiveCognitiveEvaluator,
+)
 
 
 def run_goemotions_benchmark():

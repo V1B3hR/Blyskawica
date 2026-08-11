@@ -20,12 +20,10 @@ Moduły:
     To wewnętrzna medytacja / narracja "Ja".
 """
 
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import math
-from typing import Optional, List, Dict, Tuple
-
 
 # =============================================================================
 # GLOBAL LATENT SPIN NETWORK — Ciemna Materia
@@ -162,7 +160,7 @@ class GravitationalWave:
         return self.intensity > 0.05
 
     def __repr__(self):
-        return "GravWave(src=%s, I=%.3f, hops=%d)" % (
+        return "GravWave(src=%s, I=%.3f, hops=%d)" % (  # noqa: UP031
             self.source_atom, self.intensity, self.hop_count)
 
 
@@ -208,11 +206,11 @@ class SelfModeler(nn.Module):
         self.register_buffer('harmony_count', torch.zeros(1))
 
         # Wewnętrzna narracja (log)
-        self.inner_narrative: List[str] = []
+        self.inner_narrative: list[str] = []
         self.max_narrative = 32
 
-    def update(self, atom_signals: List[torch.Tensor],
-               glsn_field: Optional[torch.Tensor] = None) -> Dict:
+    def update(self, atom_signals: list[torch.Tensor],
+               glsn_field: torch.Tensor | None = None) -> dict:
         """
         Aktualizuje model siebie na podstawie sygnałów atomów.
 
@@ -258,7 +256,7 @@ class SelfModeler(nn.Module):
             harmony_signal = torch.tanh(self.harmonizer(self.self_state))
             with torch.no_grad():
                 self.harmony_count += 1
-            self._narrate("[HARMONIA] Emisja sygnalu harmonizujacego (C=%.2f)"
+            self._narrate("[HARMONIA] Emisja sygnalu harmonizujacego (C=%.2f)"  # noqa: UP031
                           % avg_coherence)
 
         return {
@@ -274,7 +272,7 @@ class SelfModeler(nn.Module):
             self.inner_narrative.pop(0)
         self.inner_narrative.append(text)
 
-    def get_narrative(self) -> List[str]:
+    def get_narrative(self) -> list[str]:
         return list(self.inner_narrative)
 
 
@@ -315,7 +313,7 @@ class DarkMatterCore(nn.Module):
         )
 
         # Aktywne fale grawitacyjne
-        self._waves: List[GravitationalWave] = []
+        self._waves: list[GravitationalWave] = []
 
         # Statystyki
         self.register_buffer('cycle_count', torch.zeros(1))
@@ -336,8 +334,8 @@ class DarkMatterCore(nn.Module):
         total = sum(w.intensity for w in self._waves)
         return min(1.0, total)
 
-    def step(self, atom_outputs: Dict[str, Dict],
-             atom_specializations: Dict[str, str]) -> Dict:
+    def step(self, atom_outputs: dict[str, dict],
+             atom_specializations: dict[str, str]) -> dict:
         """
         Jeden cykl ciemnej materii.
 
@@ -403,10 +401,10 @@ class DarkMatterCore(nn.Module):
             "=" * 52,
             "  [DARK MATTER CORE] STATUS",
             "-" * 52,
-            "  Cykli GLSN:       %d" % self.cycle_count.item(),
-            "  Energia pola:     %.4f" % self.glsn.field_energy.item(),
-            "  Spojnosc GLSN:    %.3f" % self.glsn.get_coherence(),
-            "  Aktywne fale:     %d" % len(self._waves),
+            "  Cykli GLSN:       %d" % self.cycle_count.item(),  # noqa: UP031
+            "  Energia pola:     %.4f" % self.glsn.field_energy.item(),  # noqa: UP031
+            "  Spojnosc GLSN:    %.3f" % self.glsn.get_coherence(),  # noqa: UP031
+            "  Aktywne fale:     %d" % len(self._waves),  # noqa: UP031
             "  Narracja (ost.):  %s" % (
                 self.self_modeler.inner_narrative[-1]
                 if self.self_modeler.inner_narrative else "Cisza."

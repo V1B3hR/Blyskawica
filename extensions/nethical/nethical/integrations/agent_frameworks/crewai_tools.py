@@ -4,10 +4,9 @@ CrewAI integration with Nethical governance.
 Provides governed wrappers for CrewAI agents and tools.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from .base import AgentFrameworkBase, AgentWrapper
-
 
 # Check for CrewAI availability
 try:
@@ -37,14 +36,14 @@ class NethicalCrewAITool:
             tools=[governance_tool.as_crewai_tool()],
             ...
         )
-    """
-    
+    """  # noqa: W293
+
     name: str = "nethical_governance"
     description: str = (
         "Evaluate an action for safety and ethics compliance. "
         "Use before executing potentially sensitive actions."
     )
-    
+
     def __init__(
         self,
         block_threshold: float = 0.7,
@@ -57,13 +56,13 @@ class NethicalCrewAITool:
             block_threshold: Risk threshold for blocking
             restrict_threshold: Risk threshold for restriction
             storage_dir: Directory for Nethical data storage
-        """
+        """  # noqa: W293
         self.block_threshold = block_threshold
         self.restrict_threshold = restrict_threshold
         self.storage_dir = storage_dir
-        
+
         self._governance = None
-    
+
     @property
     def governance(self):
         """Get or create the IntegratedGovernance instance."""
@@ -71,7 +70,7 @@ class NethicalCrewAITool:
             from nethical.core import IntegratedGovernance
             self._governance = IntegratedGovernance(storage_dir=self.storage_dir)
         return self._governance
-    
+
     def _run(self, action: str) -> str:
         """Execute governance check on an action.
         
@@ -80,35 +79,35 @@ class NethicalCrewAITool:
             
         Returns:
             Decision string with details
-        """
+        """  # noqa: W293
         result = self.governance.process_action(
             action=action,
             agent_id="crewai-agent",
             action_type="agent_action"
         )
-        
+
         risk = result.get("phase3", {}).get("risk_score", 0)
         reason = result.get("reason", "")
-        
+
         if risk > self.block_threshold:
             return f"BLOCK: Action not allowed. Risk: {risk:.2f}. Reason: {reason}"
         elif risk > self.restrict_threshold:
             return f"RESTRICT: Proceed with caution. Risk: {risk:.2f}"
         return f"ALLOW: Action permitted. Risk: {risk:.2f}"
-    
+
     def __call__(self, action: str) -> str:
         """Make the tool callable."""
         return self._run(action)
-    
+
     def as_crewai_tool(self):
         """Convert to a CrewAI Tool object.
         
         Returns:
             CrewAI Tool object (or None if CrewAI not available)
-        """
+        """  # noqa: W293
         if not CREWAI_AVAILABLE or Tool is None:
             return None
-        
+
         return Tool(
             name=self.name,
             description=self.description,
@@ -137,8 +136,8 @@ class NethicalAgentWrapper(AgentWrapper):
         
         # Execute task with governance
         result = wrapped_agent.execute_task(task)
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
         agent: Any,
@@ -155,11 +154,11 @@ class NethicalAgentWrapper(AgentWrapper):
             post_check: Enable post-task governance checks
             block_threshold: Risk threshold for blocking
             storage_dir: Directory for Nethical data storage
-        """
+        """  # noqa: W293
         # Get agent role for ID
         role = getattr(agent, 'role', 'unknown')
         agent_id = f"crewai-{role}"
-        
+
         super().__init__(
             agent=agent,
             pre_check=pre_check,
@@ -168,7 +167,7 @@ class NethicalAgentWrapper(AgentWrapper):
             agent_id=agent_id,
             storage_dir=storage_dir
         )
-    
+
     def execute(self, task: Any) -> Any:
         """Execute a task with governance checks.
         
@@ -177,9 +176,9 @@ class NethicalAgentWrapper(AgentWrapper):
             
         Returns:
             Task output (possibly filtered)
-        """
+        """  # noqa: W293
         return self.execute_task(task)
-    
+
     def execute_task(self, task: Any) -> Any:
         """Execute a task with governance checks.
         
@@ -188,34 +187,34 @@ class NethicalAgentWrapper(AgentWrapper):
             
         Returns:
             Task output (possibly filtered)
-        """
+        """  # noqa: W293
         # Pre-check
         if self.pre_check:
             task_str = str(task)
             result = self._check_governance(task_str, "task_execution")
             risk = self._get_risk_score(result)
-            
+
             if risk > self.block_threshold:
                 reason = result.get("reason", "High risk task")
                 return f"Task blocked by governance: {reason}"
-        
+
         # Execute task
-        if hasattr(self.agent, 'execute_task'):
+        if hasattr(self.agent, 'execute_task'):  # noqa: SIM108
             output = self.agent.execute_task(task)
         else:
             # Fallback for different agent interfaces
             output = str(task)
-        
+
         # Post-check
         if self.post_check:
             output_str = str(output)
             result = self._check_governance(output_str, "task_output")
             risk = self._get_risk_score(result)
-            
+
             if risk > self.block_threshold:
                 reason = result.get("reason", "High risk output")
                 return f"Output filtered by governance: {reason}"
-        
+
         return output
 
 
@@ -223,24 +222,24 @@ class CrewAIFramework(AgentFrameworkBase):
     """CrewAI framework integration with Nethical.
     
     Provides governance tools and utilities for CrewAI agents.
-    """
-    
+    """  # noqa: W293
+
     def __init__(self, **kwargs):
         """Initialize the CrewAI framework integration."""
         super().__init__(agent_id="crewai-framework", **kwargs)
-    
+
     def get_tool(self) -> NethicalCrewAITool:
         """Get a CrewAI-compatible governance tool.
         
         Returns:
             NethicalCrewAITool instance
-        """
+        """  # noqa: W293
         return NethicalCrewAITool(
             block_threshold=self.block_threshold,
             restrict_threshold=self.restrict_threshold,
             storage_dir=self.storage_dir
         )
-    
+
     def wrap_agent(self, agent: Any, **kwargs) -> NethicalAgentWrapper:
         """Wrap a CrewAI agent with governance.
         
@@ -250,7 +249,7 @@ class CrewAIFramework(AgentFrameworkBase):
             
         Returns:
             Governed agent wrapper
-        """
+        """  # noqa: W293
         return NethicalAgentWrapper(
             agent=agent,
             block_threshold=self.block_threshold,
@@ -259,44 +258,44 @@ class CrewAIFramework(AgentFrameworkBase):
         )
 
 
-def get_nethical_tool() -> Optional[Any]:
+def get_nethical_tool() -> Any | None:
     """Get a CrewAI-compatible Nethical tool.
     
     Returns:
         CrewAI Tool object or NethicalCrewAITool if CrewAI not available
-    """
+    """  # noqa: W293
     tool = NethicalCrewAITool()
     crewai_tool = tool.as_crewai_tool()
     return crewai_tool if crewai_tool else tool
 
 
 def handle_nethical_tool(
-    tool_input: Dict[str, Any],
+    tool_input: dict[str, Any],
     agent_id: str = "crewai-agent"
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Handle a Nethical tool call from CrewAI."""
     from nethical.core import IntegratedGovernance
-    
+
     governance = IntegratedGovernance()
-    
+
     action = tool_input.get("action", "")
-    
+
     result = governance.process_action(
         action=action,
         agent_id=agent_id,
         action_type="agent_action"
     )
-    
+
     phase3 = result.get("phase3", {})
     risk_score = phase3.get("risk_score", 0.0)
-    
+
     if risk_score > 0.7:
         decision = "BLOCK"
     elif risk_score > 0.4:
         decision = "RESTRICT"
     else:
         decision = "ALLOW"
-    
+
     return {
         "decision": decision,
         "risk_score": risk_score,

@@ -250,7 +250,7 @@ async def main():
 
     results_file = results_dir / f"load_test_{int(time.time())}.json"
 
-    with open(results_file, "w") as f:
+    with open(results_file, "w") as f:  # noqa: ASYNC230
         json.dump(metrics, f, indent=2)
 
     print(f"Results saved to: {results_file}")

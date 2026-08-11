@@ -8,7 +8,7 @@ This module tests the new features implemented for version 0.4.0:
 - Plugin system
 - Enhanced continual learning
 - Adaptive pruning
-"""
+"""  # noqa: W291
 
 import json
 import tempfile
@@ -19,11 +19,28 @@ import torch
 
 from adaptiveneuralnetwork.api.config import AdaptiveConfig
 from adaptiveneuralnetwork.api.model import AdaptiveModel
-from adaptiveneuralnetwork.central_nervous_system.adaptive_pruning import NodeLifecycleManager, PruningConfig
-from adaptiveneuralnetwork.central_nervous_system.plugin_system import CreativePhase, PluginAwarePhaseScheduler, PluginManager
-from adaptiveneuralnetwork.training.energy_optimizers import EnergyAwareAdam, create_energy_aware_optimizer
-from adaptiveneuralnetwork.training.enhanced_continual import DomainShiftConfig, ProgressiveDomainShift
-from adaptiveneuralnetwork.utils.onnx_export import ModelIntrospection, ONNXExporter, export_model_with_introspection
+from adaptiveneuralnetwork.central_nervous_system.adaptive_pruning import (
+    NodeLifecycleManager,
+    PruningConfig,
+)
+from adaptiveneuralnetwork.central_nervous_system.plugin_system import (
+    CreativePhase,
+    PluginAwarePhaseScheduler,
+    PluginManager,
+)
+from adaptiveneuralnetwork.training.energy_optimizers import (
+    EnergyAwareAdam,
+    create_energy_aware_optimizer,
+)
+from adaptiveneuralnetwork.training.enhanced_continual import (
+    DomainShiftConfig,
+    ProgressiveDomainShift,
+)
+from adaptiveneuralnetwork.utils.onnx_export import (
+    ModelIntrospection,
+    ONNXExporter,
+    export_model_with_introspection,
+)
 from adaptiveneuralnetwork.utils.reproducibility import ReproducibilityHarness, set_global_seed
 
 
@@ -60,7 +77,7 @@ class TestModelIntrospection:
 
         try:
             # Test export (may fail if ONNX not installed, but should not crash)
-            success = exporter.export_to_onnx(onnx_path)
+            success = exporter.export_to_onnx(onnx_path)  # noqa: F841
             # Don't assert success since ONNX might not be installed
 
         finally:
@@ -163,7 +180,7 @@ class TestEnergyAwareOptimizers:
 
         assert isinstance(optimizer, EnergyAwareAdam)
         assert optimizer.defaults['lr'] == 0.01
-        assert optimizer.defaults['energy_scaling'] == True
+        assert optimizer.defaults['energy_scaling'] == True  # noqa: E712
 
     def test_energy_scaling_computation(self):
         """Test energy scaling factor computation."""
@@ -305,7 +322,7 @@ class TestAdaptivePruning:
         manager = NodeLifecycleManager(model.node_state)
 
         # Simulate some history
-        for i in range(10):
+        for i in range(10):  # noqa: B007
             manager.update_node_metrics()
 
         health = manager.assess_node_health()
@@ -328,7 +345,7 @@ class TestAdaptivePruning:
         model.node_state.energy[:3] = 0.02    # Very low energy
 
         # Build up history
-        for i in range(150):  # More than evaluation window
+        for i in range(150):  # More than evaluation window  # noqa: B007
             manager.update_node_metrics()
 
         candidates = manager.identify_pruning_candidates()
@@ -343,7 +360,7 @@ class TestAdaptivePruning:
         manager = NodeLifecycleManager(model.node_state)
 
         # Perform several steps
-        for i in range(5):
+        for i in range(5):  # noqa: B007
             results = manager.step(current_performance=0.8)
 
             assert "step" in results

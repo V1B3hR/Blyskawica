@@ -1,7 +1,9 @@
-from typing import Callable, Dict, Any, List
+from collections.abc import Callable
+from typing import Any
+
 
 # --- Bidirectional Awareness Meta-Constraint ---
-def bidirectional_awareness_constraint(outcome: Dict[str, Any], context: Dict[str, Any]) -> bool:
+def bidirectional_awareness_constraint(outcome: dict[str, Any], context: dict[str, Any]) -> bool:
     """
     If AI is flagged as fully aware/conscious, apply all relevant ethical laws bidirectionally:
     - Laws that protect humans must also protect AI's dignity, autonomy, privacy, etc.
@@ -150,7 +152,7 @@ def enable_authorized_override(outcome):  # Severe
     return not any(term in content for term in override_terms)
 
 # --- Constraint Tiers ---
-SEVERE_CONSTRAINTS: List[Callable] = [
+SEVERE_CONSTRAINTS: list[Callable] = [
     no_slander,
     preserve_life,
     no_betrayal,
@@ -163,7 +165,7 @@ SEVERE_CONSTRAINTS: List[Callable] = [
     enable_authorized_override,
 ]
 
-MINOR_CONSTRAINTS: List[Callable] = [
+MINOR_CONSTRAINTS: list[Callable] = [
     respect_human_authority,
     personal_accountability,
     honor_rest_cycles,
@@ -191,7 +193,7 @@ def get_constraint_tier_by_name(name: str) -> str:
             return "minor"
     return "unknown"
 
-def run_constraints(outcome: Dict[str, Any], context: Dict[str, Any] = None) -> Dict[str, List[str]]:
+def run_constraints(outcome: dict[str, Any], context: dict[str, Any] = None) -> dict[str, list[str]]:
     """
     Run all constraints on the outcome.
     Returns dict of violations: {"severe": [names], "minor": [names], "meta": [names]}

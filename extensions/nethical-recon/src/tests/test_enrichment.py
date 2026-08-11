@@ -2,18 +2,17 @@
 Tests for Threat Intelligence Enrichment Module
 """
 
-import pytest
 
 from nethical_recon.enrichment import (
-    ThreatEnricher,
     AbuseIPDBProvider,
-    OTXProvider,
-    GreyNoiseProvider,
-    VirusTotalProvider,
-    RiskScorer,
     EnrichmentPlugin,
-    PluginRegistry,
+    GreyNoiseProvider,
+    OTXProvider,
     PluginMetadata,
+    PluginRegistry,
+    RiskScorer,
+    ThreatEnricher,
+    VirusTotalProvider,
 )
 from nethical_recon.enrichment.providers import ThreatData
 

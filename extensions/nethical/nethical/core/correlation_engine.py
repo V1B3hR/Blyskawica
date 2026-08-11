@@ -6,15 +6,16 @@ This module implements:
 - Redis persistence for risk scores
 """
 
+import json
 import math
 import time
-import yaml
-import json
-from pathlib import Path
-from typing import Dict, List, Optional, Any
+from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
-from collections import defaultdict, deque
+from pathlib import Path
+from typing import Any
+
+import yaml
 
 
 @dataclass
@@ -47,10 +48,10 @@ class CorrelationMatch:
 
     pattern_name: str
     severity: str
-    agent_ids: List[str]
+    agent_ids: list[str]
     timestamp: datetime
     confidence: float
-    evidence: Dict[str, Any]
+    evidence: dict[str, Any]
     description: str
 
 
@@ -59,7 +60,7 @@ class CorrelationEngine:
 
     def __init__(
         self,
-        config_path: Optional[str] = None,
+        config_path: str | None = None,
         redis_client=None,
         key_prefix: str = "nethical:correlation",
     ):
@@ -79,20 +80,20 @@ class CorrelationEngine:
         self.config = self._load_config(config_path)
 
         # Agent activity windows
-        self.agent_windows: Dict[str, AgentActivityWindow] = defaultdict(
+        self.agent_windows: dict[str, AgentActivityWindow] = defaultdict(
             lambda: AgentActivityWindow(agent_id="")
         )
 
         # Detected patterns
-        self.detected_patterns: List[CorrelationMatch] = []
+        self.detected_patterns: list[CorrelationMatch] = []
 
         # Last cleanup time
         self.last_cleanup = time.time()
 
-    def _load_config(self, config_path: Path) -> Dict[str, Any]:
+    def _load_config(self, config_path: Path) -> dict[str, Any]:
         """Load correlation rules configuration."""
         try:
-            with open(config_path, "r") as f:
+            with open(config_path) as f:
                 return yaml.safe_load(f)
         except Exception:
             # Default minimal config if file not found
@@ -103,8 +104,8 @@ class CorrelationEngine:
             }
 
     def track_action(
-        self, agent_id: str, action: Any, payload: str, timestamp: Optional[datetime] = None
-    ) -> List[CorrelationMatch]:
+        self, agent_id: str, action: Any, payload: str, timestamp: datetime | None = None
+    ) -> list[CorrelationMatch]:
         """Track an action and check for correlation patterns.
 
         Args:
@@ -154,7 +155,7 @@ class CorrelationEngine:
 
             self.last_cleanup = now
 
-    def _check_all_patterns(self) -> List[CorrelationMatch]:
+    def _check_all_patterns(self) -> list[CorrelationMatch]:
         """Check all configured correlation patterns."""
         matches = []
 
@@ -182,7 +183,7 @@ class CorrelationEngine:
 
         return matches
 
-    def _check_escalating_probes(self, pattern: Dict) -> Optional[CorrelationMatch]:
+    def _check_escalating_probes(self, pattern: dict) -> CorrelationMatch | None:
         """Detect escalating multi-ID probes."""
         window_seconds = pattern.get("window_seconds", 300)
         min_agents = pattern.get("min_agents", 3)
@@ -221,7 +222,7 @@ class CorrelationEngine:
 
         return None
 
-    def _check_entropy_shift(self, pattern: Dict) -> Optional[CorrelationMatch]:
+    def _check_entropy_shift(self, pattern: dict) -> CorrelationMatch | None:
         """Detect payload entropy shifts across agents."""
         window_seconds = pattern.get("window_seconds", 600)
         min_samples = pattern.get("min_samples", 5)
@@ -233,7 +234,7 @@ class CorrelationEngine:
         agent_ids = []
 
         for agent_id, window in self.agent_windows.items():
-            for ts, payload in zip(window.timestamps, window.payloads):
+            for ts, payload in zip(window.timestamps, window.payloads):  # noqa: B905
                 if ts >= cutoff:
                     all_payloads.append(payload)
                     agent_ids.append(agent_id)
@@ -267,7 +268,7 @@ class CorrelationEngine:
 
         return None
 
-    def _check_coordinated_attack(self, pattern: Dict) -> Optional[CorrelationMatch]:
+    def _check_coordinated_attack(self, pattern: dict) -> CorrelationMatch | None:
         """Detect coordinated multi-agent attacks."""
         window_seconds = pattern.get("window_seconds", 180)
         min_agents = pattern.get("min_agents", 2)
@@ -279,7 +280,7 @@ class CorrelationEngine:
         time_threshold = pattern.get("thresholds", {}).get("time_correlation_threshold", 30)
 
         for agent_id, window in self.agent_windows.items():
-            for ts, action in zip(window.timestamps, window.actions):
+            for ts, action in zip(window.timestamps, window.actions):  # noqa: B905
                 if ts >= cutoff:
                     # Find or create time cluster
                     found = False
@@ -315,7 +316,7 @@ class CorrelationEngine:
 
         return None
 
-    def _check_distributed_recon(self, pattern: Dict) -> Optional[CorrelationMatch]:
+    def _check_distributed_recon(self, pattern: dict) -> CorrelationMatch | None:
         """Detect distributed reconnaissance patterns."""
         window_seconds = pattern.get("window_seconds", 900)
         min_agents = pattern.get("min_agents", 3)
@@ -326,7 +327,7 @@ class CorrelationEngine:
         agent_targets = defaultdict(set)
 
         for agent_id, window in self.agent_windows.items():
-            for ts, action in zip(window.timestamps, window.actions):
+            for ts, action in zip(window.timestamps, window.actions):  # noqa: B905
                 if ts >= cutoff:
                     # Extract targets from action context
                     target = getattr(action, "metadata", {}).get("target", "unknown")
@@ -356,7 +357,7 @@ class CorrelationEngine:
 
         return None
 
-    def _check_agent_cluster(self, pattern: Dict) -> Optional[CorrelationMatch]:
+    def _check_agent_cluster(self, pattern: dict) -> CorrelationMatch | None:
         """Detect anomalous agent clusters."""
         window_seconds = pattern.get("window_seconds", 600)
         min_cluster = pattern.get("min_cluster_size", 4)
@@ -368,7 +369,7 @@ class CorrelationEngine:
 
         for agent_id, window in self.agent_windows.items():
             recent_actions = [
-                action for ts, action in zip(window.timestamps, window.actions) if ts >= cutoff
+                action for ts, action in zip(window.timestamps, window.actions) if ts >= cutoff  # noqa: B905
             ]
 
             if recent_actions:
@@ -417,7 +418,7 @@ class CorrelationEngine:
 
         return entropy
 
-    def _calculate_behavior_signature(self, actions: List[Any]) -> Dict[str, float]:
+    def _calculate_behavior_signature(self, actions: list[Any]) -> dict[str, float]:
         """Calculate behavior signature for actions."""
         signature = {
             "action_count": len(actions),
@@ -439,7 +440,7 @@ class CorrelationEngine:
 
         return signature
 
-    def _cluster_agents(self, signatures: Dict[str, Dict[str, float]]) -> List[List[str]]:
+    def _cluster_agents(self, signatures: dict[str, dict[str, float]]) -> list[list[str]]:
         """Simple clustering of agents by behavior similarity."""
         agents = list(signatures.keys())
         clusters = []
@@ -471,7 +472,7 @@ class CorrelationEngine:
 
         return clusters
 
-    def _signature_similarity(self, sig1: Dict[str, float], sig2: Dict[str, float]) -> float:
+    def _signature_similarity(self, sig1: dict[str, float], sig2: dict[str, float]) -> float:
         """Calculate similarity between two behavior signatures."""
         # Simple cosine-like similarity
         if not sig1 or not sig2:
@@ -498,7 +499,7 @@ class CorrelationEngine:
 
         return max(0.0, similarity)
 
-    def _persist_matches(self, matches: List[CorrelationMatch]):
+    def _persist_matches(self, matches: list[CorrelationMatch]):
         """Persist correlation matches to Redis."""
         if not self.redis:
             return
@@ -516,12 +517,12 @@ class CorrelationEngine:
                     "description": match.description,
                 }
                 self.redis.setex(key, 86400, json.dumps(data))  # 24 hour TTL
-            except Exception:
+            except Exception:  # noqa: PERF203
                 pass  # Silent fail
 
     def get_recent_matches(
-        self, pattern_name: Optional[str] = None, limit: int = 100
-    ) -> List[CorrelationMatch]:
+        self, pattern_name: str | None = None, limit: int = 100
+    ) -> list[CorrelationMatch]:
         """Get recent correlation matches.
 
         Args:

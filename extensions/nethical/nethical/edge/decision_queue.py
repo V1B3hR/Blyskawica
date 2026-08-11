@@ -11,7 +11,7 @@ import threading
 import time
 from collections import deque
 from dataclasses import dataclass, field
-from typing import Any, Deque, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -35,13 +35,13 @@ class QueuedDecision:
     agent_id: str
     action: str
     decision: str
-    context: Dict[str, Any] = field(default_factory=dict)
+    context: dict[str, Any] = field(default_factory=dict)
     timestamp: float = field(default_factory=time.time)
     offline_mode: str = "offline"
     synced: bool = False
     sync_attempts: int = 0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "agent_id": self.agent_id,
@@ -55,7 +55,7 @@ class QueuedDecision:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "QueuedDecision":
+    def from_dict(cls, data: dict[str, Any]) -> "QueuedDecision":
         """Create from dictionary."""
         return cls(
             agent_id=data["agent_id"],
@@ -83,7 +83,7 @@ class DecisionQueue:
     def __init__(
         self,
         max_size: int = 100000,
-        persist_path: Optional[str] = None,
+        persist_path: str | None = None,
         persist_interval_seconds: int = 60,
     ):
         """
@@ -99,7 +99,7 @@ class DecisionQueue:
         self.persist_interval_seconds = persist_interval_seconds
 
         # Queue storage
-        self._queue: Deque[QueuedDecision] = deque(maxlen=max_size)
+        self._queue: deque[QueuedDecision] = deque(maxlen=max_size)
         self._lock = threading.RLock()
 
         # Metrics
@@ -129,7 +129,7 @@ class DecisionQueue:
             self._queue.append(decision)
             self._total_enqueued += 1
 
-    def dequeue(self) -> Optional[QueuedDecision]:
+    def dequeue(self) -> QueuedDecision | None:
         """
         Remove and return oldest decision.
 
@@ -141,7 +141,7 @@ class DecisionQueue:
                 return None
             return self._queue.popleft()
 
-    def peek(self) -> Optional[QueuedDecision]:
+    def peek(self) -> QueuedDecision | None:
         """
         View oldest decision without removing.
 
@@ -153,7 +153,7 @@ class DecisionQueue:
                 return None
             return self._queue[0]
 
-    def get_unsynced(self, limit: int = 100) -> List[QueuedDecision]:
+    def get_unsynced(self, limit: int = 100) -> list[QueuedDecision]:
         """
         Get unsynced decisions.
 
@@ -167,7 +167,7 @@ class DecisionQueue:
             unsynced = [d for d in self._queue if not d.synced]
             return unsynced[:limit]
 
-    def mark_synced(self, decisions: List[QueuedDecision]):
+    def mark_synced(self, decisions: list[QueuedDecision]):
         """
         Mark decisions as synced.
 
@@ -217,7 +217,7 @@ class DecisionQueue:
             return
 
         try:
-            with open(self.persist_path, "r") as f:
+            with open(self.persist_path) as f:
                 data = json.load(f)
 
             with self._lock:
@@ -234,7 +234,7 @@ class DecisionQueue:
         """Force persist to disk."""
         self._persist_to_disk()
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get queue metrics."""
         with self._lock:
             unsynced = sum(1 for d in self._queue if not d.synced)

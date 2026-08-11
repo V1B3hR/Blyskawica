@@ -1,4 +1,5 @@
 import os
+
 """
 Full System Integration Tests
 
@@ -11,16 +12,19 @@ This test module verifies the complete system functionality including:
 - Memory systems
 """
 
-import sys
-import unittest
+import sys  # noqa: E402
+import unittest  # noqa: E402
 
-import numpy as np
+import numpy as np  # noqa: E402
 
 # Add the project root to the path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from adaptiveneuralnetwork.central_nervous_system.alive_node import AliveLoopNode, Memory
-from adaptiveneuralnetwork.central_nervous_system.capacitor import CapacitorInSpace
+from adaptiveneuralnetwork.central_nervous_system.alive_node import (  # noqa: E402
+    AliveLoopNode,
+    Memory,
+)
+from adaptiveneuralnetwork.central_nervous_system.capacitor import CapacitorInSpace  # noqa: E402
 
 
 class TestFullSystemIntegration(unittest.TestCase):
@@ -106,7 +110,7 @@ class TestFullSystemIntegration(unittest.TestCase):
         self.assertIn(self.node1.phase, ["active", "sleep", "interactive", "inspired"])
 
         # Test phase stepping
-        initial_phase = self.node1.phase
+        initial_phase = self.node1.phase  # noqa: F841
         self.node1.step_phase(current_time=0)
         # Phase might change based on energy/time, so just verify it's valid
         self.assertIn(self.node1.phase, ["active", "sleep", "interactive", "inspired"])
@@ -160,7 +164,7 @@ class TestFullSystemIntegration(unittest.TestCase):
         self.node2.position = np.array([1, 1])  # Within communication range
 
         # Test signal sending
-        responses = self.node1.send_signal(
+        responses = self.node1.send_signal(  # noqa: F841
             target_nodes=[self.node2],
             signal_type="memory",
             content=test_memory,

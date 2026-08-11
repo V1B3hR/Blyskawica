@@ -22,7 +22,6 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 import numpy as np
-
 from core.alive_node import AliveLoopNode
 
 

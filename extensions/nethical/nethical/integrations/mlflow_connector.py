@@ -28,20 +28,20 @@ Usage:
     
     # End run
     connector.end_run(run_id, "completed")
-"""
+"""  # noqa: W293
 
 import logging
 import os
-from typing import Any, Dict, Optional
 from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 # Check if MLflow is available
 try:
     import mlflow
+    from mlflow.exceptions import MlflowException  # noqa: F401
     from mlflow.tracking import MlflowClient
-    from mlflow.exceptions import MlflowException
     MLFLOW_AVAILABLE = True
 except ImportError:
     MLFLOW_AVAILABLE = False
@@ -58,13 +58,13 @@ class MLflowConnector:
     - Error handling for connectivity issues
     - Experiment and run lifecycle management
     - Parameters, metrics, and artifact logging
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
-        tracking_uri: Optional[str] = None,
-        experiment_name: Optional[str] = None,
-        registry_uri: Optional[str] = None,
+        tracking_uri: str | None = None,
+        experiment_name: str | None = None,
+        registry_uri: str | None = None,
     ):
         """Initialize MLflow connector.
         
@@ -79,34 +79,34 @@ class MLflowConnector:
         Raises:
             ImportError: If MLflow is not installed
             ConnectionError: If cannot connect to remote server
-        """
+        """  # noqa: W293
         if not MLFLOW_AVAILABLE:
             raise ImportError("MLflow not installed. Install with: pip install mlflow>=2.0.0")
-        
+
         self.tracking_uri = tracking_uri or os.getenv("MLFLOW_TRACKING_URI", "file:./mlruns")
         self.experiment_name = experiment_name
         self.registry_uri = registry_uri
         self._client = None
         self._active_run = None
-        
+
         # Initialize MLflow
         self._init_mlflow()
-    
+
     def _init_mlflow(self):
         """Initialize MLflow client and set tracking URI."""
         try:
             # Set tracking URI
             mlflow.set_tracking_uri(self.tracking_uri)
             logger.info(f"MLflow tracking URI set to: {self.tracking_uri}")
-            
+
             # Set registry URI if provided
             if self.registry_uri:
                 mlflow.set_registry_uri(self.registry_uri)
                 logger.info(f"MLflow registry URI set to: {self.registry_uri}")
-            
+
             # Create client
             self._client = MlflowClient(tracking_uri=self.tracking_uri)
-            
+
             # Verify connection for remote servers
             if self.tracking_uri.startswith("http"):
                 try:
@@ -114,18 +114,18 @@ class MLflowConnector:
                     logger.info("Successfully connected to MLflow tracking server")
                 except Exception as e:
                     logger.error(f"Cannot connect to MLflow server: {e}")
-                    raise ConnectionError(f"MLflow server unreachable: {e}")
-            
+                    raise ConnectionError(f"MLflow server unreachable: {e}")  # noqa: B904
+
         except Exception as e:
             logger.error(f"Failed to initialize MLflow: {e}")
             raise
-    
+
     def start_run(
         self,
         experiment_name: str,
-        run_name: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
-        description: Optional[str] = None,
+        run_name: str | None = None,
+        tags: dict[str, str] | None = None,
+        description: str | None = None,
     ) -> str:
         """Start a new MLflow run.
         
@@ -140,7 +140,7 @@ class MLflowConnector:
             
         Raises:
             MlflowException: If MLflow operation fails
-        """
+        """  # noqa: W293
         try:
             # Set or create experiment
             experiment = self._client.get_experiment_by_name(experiment_name)
@@ -150,27 +150,27 @@ class MLflowConnector:
             else:
                 experiment_id = experiment.experiment_id
                 logger.info(f"Using existing experiment: {experiment_name} (ID: {experiment_id})")
-            
+
             mlflow.set_experiment(experiment_name)
-            
+
             # Start run
             run = mlflow.start_run(
                 run_name=run_name,
                 tags=tags,
                 description=description,
             )
-            
+
             self._active_run = run
             run_id = run.info.run_id
-            
+
             logger.info(f"Started MLflow run: {run_id} (experiment: {experiment_name})")
             return run_id
-            
+
         except Exception as e:
             logger.error(f"Failed to start MLflow run: {e}")
             raise
-    
-    def log_parameters(self, run_id: str, parameters: Dict[str, Any]):
+
+    def log_parameters(self, run_id: str, parameters: dict[str, Any]):
         """Log parameters to MLflow.
         
         Args:
@@ -179,7 +179,7 @@ class MLflowConnector:
             
         Raises:
             MlflowException: If MLflow operation fails
-        """
+        """  # noqa: W293
         try:
             # MLflow has restrictions on parameter values
             # Convert non-string values to strings
@@ -189,7 +189,7 @@ class MLflowConnector:
                     params_to_log[key] = str(value)
                 else:
                     params_to_log[key] = value
-            
+
             # Use context manager if this is the active run
             if self._active_run and self._active_run.info.run_id == run_id:
                 mlflow.log_params(params_to_log)
@@ -197,18 +197,18 @@ class MLflowConnector:
                 # Log to specific run
                 with mlflow.start_run(run_id=run_id):
                     mlflow.log_params(params_to_log)
-            
+
             logger.info(f"Logged {len(params_to_log)} parameters to run {run_id}")
-            
+
         except Exception as e:
             logger.error(f"Failed to log parameters: {e}")
             raise
-    
+
     def log_metrics(
         self,
         run_id: str,
-        metrics: Dict[str, float],
-        step: Optional[int] = None,
+        metrics: dict[str, float],
+        step: int | None = None,
     ):
         """Log metrics to MLflow.
         
@@ -219,7 +219,7 @@ class MLflowConnector:
             
         Raises:
             MlflowException: If MLflow operation fails
-        """
+        """  # noqa: W293
         try:
             # Use context manager if this is the active run
             if self._active_run and self._active_run.info.run_id == run_id:
@@ -228,17 +228,17 @@ class MLflowConnector:
                 # Log to specific run
                 with mlflow.start_run(run_id=run_id):
                     mlflow.log_metrics(metrics, step=step)
-            
+
             logger.info(
                 f"Logged {len(metrics)} metrics to run {run_id}"
                 + (f" at step {step}" if step is not None else "")
             )
-            
+
         except Exception as e:
             logger.error(f"Failed to log metrics: {e}")
             raise
-    
-    def log_artifact(self, run_id: str, artifact_path: str, artifact_folder: Optional[str] = None):
+
+    def log_artifact(self, run_id: str, artifact_path: str, artifact_folder: str | None = None):
         """Log artifact to MLflow.
         
         Args:
@@ -249,12 +249,12 @@ class MLflowConnector:
         Raises:
             MlflowException: If MLflow operation fails
             FileNotFoundError: If artifact path doesn't exist
-        """
+        """  # noqa: W293
         try:
             # Check if artifact exists
             if not Path(artifact_path).exists():
                 raise FileNotFoundError(f"Artifact not found: {artifact_path}")
-            
+
             # Use context manager if this is the active run
             if self._active_run and self._active_run.info.run_id == run_id:
                 if Path(artifact_path).is_dir():
@@ -268,14 +268,14 @@ class MLflowConnector:
                         mlflow.log_artifacts(artifact_path, artifact_folder)
                     else:
                         mlflow.log_artifact(artifact_path, artifact_folder)
-            
+
             logger.info(f"Logged artifact {artifact_path} to run {run_id}")
-            
+
         except Exception as e:
             logger.error(f"Failed to log artifact: {e}")
             raise
-    
-    def set_tags(self, run_id: str, tags: Dict[str, str]):
+
+    def set_tags(self, run_id: str, tags: dict[str, str]):
         """Set tags on a run.
         
         Args:
@@ -284,7 +284,7 @@ class MLflowConnector:
             
         Raises:
             MlflowException: If MLflow operation fails
-        """
+        """  # noqa: W293
         try:
             # Use context manager if this is the active run
             if self._active_run and self._active_run.info.run_id == run_id:
@@ -293,13 +293,13 @@ class MLflowConnector:
                 # Set tags on specific run
                 with mlflow.start_run(run_id=run_id):
                     mlflow.set_tags(tags)
-            
+
             logger.info(f"Set {len(tags)} tags on run {run_id}")
-            
+
         except Exception as e:
             logger.error(f"Failed to set tags: {e}")
             raise
-    
+
     def end_run(self, run_id: str, status: str = "FINISHED"):
         """End an MLflow run.
         
@@ -309,7 +309,7 @@ class MLflowConnector:
             
         Raises:
             MlflowException: If MLflow operation fails
-        """
+        """  # noqa: W293
         try:
             # Map status strings to MLflow status
             status_map = {
@@ -321,7 +321,7 @@ class MLflowConnector:
                 "KILLED": "KILLED",
             }
             mlflow_status = status_map.get(status, "FINISHED")
-            
+
             # End run
             if self._active_run and self._active_run.info.run_id == run_id:
                 mlflow.end_run(status=mlflow_status)
@@ -329,14 +329,14 @@ class MLflowConnector:
             else:
                 # Update run status
                 self._client.set_terminated(run_id, status=mlflow_status)
-            
+
             logger.info(f"Ended MLflow run {run_id} with status {mlflow_status}")
-            
+
         except Exception as e:
             logger.error(f"Failed to end run: {e}")
             raise
-    
-    def get_run(self, run_id: str) -> Optional[Dict[str, Any]]:
+
+    def get_run(self, run_id: str) -> dict[str, Any] | None:
         """Get run information.
         
         Args:
@@ -344,7 +344,7 @@ class MLflowConnector:
             
         Returns:
             Dictionary with run information or None if not found
-        """
+        """  # noqa: W293
         try:
             run = self._client.get_run(run_id)
             return {
@@ -361,13 +361,13 @@ class MLflowConnector:
         except Exception as e:
             logger.error(f"Failed to get run {run_id}: {e}")
             return None
-    
+
     def list_experiments(self) -> list:
         """List all experiments.
         
         Returns:
             List of experiment dictionaries
-        """
+        """  # noqa: W293
         try:
             experiments = self._client.search_experiments()
             return [
@@ -382,17 +382,17 @@ class MLflowConnector:
         except Exception as e:
             logger.error(f"Failed to list experiments: {e}")
             return []
-    
-    def health_check(self) -> Dict[str, Any]:
+
+    def health_check(self) -> dict[str, Any]:
         """Check health of MLflow connection.
         
         Returns:
             Health check result with status and details
-        """
+        """  # noqa: W293
         try:
             # Try to list experiments as health check
             self._client.search_experiments(max_results=1)
-            
+
             return {
                 "status": "healthy",
                 "tracking_uri": self.tracking_uri,

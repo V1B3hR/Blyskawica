@@ -8,12 +8,12 @@ This module implements:
 
 import json
 import random
-from typing import Dict, List, Optional, Any
+from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from collections import defaultdict
-from pathlib import Path
 from enum import Enum
+from pathlib import Path
+from typing import Any
 
 
 class SamplingStrategy(str, Enum):
@@ -33,12 +33,12 @@ class Sample:
     agent_id: str
     action_id: str
     cohort: str  # Agent cohort/group
-    violation_type: Optional[str]
-    severity: Optional[str]
+    violation_type: str | None
+    severity: str | None
     timestamp: datetime
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "sample_id": self.sample_id,
@@ -52,7 +52,7 @@ class Sample:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Sample":
+    def from_dict(cls, data: dict[str, Any]) -> "Sample":
         """Create from dictionary."""
         return cls(
             sample_id=data["sample_id"],
@@ -73,14 +73,14 @@ class SamplingJob:
     job_id: str
     strategy: SamplingStrategy
     target_sample_size: int
-    cohorts: List[str]
+    cohorts: list[str]
     start_time: datetime
-    end_time: Optional[datetime] = None
-    samples: List[Sample] = field(default_factory=list)
-    coverage: Dict[str, int] = field(default_factory=dict)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    end_time: datetime | None = None
+    samples: list[Sample] = field(default_factory=list)
+    coverage: dict[str, int] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "job_id": self.job_id,
@@ -118,15 +118,15 @@ class FairnessSampler:
         self.key_prefix = key_prefix
 
         # In-memory cache
-        self.jobs: Dict[str, SamplingJob] = {}
-        self.agent_cohorts: Dict[str, str] = {}  # agent_id -> cohort
+        self.jobs: dict[str, SamplingJob] = {}
+        self.agent_cohorts: dict[str, str] = {}  # agent_id -> cohort
 
     def create_sampling_job(
         self,
-        cohorts: List[str],
+        cohorts: list[str],
         target_sample_size: int = 1000,
         strategy: SamplingStrategy = SamplingStrategy.STRATIFIED,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> str:
         """Create a new sampling job.
 
@@ -159,9 +159,9 @@ class FairnessSampler:
         agent_id: str,
         action_id: str,
         cohort: str,
-        violation_type: Optional[str] = None,
-        severity: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        violation_type: str | None = None,
+        severity: str | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> bool:
         """Add a sample to a job.
 
@@ -207,7 +207,7 @@ class FairnessSampler:
         return True
 
     def perform_stratified_sampling(
-        self, job_id: str, population_data: Dict[str, List[Dict[str, Any]]]
+        self, job_id: str, population_data: dict[str, list[dict[str, Any]]]
     ) -> int:
         """Perform stratified sampling from population data.
 
@@ -307,7 +307,7 @@ class FairnessSampler:
         except Exception:
             pass  # Silent fail
 
-    def get_job(self, job_id: str) -> Optional[SamplingJob]:
+    def get_job(self, job_id: str) -> SamplingJob | None:
         """Get a sampling job by ID.
 
         Args:
@@ -352,7 +352,7 @@ class FairnessSampler:
         job_file = self.storage_dir / f"{job_id}.json"
         if job_file.exists():
             try:
-                with open(job_file, "r") as f:
+                with open(job_file) as f:
                     job_dict = json.load(f)
                     job = SamplingJob(
                         job_id=job_dict["job_id"],
@@ -376,7 +376,7 @@ class FairnessSampler:
 
         return None
 
-    def get_coverage_stats(self, job_id: str) -> Dict[str, Any]:
+    def get_coverage_stats(self, job_id: str) -> dict[str, Any]:
         """Get coverage statistics for a job.
 
         Args:
@@ -433,7 +433,7 @@ class FairnessSampler:
             except Exception:
                 pass
 
-    def get_agent_cohort(self, agent_id: str) -> Optional[str]:
+    def get_agent_cohort(self, agent_id: str) -> str | None:
         """Get cohort for an agent.
 
         Args:

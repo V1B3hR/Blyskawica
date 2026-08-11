@@ -1,23 +1,24 @@
 import os
+
 """
 Tests for Phase 1 - Optimized Data Layer
 
 This test suite validates the optimized dataset implementations.
 """
 
-import sys
-from pathlib import Path
+import sys  # noqa: E402
+from pathlib import Path  # noqa: E402
 
-import numpy as np
-import pytest
-import torch
+import numpy as np  # noqa: E402
+import pytest  # noqa: E402
+import torch  # noqa: E402
 
 # Direct imports to avoid circular dependencies
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import directly from files to avoid init.py issues
-import importlib.util
+import importlib.util  # noqa: E402
 
 # Import optimized_datasets
 spec = importlib.util.spec_from_file_location(
@@ -35,7 +36,7 @@ create_optimized_loader = optimized_datasets.create_optimized_loader
 optimize_dataset = optimized_datasets.optimize_dataset
 
 # Import SyntheticDataset directly
-from adaptiveneuralnetwork.training.datasets.datasets import SyntheticDataset
+from adaptiveneuralnetwork.training.datasets.datasets import SyntheticDataset  # noqa: E402
 
 
 class TestVectorizedDataset:

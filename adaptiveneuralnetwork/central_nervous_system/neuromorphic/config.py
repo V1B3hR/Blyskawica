@@ -9,9 +9,6 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
-import numpy as np
-import torch
-
 logger = logging.getLogger(__name__)
 
 class NeuromorphicPlatform(Enum):

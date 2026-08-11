@@ -10,14 +10,14 @@ Production Readiness Checklist - Section 12: Compliance
 - Access request / deletion workflow tested
 """
 
-from dataclasses import dataclass, field
-from datetime import datetime, timezone, timedelta
-from typing import Dict, List, Optional, Any, Set
-from enum import Enum
-from pathlib import Path
 import json
 import logging
 import uuid
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
+from enum import Enum
+from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -77,11 +77,11 @@ class DataStore:
     store_id: str
     name: str
     region: DataRegion
-    data_categories: Set[DataCategory]
+    data_categories: set[DataCategory]
     retention_days: int
     encryption_enabled: bool
     backup_enabled: bool
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -90,13 +90,13 @@ class DataFlow:
     flow_id: str
     source: str
     destination: str
-    data_categories: Set[DataCategory]
+    data_categories: set[DataCategory]
     purpose: ProcessingPurpose
     frequency: str  # "realtime", "batch", "on-demand"
     encryption_in_transit: bool
     cross_border: bool = False
-    source_region: Optional[DataRegion] = None
-    dest_region: Optional[DataRegion] = None
+    source_region: DataRegion | None = None
+    dest_region: DataRegion | None = None
 
 
 @dataclass
@@ -107,14 +107,14 @@ class DataSubjectRequest:
     subject_id: str
     submitted_at: datetime
     status: RequestStatus
-    completed_at: Optional[datetime] = None
-    requested_data_categories: List[DataCategory] = field(default_factory=list)
-    processed_stores: List[str] = field(default_factory=list)
-    results: Dict[str, Any] = field(default_factory=dict)
+    completed_at: datetime | None = None
+    requested_data_categories: list[DataCategory] = field(default_factory=list)
+    processed_stores: list[str] = field(default_factory=list)
+    results: dict[str, Any] = field(default_factory=dict)
     verification_method: str = ""
     notes: str = ""
-    
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
         return {
             "request_id": self.request_id,
@@ -137,33 +137,33 @@ class DataResidencyMapper:
     
     Provides visibility into where data is stored and ensures
     compliance with regional data residency requirements.
-    """
-    
+    """  # noqa: W293
+
     def __init__(self, storage_dir: str = "./nethical_data_residency"):
         """
         Initialize data residency mapper.
         
         Args:
             storage_dir: Directory for residency data
-        """
+        """  # noqa: W293
         self.storage_dir = Path(storage_dir)
         self.storage_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Data stores by region
-        self._stores: Dict[str, DataStore] = {}
-        self._flows: Dict[str, DataFlow] = {}
-        
+        self._stores: dict[str, DataStore] = {}
+        self._flows: dict[str, DataFlow] = {}
+
         # Load existing data
         self._load_data()
-        
+
         logger.info(f"Data residency mapper initialized at {storage_dir}")
-    
+
     def _load_data(self):
         """Load existing residency data"""
         stores_file = self.storage_dir / "data_stores.json"
         if stores_file.exists():
             try:
-                with open(stores_file, 'r') as f:
+                with open(stores_file) as f:
                     data = json.load(f)
                     for store_data in data:
                         store = DataStore(
@@ -180,17 +180,17 @@ class DataResidencyMapper:
                 logger.info(f"Loaded {len(self._stores)} data stores")
             except Exception as e:
                 logger.error(f"Failed to load data stores: {e}")
-    
+
     def register_data_store(
         self,
         store_id: str,
         name: str,
         region: DataRegion,
-        data_categories: Set[DataCategory],
+        data_categories: set[DataCategory],
         retention_days: int,
         encryption_enabled: bool = True,
         backup_enabled: bool = True,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: dict[str, Any] | None = None
     ) -> DataStore:
         """
         Register a data store.
@@ -207,7 +207,7 @@ class DataResidencyMapper:
         
         Returns:
             Registered DataStore
-        """
+        """  # noqa: W293
         store = DataStore(
             store_id=store_id,
             name=name,
@@ -218,23 +218,23 @@ class DataResidencyMapper:
             backup_enabled=backup_enabled,
             metadata=metadata or {}
         )
-        
+
         self._stores[store_id] = store
         self._save_stores()
-        
+
         logger.info(
             f"Registered data store '{name}' in region {region.value} "
             f"with {len(data_categories)} data categories"
         )
-        
+
         return store
-    
+
     def register_data_flow(
         self,
         flow_id: str,
         source: str,
         destination: str,
-        data_categories: Set[DataCategory],
+        data_categories: set[DataCategory],
         purpose: ProcessingPurpose,
         frequency: str = "realtime",
         encryption_in_transit: bool = True
@@ -253,20 +253,20 @@ class DataResidencyMapper:
         
         Returns:
             Registered DataFlow
-        """
+        """  # noqa: W293
         # Determine if cross-border
         source_store = self._stores.get(source)
         dest_store = self._stores.get(destination)
-        
+
         cross_border = False
         source_region = None
         dest_region = None
-        
+
         if source_store and dest_store:
             source_region = source_store.region
             dest_region = dest_store.region
             cross_border = source_region != dest_region
-        
+
         flow = DataFlow(
             flow_id=flow_id,
             source=source,
@@ -279,31 +279,31 @@ class DataResidencyMapper:
             source_region=source_region,
             dest_region=dest_region
         )
-        
+
         self._flows[flow_id] = flow
         self._save_flows()
-        
+
         logger.info(
             f"Registered data flow '{flow_id}' from {source} to {destination}, "
             f"cross-border: {cross_border}"
         )
-        
+
         return flow
-    
-    def get_stores_by_region(self, region: DataRegion) -> List[DataStore]:
+
+    def get_stores_by_region(self, region: DataRegion) -> list[DataStore]:
         """Get all data stores in a region"""
         return [
             store for store in self._stores.values()
             if store.region == region
         ]
-    
-    def get_cross_border_flows(self) -> List[DataFlow]:
+
+    def get_cross_border_flows(self) -> list[DataFlow]:
         """Get all cross-border data flows"""
         return [
             flow for flow in self._flows.values()
             if flow.cross_border
         ]
-    
+
     def _save_stores(self):
         """Save data stores to disk"""
         stores_file = self.storage_dir / "data_stores.json"
@@ -320,10 +320,10 @@ class DataResidencyMapper:
             }
             for store in self._stores.values()
         ]
-        
+
         with open(stores_file, 'w') as f:
             json.dump(data, f, indent=2)
-    
+
     def _save_flows(self):
         """Save data flows to disk"""
         flows_file = self.storage_dir / "data_flows.json"
@@ -342,11 +342,11 @@ class DataResidencyMapper:
             }
             for flow in self._flows.values()
         ]
-        
+
         with open(flows_file, 'w') as f:
             json.dump(data, f, indent=2)
-    
-    def generate_data_flow_diagram(self, output_file: Optional[str] = None) -> Dict[str, Any]:
+
+    def generate_data_flow_diagram(self, output_file: str | None = None) -> dict[str, Any]:
         """
         Generate a data flow diagram representation.
         
@@ -355,7 +355,7 @@ class DataResidencyMapper:
         
         Returns:
             Dictionary representation of data flows
-        """
+        """  # noqa: W293
         diagram = {
             "metadata": {
                 "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -387,12 +387,12 @@ class DataResidencyMapper:
                 for flow in self._flows.values()
             ]
         }
-        
+
         if output_file:
             with open(output_file, 'w') as f:
                 json.dump(diagram, f, indent=2)
             logger.info(f"Saved data flow diagram to {output_file}")
-        
+
         return diagram
 
 
@@ -404,12 +404,12 @@ class DataSubjectRequestHandler:
     - Access requests (right to access)
     - Deletion requests (right to erasure)
     - Rectification, restriction, portability, objection
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
         storage_dir: str = "./nethical_dsr",
-        residency_mapper: Optional[DataResidencyMapper] = None,
+        residency_mapper: DataResidencyMapper | None = None,
         sla_hours: int = 720  # 30 days default
     ):
         """
@@ -419,25 +419,25 @@ class DataSubjectRequestHandler:
             storage_dir: Directory for request data
             residency_mapper: Optional data residency mapper
             sla_hours: SLA in hours for completing requests (default 30 days)
-        """
+        """  # noqa: W293
         self.storage_dir = Path(storage_dir)
         self.storage_dir.mkdir(parents=True, exist_ok=True)
-        
+
         self.residency_mapper = residency_mapper
         self.sla_hours = sla_hours
-        
+
         # Request storage
-        self._requests: Dict[str, DataSubjectRequest] = {}
-        
+        self._requests: dict[str, DataSubjectRequest] = {}
+
         logger.info(
             f"Data subject request handler initialized, SLA: {sla_hours} hours"
         )
-    
+
     def submit_request(
         self,
         request_type: RequestType,
         subject_id: str,
-        data_categories: Optional[List[DataCategory]] = None,
+        data_categories: list[DataCategory] | None = None,
         verification_method: str = "email",
         notes: str = ""
     ) -> DataSubjectRequest:
@@ -453,9 +453,9 @@ class DataSubjectRequestHandler:
         
         Returns:
             Created DataSubjectRequest
-        """
+        """  # noqa: W293
         request_id = f"dsr-{uuid.uuid4().hex[:12]}"
-        
+
         request = DataSubjectRequest(
             request_id=request_id,
             request_type=request_type,
@@ -466,22 +466,22 @@ class DataSubjectRequestHandler:
             verification_method=verification_method,
             notes=notes
         )
-        
+
         self._requests[request_id] = request
         self._save_request(request)
-        
+
         logger.info(
             f"Submitted {request_type.value} request {request_id} "
             f"for subject {subject_id}"
         )
-        
+
         return request
-    
+
     def process_access_request(
         self,
         request_id: str,
-        data_stores: Optional[List[str]] = None
-    ) -> Dict[str, Any]:
+        data_stores: list[str] | None = None
+    ) -> dict[str, Any]:
         """
         Process an access request (right to access).
         
@@ -491,16 +491,16 @@ class DataSubjectRequestHandler:
         
         Returns:
             Dictionary with accessed data
-        """
+        """  # noqa: W293
         if request_id not in self._requests:
             raise ValueError(f"Request {request_id} not found")
-        
+
         request = self._requests[request_id]
         if request.request_type != RequestType.ACCESS:
             raise ValueError(f"Request {request_id} is not an access request")
-        
+
         request.status = RequestStatus.IN_PROGRESS
-        
+
         # Simulate data collection
         collected_data = {
             "subject_id": request.subject_id,
@@ -512,24 +512,24 @@ class DataSubjectRequestHandler:
                 "activity": {"events": 42, "last_activity": "2024-11-24"}
             }
         }
-        
+
         request.results = collected_data
         request.processed_stores = data_stores or []
         request.status = RequestStatus.COMPLETED
         request.completed_at = datetime.now(timezone.utc)
-        
+
         self._save_request(request)
-        
+
         logger.info(f"Completed access request {request_id}")
-        
+
         return collected_data
-    
+
     def process_deletion_request(
         self,
         request_id: str,
-        data_stores: Optional[List[str]] = None,
+        data_stores: list[str] | None = None,
         dry_run: bool = False
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Process a deletion request (right to erasure).
         
@@ -540,16 +540,16 @@ class DataSubjectRequestHandler:
         
         Returns:
             Dictionary with deletion results
-        """
+        """  # noqa: W293
         if request_id not in self._requests:
             raise ValueError(f"Request {request_id} not found")
-        
+
         request = self._requests[request_id]
         if request.request_type != RequestType.ERASURE:
             raise ValueError(f"Request {request_id} is not a deletion request")
-        
+
         request.status = RequestStatus.IN_PROGRESS
-        
+
         # Simulate deletion
         deletion_results = {
             "subject_id": request.subject_id,
@@ -565,59 +565,59 @@ class DataSubjectRequestHandler:
                 "audit_logs": "Retained for legal compliance"
             }
         }
-        
+
         request.results = deletion_results
         request.processed_stores = data_stores or []
         request.status = RequestStatus.COMPLETED
         request.completed_at = datetime.now(timezone.utc)
-        
+
         self._save_request(request)
-        
+
         logger.info(
             f"Completed deletion request {request_id} (dry_run={dry_run})"
         )
-        
+
         return deletion_results
-    
-    def get_request_status(self, request_id: str) -> Optional[DataSubjectRequest]:
+
+    def get_request_status(self, request_id: str) -> DataSubjectRequest | None:
         """Get status of a request"""
         return self._requests.get(request_id)
-    
-    def get_pending_requests(self) -> List[DataSubjectRequest]:
+
+    def get_pending_requests(self) -> list[DataSubjectRequest]:
         """Get all pending requests"""
         return [
             req for req in self._requests.values()
             if req.status == RequestStatus.PENDING
         ]
-    
-    def get_overdue_requests(self) -> List[DataSubjectRequest]:
+
+    def get_overdue_requests(self) -> list[DataSubjectRequest]:
         """Get requests that are past SLA"""
         now = datetime.now(timezone.utc)
         overdue = []
-        
+
         for req in self._requests.values():
             if req.status not in [RequestStatus.COMPLETED, RequestStatus.REJECTED]:
                 deadline = req.submitted_at + timedelta(hours=self.sla_hours)
                 if now > deadline:
                     overdue.append(req)
-        
+
         return overdue
-    
+
     def _save_request(self, request: DataSubjectRequest):
         """Save request to disk"""
         request_file = self.storage_dir / f"{request.request_id}.json"
         with open(request_file, 'w') as f:
             json.dump(request.to_dict(), f, indent=2)
-    
-    def test_workflow(self) -> Dict[str, bool]:
+
+    def test_workflow(self) -> dict[str, bool]:
         """
         Test access and deletion workflows.
         
         Returns:
             Dictionary with test results
-        """
+        """  # noqa: W293
         results = {}
-        
+
         try:
             # Test access request
             access_req = self.submit_request(
@@ -631,7 +631,7 @@ class DataSubjectRequestHandler:
         except Exception as e:
             results["access_request"] = False
             logger.error(f"Access request workflow test FAILED: {e}")
-        
+
         try:
             # Test deletion request (dry run)
             deletion_req = self.submit_request(
@@ -648,7 +648,7 @@ class DataSubjectRequestHandler:
         except Exception as e:
             results["deletion_request"] = False
             logger.error(f"Deletion request workflow test FAILED: {e}")
-        
+
         results["all_passed"] = all(results.values())
-        
+
         return results

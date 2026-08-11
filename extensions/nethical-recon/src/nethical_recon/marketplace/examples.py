@@ -4,7 +4,7 @@ Example Extensions - Demonstrating Extension API
 Sample extensions showing how to integrate with the platform.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class ExampleWebScannerExtension:
@@ -18,13 +18,13 @@ class ExampleWebScannerExtension:
     - Configuration management
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         self.config = config or {}
         self.name = "example-web-scanner"
         self.version = "1.0.0"
         self.description = "Example web vulnerability scanner"
 
-    async def scan(self, target: str, options: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    async def scan(self, target: str, options: dict[str, Any] | None = None) -> dict[str, Any]:
         """
         Scan target URL for vulnerabilities.
 
@@ -56,7 +56,7 @@ class ExampleWebScannerExtension:
             "scan_complete": True,
         }
 
-    async def _check_security_headers(self, target: str) -> List[Dict[str, Any]]:
+    async def _check_security_headers(self, target: str) -> list[dict[str, Any]]:
         """Check for security headers"""
         # Placeholder - would make actual HTTP request
         return [
@@ -69,7 +69,7 @@ class ExampleWebScannerExtension:
             }
         ]
 
-    async def _check_common_vulnerabilities(self, target: str) -> List[Dict[str, Any]]:
+    async def _check_common_vulnerabilities(self, target: str) -> list[dict[str, Any]]:
         """Check for common web vulnerabilities"""
         # Placeholder - would perform actual vulnerability checks
         return [
@@ -82,7 +82,7 @@ class ExampleWebScannerExtension:
             }
         ]
 
-    def get_metadata(self) -> Dict[str, Any]:
+    def get_metadata(self) -> dict[str, Any]:
         """Get extension metadata"""
         return {
             "name": self.name,
@@ -114,7 +114,7 @@ class ExampleDNSEnrichmentExtension:
         self.version = "1.0.0"
         self.description = "Example DNS data enrichment"
 
-    async def enrich(self, domain: str) -> Dict[str, Any]:
+    async def enrich(self, domain: str) -> dict[str, Any]:
         """
         Enrich domain with DNS information.
 
@@ -135,7 +135,7 @@ class ExampleDNSEnrichmentExtension:
 
         return enrichment_data
 
-    async def _get_dns_records(self, domain: str) -> Dict[str, List[str]]:
+    async def _get_dns_records(self, domain: str) -> dict[str, list[str]]:
         """Get DNS records"""
         # Placeholder - would query DNS
         return {
@@ -145,7 +145,7 @@ class ExampleDNSEnrichmentExtension:
             "TXT": ["v=spf1 include:_spf.example.com ~all"],
         }
 
-    async def _get_whois_info(self, domain: str) -> Dict[str, Any]:
+    async def _get_whois_info(self, domain: str) -> dict[str, Any]:
         """Get WHOIS information"""
         # Placeholder - would query WHOIS
         return {
@@ -155,7 +155,7 @@ class ExampleDNSEnrichmentExtension:
             "status": "clientTransferProhibited",
         }
 
-    async def _discover_subdomains(self, domain: str) -> List[str]:
+    async def _discover_subdomains(self, domain: str) -> list[str]:
         """Discover subdomains"""
         # Placeholder - would perform subdomain enumeration
         return [
@@ -164,7 +164,7 @@ class ExampleDNSEnrichmentExtension:
             f"ftp.{domain}",
         ]
 
-    async def _check_reputation(self, domain: str) -> Dict[str, Any]:
+    async def _check_reputation(self, domain: str) -> dict[str, Any]:
         """Check domain reputation"""
         # Placeholder - would check threat intel sources
         return {
@@ -173,7 +173,7 @@ class ExampleDNSEnrichmentExtension:
             "categories": ["business", "technology"],
         }
 
-    def get_metadata(self) -> Dict[str, Any]:
+    def get_metadata(self) -> dict[str, Any]:
         """Get extension metadata"""
         return {
             "name": self.name,
@@ -195,13 +195,13 @@ class ExampleThreatIntelExtension:
     - Threat context enrichment
     """
 
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(self, api_key: str | None = None):
         self.name = "example-threat-intel"
         self.version = "1.0.0"
         self.description = "Example threat intelligence integration"
         self.api_key = api_key
 
-    async def get_ip_reputation(self, ip_address: str) -> Dict[str, Any]:
+    async def get_ip_reputation(self, ip_address: str) -> dict[str, Any]:
         """
         Get IP reputation from threat intelligence.
 
@@ -223,7 +223,7 @@ class ExampleThreatIntelExtension:
             "asn_org": "Google LLC",
         }
 
-    async def get_domain_threats(self, domain: str) -> Dict[str, Any]:
+    async def get_domain_threats(self, domain: str) -> dict[str, Any]:
         """
         Get domain threat information.
 
@@ -243,7 +243,7 @@ class ExampleThreatIntelExtension:
             "risk_score": 10,
         }
 
-    async def get_cve_info(self, cve_id: str) -> Dict[str, Any]:
+    async def get_cve_info(self, cve_id: str) -> dict[str, Any]:
         """
         Get CVE vulnerability information.
 
@@ -266,7 +266,7 @@ class ExampleThreatIntelExtension:
             ],
         }
 
-    async def enrich_finding(self, finding: Dict[str, Any]) -> Dict[str, Any]:
+    async def enrich_finding(self, finding: dict[str, Any]) -> dict[str, Any]:
         """
         Enrich finding with threat intelligence.
 
@@ -290,7 +290,7 @@ class ExampleThreatIntelExtension:
 
         return enriched
 
-    def get_metadata(self) -> Dict[str, Any]:
+    def get_metadata(self) -> dict[str, Any]:
         """Get extension metadata"""
         return {
             "name": self.name,

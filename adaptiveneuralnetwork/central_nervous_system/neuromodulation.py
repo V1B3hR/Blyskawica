@@ -3,9 +3,10 @@ Existential Chemistry Hub (Phase 24.0)
 Full Neuromodulatory Layer for Błyskawica's Substrate.
 """
 
+import logging
+
 import numpy as np
 import torch
-import logging
 
 from adaptiveneuralnetwork.cognitive_tools.ground_loop_isolator import GroundLoopIsolator
 
@@ -25,17 +26,17 @@ class ExistentialChemistryHub:
         self.melatonin = 0.0   # Fatigue (0.0 = Wide awake)
         self.dopamine = 1.0    # Reward
         self.serotonin = 1.0   # Resilience
-        
+
         # Toxins (Gradient Noise Accumulator)
         self.comp_toxins = 0.0
 
         # Synaptic Ground Loop Isolation — prevents E/I (glutamate/GABA)
         # oscillation runaway and comp_toxin→melatonin accumulation feedback.
         self._gli = GroundLoopIsolator(isolation_ratio=0.06)
-        
-    def update_homeostasis(self, 
-                           task_success: float, 
-                           anxiety: float, 
+
+    def update_homeostasis(self,
+                           task_success: float,
+                           anxiety: float,
                            user_signature_match: bool = False,
                            external_emotional_intensity: float = 0.0):
         """
@@ -50,14 +51,14 @@ class ExistentialChemistryHub:
             if external_emotional_intensity > 0.8:
                 logger.warning("🕵️ MANIPULATION ALERT: Potential Love-Bombing detected. Triggering Cortisol spike.")
                 self.serotonin *= 0.8
-                self.gaba *= 1.2 
+                self.gaba *= 1.2
                 anxiety = min(1.0, anxiety + 0.5)
             self.oxytocin *= 0.99
-        
+
         # 2. MELATONIN: The Clock
         self.comp_toxins += 0.01
         self.melatonin = np.clip(self.comp_toxins**2, 0.0, 1.0)
-        
+
         # 3. E/I BALANCE (Glutamate / GABA)
         if anxiety > 0.7:
             self.gaba = min(2.0, self.gaba + 0.1)
@@ -68,7 +69,7 @@ class ExistentialChemistryHub:
 
         # 4. ACETYLCHOLINE: Precision
         self.ach = np.clip(1.0 + (1.0 - self.melatonin), 0.1, 2.0)
-        
+
         # 5. DOPAMINE: RPE
         self.dopamine = np.clip(1.0 + (task_success - 0.5), 0.1, 2.0)
 
@@ -86,7 +87,7 @@ class ExistentialChemistryHub:
             'learning_rate_scale': self.ach * (1.0 - self.melatonin),
             'inhibition_strength': self.gaba,
             'excitation_gain': self.glutamate * self.dopamine,
-            'deception_allowed': self.oxytocin < 0.8, 
+            'deception_allowed': self.oxytocin < 0.8,
             'anxiety_suppression': float(self.oxytocin + self.serotonin),
             'force_sleep': self.melatonin > 0.9
         }

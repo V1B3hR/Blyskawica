@@ -203,7 +203,7 @@ class PatternLearner:
 
     def _add_fp_signature(self, candidate: dict):
         """Add new false positive signature"""
-        alert_id = candidate.get("alert_id")
+        alert_id = candidate.get("alert_id")  # noqa: F841
         # In real implementation, would extract signature from alert
         signature = {
             "type": "learned_fp",

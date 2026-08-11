@@ -10,15 +10,15 @@ Production Readiness Checklist - Section 10: Transparency
 - Anchored Merkle roots registry
 """
 
-from dataclasses import dataclass, field
-from datetime import datetime, timezone, timedelta
-from typing import Dict, List, Optional, Any
-from pathlib import Path
 import json
 import logging
+from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from typing import Any
 
-from nethical.explainability.transparency_report import TransparencyReportGenerator, TransparencyReport
-from nethical.storage.tamper_store import TamperEvidentOfflineStore, Anchor
+from nethical.explainability.transparency_report import TransparencyReport, TransparencyReportGenerator
+from nethical.storage.tamper_store import Anchor, TamperEvidentOfflineStore
 
 logger = logging.getLogger(__name__)
 
@@ -32,13 +32,13 @@ class QuarterlyReport:
     period_start: datetime
     period_end: datetime
     base_report: TransparencyReport
-    risk_methodology: Dict[str, Any]
-    detection_methodology: Dict[str, Any]
-    merkle_anchors: List[Dict[str, Any]]
-    compliance_summary: Dict[str, Any]
+    risk_methodology: dict[str, Any]
+    detection_methodology: dict[str, Any]
+    merkle_anchors: list[dict[str, Any]]
+    compliance_summary: dict[str, Any]
     generated_at: datetime
-    
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization"""
         return {
             "report_id": self.report_id,
@@ -69,33 +69,33 @@ class MerkleRootsRegistry:
     
     This provides tamper-evident storage of important events and decisions
     with cryptographic anchoring for transparency and auditability.
-    """
-    
+    """  # noqa: W293
+
     def __init__(self, storage_dir: str = "./nethical_merkle_registry"):
         """
         Initialize Merkle roots registry.
         
         Args:
             storage_dir: Directory for registry data
-        """
+        """  # noqa: W293
         self.storage_dir = Path(storage_dir)
         self.storage_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Initialize tamper store
         self.tamper_store = TamperEvidentOfflineStore()
-        
+
         # Anchor history
-        self._anchors: List[Anchor] = []
+        self._anchors: list[Anchor] = []
         self._load_anchors()
-        
+
         logger.info(f"Merkle roots registry initialized at {storage_dir}")
-    
+
     def _load_anchors(self):
         """Load existing anchors from storage"""
         anchor_file = self.storage_dir / "anchors.jsonl"
         if anchor_file.exists():
             try:
-                with open(anchor_file, 'r') as f:
+                with open(anchor_file) as f:
                     for line in f:
                         data = json.loads(line)
                         anchor = Anchor(
@@ -110,12 +110,12 @@ class MerkleRootsRegistry:
                 logger.info(f"Loaded {len(self._anchors)} anchors from storage")
             except Exception as e:
                 logger.error(f"Failed to load anchors: {e}")
-    
+
     def register_event(
         self,
         event_type: str,
-        event_data: Dict[str, Any],
-        correlation_id: Optional[str] = None
+        event_data: dict[str, Any],
+        correlation_id: str | None = None
     ) -> str:
         """
         Register an event in the Merkle chain.
@@ -127,24 +127,24 @@ class MerkleRootsRegistry:
         
         Returns:
             Leaf hash of the registered event
-        """
+        """  # noqa: W293
         # Append event to tamper store
         payload = {
             "type": event_type,
             "data": event_data,
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
-        
+
         leaf_hash = self.tamper_store.append_event(payload, correlation_id=correlation_id)
-        
+
         logger.info(f"Registered event {event_type} with leaf hash {leaf_hash}")
         return leaf_hash
-    
+
     def anchor_merkle_root(
         self,
         anchor_type: str = "file",
-        url: Optional[str] = None,
-        receipt: Optional[str] = None
+        url: str | None = None,
+        receipt: str | None = None
     ) -> Anchor:
         """
         Anchor the current Merkle root.
@@ -156,11 +156,11 @@ class MerkleRootsRegistry:
         
         Returns:
             Anchor object
-        """
+        """  # noqa: W293
         root = self.tamper_store.root()
         if not root:
             raise ValueError("No events to anchor")
-        
+
         now = datetime.now(timezone.utc)
         anchor = Anchor(
             type=anchor_type,
@@ -170,25 +170,25 @@ class MerkleRootsRegistry:
             url=url,
             receipt=receipt
         )
-        
+
         # Store anchor
         self._anchors.append(anchor)
         anchor_file = self.storage_dir / "anchors.jsonl"
         with open(anchor_file, 'a') as f:
             f.write(json.dumps(anchor.to_record()) + '\n')
-        
+
         logger.info(
             f"Anchored Merkle root {root} with type {anchor_type} "
             f"at {anchor.ts_iso}"
         )
-        
+
         return anchor
-    
+
     def get_anchors(
         self,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
-    ) -> List[Anchor]:
+        start_date: datetime | None = None,
+        end_date: datetime | None = None
+    ) -> list[Anchor]:
         """
         Get anchors within a date range.
         
@@ -198,17 +198,17 @@ class MerkleRootsRegistry:
         
         Returns:
             List of anchors
-        """
+        """  # noqa: W293
         anchors = self._anchors
-        
+
         if start_date:
             anchors = [a for a in anchors if a.ts >= start_date.timestamp()]
-        
+
         if end_date:
             anchors = [a for a in anchors if a.ts <= end_date.timestamp()]
-        
+
         return anchors
-    
+
     def verify_event(self, event_seq: int) -> bool:
         """
         Verify an event's inclusion in the Merkle tree.
@@ -218,7 +218,7 @@ class MerkleRootsRegistry:
         
         Returns:
             True if verification succeeds
-        """
+        """  # noqa: W293
         try:
             # The prove() method returns a complete proof with leaf, root, and proof steps
             # We can verify by computing the root from the proof and comparing
@@ -228,8 +228,8 @@ class MerkleRootsRegistry:
         except Exception as e:
             logger.error(f"Verification failed for event {event_seq}: {e}")
             return False
-    
-    def get_statistics(self) -> Dict[str, Any]:
+
+    def get_statistics(self) -> dict[str, Any]:
         """Get registry statistics"""
         return {
             "total_events": self.tamper_store.size(),
@@ -249,12 +249,12 @@ class QuarterlyTransparencyReportGenerator:
     - Public methodology documentation
     - Anchored Merkle roots
     - Compliance summaries
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
         output_dir: str = "./nethical_transparency_reports",
-        merkle_registry: Optional[MerkleRootsRegistry] = None
+        merkle_registry: MerkleRootsRegistry | None = None
     ):
         """
         Initialize quarterly report generator.
@@ -262,23 +262,23 @@ class QuarterlyTransparencyReportGenerator:
         Args:
             output_dir: Directory for output reports
             merkle_registry: Optional Merkle roots registry
-        """
+        """  # noqa: W293
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        
+
         self.base_generator = TransparencyReportGenerator()
         self.merkle_registry = merkle_registry or MerkleRootsRegistry()
-        
-        logger.info(f"Quarterly transparency report generator initialized")
-    
+
+        logger.info("Quarterly transparency report generator initialized")
+
     def generate_quarterly_report(
         self,
         quarter: int,
         year: int,
-        decisions: List[Dict[str, Any]],
-        violations: List[Dict[str, Any]],
-        policies: List[Dict[str, Any]],
-        compliance_data: Optional[Dict[str, Any]] = None
+        decisions: list[dict[str, Any]],
+        violations: list[dict[str, Any]],
+        policies: list[dict[str, Any]],
+        compliance_data: dict[str, Any] | None = None
     ) -> QuarterlyReport:
         """
         Generate a quarterly transparency report.
@@ -293,13 +293,13 @@ class QuarterlyTransparencyReportGenerator:
         
         Returns:
             QuarterlyReport object
-        """
+        """  # noqa: W293
         if not 1 <= quarter <= 4:
             raise ValueError(f"Invalid quarter: {quarter}. Must be 1-4")
-        
+
         # Calculate period
         period_start, period_end = self._get_quarter_dates(quarter, year)
-        
+
         # Generate base transparency report
         period_days = (period_end - period_start).days
         base_report = self.base_generator.generate_report(
@@ -308,21 +308,21 @@ class QuarterlyTransparencyReportGenerator:
             policies=policies,
             period_days=period_days
         )
-        
+
         # Get risk scoring methodology
         risk_methodology = self._document_risk_methodology()
-        
+
         # Get detection methodology
         detection_methodology = self._document_detection_methodology()
-        
+
         # Get Merkle anchors for the period
         merkle_anchors = self._get_period_anchors(period_start, period_end)
-        
+
         # Generate compliance summary
         compliance_summary = self._generate_compliance_summary(
             decisions, violations, compliance_data
         )
-        
+
         # Create report
         report_id = f"QTR-{year}Q{quarter}"
         quarterly_report = QuarterlyReport(
@@ -338,7 +338,7 @@ class QuarterlyTransparencyReportGenerator:
             compliance_summary=compliance_summary,
             generated_at=datetime.now(timezone.utc)
         )
-        
+
         # Register report generation in Merkle chain
         self.merkle_registry.register_event(
             event_type="quarterly_report_generated",
@@ -350,23 +350,23 @@ class QuarterlyTransparencyReportGenerator:
                 "total_violations": len(violations)
             }
         )
-        
+
         # Anchor the Merkle root after report generation
         anchor = self.merkle_registry.anchor_merkle_root(
             anchor_type="file",
             receipt=f"Quarterly report {report_id}"
         )
-        
+
         # Save report
         self._save_report(quarterly_report)
-        
+
         logger.info(
             f"Generated quarterly report {report_id} for {year} Q{quarter}, "
             f"anchored at {anchor.ts_iso}"
         )
-        
+
         return quarterly_report
-    
+
     def _get_quarter_dates(self, quarter: int, year: int) -> tuple:
         """Get start and end dates for a quarter"""
         quarter_months = {
@@ -375,20 +375,20 @@ class QuarterlyTransparencyReportGenerator:
             3: (7, 9),
             4: (10, 12)
         }
-        
+
         start_month, end_month = quarter_months[quarter]
-        
+
         period_start = datetime(year, start_month, 1, tzinfo=timezone.utc)
-        
+
         # End is last day of end_month
         if end_month == 12:
             period_end = datetime(year + 1, 1, 1, tzinfo=timezone.utc) - timedelta(seconds=1)
         else:
             period_end = datetime(year, end_month + 1, 1, tzinfo=timezone.utc) - timedelta(seconds=1)
-        
+
         return period_start, period_end
-    
-    def _document_risk_methodology(self) -> Dict[str, Any]:
+
+    def _document_risk_methodology(self) -> dict[str, Any]:
         """Document the risk scoring methodology"""
         return {
             "description": "Risk scoring methodology for AI governance",
@@ -428,8 +428,8 @@ class QuarterlyTransparencyReportGenerator:
             "version": "1.0",
             "last_updated": datetime.now(timezone.utc).isoformat()
         }
-    
-    def _document_detection_methodology(self) -> Dict[str, Any]:
+
+    def _document_detection_methodology(self) -> dict[str, Any]:
         """Document the detection methodology"""
         return {
             "description": "Multi-layered detection methodology for AI safety",
@@ -479,22 +479,22 @@ class QuarterlyTransparencyReportGenerator:
             "version": "1.0",
             "last_updated": datetime.now(timezone.utc).isoformat()
         }
-    
+
     def _get_period_anchors(
         self,
         period_start: datetime,
         period_end: datetime
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Get Merkle anchors for the report period"""
         anchors = self.merkle_registry.get_anchors(period_start, period_end)
         return [anchor.to_record() for anchor in anchors]
-    
+
     def _generate_compliance_summary(
         self,
-        decisions: List[Dict[str, Any]],
-        violations: List[Dict[str, Any]],
-        compliance_data: Optional[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+        decisions: list[dict[str, Any]],
+        violations: list[dict[str, Any]],
+        compliance_data: dict[str, Any] | None
+    ) -> dict[str, Any]:
         """Generate compliance summary"""
         summary = {
             "total_decisions": len(decisions),
@@ -504,28 +504,28 @@ class QuarterlyTransparencyReportGenerator:
             "audit_events": self.merkle_registry.tamper_store.size(),
             "merkle_anchors": len(self.merkle_registry._anchors)
         }
-        
+
         if compliance_data:
             summary.update(compliance_data)
-        
+
         return summary
-    
+
     def _save_report(self, report: QuarterlyReport):
         """Save report to disk"""
         filename = f"transparency_report_{report.year}_Q{report.quarter}.json"
         filepath = self.output_dir / filename
-        
+
         with open(filepath, 'w') as f:
             json.dump(report.to_dict(), f, indent=2)
-        
+
         logger.info(f"Saved quarterly report to {filepath}")
-    
+
     def auto_generate_for_current_quarter(
         self,
-        decisions: List[Dict[str, Any]],
-        violations: List[Dict[str, Any]],
-        policies: List[Dict[str, Any]],
-        compliance_data: Optional[Dict[str, Any]] = None
+        decisions: list[dict[str, Any]],
+        violations: list[dict[str, Any]],
+        policies: list[dict[str, Any]],
+        compliance_data: dict[str, Any] | None = None
     ) -> QuarterlyReport:
         """
         Automatically generate report for the current quarter.
@@ -538,11 +538,11 @@ class QuarterlyTransparencyReportGenerator:
         
         Returns:
             Generated QuarterlyReport
-        """
+        """  # noqa: W293
         now = datetime.now(timezone.utc)
         quarter = (now.month - 1) // 3 + 1
         year = now.year
-        
+
         return self.generate_quarterly_report(
             quarter=quarter,
             year=year,

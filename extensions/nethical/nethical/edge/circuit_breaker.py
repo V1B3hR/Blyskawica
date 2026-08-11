@@ -9,7 +9,7 @@ import threading
 import time
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +63,7 @@ class CircuitBreaker:
         max_latency_ms: float = 10.0,
         failure_threshold: int = 5,
         recovery_timeout_seconds: float = 30.0,
-        config: Optional[CircuitConfig] = None,
+        config: CircuitConfig | None = None,
     ):
         """
         Initialize CircuitBreaker.
@@ -89,11 +89,11 @@ class CircuitBreaker:
 
         # Failure tracking
         self._consecutive_failures = 0
-        self._last_failure_time: Optional[float] = None
-        self._open_time: Optional[float] = None
+        self._last_failure_time: float | None = None
+        self._open_time: float | None = None
 
         # Latency tracking
-        self._latency_samples: List[float] = []
+        self._latency_samples: list[float] = []
 
         # Half-open tracking
         self._half_open_successes = 0
@@ -127,7 +127,7 @@ class CircuitBreaker:
             if self._state == CircuitState.CLOSED:
                 return True
 
-            if self._state == CircuitState.HALF_OPEN:
+            if self._state == CircuitState.HALF_OPEN:  # noqa: SIM102
                 # Allow limited requests in half-open state
                 if self._half_open_successes < self.config.half_open_requests:
                     return True
@@ -220,7 +220,7 @@ class CircuitBreaker:
 
     def _maybe_transition_state(self):
         """Check if state should transition."""
-        if self._state == CircuitState.OPEN:
+        if self._state == CircuitState.OPEN:  # noqa: SIM102
             if self._open_time is not None:
                 elapsed = time.time() - self._open_time
                 if elapsed >= self.config.recovery_timeout_seconds:
@@ -245,7 +245,7 @@ class CircuitBreaker:
             self._failed_requests = 0
             self._rejected_requests = 0
 
-    def get_latency_percentile(self, percentile: float) -> Optional[float]:
+    def get_latency_percentile(self, percentile: float) -> float | None:
         """
         Get latency percentile.
 
@@ -262,7 +262,7 @@ class CircuitBreaker:
             idx = int(len(sorted_samples) * percentile / 100)
             return sorted_samples[min(idx, len(sorted_samples) - 1)]
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get circuit breaker metrics."""
         with self._lock:
             return {

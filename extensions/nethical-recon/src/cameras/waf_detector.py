@@ -72,7 +72,7 @@ class WAFDetector(BaseCamera):
     def validate_config(self) -> bool:
         """Validate configuration"""
         try:
-            import requests
+            import requests  # noqa: F401
 
             return True
         except ImportError:

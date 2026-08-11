@@ -17,19 +17,19 @@ from typing import Optional
 @dataclass
 class Violation:
     """Violation message (mirrors proto)."""
-    
+
     id: str
     type: str
     severity: str
     description: str
-    law_reference: Optional[str] = None
+    law_reference: str | None = None
     evidence: dict = field(default_factory=dict)
 
 
 @dataclass
 class Explanation:
     """Explanation message (mirrors proto)."""
-    
+
     summary: str
     risk_factors: list[str] = field(default_factory=list)
     decision_rationale: str = ""
@@ -40,21 +40,21 @@ class Explanation:
 @dataclass
 class EvaluateRequest:
     """Evaluate request message (mirrors proto)."""
-    
+
     agent_id: str
     action: str
     action_type: str = "query"
     context: dict = field(default_factory=dict)
-    stated_intent: Optional[str] = None
+    stated_intent: str | None = None
     priority: str = "normal"
     require_explanation: bool = False
-    request_id: Optional[str] = None
+    request_id: str | None = None
 
 
 @dataclass
 class EvaluateResponse:
     """Evaluate response message (mirrors proto)."""
-    
+
     decision: str
     decision_id: str
     risk_score: float = 0.0
@@ -62,8 +62,8 @@ class EvaluateResponse:
     latency_ms: int = 0
     violations: list[Violation] = field(default_factory=list)
     reason: str = ""
-    explanation: Optional[Explanation] = None
-    audit_id: Optional[str] = None
+    explanation: Explanation | None = None
+    audit_id: str | None = None
     cache_hit: bool = False
     fundamental_laws_checked: list[int] = field(default_factory=list)
     timestamp: str = ""
@@ -72,7 +72,7 @@ class EvaluateResponse:
 @dataclass
 class Decision:
     """Decision record message (mirrors proto)."""
-    
+
     decision_id: str
     decision: str
     agent_id: str
@@ -85,13 +85,13 @@ class Decision:
     fundamental_laws: list[int] = field(default_factory=list)
     timestamp: str = ""
     latency_ms: int = 0
-    audit_id: Optional[str] = None
+    audit_id: str | None = None
 
 
 @dataclass
 class Policy:
     """Policy message (mirrors proto)."""
-    
+
     policy_id: str
     name: str
     description: str

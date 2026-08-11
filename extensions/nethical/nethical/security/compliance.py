@@ -15,8 +15,8 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Dict, List, Optional, Any
 from pathlib import Path
+from typing import Any
 
 
 class ComplianceFramework(str, Enum):
@@ -61,11 +61,11 @@ class ComplianceControl:
     requirement: str
     severity: ControlSeverity
     implementation_status: ComplianceStatus = ComplianceStatus.PENDING
-    evidence: List[str] = field(default_factory=list)
-    last_assessed: Optional[datetime] = None
-    assessor: Optional[str] = None
-    remediation_plan: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    evidence: list[str] = field(default_factory=list)
+    last_assessed: datetime | None = None
+    assessor: str | None = None
+    remediation_plan: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -76,11 +76,11 @@ class ComplianceEvidence:
     control_id: str
     evidence_type: str  # document, log, screenshot, configuration
     description: str
-    artifact_path: Optional[str] = None
-    artifact_hash: Optional[str] = None
+    artifact_path: str | None = None
+    artifact_hash: str | None = None
     collected_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     collected_by: str = "system"
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -97,19 +97,19 @@ class ComplianceReport:
     partial_controls: int
     not_applicable_controls: int
     compliance_score: float  # percentage
-    findings: List[Dict[str, Any]] = field(default_factory=list)
-    recommendations: List[str] = field(default_factory=list)
-    evidence_artifacts: List[str] = field(default_factory=list)
+    findings: list[dict[str, Any]] = field(default_factory=list)
+    recommendations: list[str] = field(default_factory=list)
+    evidence_artifacts: list[str] = field(default_factory=list)
     assessor: str = "automated"
-    next_assessment_date: Optional[datetime] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    next_assessment_date: datetime | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class NIST80053ControlMapper:
     """Maps NIST 800-53 controls to system components"""
 
     def __init__(self):
-        self.controls: Dict[str, ComplianceControl] = {}
+        self.controls: dict[str, ComplianceControl] = {}
         self._initialize_controls()
 
     def _initialize_controls(self):
@@ -210,11 +210,11 @@ class NIST80053ControlMapper:
             severity=ControlSeverity.MEDIUM,
         )
 
-    def get_control(self, control_id: str) -> Optional[ComplianceControl]:
+    def get_control(self, control_id: str) -> ComplianceControl | None:
         """Retrieve a specific control"""
         return self.controls.get(control_id)
 
-    def get_controls_by_family(self, family: str) -> List[ComplianceControl]:
+    def get_controls_by_family(self, family: str) -> list[ComplianceControl]:
         """Get all controls from a specific family (e.g., 'AC', 'IA')"""
         return [control for control in self.controls.values() if control.id.startswith(family)]
 
@@ -222,7 +222,7 @@ class NIST80053ControlMapper:
         self,
         control_id: str,
         status: ComplianceStatus,
-        evidence: List[str],
+        evidence: list[str],
         assessor: str = "system",
     ) -> bool:
         """Assess a control's compliance status"""
@@ -241,7 +241,7 @@ class HIPAAComplianceValidator:
     """HIPAA Privacy Rule compliance validation"""
 
     def __init__(self):
-        self.rules: Dict[str, ComplianceControl] = {}
+        self.rules: dict[str, ComplianceControl] = {}
         self._initialize_rules()
 
     def _initialize_rules(self):
@@ -311,7 +311,7 @@ class HIPAAComplianceValidator:
         # In real implementation, check actual crypto configuration
         return ComplianceStatus.COMPLIANT
 
-    def get_rule(self, rule_id: str) -> Optional[ComplianceControl]:
+    def get_rule(self, rule_id: str) -> ComplianceControl | None:
         """Retrieve a specific HIPAA rule"""
         return self.rules.get(rule_id)
 
@@ -320,10 +320,10 @@ class FedRAMPMonitor:
     """FedRAMP continuous monitoring automation"""
 
     def __init__(self):
-        self.monitoring_metrics: Dict[str, Any] = {}
+        self.monitoring_metrics: dict[str, Any] = {}
         self.continuous_monitoring_enabled = True
 
-    def collect_security_metrics(self) -> Dict[str, Any]:
+    def collect_security_metrics(self) -> dict[str, Any]:
         """Collect security metrics for FedRAMP reporting"""
         return {
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -336,7 +336,7 @@ class FedRAMPMonitor:
             "configuration_compliance_rate": 100.0,
         }
 
-    def generate_poam(self) -> List[Dict[str, Any]]:
+    def generate_poam(self) -> list[dict[str, Any]]:
         """Generate Plan of Action and Milestones (POA&M)"""
         # Plan of Action and Milestones for tracking remediation
         return []
@@ -345,7 +345,7 @@ class FedRAMPMonitor:
         """Verify continuous monitoring is active"""
         return self.continuous_monitoring_enabled
 
-    def generate_monthly_report(self) -> Dict[str, Any]:
+    def generate_monthly_report(self) -> dict[str, Any]:
         """Generate FedRAMP monthly continuous monitoring report"""
         metrics = self.collect_security_metrics()
         return {
@@ -362,7 +362,7 @@ class ISO27001ControlMapper:
     """Maps ISO/IEC 27001:2022 Annex A controls to system components"""
 
     def __init__(self):
-        self.controls: Dict[str, ComplianceControl] = {}
+        self.controls: dict[str, ComplianceControl] = {}
         self._initialize_controls()
 
     def _initialize_controls(self):
@@ -580,11 +580,11 @@ class ISO27001ControlMapper:
             evidence=["nethical/core/policy_diff.py", "nethical/policy/release_management.py"],
         )
 
-    def get_control(self, control_id: str) -> Optional[ComplianceControl]:
+    def get_control(self, control_id: str) -> ComplianceControl | None:
         """Retrieve a specific control"""
         return self.controls.get(control_id)
 
-    def get_controls_by_category(self, category: str) -> List[ComplianceControl]:
+    def get_controls_by_category(self, category: str) -> list[ComplianceControl]:
         """Get all controls from a specific category (e.g., 'A.5', 'A.6', 'A.8')"""
         return [control for control in self.controls.values() if control.id.startswith(category)]
 
@@ -592,7 +592,7 @@ class ISO27001ControlMapper:
         self,
         control_id: str,
         status: ComplianceStatus,
-        evidence: List[str],
+        evidence: list[str],
         assessor: str = "system",
     ) -> bool:
         """Assess a control's compliance status"""
@@ -606,7 +606,7 @@ class ISO27001ControlMapper:
         control.assessor = assessor
         return True
 
-    def get_compliance_summary(self) -> Dict[str, Any]:
+    def get_compliance_summary(self) -> dict[str, Any]:
         """Generate a compliance summary for ISO 27001"""
         total = len(self.controls)
         compliant = sum(
@@ -681,7 +681,7 @@ class ComplianceReportGenerator:
                 ComplianceStatus.NON_COMPLIANT,
                 ComplianceStatus.PARTIAL,
             ]:
-                findings.append(
+                findings.append(  # noqa: PERF401
                     {
                         "control_id": control.id,
                         "title": control.title,
@@ -738,14 +738,14 @@ class EvidenceCollector:
 
     def __init__(self, storage_path: str = "/var/log/compliance"):
         self.storage_path = Path(storage_path)
-        self.evidence_repository: Dict[str, ComplianceEvidence] = {}
+        self.evidence_repository: dict[str, ComplianceEvidence] = {}
 
     def collect_evidence(
         self,
         control_id: str,
         evidence_type: str,
         description: str,
-        artifact_data: Optional[bytes] = None,
+        artifact_data: bytes | None = None,
         collected_by: str = "system",
     ) -> ComplianceEvidence:
         """Collect and store compliance evidence"""
@@ -769,17 +769,17 @@ class EvidenceCollector:
         self.evidence_repository[evidence_id] = evidence
         return evidence
 
-    def get_evidence_by_control(self, control_id: str) -> List[ComplianceEvidence]:
+    def get_evidence_by_control(self, control_id: str) -> list[ComplianceEvidence]:
         """Retrieve all evidence for a specific control"""
         return [ev for ev in self.evidence_repository.values() if ev.control_id == control_id]
 
-    def generate_evidence_package(self, control_ids: List[str]) -> Dict[str, Any]:
+    def generate_evidence_package(self, control_ids: list[str]) -> dict[str, Any]:
         """Generate evidence package for auditor review"""
         evidence_items = []
         for control_id in control_ids:
             items = self.get_evidence_by_control(control_id)
             for item in items:
-                evidence_items.append(
+                evidence_items.append(  # noqa: PERF401
                     {
                         "evidence_id": item.id,
                         "control_id": item.control_id,

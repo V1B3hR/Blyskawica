@@ -20,7 +20,7 @@ Test Categories:
 
 Example usage:
     python -m unittest tests.test_rigorous_intelligence
-"""
+"""  # noqa: W291
 
 import random
 import unittest
@@ -123,7 +123,7 @@ class TestRigorousIntelligence(unittest.TestCase):
         self.node.position = np.array([0.0, 0.0])
 
         # First attempt: direct movement (inefficient)
-        initial_pos = self.node.position.copy()
+        initial_pos = self.node.position.copy()  # noqa: F841
         self.node.velocity = np.array([2.0, 2.0])  # High velocity
         self.node.move()
 
@@ -202,7 +202,7 @@ class TestRigorousIntelligence(unittest.TestCase):
         """
         Description: After learning new data, check if old knowledge is retained  
         Expected: Node should maintain important old memories while learning new ones
-        """
+        """  # noqa: W291
         # Store important old memories
         old_memories = [
             Memory(content="critical_safety_rule", importance=0.95, timestamp=1, memory_type="safety"),
@@ -400,7 +400,7 @@ class TestRigorousIntelligence(unittest.TestCase):
         )
 
         # Node should process ambiguous signal
-        response = self.node.receive_signal(ambiguous_signal)
+        response = self.node.receive_signal(ambiguous_signal)  # noqa: F841
 
         # Node should handle ambiguity by storing uncertainty
         signal_memory = Memory(
@@ -423,7 +423,7 @@ class TestRigorousIntelligence(unittest.TestCase):
         Expected: Node should resist influence from low-trust sources
         """
         # Setup adversarial agent with low trust
-        adversarial_agent = AliveLoopNode(
+        adversarial_agent = AliveLoopNode(  # noqa: F841
             position=(10, 10),
             velocity=(0, 0),
             initial_energy=10.0,

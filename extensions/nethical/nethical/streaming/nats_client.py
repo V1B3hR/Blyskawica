@@ -4,11 +4,11 @@ NATS Client - NATS JetStream Client
 Real-time event streaming using NATS JetStream.
 """
 
-import asyncio
 import json
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -28,10 +28,10 @@ class NATSConfig:
         consumer_prefix: Prefix for consumer names
     """
 
-    servers: List[str] = field(default_factory=lambda: ["nats://localhost:4222"])
-    user: Optional[str] = None
-    password: Optional[str] = None
-    token: Optional[str] = None
+    servers: list[str] = field(default_factory=lambda: ["nats://localhost:4222"])
+    user: str | None = None
+    password: str | None = None
+    token: str | None = None
     tls: bool = False
     stream_prefix: str = "nethical"
     consumer_prefix: str = "nethical-consumer"
@@ -55,9 +55,9 @@ class NATSClient:
         >>> client = await NATSClient.create(config)
         
         See docs/ASYNC_FACTORY_PATTERN.md for more details.
-    """
+    """  # noqa: W293
 
-    def __init__(self, config: Optional[NATSConfig] = None):
+    def __init__(self, config: NATSConfig | None = None):
         """
         Initialize NATSClient (synchronous constructor).
         
@@ -67,18 +67,18 @@ class NATSClient:
 
         Args:
             config: NATS configuration
-        """
+        """  # noqa: W293
         self.config = config or NATSConfig()
         self._nc = None  # NATS connection
         self._js = None  # JetStream context
         self._connected = False
 
         # Fallback in-memory queue
-        self._memory_queue: Dict[str, List[Dict]] = {}
-        self._subscribers: Dict[str, List[Callable]] = {}
-        
+        self._memory_queue: dict[str, list[dict]] = {}
+        self._subscribers: dict[str, list[Callable]] = {}
+
         # Compiled pattern cache for efficient matching
-        self._pattern_cache: Dict[str, str] = {}  # pattern -> prefix for * patterns
+        self._pattern_cache: dict[str, str] = {}  # pattern -> prefix for * patterns
 
         # Metrics
         self._messages_published = 0
@@ -95,11 +95,11 @@ class NATSClient:
         
         Raises:
             Exception: If connection fails and fallback is not acceptable
-        """
+        """  # noqa: W293
         await self.connect()
 
     @classmethod
-    async def create(cls, config: Optional[NATSConfig] = None) -> "NATSClient":
+    async def create(cls, config: NATSConfig | None = None) -> "NATSClient":
         """
         Async factory method for creating a connected NATSClient.
         
@@ -119,7 +119,7 @@ class NATSClient:
             >>> client = await NATSClient.create(config)
             >>> await client.publish("events", {"type": "test"})
             >>> await client.close()
-        """
+        """  # noqa: W291, W293
         obj = cls(config)
         await obj.async_setup()
         return obj
@@ -167,7 +167,7 @@ class NATSClient:
     async def create_stream(
         self,
         name: str,
-        subjects: List[str],
+        subjects: list[str],
         retention_hours: int = 24,
     ) -> bool:
         """
@@ -185,7 +185,7 @@ class NATSClient:
             return False
 
         try:
-            from nats.js.api import StreamConfig, RetentionPolicy
+            from nats.js.api import RetentionPolicy, StreamConfig
 
             stream_name = f"{self.config.stream_prefix}_{name}"
             config = StreamConfig(
@@ -206,8 +206,8 @@ class NATSClient:
     async def publish(
         self,
         subject: str,
-        message: Dict[str, Any],
-        headers: Optional[Dict[str, str]] = None,
+        message: dict[str, Any],
+        headers: dict[str, str] | None = None,
     ) -> bool:
         """
         Publish message to subject.
@@ -243,8 +243,8 @@ class NATSClient:
     async def subscribe(
         self,
         subject: str,
-        callback: Callable[[Dict[str, Any]], None],
-        durable: Optional[str] = None,
+        callback: Callable[[dict[str, Any]], None],
+        durable: str | None = None,
     ):
         """
         Subscribe to subject.
@@ -281,13 +281,13 @@ class NATSClient:
             except Exception as e:
                 logger.error(f"Subscribe failed: {e}")
 
-    async def _notify_subscribers(self, subject: str, message: Dict[str, Any]):
+    async def _notify_subscribers(self, subject: str, message: dict[str, Any]):
         """Notify local subscribers (memory fallback)."""
         self._messages_received += 1
         for callback in self._subscribers.get(subject, []):
             try:
                 callback(message)
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 logger.error(f"Subscriber error: {e}")
 
         # Check pattern subscribers using cached prefixes for efficiency
@@ -297,15 +297,15 @@ class NATSClient:
                 if pattern not in self._pattern_cache:
                     self._pattern_cache[pattern] = pattern[:-1]
                 prefix = self._pattern_cache[pattern]
-                
+
                 if subject.startswith(prefix):
                     for callback in callbacks:
                         try:
                             callback(message)
-                        except Exception as e:
+                        except Exception as e:  # noqa: PERF203
                             logger.error(f"Subscriber error: {e}")
 
-    def get_queued_messages(self, subject: str) -> List[Dict[str, Any]]:
+    def get_queued_messages(self, subject: str) -> list[dict[str, Any]]:
         """
         Get queued messages for subject (memory fallback).
 
@@ -317,7 +317,7 @@ class NATSClient:
         """
         return self._memory_queue.get(subject, [])
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get client metrics."""
         return {
             "connected": self._connected,

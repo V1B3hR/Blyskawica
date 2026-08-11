@@ -4,9 +4,9 @@ Enriches raw discoveries with additional context and intelligence
 """
 
 import logging
+import socket
 from datetime import datetime
 from typing import Any
-import socket
 
 from .base import CameraDiscovery
 
@@ -67,7 +67,7 @@ class DNSEnrichmentProvider(EnrichmentProvider):
         try:
             socket.inet_aton(target)
             return True
-        except socket.error:
+        except OSError:
             return False
 
 
@@ -140,7 +140,7 @@ class MetadataEnrichmentProvider(EnrichmentProvider):
         try:
             socket.inet_aton(target)
             return True
-        except socket.error:
+        except OSError:
             return False
 
 
@@ -305,5 +305,5 @@ class EnrichmentPipeline:
         """Reset statistics"""
         self.total_enrichments = 0
         self.total_errors = 0
-        self.enrichments_by_provider = {name: 0 for name in self.providers}
+        self.enrichments_by_provider = dict.fromkeys(self.providers, 0)
         self.logger.info("Reset enrichment statistics")

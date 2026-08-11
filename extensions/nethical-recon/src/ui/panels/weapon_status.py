@@ -69,5 +69,5 @@ class WeaponStatusPanel:
 
     def render_compact(self) -> str:
         """Render compact text version"""
-        icon = self.get_mode_icon()
+        icon = self.get_mode_icon()  # noqa: F841
         return f"🔫 {self.mode} [{self.status}] Stealth: {self.stealth}%"

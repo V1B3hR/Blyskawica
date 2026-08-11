@@ -1,8 +1,8 @@
 """Sky/Birds Module"""
 
+from .communication import BirdCommunicationProtocol
 from .coordination_protocol import BirdCoordinationProtocol, CoordinationMessage
 from .topology_viz import SkyTopologyVisualizer
-from .communication import BirdCommunicationProtocol
 
 __all__ = [
     "BirdCoordinationProtocol",

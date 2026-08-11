@@ -14,7 +14,10 @@ from typing import Any
 
 import torch
 
-from adaptiveneuralnetwork.central_nervous_system.consolidation import PhaseBasedConsolidation, UnifiedConsolidationManager
+from adaptiveneuralnetwork.central_nervous_system.consolidation import (
+    PhaseBasedConsolidation,
+    UnifiedConsolidationManager,
+)
 from adaptiveneuralnetwork.central_nervous_system.nodes import NodeState
 from adaptiveneuralnetwork.central_nervous_system.phases import PhaseScheduler
 
@@ -47,7 +50,7 @@ class PhasePlugin(ABC):
             
         Returns:
             Dictionary with phase results and modifications
-        """
+        """  # noqa: W293
         pass
 
     @abstractmethod
@@ -57,7 +60,7 @@ class PhasePlugin(ABC):
         
         Returns:
             Dictionary mapping from_phase -> {to_phase: probability}
-        """
+        """  # noqa: W293
         pass
 
     def _get_metadata(self) -> dict[str, Any]:
@@ -222,7 +225,7 @@ class PluginManager:
             
         Returns:
             Assigned phase ID
-        """
+        """  # noqa: W293
         if plugin.name in self.plugins and not replace_existing:
             raise ValueError(f"Plugin '{plugin.name}' already registered. Use replace_existing=True to override.")
 
@@ -332,7 +335,7 @@ class PluginManager:
             
         Returns:
             Extended transition matrix including plugin phases
-        """
+        """  # noqa: W293
         total_phases = num_base_phases + len(self.active_plugins)
 
         if total_phases == num_base_phases:
@@ -381,7 +384,7 @@ class PluginManager:
 
             # Find plugin classes
             plugin_classes = []
-            for name, obj in inspect.getmembers(module):
+            for name, obj in inspect.getmembers(module):  # noqa: B007
                 if (inspect.isclass(obj) and
                     issubclass(obj, PhasePlugin) and
                     obj is not PhasePlugin):

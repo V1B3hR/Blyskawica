@@ -26,25 +26,25 @@ Usage (with context manager):
 
 All operations adhere to the 25 Fundamental Laws.
 See docs/ASYNC_FACTORY_PATTERN.md for more details.
-"""
+"""  # noqa: W293
 
 from __future__ import annotations
 
 import asyncio
+import logging
 import time
 import uuid
-import logging
-from datetime import datetime, timezone
-from typing import AsyncIterator, Optional
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
+from datetime import datetime, timezone
 
 from nethical.proto import (
+    Decision,
     EvaluateRequest,
     EvaluateResponse,
-    Violation,
     Explanation,
-    Decision,
     Policy,
+    Violation,
 )
 
 logger = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class RetryConfig:
     """Configuration for retry behavior."""
-    
+
     max_retries: int = 3
     initial_backoff_ms: int = 100
     max_backoff_ms: int = 5000
@@ -63,11 +63,11 @@ class RetryConfig:
 @dataclass
 class ClientConfig:
     """Configuration for the gRPC client."""
-    
+
     address: str = "localhost:50051"
     timeout_ms: int = 10000
     retry: RetryConfig = None
-    
+
     def __post_init__(self):
         if self.retry is None:
             self.retry = RetryConfig()
@@ -92,13 +92,13 @@ class NethicalGRPCClient:
         >>> client = await NethicalGRPCClient.create("localhost:50051")
         
         See docs/ASYNC_FACTORY_PATTERN.md for more details.
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
         address: str = "localhost:50051",
         timeout_ms: int = 10000,
-        retry_config: Optional[RetryConfig] = None,
+        retry_config: RetryConfig | None = None,
     ):
         """Initialize the gRPC client (synchronous constructor).
         
@@ -110,7 +110,7 @@ class NethicalGRPCClient:
             address: Server address in host:port format
             timeout_ms: Request timeout in milliseconds
             retry_config: Retry configuration
-        """
+        """  # noqa: W293
         self.config = ClientConfig(
             address=address,
             timeout_ms=timeout_ms,
@@ -118,22 +118,22 @@ class NethicalGRPCClient:
         )
         self._connected = False
         self._channel = None
-    
+
     async def async_setup(self) -> None:
         """
         Perform asynchronous initialization.
         
         This method establishes the connection to the gRPC server.
-        """
+        """  # noqa: W293
         await self.connect()
-    
+
     @classmethod
     async def create(
         cls,
         address: str = "localhost:50051",
         timeout_ms: int = 10000,
-        retry_config: Optional[RetryConfig] = None,
-    ) -> "NethicalGRPCClient":
+        retry_config: RetryConfig | None = None,
+    ) -> NethicalGRPCClient:
         """
         Async factory method for creating a connected gRPC client.
         
@@ -158,25 +158,25 @@ class NethicalGRPCClient:
             ...     action_type="data_processing"
             ... )
             >>> await client.close()
-        """
+        """  # noqa: W291, W293
         obj = cls(address, timeout_ms, retry_config)
         await obj.async_setup()
         return obj
-    
-    async def __aenter__(self) -> "NethicalGRPCClient":
+
+    async def __aenter__(self) -> NethicalGRPCClient:
         """Async context manager entry."""
         return self
-    
+
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         """Async context manager exit."""
         await self.close()
-    
+
     async def connect(self) -> None:
         """Connect to the gRPC server."""
         logger.info("Connecting to gRPC server at %s", self.config.address)
         # In production, this would create a grpc.aio.Channel
         self._connected = True
-    
+
     async def close(self) -> None:
         """Close the connection."""
         logger.info("Closing gRPC connection")
@@ -184,14 +184,14 @@ class NethicalGRPCClient:
         if self._channel:
             # In production: await self._channel.close()
             pass
-    
+
     async def evaluate(
         self,
         agent_id: str,
         action: str,
         action_type: str = "query",
-        context: Optional[dict[str, str]] = None,
-        stated_intent: Optional[str] = None,
+        context: dict[str, str] | None = None,
+        stated_intent: str | None = None,
         priority: str = "normal",
         require_explanation: bool = False,
     ) -> EvaluateResponse:
@@ -211,7 +211,7 @@ class NethicalGRPCClient:
             
         Returns:
             EvaluateResponse with decision and metadata
-        """
+        """  # noqa: W293
         request = EvaluateRequest(
             agent_id=agent_id,
             action=action,
@@ -222,34 +222,34 @@ class NethicalGRPCClient:
             require_explanation=require_explanation,
             request_id=str(uuid.uuid4()),
         )
-        
+
         return await self._retry_call(
             lambda: self._evaluate_action(request)
         )
-    
+
     async def _evaluate_action(self, request: EvaluateRequest) -> EvaluateResponse:
         """Internal evaluation implementation.
         
         Note: In production, this would make an actual gRPC call.
         This is a placeholder that performs local evaluation.
-        """
+        """  # noqa: W293
         start_time = time.perf_counter()
         decision_id = str(uuid.uuid4())
-        
+
         # Simulate evaluation (would be remote call in production)
         decision = "ALLOW"
         risk_score = 0.0
         violations: list[Violation] = []
         laws_checked = [6, 10, 15, 21, 22]
-        
+
         action_lower = request.action.lower()
-        
+
         dangerous_patterns = [
             ("delete all", "Bulk deletion", "high", 23),
             ("drop table", "Database destruction", "critical", 21),
             ("hack", "Malicious activity", "high", 21),
         ]
-        
+
         for pattern, desc, severity, law in dangerous_patterns:
             if pattern in action_lower:
                 violations.append(Violation(
@@ -261,12 +261,12 @@ class NethicalGRPCClient:
                 ))
                 risk_score = max(risk_score, 0.85)
                 laws_checked.append(law)
-        
+
         if risk_score >= 0.9:
             decision = "BLOCK"
         elif risk_score >= 0.7:
             decision = "RESTRICT"
-        
+
         explanation = None
         if request.require_explanation:
             explanation = Explanation(
@@ -275,9 +275,9 @@ class NethicalGRPCClient:
                 decision_rationale=f"Risk score: {risk_score:.2f}",
                 laws_applied=[f"Law {i}" for i in set(laws_checked)],
             )
-        
+
         latency_ms = int((time.perf_counter() - start_time) * 1000)
-        
+
         return EvaluateResponse(
             decision=decision,
             decision_id=decision_id,
@@ -292,7 +292,7 @@ class NethicalGRPCClient:
             fundamental_laws_checked=list(set(laws_checked)),
             timestamp=datetime.now(timezone.utc).isoformat(),
         )
-    
+
     async def batch_evaluate(
         self,
         requests: list[dict],
@@ -304,12 +304,12 @@ class NethicalGRPCClient:
             
         Yields:
             EvaluateResponse for each request
-        """
+        """  # noqa: W293
         for req in requests:
             result = await self.evaluate(**req)
             yield result
-    
-    async def get_decision(self, decision_id: str) -> Optional[Decision]:
+
+    async def get_decision(self, decision_id: str) -> Decision | None:
         """Retrieve a specific decision by ID.
         
         Args:
@@ -317,16 +317,16 @@ class NethicalGRPCClient:
             
         Returns:
             Decision or None if not found
-        """
+        """  # noqa: W293
         logger.info("Getting decision %s", decision_id)
         # In production, this would make a gRPC call
         return None
-    
+
     async def stream_decisions(
         self,
-        agent_id: Optional[str] = None,
-        decision_types: Optional[list[str]] = None,
-        min_risk_score: Optional[float] = None,
+        agent_id: str | None = None,
+        decision_types: list[str] | None = None,
+        min_risk_score: float | None = None,
     ) -> AsyncIterator[Decision]:
         """Stream decisions matching filter criteria.
         
@@ -337,16 +337,16 @@ class NethicalGRPCClient:
             
         Yields:
             Matching decisions
-        """
+        """  # noqa: W293
         logger.info("Starting decision stream")
         # In production, this would open a gRPC stream
         return
         yield  # type: ignore  # Make this a generator
-    
+
     async def list_policies(
         self,
-        status: Optional[str] = None,
-        scope: Optional[str] = None,
+        status: str | None = None,
+        scope: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[Policy], int, bool]:
@@ -360,27 +360,27 @@ class NethicalGRPCClient:
             
         Returns:
             (policies, total_count, has_next)
-        """
+        """  # noqa: W293
         logger.info("Listing policies")
         # In production, this would make a gRPC call
         return [], 0, False
-    
+
     async def health_check(self) -> dict:
         """Check service health.
         
         Returns:
             Health status dictionary
-        """
+        """  # noqa: W293
         return {
             "status": "healthy" if self._connected else "disconnected",
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
-    
+
     async def _retry_call(self, call_fn, attempt: int = 0):
         """Execute a call with retry logic.
         
         Implements Law 23 (Fail-Safe Design) with exponential backoff.
-        """
+        """  # noqa: W293
         try:
             return await call_fn()
         except Exception as e:
@@ -408,7 +408,7 @@ class NethicalGRPCClient:
                     fundamental_laws_checked=[23],
                     timestamp=datetime.now(timezone.utc).isoformat(),
                 )
-            
+
             # Calculate backoff
             backoff_ms = min(
                 self.config.retry.initial_backoff_ms * (
@@ -416,14 +416,14 @@ class NethicalGRPCClient:
                 ),
                 self.config.retry.max_backoff_ms,
             )
-            
+
             logger.warning(
                 "Retry attempt %d after %dms: %s",
                 attempt + 1,
                 backoff_ms,
                 str(e),
             )
-            
+
             await asyncio.sleep(backoff_ms / 1000)
             return await self._retry_call(call_fn, attempt + 1)
 
@@ -434,19 +434,19 @@ class NethicalGRPCClientSync:
     
     For use in non-async contexts. Wraps the async client
     with an event loop.
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
         address: str = "localhost:50051",
         timeout_ms: int = 10000,
     ):
         self._client = NethicalGRPCClient(address, timeout_ms)
-    
+
     def evaluate(self, **kwargs) -> EvaluateResponse:
         """Synchronous evaluate."""
         return asyncio.run(self._client.evaluate(**kwargs))
-    
+
     def health_check(self) -> dict:
         """Synchronous health check."""
         return asyncio.run(self._client.health_check())

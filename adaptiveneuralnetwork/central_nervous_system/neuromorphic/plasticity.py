@@ -75,7 +75,7 @@ class STDPSynapse(nn.Module):
     
     Classic STDP rule where pre-before-post leads to potentiation (LTP)
     and post-before-pre leads to depression (LTD).
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
@@ -128,7 +128,7 @@ class STDPSynapse(nn.Module):
             
         Returns:
             Tuple of (synaptic_current, plasticity_info)
-        """
+        """  # noqa: W291, W293
         if dt is None:
             dt = 0.001  # Default 1ms
 
@@ -182,7 +182,7 @@ class STDPSynapse(nn.Module):
             if self.config.multiplicative:
                 # Multiplicative STDP
                 potentiation_mask = weight_changes > 0
-                depression_mask = weight_changes < 0
+                depression_mask = weight_changes < 0  # noqa: F841
 
                 pot_change = weight_changes * (self.config.w_max - self.weights)
                 dep_change = weight_changes * (self.weights - self.config.w_min)
@@ -227,7 +227,7 @@ class STDPSynapse(nn.Module):
                 # Check ALL pre-neurons for recent spikes
                 # (Optimized version would use traces, but we use last_pre_spike for fidelity here)
                 dt_ltp = post_time - self.last_pre_spike[b] # [pre_size] tensor
-                
+
                 # Masks for valid pairing range
                 ltp_mask = (dt_ltp > 0) & (dt_ltp <= self.config.max_dt)
                 if ltp_mask.any():
@@ -239,7 +239,7 @@ class STDPSynapse(nn.Module):
                 pre_time = current_time
                 # Check ALL post-neurons for recent spikes
                 dt_ltd = pre_time - self.last_post_spike[b] # [post_size] tensor
-                
+
                 ltd_mask = (dt_ltd > 0) & (dt_ltd <= self.config.max_dt)
                 if ltd_mask.any():
                     ltd_amount = -self.config.a_minus * torch.exp(-dt_ltd[ltd_mask] / self.config.tau_minus)
@@ -255,7 +255,7 @@ class MetaplasticitySynapse(nn.Module):
     
     Implements sliding threshold metaplasticity where the plasticity
     threshold adapts based on postsynaptic activity history.
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
@@ -306,7 +306,7 @@ class MetaplasticitySynapse(nn.Module):
             
         Returns:
             Tuple of (synaptic_current, plasticity_info)
-        """
+        """  # noqa: W293
         if dt is None:
             dt = 0.001
 
@@ -355,15 +355,15 @@ class MetaplasticitySynapse(nn.Module):
             with torch.no_grad():
                 # Update tags based on co-activation salience
                 self.weight_tags += torch.abs(post_spikes.mean(dim=0).unsqueeze(0) * pre_spikes.mean(dim=0).unsqueeze(1)) * 0.01
-                
+
                 # Knowledge Crystallization (Phase 7.5) - Social Consensus
                 # If trust matrix is available, use it to 'tag' and freeze weights
                 # We expect trust_matrix to be [num_nodes, num_nodes]
                 # In a simplified mapping, we can use trust between pre/post segments
-                
+
                 # Protection factor is the inverse of plasticity
                 self.protection_factor = torch.exp(-self.weight_tags * 5.0) # Higher tag = lower plasticity
-                
+
                 # Modulate the learning rate of the underlying STDP synapse
                 self.stdp_synapse.lr *= self.protection_factor
 
@@ -381,7 +381,7 @@ class MetaplasticitySynapse(nn.Module):
             # If activity < threshold: increase plasticity (priming)
             # Both self.x and self.theta should be [batch, post_size]
             activity_factor = torch.sigmoid(-(self.x - self.theta)) # [batch, post_size]
-            
+
             # Average activity factor across batch
             batch_activity_factor = activity_factor.mean(dim=0) # [post_size]
 
@@ -415,7 +415,7 @@ class HomeostaticScaling(nn.Module):
     
     Multiplicatively scales all synapses to maintain target firing rates,
     preserving relative weight relationships while ensuring network stability.
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
@@ -457,7 +457,7 @@ class HomeostaticScaling(nn.Module):
             
         Returns:
             Tuple of (scaled_weights, homeostatic_info)
-        """
+        """  # noqa: W293
         if dt is None:
             dt = 0.001
 
@@ -527,7 +527,7 @@ class MultiTimescalePlasticity(nn.Module):
     - Fast STDP (milliseconds to seconds)  
     - Slow homeostatic scaling (minutes to hours)
     - Intermediate metaplasticity (seconds to minutes)
-    """
+    """  # noqa: W291, W293
 
     def __init__(
         self,
@@ -574,7 +574,7 @@ class MultiTimescalePlasticity(nn.Module):
             
         Returns:
             Tuple of (synaptic_current, plasticity_info)
-        """
+        """  # noqa: W293
         if dt is None:
             dt = 0.001
 

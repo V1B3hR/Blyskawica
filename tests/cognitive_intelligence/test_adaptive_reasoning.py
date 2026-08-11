@@ -38,7 +38,7 @@ class TestAdaptiveReasoning(unittest.TestCase):
         Expected: System should adapt strategy when context indicates poor performance
         """
         # Initial context with low success rate
-        initial_context = {"problem_type": "optimization", "success_rate": 0.3}
+        initial_context = {"problem_type": "optimization", "success_rate": 0.3}  # noqa: F841
         self.reasoning_system.current_strategy = "greedy"
 
         # Simulate context change requiring different strategy

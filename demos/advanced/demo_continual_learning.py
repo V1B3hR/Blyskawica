@@ -7,7 +7,7 @@ This script demonstrates:
 2. Sleep-phase ablation studies  
 3. Anxiety and restorative behavior analysis
 4. Enhanced phase controllers with sparsity metrics
-"""
+"""  # noqa: W291
 
 import os
 import sys

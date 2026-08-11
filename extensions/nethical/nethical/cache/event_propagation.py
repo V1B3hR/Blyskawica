@@ -8,9 +8,10 @@ import json
 import logging
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -39,9 +40,9 @@ class CacheEvent:
     """
 
     event_type: EventType
-    key: Optional[str] = None
+    key: str | None = None
     value: Any = None
-    pattern: Optional[str] = None
+    pattern: str | None = None
     timestamp: float = field(default_factory=time.time)
     source_region: str = "local"
     propagate_globally: bool = True
@@ -64,7 +65,7 @@ class EventPropagation:
     def __init__(
         self,
         l2_cache: Optional["L2RedisCache"] = None,
-        nats_client: Optional[Any] = None,
+        nats_client: Any | None = None,
         region: str = "local",
     ):
         """
@@ -80,13 +81,13 @@ class EventPropagation:
         self.region = region
 
         # Local subscribers
-        self._subscribers: Dict[EventType, List[Callable]] = {
+        self._subscribers: dict[EventType, list[Callable]] = {
             et: [] for et in EventType
         }
         self._lock = threading.RLock()
 
         # Event buffer for batching
-        self._event_buffer: List[CacheEvent] = []
+        self._event_buffer: list[CacheEvent] = []
         self._buffer_size = 100
         self._flush_interval = 1.0  # seconds
 
@@ -123,7 +124,7 @@ class EventPropagation:
             for callback in self._subscribers.get(event.event_type, []):
                 try:
                     callback(event)
-                except Exception as e:
+                except Exception as e:  # noqa: PERF203
                     logger.error(f"Local subscriber error: {e}")
 
     def _publish_l2(self, event: CacheEvent):
@@ -217,7 +218,7 @@ class EventPropagation:
             channel = f"nethical:cache:{event_type.value}"
             self.l2_cache.subscribe(channel, handle_message)
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get propagation metrics."""
         return {
             "events_published": self._events_published,
@@ -231,7 +232,7 @@ class EventPropagation:
 
 
 # Type hints
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING  # noqa: E402
 
 if TYPE_CHECKING:
     from .l2_redis import L2RedisCache

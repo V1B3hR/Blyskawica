@@ -70,7 +70,7 @@ class ConvLSTMCell(nn.Module):
             
         Returns:
             (h_next, c_next): Next hidden and cell states
-        """
+        """  # noqa: W293
         h_cur, c_cur = cur_state
 
         # Concatenate input and hidden state
@@ -154,7 +154,7 @@ class ConvLSTM(nn.Module):
             
         Returns:
             Output tensor of shape (B, num_classes)
-        """
+        """  # noqa: W293
         batch_size, seq_len, channels, height, width = x.size()
 
         # Initialize hidden states for all layers
@@ -244,7 +244,7 @@ class Conv3D(nn.Module):
             
         Returns:
             Output tensor of shape (B, num_classes)
-        """
+        """  # noqa: W293
         # Rearrange to (B, C, T, H, W) for 3D convolution
         x = x.permute(0, 2, 1, 3, 4)
 
@@ -338,7 +338,7 @@ class VideoTransformer(nn.Module):
             
         Returns:
             Output tensor of shape (B, num_classes)
-        """
+        """  # noqa: W293
         batch_size, seq_len, channels, height, width = x.size()
 
         # Extract spatial features for each frame
@@ -409,7 +409,7 @@ class HybridVideoModel(nn.Module):
             
         Returns:
             Output tensor of shape (B, num_classes)
-        """
+        """  # noqa: W293
         # Get outputs from all models
         convlstm_out = self.convlstm(x)
         conv3d_out = self.conv3d(x)
@@ -490,7 +490,7 @@ class AdvancedTemporalReasoning(nn.Module):
             
         Returns:
             Dictionary with temporal analysis results
-        """
+        """  # noqa: W293
         B, T, D = sequence_features.shape
 
         # Multi-scale temporal convolutions
@@ -566,7 +566,7 @@ class ActionRecognitionHead(nn.Module):
             
         Returns:
             Dictionary with action recognition results
-        """
+        """  # noqa: W293
         # Use global temporal pooling for current action
         current_action_features = temporal_features.mean(dim=1)  # (B, D)
 
@@ -633,8 +633,8 @@ class VideoTextAudioFusion(nn.Module):
             
         Returns:
             Dictionary with fused features
-        """
-        B = video_features.shape[0]
+        """  # noqa: W293
+        B = video_features.shape[0]  # noqa: F841
 
         # Project to common dimension
         video_proj = self.video_proj(video_features)  # (B, T, fusion_dim)
@@ -711,7 +711,7 @@ class AdvancedVideoTransformer(VideoTransformer):
             
         Returns:
             Either classification logits or detailed analysis dictionary
-        """
+        """  # noqa: W293
         batch_size, seq_len, channels, height, width = x.shape
 
         # Process each frame through CNN

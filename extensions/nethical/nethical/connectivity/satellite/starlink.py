@@ -13,15 +13,13 @@ import asyncio
 import logging
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any
 
 from .base import (
     ConnectionConfig,
-    ConnectionMetrics,
     ConnectionState,
     SatelliteConnectionError,
     SatelliteProvider,
-    SatelliteTimeoutError,
 )
 
 logger = logging.getLogger(__name__)
@@ -81,7 +79,7 @@ class StarlinkProvider(SatelliteProvider):
         >>> provider = await StarlinkProvider.create(config)
         
         See docs/ASYNC_FACTORY_PATTERN.md for more details.
-    """
+    """  # noqa: W293
 
     # Starlink typical performance ranges
     TYPICAL_LATENCY_MS_MIN = 20.0
@@ -89,7 +87,7 @@ class StarlinkProvider(SatelliteProvider):
     SPIKE_LATENCY_MS = 100.0
     TYPICAL_BANDWIDTH_MBPS = 100.0
 
-    def __init__(self, config: Optional[ConnectionConfig] = None):
+    def __init__(self, config: ConnectionConfig | None = None):
         """
         Initialize Starlink provider (synchronous constructor).
         
@@ -99,7 +97,7 @@ class StarlinkProvider(SatelliteProvider):
 
         Args:
             config: Connection configuration with Starlink-specific options
-        """
+        """  # noqa: W293
         super().__init__(config)
 
         # Starlink-specific configuration
@@ -110,8 +108,8 @@ class StarlinkProvider(SatelliteProvider):
         self._enable_ipv6 = self.config.provider_options.get("enable_ipv6", True)
 
         # Dish status
-        self._dish_status: Optional[StarlinkDishStatus] = None
-        self._last_dish_poll: Optional[datetime] = None
+        self._dish_status: StarlinkDishStatus | None = None
+        self._last_dish_poll: datetime | None = None
 
         # Connection tracking
         self._send_queue: asyncio.Queue = asyncio.Queue()
@@ -126,11 +124,11 @@ class StarlinkProvider(SatelliteProvider):
         
         Raises:
             SatelliteConnectionError: If connection fails
-        """
+        """  # noqa: W293
         await self.connect()
 
     @classmethod
-    async def create(cls, config: Optional[ConnectionConfig] = None) -> "StarlinkProvider":
+    async def create(cls, config: ConnectionConfig | None = None) -> "StarlinkProvider":
         """
         Async factory method for creating a connected Starlink provider.
         
@@ -158,7 +156,7 @@ class StarlinkProvider(SatelliteProvider):
             >>> provider = await StarlinkProvider.create(config)
             >>> await provider.send("Hello from space!")
             >>> await provider.disconnect()
-        """
+        """  # noqa: W291, W293
         obj = cls(config)
         await obj.async_setup()
         return obj
@@ -172,7 +170,7 @@ class StarlinkProvider(SatelliteProvider):
         return "LEO"
 
     @property
-    def dish_status(self) -> Optional[StarlinkDishStatus]:
+    def dish_status(self) -> StarlinkDishStatus | None:
         """Get current dish status."""
         return self._dish_status
 
@@ -232,7 +230,7 @@ class StarlinkProvider(SatelliteProvider):
             raise
         except Exception as e:
             self.state = ConnectionState.ERROR
-            raise SatelliteConnectionError(
+            raise SatelliteConnectionError(  # noqa: B904
                 f"Starlink connection failed: {str(e)}",
                 self.provider_name,
                 {"error": str(e)},
@@ -282,12 +280,12 @@ class StarlinkProvider(SatelliteProvider):
             return True
         except Exception as e:
             self._metrics.errors_count += 1
-            raise SatelliteConnectionError(
+            raise SatelliteConnectionError(  # noqa: B904
                 f"Send failed: {str(e)}",
                 self.provider_name,
             )
 
-    async def receive(self, timeout: Optional[float] = None) -> Optional[bytes]:
+    async def receive(self, timeout: float | None = None) -> bytes | None:
         """
         Receive data from Starlink connection.
 
@@ -315,7 +313,7 @@ class StarlinkProvider(SatelliteProvider):
             return None
         except Exception as e:
             self._metrics.errors_count += 1
-            raise SatelliteConnectionError(
+            raise SatelliteConnectionError(  # noqa: B904
                 f"Receive failed: {str(e)}",
                 self.provider_name,
             )
@@ -362,7 +360,7 @@ class StarlinkProvider(SatelliteProvider):
             self._metrics.errors_count += 1
             return False
 
-    async def get_signal_info(self) -> Dict[str, Any]:
+    async def get_signal_info(self) -> dict[str, Any]:
         """
         Get current Starlink signal information.
 
@@ -393,7 +391,7 @@ class StarlinkProvider(SatelliteProvider):
             "alerts": self._dish_status.alerts,
         }
 
-    async def get_obstruction_map(self) -> Optional[Dict[str, Any]]:
+    async def get_obstruction_map(self) -> dict[str, Any] | None:
         """
         Get dish obstruction map.
 

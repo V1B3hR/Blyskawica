@@ -26,7 +26,7 @@ Version: 1.0.0
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 import numpy as np
 
@@ -61,7 +61,7 @@ def is_cuda_available() -> bool:
     return torch.cuda.is_available()
 
 
-def get_cuda_info() -> Dict[str, Any]:
+def get_cuda_info() -> dict[str, Any]:
     """Get CUDA device information.
 
     Returns:
@@ -108,7 +108,7 @@ class CUDAAccelerator(AcceleratorInterface):
             config: Accelerator configuration
         """
         super().__init__(config)
-        self._stream: Optional[Any] = None
+        self._stream: Any | None = None
         self._dtype = None
 
     @property
@@ -203,7 +203,7 @@ class CUDAAccelerator(AcceleratorInterface):
 
         tensor = torch.from_numpy(data).to(self._device)
 
-        if self.config.mixed_precision:
+        if self.config.mixed_precision:  # noqa: SIM108
             tensor = tensor.half()
         else:
             tensor = tensor.float()
@@ -253,9 +253,8 @@ class CUDAAccelerator(AcceleratorInterface):
 
         # Execute in stream if async
         if self._stream is not None:
-            with torch.cuda.stream(self._stream):
-                with torch.no_grad():
-                    return model(inputs)
+            with torch.cuda.stream(self._stream), torch.no_grad():
+                return model(inputs)
         else:
             with torch.no_grad():
                 return model(inputs)
@@ -268,7 +267,7 @@ class CUDAAccelerator(AcceleratorInterface):
             else:
                 torch.cuda.synchronize(self._device)
 
-    def get_memory_info(self) -> Dict[str, float]:
+    def get_memory_info(self) -> dict[str, float]:
         """Get CUDA memory usage.
 
         Returns:
@@ -303,7 +302,7 @@ class CUDAAccelerator(AcceleratorInterface):
             self._stream = None
             log.info("CUDA accelerator shutdown")
 
-    def compile_model(self, model: Any, example_inputs: Optional[Any] = None) -> Any:
+    def compile_model(self, model: Any, example_inputs: Any | None = None) -> Any:
         """Compile model for optimized inference.
 
         Uses torch.compile for PyTorch 2.0+ or TorchScript for older versions.

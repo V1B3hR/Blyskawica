@@ -15,31 +15,31 @@ Author: Nethical Core Team
 Version: 1.0.0
 """
 
-from .gdpr import (
-    GDPRComplianceValidator,
-    GDPRArticle,
-    DataSubjectRight,
-    LawfulBasis,
-    GDPRValidationResult,
-)
-from .eu_ai_act import (
-    EUAIActValidator,
-    AIRiskLevel,
-    EUAIActArticle,
-    ConformityAssessmentResult,
-)
 from .data_residency import (
-    DataResidencyManager,
-    DataRegion,
     DataClassification,
+    DataRegion,
+    DataResidencyManager,
     DataType,
     ResidencyPolicy,
     ResidencyViolation,
 )
+from .eu_ai_act import (
+    AIRiskLevel,
+    ConformityAssessmentResult,
+    EUAIActArticle,
+    EUAIActValidator,
+)
+from .gdpr import (
+    DataSubjectRight,
+    GDPRArticle,
+    GDPRComplianceValidator,
+    GDPRValidationResult,
+    LawfulBasis,
+)
 from .validator import (
-    ComplianceValidator,
     ComplianceFramework,
     ComplianceReport,
+    ComplianceValidator,
     ValidationResult,
 )
 

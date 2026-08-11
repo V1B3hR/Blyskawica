@@ -1,4 +1,5 @@
 import logging
+
 from adaptiveneuralnetwork.cognitive_tools.polymathic_hub import PolymathicHub
 from adaptiveneuralnetwork.training.deep_education_curriculum import DeepEducationCurriculum
 
@@ -15,15 +16,15 @@ class ITOsmosisExperiment:
 
     def run_it_mastery_test(self):
         print("\n=== STARTING IT OSMOSIS EXPERIMENT (LEVEL 1: FUNDAMENTALS) ===")
-        
+
         # Test 1: Networking Topology
         print("\n[SCENARIO] Configure a resilient BGP peering between two enterprise hubs.")
         cost, net_resp = self.poly_hub.process_polymathic_signal(
-            "Configure BGP router with IP 192.168.1.1 and DNS failover on switch.", 
+            "Configure BGP router with IP 192.168.1.1 and DNS failover on switch.",
             current_energy=20.0
         )
         print(f"Blyskawica Analysis: {net_resp}")
-        
+
         # Test 2: OS Kernel Mastery
         print("\n[SCENARIO] Describe the differences in handle management between Windows 11 and Linux Kernel 6.x.")
         cost, os_resp = self.poly_hub.process_polymathic_signal(
@@ -31,7 +32,7 @@ class ITOsmosisExperiment:
             current_energy=18.0
         )
         print(f"Blyskawica Analysis: {os_resp}")
-        
+
         # Test 3: Cybersecurity
         print("\n[SCENARIO] Detect signs of a Cobalt Strike beacon based on Abuse.ch traffic patterns.")
         cost, cyb_resp = self.poly_hub.process_polymathic_signal(
@@ -44,7 +45,7 @@ class ITOsmosisExperiment:
         self.curriculum.advance_stage("IT_Infrasructure")
         self.curriculum.advance_stage("OS_Mastery")
         self.curriculum.advance_stage("Cybersecurity")
-        
+
         print("\n=== EXPERIMENT COMPLETED. MASTERY LEVELS ADVANCED. ===")
         print(f"New Report: {self.curriculum.get_stage_report()}")
 

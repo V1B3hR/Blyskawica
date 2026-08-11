@@ -35,9 +35,8 @@ import argparse
 import json
 import logging
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -49,9 +48,9 @@ except ImportError:
     YAML_AVAILABLE = False
 
 from nethical.compliance import (
-    ComplianceValidator,
     ComplianceFramework,
     ComplianceReport,
+    ComplianceValidator,
 )
 
 # Configure logging
@@ -65,7 +64,7 @@ logger = logging.getLogger(__name__)
 # ANSI color codes for terminal output
 class Colors:
     """ANSI color codes for terminal output."""
-    
+
     HEADER = "\033[95m"
     BLUE = "\033[94m"
     CYAN = "\033[96m"
@@ -85,7 +84,7 @@ def color_status(status: str) -> str:
         
     Returns:
         Colored status string
-    """
+    """  # noqa: W293
     status_lower = status.lower()
     if status_lower == "compliant":
         return f"{Colors.GREEN}✓ COMPLIANT{Colors.ENDC}"
@@ -102,7 +101,7 @@ def print_header(text: str) -> None:
     
     Args:
         text: Header text
-    """
+    """  # noqa: W293
     print(f"\n{Colors.BOLD}{Colors.HEADER}{'=' * 60}{Colors.ENDC}")
     print(f"{Colors.BOLD}{Colors.HEADER}{text:^60}{Colors.ENDC}")
     print(f"{Colors.BOLD}{Colors.HEADER}{'=' * 60}{Colors.ENDC}\n")
@@ -113,11 +112,11 @@ def print_section(text: str) -> None:
     
     Args:
         text: Section text
-    """
+    """  # noqa: W293
     print(f"\n{Colors.BOLD}{Colors.BLUE}--- {text} ---{Colors.ENDC}\n")
 
 
-def load_config(config_path: Optional[str]) -> Dict[str, Any]:
+def load_config(config_path: str | None) -> dict[str, Any]:
     """Load configuration from file.
     
     Args:
@@ -125,17 +124,17 @@ def load_config(config_path: Optional[str]) -> Dict[str, Any]:
         
     Returns:
         Configuration dictionary
-    """
+    """  # noqa: W293
     if not config_path:
         return {}
-    
+
     path = Path(config_path)
     if not path.exists():
         logger.warning("Config file not found: %s", config_path)
         return {}
-    
+
     content = path.read_text()
-    
+
     if path.suffix in (".yaml", ".yml"):
         if not YAML_AVAILABLE:
             logger.error("PyYAML not installed. Install with: pip install pyyaml")
@@ -153,33 +152,33 @@ def print_report_summary(report: ComplianceReport) -> None:
     
     Args:
         report: ComplianceReport to print
-    """
+    """  # noqa: W293
     print_header("NETHICAL COMPLIANCE VALIDATION REPORT")
-    
+
     # Report metadata
     print(f"{Colors.CYAN}Report ID:{Colors.ENDC} {report.report_id}")
     print(f"{Colors.CYAN}Generated:{Colors.ENDC} {report.generated_at.isoformat()}")
     print(f"{Colors.CYAN}Frameworks:{Colors.ENDC} {', '.join(f.value for f in report.frameworks_validated)}")
-    
+
     # Overall status
     print_section("OVERALL STATUS")
     print(f"Status: {color_status(report.overall_status.value)}")
-    
+
     # Score bar
     score = report.compliance_score
     bar_width = 40
     filled = int(bar_width * score / 100)
     bar = "█" * filled + "░" * (bar_width - filled)
-    
+
     if score >= 80:
         score_color = Colors.GREEN
     elif score >= 60:
         score_color = Colors.YELLOW
     else:
         score_color = Colors.RED
-    
+
     print(f"Score: {score_color}[{bar}] {score:.1f}%{Colors.ENDC}")
-    
+
     # Framework summaries
     if report.gdpr_summary:
         print_section("GDPR SUMMARY")
@@ -187,7 +186,7 @@ def print_report_summary(report: ComplianceReport) -> None:
         print(f"  Total Checks: {summary.get('total_checks', 0)}")
         print(f"  Status: {summary.get('overall_status', 'N/A')}")
         print(f"  Score: {summary.get('compliance_score', 0):.1f}%")
-    
+
     if report.eu_ai_act_summary:
         print_section("EU AI ACT SUMMARY")
         summary = report.eu_ai_act_summary
@@ -195,31 +194,31 @@ def print_report_summary(report: ComplianceReport) -> None:
         print(f"  Articles Validated: {summary.get('total_articles_validated', 0)}")
         print(f"  Score: {summary.get('compliance_score', 0):.1f}%")
         print(f"  Certification Ready: {'Yes' if summary.get('certification_ready') else 'No'}")
-    
+
     # Validation results by framework
     print_section("VALIDATION RESULTS")
-    
+
     current_framework = None
     for result in report.validation_results:
         if result.framework != current_framework:
             current_framework = result.framework
             print(f"\n{Colors.BOLD}{current_framework.value.upper()}{Colors.ENDC}")
-        
+
         print(f"  [{result.check_id}] {result.check_name}: {color_status(result.status.value)}")
-        
+
         if result.gaps:
             for gap in result.gaps[:2]:  # Show first 2 gaps
                 print(f"    {Colors.RED}• {gap}{Colors.ENDC}")
-    
+
     # Recommendations
     if report.recommendations:
         print_section("RECOMMENDATIONS")
         for i, rec in enumerate(report.recommendations[:10], 1):  # Show first 10
             print(f"  {i}. {rec}")
-        
+
         if len(report.recommendations) > 10:
             print(f"  ... and {len(report.recommendations) - 10} more")
-    
+
     # Data residency summary
     if report.data_residency_summary:
         print_section("DATA RESIDENCY")
@@ -229,14 +228,14 @@ def print_report_summary(report: ComplianceReport) -> None:
             print(f"  {Colors.RED}Violations: {violations}{Colors.ENDC}")
         else:
             print(f"  {Colors.GREEN}No violations detected{Colors.ENDC}")
-    
+
     print("\n" + "=" * 60)
 
 
 def run_validation(
     framework: str,
-    config: Dict[str, Any],
-    output_path: Optional[str] = None,
+    config: dict[str, Any],
+    output_path: str | None = None,
     verbose: bool = False,
 ) -> int:
     """Run compliance validation.
@@ -249,7 +248,7 @@ def run_validation(
         
     Returns:
         Exit code (0 for success, 1 for failures)
-    """
+    """  # noqa: W293
     # Map string to enum
     framework_map = {
         "all": ComplianceFramework.ALL,
@@ -259,35 +258,35 @@ def run_validation(
         "iso_27001": ComplianceFramework.ISO_27001,
         "nist_ai_rmf": ComplianceFramework.NIST_AI_RMF,
     }
-    
+
     framework_enum = framework_map.get(framework.lower())
     if not framework_enum:
         logger.error("Unknown framework: %s", framework)
         print(f"Valid frameworks: {', '.join(framework_map.keys())}")
         return 1
-    
+
     # Initialize validator
     system_characteristics = config.get("system_characteristics", {
         "critical_infrastructure": True,  # Enables high-risk AI evaluation
     })
-    
+
     validator = ComplianceValidator(system_characteristics=system_characteristics)
-    
+
     # Run validation
     logger.info("Running compliance validation for: %s", framework)
     report = validator.validate(
         framework=framework_enum,
         configs=config,
     )
-    
+
     # Print report
     print_report_summary(report)
-    
+
     # Save report if output path specified
     if output_path:
         report.save(output_path)
         print(f"\n{Colors.GREEN}Report saved to: {output_path}{Colors.ENDC}")
-    
+
     # Return exit code based on status
     if report.overall_status.value == "compliant":
         return 0
@@ -302,7 +301,7 @@ def main() -> int:
     
     Returns:
         Exit code
-    """
+    """  # noqa: W293
     parser = argparse.ArgumentParser(
         description="Nethical Compliance Validator CLI",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -319,9 +318,9 @@ Frameworks:
   eu_ai_act   - EU AI Act (Regulation 2024/1689)
   iso_27001   - ISO 27001 Information Security
   nist_ai_rmf - NIST AI Risk Management Framework
-        """,
+        """,  # noqa: W293
     )
-    
+
     parser.add_argument(
         "framework",
         type=str,
@@ -329,40 +328,40 @@ Frameworks:
         default="all",
         help="Framework to validate (default: all)",
     )
-    
+
     parser.add_argument(
         "-c", "--config",
         type=str,
         help="Path to configuration file (JSON or YAML)",
     )
-    
+
     parser.add_argument(
         "-o", "--output",
         type=str,
         help="Path to save output report (JSON)",
     )
-    
+
     parser.add_argument(
         "-v", "--verbose",
         action="store_true",
         help="Enable verbose output",
     )
-    
+
     parser.add_argument(
         "--version",
         action="version",
         version="%(prog)s 1.0.0",
     )
-    
+
     args = parser.parse_args()
-    
+
     # Set log level
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
-    
+
     # Load config
     config = load_config(args.config)
-    
+
     try:
         return run_validation(
             framework=args.framework,

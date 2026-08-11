@@ -10,7 +10,7 @@ import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ class BenchmarkComparison:
 
     scenario_name: str
     passed: bool
-    comparisons: List[ComparisonResult]
+    comparisons: list[ComparisonResult]
     summary: str
 
 
@@ -53,13 +53,13 @@ class BenchmarkComparer:
     def __init__(
         self,
         baselines_dir: str = "benchmarks/baselines",
-        thresholds: Optional[Dict[str, float]] = None,
+        thresholds: dict[str, float] | None = None,
     ):
         self.baselines_dir = Path(baselines_dir)
 
         # Allow thresholds override via env var BENCHMARK_THRESHOLDS as JSON, e.g.:
         # {"avg_latency_ms": 25.0, "p99_latency_ms": 30.0, "throughput_rps": -20.0}
-        env_thresholds: Optional[Dict[str, float]] = None
+        env_thresholds: dict[str, float] | None = None
         raw = os.getenv("BENCHMARK_THRESHOLDS", "").strip()
         if raw:
             try:
@@ -77,7 +77,7 @@ class BenchmarkComparer:
         else:
             self.thresholds = base_thresholds
 
-    def load_baseline(self, version: str) -> Optional[Dict[str, Any]]:
+    def load_baseline(self, version: str) -> dict[str, Any] | None:
         """Load baseline results for a specific version."""
         baseline_path = self.baselines_dir / f"{version}.json"
         if not baseline_path.exists():
@@ -92,7 +92,7 @@ class BenchmarkComparer:
         metric: str,
         current: float,
         baseline: float,
-        threshold: Optional[float] = None,
+        threshold: float | None = None,
     ) -> ComparisonResult:
         """Compare a single metric against baseline."""
         if threshold is None:
@@ -104,7 +104,7 @@ class BenchmarkComparer:
             difference_percent = ((current - baseline) / baseline) * 100
 
         # For throughput, regression is when value decreases
-        if metric == "throughput_rps":
+        if metric == "throughput_rps":  # noqa: SIM108
             regression = difference_percent < threshold  # threshold is negative
         else:
             regression = difference_percent > threshold
@@ -120,12 +120,12 @@ class BenchmarkComparer:
 
     def compare_scenario(
         self,
-        current_results: Dict[str, Any],
-        baseline_results: Dict[str, Any],
+        current_results: dict[str, Any],
+        baseline_results: dict[str, Any],
         scenario_name: str,
     ) -> BenchmarkComparison:
         """Compare results for a single scenario against baseline."""
-        comparisons: List[ComparisonResult] = []
+        comparisons: list[ComparisonResult] = []
         metrics_to_compare = [
             "avg_latency_ms",
             "p50_latency_ms",
@@ -163,7 +163,7 @@ class BenchmarkComparer:
         self,
         current_path: str,
         baseline_version: str = "v2.2.0",
-    ) -> List[BenchmarkComparison]:
+    ) -> list[BenchmarkComparison]:
         """Compare current benchmark results against a baseline version."""
         baseline = self.load_baseline(baseline_version)
         if baseline is None:
@@ -173,7 +173,7 @@ class BenchmarkComparer:
         with open(current_path) as f:
             current = json.load(f)
 
-        comparisons: List[BenchmarkComparison] = []
+        comparisons: list[BenchmarkComparison] = []
 
         # Map results by scenario name
         baseline_by_name = {r["name"]: r for r in baseline.get("results", [])}
@@ -191,7 +191,7 @@ class BenchmarkComparer:
 
         return comparisons
 
-    def generate_report(self, comparisons: List[BenchmarkComparison]) -> str:
+    def generate_report(self, comparisons: list[BenchmarkComparison]) -> str:
         """Generate a human-readable comparison report."""
         lines = [
             "# Benchmark Comparison Report",
@@ -242,7 +242,7 @@ def compare_and_report(
     # Allow toggling fail behavior from env
     env_fail = os.getenv("FAIL_ON_REGRESSION")
     if env_fail is not None:
-        try:
+        try:  # noqa: SIM105
             # Accept "true"/"false"/"1"/"0"
             fail_on_regression = str(env_fail).lower() in {"1", "true", "yes"}
         except Exception:

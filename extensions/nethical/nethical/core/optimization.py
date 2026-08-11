@@ -17,14 +17,15 @@ Design:
 from __future__ import annotations
 
 import json
+import math
 import random
 import sqlite3
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Callable, Tuple
-import math
+from typing import Any
 
 
 class OptimizationTechnique(Enum):
@@ -53,7 +54,7 @@ class OptimizationObjective:
     weight: float
     maximize: bool  # True to maximize, False to minimize
     current_value: float = 0.0
-    target_value: Optional[float] = None
+    target_value: float | None = None
 
     def score(self, value: float) -> float:
         """Calculate weighted score for this objective.
@@ -80,7 +81,7 @@ class Configuration:
     created_at: datetime
 
     # Rule parameters
-    rule_weights: Dict[str, float] = field(default_factory=dict)
+    rule_weights: dict[str, float] = field(default_factory=dict)
 
     # ML parameters
     classifier_threshold: float = 0.5
@@ -95,9 +96,9 @@ class Configuration:
     escalation_violation_count: int = 3
 
     # Metadata
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "config_id": self.config_id,
@@ -138,7 +139,7 @@ class PerformanceMetrics:
     # Sample size
     total_cases: int = 0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "config_id": self.config_id,
@@ -164,7 +165,7 @@ class PromotionGate:
 
     def evaluate(
         self, candidate_metrics: PerformanceMetrics, baseline_metrics: PerformanceMetrics
-    ) -> Tuple[bool, List[str]]:
+    ) -> tuple[bool, list[str]]:
         """Evaluate if candidate passes promotion gate.
 
         Args:
@@ -246,7 +247,7 @@ class MultiObjectiveOptimizer:
     def __init__(
         self,
         storage_path: str = "./data/optimization.db",
-        objectives: Optional[List[OptimizationObjective]] = None,
+        objectives: list[OptimizationObjective] | None = None,
     ):
         """Initialize optimizer.
 
@@ -267,8 +268,8 @@ class MultiObjectiveOptimizer:
         self.promotion_gate = PromotionGate()
 
         # Configuration history
-        self.configurations: Dict[str, Configuration] = {}
-        self.metrics_history: Dict[str, PerformanceMetrics] = {}
+        self.configurations: dict[str, Configuration] = {}
+        self.metrics_history: dict[str, PerformanceMetrics] = {}
 
         self._init_storage()
 
@@ -323,14 +324,14 @@ class MultiObjectiveOptimizer:
     def create_configuration(
         self,
         config_version: str,
-        rule_weights: Optional[Dict[str, float]] = None,
+        rule_weights: dict[str, float] | None = None,
         classifier_threshold: float = 0.5,
         confidence_threshold: float = 0.7,
         gray_zone_lower: float = 0.4,
         gray_zone_upper: float = 0.6,
         escalation_confidence_threshold: float = 0.9,
         escalation_violation_count: int = 3,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> Configuration:
         """Create a new configuration.
 
@@ -508,10 +509,10 @@ class MultiObjectiveOptimizer:
 
     def grid_search(
         self,
-        param_grid: Dict[str, List[Any]],
+        param_grid: dict[str, list[Any]],
         evaluate_fn: Callable[[Configuration], PerformanceMetrics],
         max_iterations: int = 100,
-    ) -> List[Tuple[Configuration, PerformanceMetrics]]:
+    ) -> list[tuple[Configuration, PerformanceMetrics]]:
         """Perform grid search over parameter space.
 
         Args:
@@ -550,10 +551,10 @@ class MultiObjectiveOptimizer:
 
     def random_search(
         self,
-        param_ranges: Dict[str, Tuple[float, float]],
+        param_ranges: dict[str, tuple[float, float]],
         evaluate_fn: Callable[[Configuration], PerformanceMetrics],
         n_iterations: int = 50,
-    ) -> List[Tuple[Configuration, PerformanceMetrics]]:
+    ) -> list[tuple[Configuration, PerformanceMetrics]]:
         """Perform random search over parameter space.
 
         Args:
@@ -595,7 +596,7 @@ class MultiObjectiveOptimizer:
         population_size: int = 20,
         n_generations: int = 10,
         mutation_rate: float = 0.2,
-    ) -> List[Tuple[Configuration, PerformanceMetrics]]:
+    ) -> list[tuple[Configuration, PerformanceMetrics]]:
         """Perform evolutionary search.
 
         Simple evolutionary strategy:
@@ -654,7 +655,7 @@ class MultiObjectiveOptimizer:
 
         return population
 
-    def check_promotion_gate(self, candidate_id: str, baseline_id: str) -> Tuple[bool, List[str]]:
+    def check_promotion_gate(self, candidate_id: str, baseline_id: str) -> tuple[bool, list[str]]:
         """Check if candidate passes promotion gate.
 
         Args:
@@ -719,11 +720,11 @@ class MultiObjectiveOptimizer:
 
     def bayesian_optimization(
         self,
-        param_ranges: Dict[str, Tuple[float, float]],
+        param_ranges: dict[str, tuple[float, float]],
         evaluate_fn: Callable[[Configuration], PerformanceMetrics],
         n_iterations: int = 30,
         n_initial_random: int = 5,
-    ) -> List[Tuple[Configuration, PerformanceMetrics]]:
+    ) -> list[tuple[Configuration, PerformanceMetrics]]:
         """Perform Bayesian optimization over parameter space.
 
         Uses a simplified Gaussian Process approach to intelligently explore
@@ -762,7 +763,7 @@ class MultiObjectiveOptimizer:
         for i in range(n_initial_random, n_iterations):
             # Get best configuration so far
             best_metrics = max(results, key=lambda x: x[1].fitness_score)[1]
-            best_metrics.fitness_score
+            best_metrics.fitness_score  # noqa: B018
 
             # Sample around best configuration with adaptive exploration
             # Higher variance early on, lower variance later
@@ -812,7 +813,7 @@ class MultiObjectiveOptimizer:
         """Clip value to range."""
         return max(min_val, min(max_val, value))
 
-    def get_best_configuration(self) -> Optional[Tuple[Configuration, PerformanceMetrics]]:
+    def get_best_configuration(self) -> tuple[Configuration, PerformanceMetrics] | None:
         """Get best configuration by fitness score.
 
         Returns:
@@ -838,10 +839,10 @@ class OutcomeRecord:
     actual_outcome: str
     confidence: float
     timestamp: datetime
-    human_feedback: Optional[str] = None
+    human_feedback: str | None = None
     was_correct: bool = False
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "action_id": self.action_id,
@@ -866,7 +867,7 @@ class AdaptiveThresholdTuner:
     """
 
     def __init__(
-        self, objectives: List[str], learning_rate: float = 0.01, storage_path: Optional[str] = None
+        self, objectives: list[str], learning_rate: float = 0.01, storage_path: str | None = None
     ):
         """Initialize adaptive threshold tuner.
 
@@ -880,13 +881,13 @@ class AdaptiveThresholdTuner:
         self.storage_path = Path(storage_path) if storage_path else None
 
         # Outcome history
-        self.outcomes: List[OutcomeRecord] = []
+        self.outcomes: list[OutcomeRecord] = []
 
         # Agent-specific thresholds
-        self.agent_thresholds: Dict[str, Dict[str, float]] = {}
+        self.agent_thresholds: dict[str, dict[str, float]] = {}
 
         # Global thresholds
-        self.global_thresholds: Dict[str, float] = {
+        self.global_thresholds: dict[str, float] = {
             "classifier_threshold": 0.5,
             "confidence_threshold": 0.7,
             "gray_zone_lower": 0.4,
@@ -952,7 +953,7 @@ class AdaptiveThresholdTuner:
         predicted_outcome: str,
         actual_outcome: str,
         confidence: float,
-        human_feedback: Optional[str] = None,
+        human_feedback: str | None = None,
     ) -> OutcomeRecord:
         """Record an outcome for learning.
 
@@ -1037,14 +1038,14 @@ class AdaptiveThresholdTuner:
             outcome: Outcome record
         """
         # Adjust based on objectives and outcome
-        if "minimize_fp" in self.objectives or "minimize_false_positives" in self.objectives:
+        if "minimize_fp" in self.objectives or "minimize_false_positives" in self.objectives:  # noqa: SIM102
             if outcome.actual_outcome == "false_positive":
                 # Increase threshold to reduce false positives
                 self.global_thresholds["classifier_threshold"] = min(
                     0.9, self.global_thresholds["classifier_threshold"] + self.learning_rate
                 )
 
-        if "maximize_recall" in self.objectives:
+        if "maximize_recall" in self.objectives:  # noqa: SIM102
             if outcome.actual_outcome == "false_negative":
                 # Decrease threshold to catch more violations
                 self.global_thresholds["classifier_threshold"] = max(
@@ -1058,7 +1059,7 @@ class AdaptiveThresholdTuner:
                 0.95, self.global_thresholds["confidence_threshold"] + self.learning_rate * 0.5
             )
 
-    def get_thresholds(self, agent_id: Optional[str] = None) -> Dict[str, float]:
+    def get_thresholds(self, agent_id: str | None = None) -> dict[str, float]:
         """Get thresholds for agent or global.
 
         Args:
@@ -1071,7 +1072,7 @@ class AdaptiveThresholdTuner:
             return self.agent_thresholds[agent_id].copy()
         return self.global_thresholds.copy()
 
-    def set_agent_thresholds(self, agent_id: str, thresholds: Dict[str, float]) -> None:
+    def set_agent_thresholds(self, agent_id: str, thresholds: dict[str, float]) -> None:
         """Set agent-specific thresholds.
 
         Args:
@@ -1105,7 +1106,7 @@ class AdaptiveThresholdTuner:
             conn.commit()
             conn.close()
 
-    def get_performance_stats(self) -> Dict[str, Any]:
+    def get_performance_stats(self) -> dict[str, Any]:
         """Get performance statistics.
 
         Returns:
@@ -1161,7 +1162,7 @@ class ABTestingFramework:
     - Automatic rollback on performance degradation
     """
 
-    def __init__(self, storage_path: Optional[str] = None):
+    def __init__(self, storage_path: str | None = None):
         """Initialize A/B testing framework.
 
         Args:
@@ -1170,12 +1171,12 @@ class ABTestingFramework:
         self.storage_path = Path(storage_path) if storage_path else None
 
         # Active variants
-        self.variants: Dict[str, Configuration] = {}
-        self.variant_metrics: Dict[str, PerformanceMetrics] = {}
-        self.variant_traffic: Dict[str, float] = {}  # Variant ID -> traffic percentage
+        self.variants: dict[str, Configuration] = {}
+        self.variant_metrics: dict[str, PerformanceMetrics] = {}
+        self.variant_traffic: dict[str, float] = {}  # Variant ID -> traffic percentage
 
         # Test configuration
-        self.control_variant_id: Optional[str] = None
+        self.control_variant_id: str | None = None
         self.min_sample_size: int = 100
         self.significance_level: float = 0.05  # 95% confidence
 
@@ -1229,7 +1230,7 @@ class ABTestingFramework:
         control_config: Configuration,
         treatment_config: Configuration,
         traffic_split: float = 0.1,
-    ) -> Tuple[str, str]:
+    ) -> tuple[str, str]:
         """Create an A/B test with control and treatment variants.
 
         Args:
@@ -1332,7 +1333,7 @@ class ABTestingFramework:
 
     def check_statistical_significance(
         self, control_variant_id: str, treatment_variant_id: str, metric: str = "detection_recall"
-    ) -> Tuple[bool, float, str]:
+    ) -> tuple[bool, float, str]:
         """Check if difference between variants is statistically significant.
 
         Uses a simplified z-test for proportions.
@@ -1472,7 +1473,7 @@ class ABTestingFramework:
 
         return True
 
-    def get_variant_summary(self) -> Dict[str, Any]:
+    def get_variant_summary(self) -> dict[str, Any]:
         """Get summary of all variants.
 
         Returns:

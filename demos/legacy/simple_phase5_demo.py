@@ -12,7 +12,7 @@ print("=" * 70)
 print("\n1. ☁️ Kubernetes Deployment")
 print("-" * 40)
 
-from adaptiveneuralnetwork.production.deployment import (
+from adaptiveneuralnetwork.production.deployment import (  # noqa: E402
     AutoScaler,
     DeploymentConfig,
     KubernetesDeployment,
@@ -59,8 +59,8 @@ print(f"✓ Scaling recommendation: {scaling_recommendation} replicas")
 print("\n2. 🔌 Plugin Architecture")
 print("-" * 40)
 
-from adaptiveneuralnetwork.api.config import AdaptiveConfig
-from adaptiveneuralnetwork.ecosystem.plugins import (
+from adaptiveneuralnetwork.api.config import AdaptiveConfig  # noqa: E402
+from adaptiveneuralnetwork.ecosystem.plugins import (  # noqa: E402
     ExampleEnhancementPlugin,
     ExampleMetricsPlugin,
     PluginManager,
@@ -93,8 +93,8 @@ print(f"✓ Plugin system operational with {len(status)} plugins")
 print("\n3. 🔗 Framework Integrations")
 print("-" * 40)
 
-from adaptiveneuralnetwork.api.model import AdaptiveModel
-from adaptiveneuralnetwork.ecosystem.integrations import PyTorchIntegration
+from adaptiveneuralnetwork.api.model import AdaptiveModel  # noqa: E402
+from adaptiveneuralnetwork.ecosystem.integrations import PyTorchIntegration  # noqa: E402
 
 # Create sample model
 model = AdaptiveModel(config)
@@ -113,7 +113,10 @@ print(f"  • Model size: {weights_export['architecture']['model_size_mb']:.2f} 
 print("\n4. 👥 Community Contribution System")
 print("-" * 40)
 
-from adaptiveneuralnetwork.ecosystem.contrib import ContributionManager, ContributionType
+from adaptiveneuralnetwork.ecosystem.contrib import (  # noqa: E402
+    ContributionManager,
+    ContributionType,
+)
 
 # Initialize contribution manager
 with tempfile.TemporaryDirectory() as temp_dir:

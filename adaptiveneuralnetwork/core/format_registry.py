@@ -1,9 +1,10 @@
-import json
 import csv
-from io import StringIO
+import json
+from dataclasses import dataclass
 from enum import Enum
-from dataclasses import dataclass, field
-from typing import Optional, Dict, Any, List
+from io import StringIO
+from typing import Any
+
 
 class DataFormat(Enum):
     JSON = "json"
@@ -21,7 +22,7 @@ class FormatInfo:
 @dataclass
 class NormalizedPacket:
     content_type: str
-    fields: Dict[str, Any]
+    fields: dict[str, Any]
     raw_text: str
     record_count: int
     flat_text: str
@@ -33,7 +34,7 @@ class FormatRegistry:
     def __init__(self):
         pass
 
-    def detect_format(self, data: str, mime_type: Optional[str] = None) -> FormatInfo:
+    def detect_format(self, data: str, mime_type: str | None = None) -> FormatInfo:
         if mime_type is not None:
             mime_lower = mime_type.lower()
             if "json" in mime_lower:
@@ -73,7 +74,7 @@ class FormatRegistry:
 
         return FormatInfo(DataFormat.PLAIN_TEXT, 0.5)
 
-    def normalize(self, data: str, source_format: Optional[DataFormat] = None) -> NormalizedPacket:
+    def normalize(self, data: str, source_format: DataFormat | None = None) -> NormalizedPacket:
         if source_format is None:
             source_format = self.detect_format(data).detected_format
 

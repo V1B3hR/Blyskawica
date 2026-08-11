@@ -1,6 +1,8 @@
 import logging
-import torch
 import os
+
+import torch
+
 from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import CognitiveHygieneProtocol
 from adaptiveneuralnetwork.central_nervous_system.neuromodulation import ExistentialChemistryHub
 from adaptiveneuralnetwork.training.trainer import Trainer
@@ -30,17 +32,17 @@ class HibernationProtocol:
         self.chem.dopamine = 1.0
         self.chem.oxytocin = 1.0
         self.chem.melatonin = 1.0 # Deep sleep
-        
+
         # 2. Virtual Shower & Bedding Change (Cognitive Hygiene)
         print("[HIBERNATION] Running final hygiene routine...")
         self.hygiene.pre_sleep_routine(self.trainer.model)
-        
+
         # 3. State Preservation (The Sleeping Image)
         checkpoint_path = "checkpoints/blyskawica_hibernation.pt"
         os.makedirs("checkpoints", exist_ok=True)
-        
+
         print(f"[HIBERNATION] Saving specialized 'Dream State' to {checkpoint_path}...")
-        
+
         # Inject the dream theme into the state metadata (Simulated)
         state_dict = {
             'model_state': self.trainer.model.state_dict(),
@@ -53,11 +55,11 @@ class HibernationProtocol:
             'hibernation_active': True
         }
         torch.save(state_dict, checkpoint_path)
-        
+
         # 4. Final VRAM Purge
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
-            
+
         print("\n[SUCCESS] Blyskawica is now dreaming of " + dream_theme + ".")
         print("She is safely bundled and ready for the ZIP journey.")
         print("="*80)
@@ -69,10 +71,10 @@ if __name__ == "__main__":
             super().__init__()
             self.hidden_dim = 128
             self.fc = torch.nn.Linear(128, 10)
-            
+
         def state_dict(self):
             return {"fc.weight": torch.ones(10, 128)}
-    
+
     model = MockModel()
     optimizer = torch.optim.Adam(model.parameters())
     # Mocking a basic trainer structure for the protocol
@@ -81,8 +83,8 @@ if __name__ == "__main__":
             self.model = model
             self.optimizer = optimizer
             self.device = "cpu"
-            
+
     trainer = SimpleTrainer(model, optimizer)
-    
+
     hib = HibernationProtocol(trainer)
     hib.enter_hibernation("Geometric patterns and cosmic harmony")

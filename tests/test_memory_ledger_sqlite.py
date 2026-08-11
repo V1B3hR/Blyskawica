@@ -1,9 +1,10 @@
 import os
 import sqlite3
-import unittest
 import tempfile
-from pathlib import Path
+import unittest
+
 from adaptiveneuralnetwork.immune_system import MemoryLedger
+
 
 class TestMemoryLedgerSQLite(unittest.TestCase):
     def setUp(self):
@@ -15,17 +16,17 @@ class TestMemoryLedgerSQLite(unittest.TestCase):
 
     def test_sqlite_initialization_and_genesis(self):
         """Verify that memory_ledger table is initialized and genesis block is saved."""
-        ledger = MemoryLedger(db_path=self.db_path)
-        
+        ledger = MemoryLedger(db_path=self.db_path)  # noqa: F841
+
         # Verify db file exists
         self.assertTrue(os.path.exists(self.db_path))
-        
+
         # Verify tables and genesis entry exists in DB
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='memory_ledger';")
         self.assertIsNotNone(cursor.fetchone())
-        
+
         cursor.execute("SELECT index_val, text, prev_hash FROM memory_ledger;")
         row = cursor.fetchone()
         self.assertIsNotNone(row)
@@ -38,7 +39,7 @@ class TestMemoryLedgerSQLite(unittest.TestCase):
         """Verify memory ledger correctly loads history from DB and performs drift detection."""
         # 1. Instantiate ledger, append a block
         ledger1 = MemoryLedger(drift_threshold=0.65, db_path=self.db_path)
-        
+
         vector_a = [1.0, 0.0, 0.0, 0.0]
         appended1 = ledger1.validate_and_append(
             vector_id=10,
@@ -49,11 +50,11 @@ class TestMemoryLedgerSQLite(unittest.TestCase):
         )
         self.assertTrue(appended1)
         self.assertEqual(len(ledger1.chain), 2)
-        
+
         # 2. Re-instantiate ledger (simulating restart)
         ledger2 = MemoryLedger(drift_threshold=0.65, db_path=self.db_path)
         self.assertEqual(len(ledger2.chain), 2)
-        
+
         # 3. Try to append matching vector (should pass)
         vector_match = [0.99, 0.0, 0.0, 0.0]
         appended_match = ledger2.validate_and_append(
@@ -64,7 +65,7 @@ class TestMemoryLedgerSQLite(unittest.TestCase):
             signature="SIG2"
         )
         self.assertTrue(appended_match)
-        
+
         # 4. Try to append drifting vector (should fail due to cosine distance > 0.65 w.r.t loaded history)
         vector_drift = [0.0, 1.0, 0.0, 0.0]
         appended_drift = ledger2.validate_and_append(

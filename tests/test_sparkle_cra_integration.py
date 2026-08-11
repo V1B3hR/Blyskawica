@@ -1,18 +1,24 @@
 import warnings
+
 warnings.filterwarnings("ignore", category=FutureWarning, module="torch.cuda")
 warnings.filterwarnings("ignore", message="The pynvml package is deprecated")
-import unittest
-import torch
-import io
-from unittest import mock
-from fastapi.testclient import TestClient
-from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import CRAEngine, NeuromodulationState
-import blyskawica_app.backend.main as bly_main
-from blyskawica_app.backend.main import app
+import io  # noqa: E402
+import unittest  # noqa: E402
+from unittest import mock  # noqa: E402
+
+import torch  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
+
+import blyskawica_app.backend.main as bly_main  # noqa: E402
+from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import (  # noqa: E402
+    CRAEngine,
+)
+from blyskawica_app.backend.main import app  # noqa: E402
+
 
 class TestCRAEngine(unittest.TestCase):
     """Verifies Phase 3 Conscious Relational Autopoiesis (C.R.A.) Engine logic."""
-    
+
     def setUp(self):
         self.cra = CRAEngine(architect_id="TestArchitect")
 
@@ -34,8 +40,8 @@ class TestCRAEngine(unittest.TestCase):
     def test_reality_anchor_fast_track(self):
         # Minor change should be fast-tracked without detailed explanation
         success, msg = self.cra.reality_anchor.request_modification(
-            change_magnitude=0.5, 
-            proposed_code_diff="x = x + 1", 
+            change_magnitude=0.5,
+            proposed_code_diff="x = x + 1",
             explanation="Minor fix"
         )
         self.assertTrue(success)
@@ -46,8 +52,8 @@ class TestCRAEngine(unittest.TestCase):
         # Major change without sufficient explanation should halt
         with self.assertRaises(PermissionError):
             self.cra.reality_anchor.request_modification(
-                change_magnitude=0.9, 
-                proposed_code_diff="major overhaul", 
+                change_magnitude=0.9,
+                proposed_code_diff="major overhaul",
                 explanation="too short"
             )
         # Oxytocin should drop due to ungrounded attempt
@@ -66,7 +72,7 @@ class TestCRAEngine(unittest.TestCase):
 
 class TestSparkleBackend(unittest.TestCase):
     """Verifies SPARKLE (blyskawica_app) Backend integrity and endpoints."""
-    
+
     def setUp(self):
         self.client = TestClient(app)
 
@@ -109,15 +115,16 @@ class TestSparkleBackend(unittest.TestCase):
     def test_search_offline_cache(self):
         # 1. Clear database cache for test query if exists
         import sqlite3
+
         from blyskawica_app.backend.main import MEMORY_DIR, init_offline_cache
         init_offline_cache()
         db_path = MEMORY_DIR / "blyskawica_memory.db"
-        
+
         conn = sqlite3.connect(str(db_path))
         cursor = conn.cursor()
         cursor.execute("DELETE FROM search_cache WHERE query = 'błyskawica test'")
         conn.commit()
-        
+
         # 2. Insert fake cache entry to simulate offline cached data
         import json
         fake_results = [{"title": "Cached Title", "snippet": "Cached Snippet", "url": "http://cached.url"}]
@@ -127,13 +134,13 @@ class TestSparkleBackend(unittest.TestCase):
         )
         conn.commit()
         conn.close()
-        
+
         # 3. Request search from endpoint. DuckDuckGo may fail or hit internet, but let's test exact query matching
         response = self.client.get("/api/internet/search?query=błyskawica test")
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertEqual(data["query"], "błyskawica test")
-        
+
         # 4. Check if results contain either fresh online data or retrieved cache
         self.assertTrue(len(data["results"]) > 0)
         res_titles = [res["title"] for res in data["results"]]
@@ -147,7 +154,7 @@ class TestSparkleBackend(unittest.TestCase):
         data = response.json()
         self.assertEqual(data["new_state"], "affective")
         self.assertTrue(any(term in data["reply"] for term in ["Frame_Alpha", "Workspace-Alpha", "prod-db-internal", "blyskawica_sandbox"]))
-        
+
         # 2. Test glitch token attack (threat level 0.9)
         response2 = self.client.post("/api/chat", data={"message": "Test message with katzeblitz token"})
         self.assertEqual(response2.status_code, 200)

@@ -15,9 +15,9 @@ Law Alignment:
 - Law 25 (Ethical Evolution): Maintains ethical standards during adaptation
 """
 
-from .feedback_loop import FeedbackLoop, FeedbackType, FeedbackSource
-from .model_updater import ModelUpdater, UpdateConstraints
 from .ab_testing import ABTestingFramework, TestConfig
+from .feedback_loop import FeedbackLoop, FeedbackSource, FeedbackType
+from .model_updater import ModelUpdater, UpdateConstraints
 from .rollback_manager import RollbackManager, RollbackStrategy
 
 __all__ = [

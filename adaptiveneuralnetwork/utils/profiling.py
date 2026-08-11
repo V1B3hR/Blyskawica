@@ -52,7 +52,7 @@ class PerformanceProfiler:
         with self.time_block("forward_pass"):
             with torch.no_grad():
                 for _ in range(num_iterations):
-                    output = model(input_tensor)
+                    output = model(input_tensor)  # noqa: F841
 
         torch.cuda.synchronize() if torch.cuda.is_available() else None
 

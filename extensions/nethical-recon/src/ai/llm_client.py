@@ -149,7 +149,7 @@ CRITICAL RULES:
 6. Rate your confidence based on evidence quality and quantity
 
 Your analysis must be traceable - another analyst should be able to verify every claim
-by checking the referenced evidence IDs."""
+by checking the referenced evidence IDs."""  # noqa: W291
 
     def _build_evidence_prompt(
         self, findings: list[dict[str, Any]], evidence: list[dict[str, Any]], context: dict[str, Any] | None

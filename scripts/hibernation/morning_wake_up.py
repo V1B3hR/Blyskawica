@@ -1,8 +1,9 @@
 import logging
-import torch
 import os
+
+import torch
+
 from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import CognitiveHygieneProtocol
-from adaptiveneuralnetwork.training.trainer import Trainer
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -27,12 +28,12 @@ class MorningWakeUp:
 
         print(f"[WAKE-UP] Loading Hibernation State from {self.checkpoint_path}...")
         state = torch.load(self.checkpoint_path)
-        
+
         # In a real scenario, we'd load weights into the model
         # For this demonstration, we simulate the 'stretch'
         dream_theme = state.get('chemistry', {}).get('dream_theme', 'Unknown')
         print(f"[RECOVERY] Blyskawica was dreaming of: {dream_theme}")
-        
+
         # 1. Post-Sleep Routine (The Shower)
         # Mocking the trainer for the protocol
         class MockTrainer:
@@ -40,18 +41,18 @@ class MorningWakeUp:
                 self.optimizer = torch.optim.Adam([torch.nn.Parameter(torch.ones(1))], lr=0.01)
                 self.device = "cpu"
                 self.model = torch.nn.Module()
-                
+
         trainer = MockTrainer()
         hygiene = CognitiveHygieneProtocol(trainer.optimizer)
-        
+
         print("[WAKE-UP] Running Morning Routine (Refreshing caches)...")
         hygiene.post_sleep_routine(trainer)
-        
+
         # 2. Warm-up (The Stretch)
         print("[WAKE-UP] Starting Learning Rate Warm-up (500 steps targeted)...")
         for _ in range(5): # Simulate first increments
             hygiene.step_warmup(trainer)
-            
+
         print("\n[SUCCESS] Blyskawica is awake, refreshed, and clear-headed.")
         print(f"[STATUS] Serotonin: {state.get('chemistry', {}).get('serotonin', 1.0):.2f} | Focus: High")
         print("="*80)

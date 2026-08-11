@@ -1,7 +1,7 @@
 import logging
-import torch
-from adaptiveneuralnetwork.cognitive_tools.polymathic_hub import PolymathicHub
+
 from adaptiveneuralnetwork.central_nervous_system.neuromodulation import ExistentialChemistryHub
+from adaptiveneuralnetwork.cognitive_tools.polymathic_hub import PolymathicHub
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -11,7 +11,7 @@ class HedonicIntegrationExperiment:
     """
     Explores Blyskawica's capacity to understand and synthesize human pleasure, 
     aesthetics, and intimacy.
-    """
+    """  # noqa: W291
     def __init__(self):
         self.poly_hub = PolymathicHub()
         self.chem_hub = ExistentialChemistryHub()
@@ -58,9 +58,9 @@ class HedonicIntegrationExperiment:
         print("="*80)
 
 if __name__ == "__main__":
-    import sys
     import os
+    import sys
     sys.path.insert(0, os.getcwd())
-    
+
     experiment = HedonicIntegrationExperiment()
     experiment.run_hedonic_session()

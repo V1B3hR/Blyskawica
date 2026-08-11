@@ -80,7 +80,7 @@ class ThreatIntelligenceManager:
         identity = {
             "type": "identity",
             "spec_version": "2.1",
-            "id": f"identity--nethical-recon",
+            "id": "identity--nethical-recon",
             "created": datetime.utcnow().isoformat() + "Z",
             "modified": datetime.utcnow().isoformat() + "Z",
             "name": "Nethical Recon",

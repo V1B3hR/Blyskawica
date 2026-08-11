@@ -6,37 +6,29 @@ import hmac
 import json
 import secrets
 import time
+from collections.abc import Callable, Mapping, MutableSet, Sequence
 from dataclasses import dataclass
 from typing import (
     Any,
-    Callable,
-    Dict,
-    Mapping,
-    MutableSet,
-    Optional,
     Protocol,
-    Sequence,
-    Set,
-    Tuple,
 )
 
 from nethical.hooks.interfaces import (
     CryptoSignalProvider,
-    SignalResult,
     RoleName,
-    TokenStr,
+    SignalResult,
     TokenMeta,
+    TokenStr,
 )
-
 
 # =========================
 # Constants & Type Aliases
 # =========================
 
-Header = Dict[str, Any]
-Payload = Dict[str, Any]
+Header = dict[str, Any]
+Payload = dict[str, Any]
 
-SUPPORTED_HMAC_ALGS: Mapping[str, Callable[[bytes], "hashlib._Hash"]] = {
+SUPPORTED_HMAC_ALGS: Mapping[str, Callable[[bytes], hashlib._Hash]] = {
     "HS256": hashlib.sha256,
     "HS384": hashlib.sha384,
     "HS512": hashlib.sha512,
@@ -78,10 +70,10 @@ class IssueOptions:
 
     ttl_seconds: int = 60
     not_before_leeway: int = 0  # Additional backdating leeway beyond core clock skew
-    extra_claims: Dict[str, Any] | None = None
+    extra_claims: dict[str, Any] | None = None
     role_claim_name: str = "role"
     # Provide an externally generated jti if required (e.g. deterministic); otherwise random.
-    jti: Optional[str] = None
+    jti: str | None = None
 
 
 @dataclass
@@ -91,20 +83,20 @@ class VerifyOptions:
     """
 
     enforce_peer_issuer: bool = True
-    max_ttl_seconds: Optional[int] = None  # Override provider default if set
-    acceptable_clock_skew_seconds: Optional[int] = None
+    max_ttl_seconds: int | None = None  # Override provider default if set
+    acceptable_clock_skew_seconds: int | None = None
     required_type: str = DEFAULT_TYPE
     required_version: str = DEFAULT_VERSION
     role_claim_name: str = "role"
-    allowed_roles: Optional[Set[str]] = None
+    allowed_roles: set[str] | None = None
     require_jti: bool = False
     reject_if_no_jti: bool = False
     # Callback to record accepted jti (for replay prevention).
-    replay_register: Optional[Callable[[str], None]] = None
+    replay_register: Callable[[str], None] | None = None
     # Callback returning True if jti already used.
-    replay_already_seen: Optional[Callable[[str], bool]] = None
+    replay_already_seen: Callable[[str], bool] | None = None
     # Allow injecting additional validation logic; raise Exception or return str for failure message.
-    custom_validators: Optional[Sequence[Callable[[Header, Payload], Optional[str]]]] = None
+    custom_validators: Sequence[Callable[[Header, Payload], str | None]] | None = None
 
 
 class InMemoryJtiStore:
@@ -153,13 +145,13 @@ class HmacRoleSignal(CryptoSignalProvider):
         secret: bytes | None,
         issuer: str,
         audience: str,
-        subject: Optional[str] = None,
+        subject: str | None = None,
         key_id: str = "default",
         algorithm: str = "HS256",
         max_ttl_seconds: int = 300,
         clock_skew_seconds: int = 5,
         enforce_peer_issuer: bool = True,
-        key_resolver: Optional[KeyResolver] = None,
+        key_resolver: KeyResolver | None = None,
         enable_replay_store: bool = False,
     ):
         """
@@ -243,8 +235,8 @@ class HmacRoleSignal(CryptoSignalProvider):
         iss: str,
         sub: str,
         aud: str,
-        jti: Optional[str],
-        extra_claims: Optional[Dict[str, Any]],
+        jti: str | None,
+        extra_claims: dict[str, Any] | None,
     ) -> Payload:
         payload: Payload = {
             "iss": iss,
@@ -285,7 +277,7 @@ class HmacRoleSignal(CryptoSignalProvider):
         self,
         role: RoleName,
         ttl_seconds: int = 60,
-        options: Optional[IssueOptions] = None,
+        options: IssueOptions | None = None,
     ) -> SignalResult:
         """
         Issue a signed role token.
@@ -361,7 +353,7 @@ class HmacRoleSignal(CryptoSignalProvider):
     def verify_peer_role_token(
         self,
         token: TokenStr,
-        options: Optional[VerifyOptions] = None,
+        options: VerifyOptions | None = None,
     ) -> SignalResult:
         """
         Verify a peer-provided token and extract role metadata.
@@ -492,7 +484,7 @@ class HmacRoleSignal(CryptoSignalProvider):
                             return SignalResult(
                                 ok=False, reason=res, code="custom_validator_failed"
                             )
-                    except Exception as ve:
+                    except Exception as ve:  # noqa: PERF203
                         return SignalResult(ok=False, reason=str(ve), code="custom_validator_error")
 
             meta: TokenMeta = {
@@ -518,7 +510,7 @@ class HmacRoleSignal(CryptoSignalProvider):
 
     # ========= Utility / Introspection =========
 
-    def decode_unverified(self, token: TokenStr) -> Tuple[Header, Payload]:
+    def decode_unverified(self, token: TokenStr) -> tuple[Header, Payload]:
         """
         Decode header & payload WITHOUT verifying signature. For debugging / logging ONLY.
         """

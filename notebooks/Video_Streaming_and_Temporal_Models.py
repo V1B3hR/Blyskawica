@@ -30,7 +30,10 @@ print()
 print("SECTION 1: Model Comparison and Benchmarking")
 print("-" * 50)
 
-from adaptiveneuralnetwork.models.video_models import VideoModelConfig, create_video_model
+from adaptiveneuralnetwork.models.video_models import (  # noqa: E402
+    VideoModelConfig,
+    create_video_model,
+)
 
 # Configure models
 config = VideoModelConfig(
@@ -116,7 +119,7 @@ print()
 print("SECTION 2: Hybrid Model Demonstration")
 print("-" * 50)
 
-from adaptiveneuralnetwork.models.video_models import HybridVideoModel
+from adaptiveneuralnetwork.models.video_models import HybridVideoModel  # noqa: E402
 
 # Create hybrid model
 hybrid_model = HybridVideoModel(config)

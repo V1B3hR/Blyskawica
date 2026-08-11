@@ -9,7 +9,7 @@ import logging
 import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any, Optional
+from typing import Any
 
 import requests
 
@@ -27,7 +27,7 @@ class KEVEntry:
     date_added: str
     short_description: str
     required_action: str
-    due_date: Optional[str] = None
+    due_date: str | None = None
     known_ransomware_campaign_use: str = "Unknown"
     notes: str = ""
 
@@ -49,7 +49,7 @@ class CISAKEVClient:
     KEV_API_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
     CACHE_DURATION = timedelta(hours=24)
 
-    def __init__(self, cache_file: Optional[str] = None):
+    def __init__(self, cache_file: str | None = None):
         """
         Initialize CISA KEV client.
 
@@ -58,9 +58,9 @@ class CISAKEVClient:
         """
         self.cache_file = cache_file
         self._cache: dict[str, KEVEntry] = {}
-        self._last_update: Optional[datetime] = None
-        self._catalog_version: Optional[str] = None
-        self._catalog_date: Optional[str] = None
+        self._last_update: datetime | None = None
+        self._catalog_version: str | None = None
+        self._catalog_date: str | None = None
 
     def update_cache(self, force: bool = False) -> bool:
         """
@@ -135,7 +135,7 @@ class CISAKEVClient:
 
         return cve_id in self._cache
 
-    def get_kev_entry(self, cve_id: str) -> Optional[KEVEntry]:
+    def get_kev_entry(self, cve_id: str) -> KEVEntry | None:
         """
         Get KEV entry for CVE.
 
@@ -150,7 +150,7 @@ class CISAKEVClient:
 
         return self._cache.get(cve_id)
 
-    def get_kev_metadata(self, cve_id: str) -> Optional[dict[str, Any]]:
+    def get_kev_metadata(self, cve_id: str) -> dict[str, Any] | None:
         """
         Get KEV metadata for CVE.
 
@@ -230,7 +230,7 @@ class CISAKEVClient:
         age = datetime.utcnow() - self._last_update
         return age < self.CACHE_DURATION
 
-    def _get_cache_age_hours(self) -> Optional[float]:
+    def _get_cache_age_hours(self) -> float | None:
         """Get cache age in hours."""
         if not self._last_update:
             return None

@@ -2,7 +2,11 @@ import unittest
 
 import numpy as np
 
-from adaptiveneuralnetwork.central_nervous_system.alive_node import AliveLoopNode, Memory, SocialSignal
+from adaptiveneuralnetwork.central_nervous_system.alive_node import (
+    AliveLoopNode,
+    Memory,
+    SocialSignal,
+)
 from adaptiveneuralnetwork.central_nervous_system.capacitor import CapacitorInSpace
 from tests.test_utils import get_test_seed, set_seed
 
@@ -107,7 +111,7 @@ class TestAdversarialInputs(unittest.TestCase):
 
     def test_energy_drain_attack(self):
         """Test protection against energy drain attacks"""
-        initial_energy = self.node.energy
+        initial_energy = self.node.energy  # noqa: F841
 
         # Simulate many high-cost operations
         for _ in range(10):
@@ -143,7 +147,7 @@ class TestCommunicationPaths(unittest.TestCase):
         initial_signal_count = len(self.node1.signal_history)
 
         # Node 1 sends message to Node 2
-        responses = self.node1.send_signal([self.node2], "query", "hello", requires_response=True)
+        responses = self.node1.send_signal([self.node2], "query", "hello", requires_response=True)  # noqa: F841
 
         # Check that signal was actually sent (signal history should increase)
         self.assertGreater(len(self.node1.signal_history), initial_signal_count,

@@ -13,12 +13,12 @@ Key Features:
 - Migration roadmap and transition planning
 """
 
-from typing import Dict, List, Optional, Any
+import hashlib
+import secrets
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-import hashlib
-import secrets
+from typing import Any
 
 
 class PQCAlgorithm(Enum):
@@ -75,7 +75,7 @@ class KyberKeyPair:
     created_at: datetime = field(default_factory=datetime.now)
     key_id: str = field(default_factory=lambda: secrets.token_hex(16))
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "key_id": self.key_id,
@@ -98,7 +98,7 @@ class DilithiumKeyPair:
     created_at: datetime = field(default_factory=datetime.now)
     key_id: str = field(default_factory=lambda: secrets.token_hex(16))
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "key_id": self.key_id,
@@ -119,7 +119,7 @@ class EncapsulatedKey:
     algorithm: PQCAlgorithm
     timestamp: datetime = field(default_factory=datetime.now)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "algorithm": self.algorithm.value,
@@ -139,7 +139,7 @@ class QuantumSignature:
     signer_key_id: str
     timestamp: datetime = field(default_factory=datetime.now)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "algorithm": self.algorithm.value,
@@ -158,11 +158,11 @@ class QuantumThreatAssessment:
     estimated_years_to_threat: float
     cryptographic_agility_score: float
     migration_urgency: str
-    affected_systems: List[str]
-    recommended_algorithms: List[PQCAlgorithm]
+    affected_systems: list[str]
+    recommended_algorithms: list[PQCAlgorithm]
     assessment_date: datetime = field(default_factory=datetime.now)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "threat_level": self.threat_level.value,
@@ -182,13 +182,13 @@ class MigrationPhase:
     phase_number: int
     phase_name: str
     duration_months: int
-    deliverables: List[str]
-    dependencies: List[str]
+    deliverables: list[str]
+    dependencies: list[str]
     status: str = "pending"
-    start_date: Optional[datetime] = None
-    completion_date: Optional[datetime] = None
+    start_date: datetime | None = None
+    completion_date: datetime | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "phase_number": self.phase_number,
@@ -228,13 +228,13 @@ class CRYSTALSKyber:
 
         self.algorithm = algorithm
         self.enable_key_caching = enable_key_caching
-        self.key_cache: Dict[str, KyberKeyPair] = {}
+        self.key_cache: dict[str, KyberKeyPair] = {}
         self.encapsulation_count = 0
 
         # Algorithm parameters (simplified for demonstration)
         self.params = self._get_algorithm_parameters()
 
-    def _get_algorithm_parameters(self) -> Dict[str, int]:
+    def _get_algorithm_parameters(self) -> dict[str, int]:
         """Get algorithm-specific parameters."""
         params = {
             PQCAlgorithm.KYBER_512: {
@@ -334,7 +334,7 @@ class CRYSTALSKyber:
 
         return shared_secret
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get Kyber operation statistics."""
         return {
             "algorithm": self.algorithm.value,
@@ -375,13 +375,13 @@ class CRYSTALSDilithium:
 
         self.algorithm = algorithm
         self.enable_key_caching = enable_key_caching
-        self.key_cache: Dict[str, DilithiumKeyPair] = {}
+        self.key_cache: dict[str, DilithiumKeyPair] = {}
         self.signature_count = 0
         self.verification_count = 0
 
         self.params = self._get_algorithm_parameters()
 
-    def _get_algorithm_parameters(self) -> Dict[str, int]:
+    def _get_algorithm_parameters(self) -> dict[str, int]:
         """Get algorithm-specific parameters."""
         params = {
             PQCAlgorithm.DILITHIUM_2: {
@@ -483,7 +483,7 @@ class CRYSTALSDilithium:
         # Simulate high success rate for valid signatures
         return True
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get Dilithium operation statistics."""
         return {
             "algorithm": self.algorithm.value,
@@ -532,9 +532,9 @@ class HybridTLSManager:
 
     def perform_hybrid_handshake(
         self,
-        peer_public_key_classical: Optional[bytes] = None,
-        peer_public_key_quantum: Optional[bytes] = None,
-    ) -> Dict[str, Any]:
+        peer_public_key_classical: bytes | None = None,
+        peer_public_key_quantum: bytes | None = None,
+    ) -> dict[str, Any]:
         """
         Perform hybrid TLS handshake.
 
@@ -578,8 +578,8 @@ class HybridTLSManager:
         }
 
     def _combine_secrets(
-        self, classical_secret: Optional[bytes], quantum_secret: Optional[bytes]
-    ) -> Optional[bytes]:
+        self, classical_secret: bytes | None, quantum_secret: bytes | None
+    ) -> bytes | None:
         """Combine classical and quantum secrets."""
         if classical_secret is None and quantum_secret is None:
             return None
@@ -598,7 +598,7 @@ class HybridTLSManager:
             # XOR (with padding if needed)
             min_len = min(len(classical_secret), len(quantum_secret))
             return bytes(
-                a ^ b for a, b in zip(classical_secret[:min_len], quantum_secret[:min_len])
+                a ^ b for a, b in zip(classical_secret[:min_len], quantum_secret[:min_len])  # noqa: B905
             )
 
         elif self.hybrid_mode == HybridMode.HYBRID_KDF:
@@ -608,7 +608,7 @@ class HybridTLSManager:
 
         return classical_secret
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get hybrid TLS statistics."""
         return {
             "handshake_count": self.handshake_count,
@@ -639,11 +639,11 @@ class QuantumThreatAnalyzer:
         """Initialize quantum threat analyzer."""
         self.current_qubit_count = current_qubit_count
         self.error_correction_progress = error_correction_progress
-        self.assessments: List[QuantumThreatAssessment] = []
+        self.assessments: list[QuantumThreatAssessment] = []
 
     def assess_quantum_threat(
         self,
-        cryptographic_inventory: List[str],
+        cryptographic_inventory: list[str],
         data_lifetime_years: float = 10.0,
         criticality_level: str = "high",
     ) -> QuantumThreatAssessment:
@@ -716,7 +716,7 @@ class QuantumThreatAnalyzer:
 
         return max(2.0, min(30.0, years))
 
-    def _calculate_agility_score(self, inventory: List[str]) -> float:
+    def _calculate_agility_score(self, inventory: list[str]) -> float:
         """Calculate cryptographic agility score (0-1)."""
         quantum_resistant = ["kyber", "dilithium", "falcon", "sphincs"]
 
@@ -766,7 +766,7 @@ class QuantumThreatAnalyzer:
         else:
             return "MONITORING - Track quantum computing progress"
 
-    def _identify_affected_systems(self, inventory: List[str]) -> List[str]:
+    def _identify_affected_systems(self, inventory: list[str]) -> list[str]:
         """Identify systems vulnerable to quantum attacks."""
         vulnerable_algos = ["rsa", "ecdh", "ecdsa", "dh"]
 
@@ -779,8 +779,8 @@ class QuantumThreatAnalyzer:
         return affected
 
     def _recommend_algorithms(
-        self, criticality: str, affected_systems: List[str]
-    ) -> List[PQCAlgorithm]:
+        self, criticality: str, affected_systems: list[str]
+    ) -> list[PQCAlgorithm]:
         """Recommend quantum-resistant algorithms."""
         if criticality in ["critical", "high"]:
             # Highest security level
@@ -792,7 +792,7 @@ class QuantumThreatAnalyzer:
             # Basic quantum resistance
             return [PQCAlgorithm.KYBER_512, PQCAlgorithm.DILITHIUM_2]
 
-    def get_threat_summary(self) -> Dict[str, Any]:
+    def get_threat_summary(self) -> dict[str, Any]:
         """Get summary of all threat assessments."""
         if not self.assessments:
             return {
@@ -823,11 +823,11 @@ class PQCMigrationPlanner:
     quantum-resistant cryptography with minimal disruption.
     """
 
-    def __init__(self, organization_name: str, start_date: Optional[datetime] = None):
+    def __init__(self, organization_name: str, start_date: datetime | None = None):
         """Initialize PQC migration planner."""
         self.organization_name = organization_name
         self.start_date = start_date or datetime.now()
-        self.phases: List[MigrationPhase] = []
+        self.phases: list[MigrationPhase] = []
         self._initialize_migration_phases()
 
     def _initialize_migration_phases(self) -> None:
@@ -897,7 +897,7 @@ class PQCMigrationPlanner:
 
         self.phases = phases
 
-    def start_migration(self) -> Dict[str, Any]:
+    def start_migration(self) -> dict[str, Any]:
         """Start migration process."""
         if self.phases:
             self.phases[0].status = "in_progress"
@@ -924,7 +924,7 @@ class PQCMigrationPlanner:
 
         return True
 
-    def get_migration_status(self) -> Dict[str, Any]:
+    def get_migration_status(self) -> dict[str, Any]:
         """Get current migration status."""
         total_phases = len(self.phases)
         completed_phases = sum(1 for p in self.phases if p.status == "completed")
@@ -943,7 +943,7 @@ class PQCMigrationPlanner:
             "all_phases": [p.to_dict() for p in self.phases],
         }
 
-    def export_roadmap(self) -> Dict[str, Any]:
+    def export_roadmap(self) -> dict[str, Any]:
         """Export complete migration roadmap."""
         return {
             "organization": self.organization_name,
@@ -992,7 +992,7 @@ class QuantumCryptoManager:
         self.threat_analyzer = QuantumThreatAnalyzer()
         self.migration_planner = PQCMigrationPlanner(organization_name=organization_name)
 
-    def get_security_status(self) -> Dict[str, Any]:
+    def get_security_status(self) -> dict[str, Any]:
         """Get comprehensive quantum crypto security status."""
         status = {
             "organization": self.organization_name,
@@ -1014,7 +1014,7 @@ class QuantumCryptoManager:
 
         return status
 
-    def export_compliance_report(self) -> Dict[str, Any]:
+    def export_compliance_report(self) -> dict[str, Any]:
         """Export quantum crypto compliance report."""
         return {
             "timestamp": datetime.now().isoformat(),

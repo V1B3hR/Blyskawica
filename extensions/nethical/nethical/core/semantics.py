@@ -17,13 +17,12 @@ from __future__ import annotations
 import logging
 import threading
 from functools import lru_cache
-from typing import Any, Optional, Tuple
-import warnings
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 # Global singleton instance
-_model_instance: Optional["SentenceTransformerWrapper"] = None
+_model_instance: SentenceTransformerWrapper | None = None
 _model_lock = threading.Lock()
 
 
@@ -35,20 +34,20 @@ class SentenceTransformerWrapper:
         
         Args:
             model_name: Name of the sentence-transformers model to use
-        """
+        """  # noqa: W293
         self.model_name = model_name
         self._model = None
         self._load_lock = threading.Lock()
-        
+
     def _ensure_loaded(self) -> None:
         """Ensure the model is loaded (lazy loading)."""
         if self._model is not None:
             return
-            
+
         with self._load_lock:
             if self._model is not None:  # Double-check after acquiring lock
                 return
-                
+
             try:
                 from sentence_transformers import SentenceTransformer
                 logger.info(f"Loading sentence-transformers model: {self.model_name}")
@@ -63,7 +62,7 @@ class SentenceTransformerWrapper:
             except Exception as e:
                 logger.error(f"Failed to load sentence-transformers model: {e}")
                 raise
-                
+
     def encode(self, texts: list[str] | str, **kwargs) -> Any:
         """Encode text(s) into embeddings.
         
@@ -73,12 +72,12 @@ class SentenceTransformerWrapper:
             
         Returns:
             Embeddings array
-        """
+        """  # noqa: W293
         self._ensure_loaded()
         if isinstance(texts, str):
             texts = [texts]
         return self._model.encode(texts, **kwargs)
-        
+
     @property
     def is_available(self) -> bool:
         """Check if the model is available."""
@@ -89,21 +88,21 @@ class SentenceTransformerWrapper:
             return False
 
 
-def get_embedding_model() -> Optional[SentenceTransformerWrapper]:
+def get_embedding_model() -> SentenceTransformerWrapper | None:
     """Get or create the singleton embedding model instance.
     
     Returns:
         SentenceTransformerWrapper instance or None if unavailable
-    """
+    """  # noqa: W293
     global _model_instance
-    
+
     if _model_instance is not None:
         return _model_instance
-        
+
     with _model_lock:
         if _model_instance is not None:  # Double-check
             return _model_instance
-            
+
         try:
             _model_instance = SentenceTransformerWrapper()
             return _model_instance
@@ -121,18 +120,18 @@ def cosine_similarity(vec_a: Any, vec_b: Any) -> float:
         
     Returns:
         Cosine similarity score (0.0 to 1.0)
-    """
+    """  # noqa: W293
     import numpy as np
-    
+
     # Normalize to handle both 1D and 2D arrays
     vec_a = np.atleast_2d(vec_a)
     vec_b = np.atleast_2d(vec_b)
-    
+
     # Compute cosine similarity
     dot_product = np.dot(vec_a, vec_b.T)
     norm_a = np.linalg.norm(vec_a, axis=1, keepdims=True)
     norm_b = np.linalg.norm(vec_b, axis=1, keepdims=True)
-    
+
     similarity = dot_product / (norm_a * norm_b.T)
     return float(similarity[0, 0])
 
@@ -149,11 +148,11 @@ def get_similarity(text_a: str, text_b: str) -> float:
         
     Returns:
         Similarity score (0.0 to 1.0), where 1.0 is identical
-    """
+    """  # noqa: W293
     # Handle empty or None inputs
     if not text_a or not text_b:
         return 0.0
-        
+
     # Try semantic similarity first
     model = get_embedding_model()
     if model and model.is_available:
@@ -163,7 +162,7 @@ def get_similarity(text_a: str, text_b: str) -> float:
             return max(0.0, min(1.0, similarity))  # Clamp to [0, 1]
         except Exception as e:
             logger.warning(f"Semantic similarity failed, falling back to lexical: {e}")
-            
+
     # Fallback to lexical similarity
     return _lexical_similarity(text_a, text_b)
 
@@ -177,18 +176,18 @@ def _lexical_similarity(text_a: str, text_b: str) -> float:
         
     Returns:
         Jaccard similarity score (0.0 to 1.0)
-    """
+    """  # noqa: W293
     # Simple tokenization
     tokens_a = set(text_a.lower().split())
     tokens_b = set(text_b.lower().split())
-    
+
     if not tokens_a or not tokens_b:
         return 0.0
-        
+
     # Jaccard similarity
     intersection = len(tokens_a & tokens_b)
     union = len(tokens_a | tokens_b)
-    
+
     return intersection / union if union > 0 else 0.0
 
 
@@ -205,7 +204,7 @@ def get_semantic_deviation(stated_intent: str, actual_action: str) -> float:
         
     Returns:
         Deviation score (0.0 to 1.0)
-    """
+    """  # noqa: W293
     similarity = get_similarity(stated_intent, actual_action)
     deviation = 1.0 - similarity
     return max(0.0, min(1.0, deviation))  # Clamp to [0, 1]
@@ -224,12 +223,12 @@ def get_concept_similarity(text: str, concept_phrase: str) -> float:
         
     Returns:
         Similarity score (0.0 to 1.0)
-    """
+    """  # noqa: W293
     return get_similarity(text, concept_phrase)
 
 
 def batch_similarity(
-    texts: list[str], 
+    texts: list[str],
     reference_text: str,
     batch_size: int = 32
 ) -> list[float]:
@@ -244,29 +243,29 @@ def batch_similarity(
         
     Returns:
         List of similarity scores
-    """
+    """  # noqa: W293
     if not texts:
         return []
-        
+
     model = get_embedding_model()
     if not model or not model.is_available:
         # Fallback to individual lexical comparisons
         return [_lexical_similarity(t, reference_text) for t in texts]
-        
+
     try:
         # Encode reference
         ref_embedding = model.encode([reference_text])[0]
-        
+
         # Encode texts in batches
         similarities = []
         for i in range(0, len(texts), batch_size):
             batch = texts[i:i + batch_size]
             batch_embeddings = model.encode(batch)
-            
+
             for emb in batch_embeddings:
                 sim = cosine_similarity(emb, ref_embedding)
                 similarities.append(max(0.0, min(1.0, sim)))
-                
+
         return similarities
     except Exception as e:
         logger.warning(f"Batch similarity failed, falling back: {e}")
@@ -283,6 +282,6 @@ def is_semantic_available() -> bool:
     
     Returns:
         True if sentence-transformers is available and working
-    """
+    """  # noqa: W293
     model = get_embedding_model()
     return model is not None and model.is_available

@@ -27,11 +27,11 @@ from __future__ import annotations
 
 import logging
 import secrets
-from datetime import datetime, timedelta, timezone
-from typing import Dict, Optional, List, Any, Tuple
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
 from enum import Enum
-from urllib.parse import urljoin, parse_qs, urlparse
+from typing import Any
+from urllib.parse import parse_qs, urljoin, urlparse
 
 __all__ = [
     "SSOProvider",
@@ -66,13 +66,13 @@ class SAMLConfig:
     # Service Provider (SP) configuration
     sp_entity_id: str
     sp_acs_url: str  # Assertion Consumer Service URL
-    sp_sls_url: Optional[str] = None  # Single Logout Service URL
+    sp_sls_url: str | None = None  # Single Logout Service URL
 
     # Identity Provider (IdP) configuration
     idp_entity_id: str = ""
     idp_sso_url: str = ""
-    idp_slo_url: Optional[str] = None
-    idp_x509_cert: Optional[str] = None
+    idp_slo_url: str | None = None
+    idp_x509_cert: str | None = None
 
     # Security settings
     want_assertions_signed: bool = True
@@ -80,7 +80,7 @@ class SAMLConfig:
     want_name_id_encrypted: bool = False
 
     # Attribute mapping (SAML attribute -> internal field)
-    attribute_mapping: Dict[str, str] = field(
+    attribute_mapping: dict[str, str] = field(
         default_factory=lambda: {
             "email": "email",
             "uid": "user_id",
@@ -105,8 +105,8 @@ class SSOConfig:
     enabled: bool = True
 
     # Provider-specific config
-    saml_config: Optional[SAMLConfig] = None
-    oauth_config: Optional[Dict[str, Any]] = None
+    saml_config: SAMLConfig | None = None
+    oauth_config: dict[str, Any] | None = None
 
     # User provisioning
     auto_create_users: bool = True
@@ -142,10 +142,10 @@ class SSOManager:
             base_url: Base URL of the application
         """
         self.base_url = base_url
-        self.configs: Dict[str, SSOConfig] = {}
+        self.configs: dict[str, SSOConfig] = {}
         self.saml_auth = None
         # Store pending OAuth states for CSRF validation
-        self._pending_oauth_states: Dict[str, Dict[str, Any]] = {}
+        self._pending_oauth_states: dict[str, dict[str, Any]] = {}
         log.info(f"SSOManager initialized with base_url: {base_url}")
 
     def configure_saml(
@@ -154,8 +154,8 @@ class SSOManager:
         sp_entity_id: str,
         idp_entity_id: str,
         idp_sso_url: str,
-        idp_x509_cert: Optional[str] = None,
-        attribute_mapping: Optional[Dict[str, str]] = None,
+        idp_x509_cert: str | None = None,
+        attribute_mapping: dict[str, str] | None = None,
     ) -> SSOConfig:
         """
         Configure SAML 2.0 authentication
@@ -204,7 +204,7 @@ class SSOManager:
         client_secret: str,
         authorization_url: str,
         token_url: str,
-        userinfo_url: Optional[str] = None,
+        userinfo_url: str | None = None,
     ) -> SSOConfig:
         """
         Configure OAuth 2.0 / OpenID Connect authentication
@@ -294,7 +294,7 @@ class SSOManager:
 
     def handle_saml_response(
         self, saml_response: str, config_name: str = "default"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Handle SAML authentication response
 
@@ -364,8 +364,8 @@ class SSOManager:
             }
 
     def initiate_oauth_login(
-        self, config_name: str = "default", state: Optional[str] = None
-    ) -> Tuple[str, str]:
+        self, config_name: str = "default", state: str | None = None
+    ) -> tuple[str, str]:
         """
         Initiate OAuth 2.0 / OIDC login flow
 
@@ -431,8 +431,8 @@ class SSOManager:
         self,
         authorization_response: str,
         config_name: str = "default",
-        expected_state: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        expected_state: str | None = None,
+    ) -> dict[str, Any]:
         """
         Handle OAuth callback and exchange code for token
 
@@ -522,9 +522,9 @@ class SSOManager:
     def _verify_and_decode_id_token(
         self,
         id_token: str,
-        oauth_cfg: Dict[str, Any],
+        oauth_cfg: dict[str, Any],
         config_name: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Verify and decode an OIDC ID token with signature verification.
 
@@ -585,9 +585,9 @@ class SSOManager:
 
         except jwt.InvalidTokenError as e:
             log.error(f"ID token verification failed: {e}")
-            raise SSOError(f"ID token verification failed: {e}")
+            raise SSOError(f"ID token verification failed: {e}")  # noqa: B904
 
-    def get_config(self, config_name: str) -> Optional[SSOConfig]:
+    def get_config(self, config_name: str) -> SSOConfig | None:
         """
         Get SSO configuration by name
 
@@ -599,7 +599,7 @@ class SSOManager:
         """
         return self.configs.get(config_name)
 
-    def list_configs(self) -> List[str]:
+    def list_configs(self) -> list[str]:
         """
         List all SSO configuration names
 
@@ -608,7 +608,7 @@ class SSOManager:
         """
         return list(self.configs.keys())
 
-    def _build_saml_settings(self, saml_config: SAMLConfig) -> Dict[str, Any]:
+    def _build_saml_settings(self, saml_config: SAMLConfig) -> dict[str, Any]:
         """
         Build python3-saml settings dictionary
 
@@ -662,8 +662,8 @@ class SSOManager:
         return settings
 
     def _map_saml_attributes(
-        self, attributes: Dict[str, List[str]], name_id: str, mapping: Dict[str, str]
-    ) -> Dict[str, Any]:
+        self, attributes: dict[str, list[str]], name_id: str, mapping: dict[str, str]
+    ) -> dict[str, Any]:
         """
         Map SAML attributes to internal user data format
 
@@ -687,7 +687,7 @@ class SSOManager:
 
 
 # Global SSO manager instance
-_sso_manager: Optional[SSOManager] = None
+_sso_manager: SSOManager | None = None
 
 
 def get_sso_manager() -> SSOManager:

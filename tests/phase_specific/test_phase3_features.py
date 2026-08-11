@@ -35,7 +35,7 @@ def test_advanced_video_processing():
     print("\n🎥 Testing Advanced Video Processing...")
 
     # Create video model configuration
-    config = VideoModelConfig(
+    config = VideoModelConfig(  # noqa: F841
         input_channels=3,
         input_height=224,
         input_width=224,
@@ -262,7 +262,7 @@ def test_iot_edge_integration():
     mobile_manager.start_service()
 
     # Test sensor data processing
-    sensor_json = {
+    sensor_json = {  # noqa: F841
         "sensors": [
             {
                 "sensor_id": data.sensor_id,

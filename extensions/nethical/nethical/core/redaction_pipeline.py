@@ -4,13 +4,13 @@ This module provides advanced PII detection, automatic redaction, audit trails,
 and reversible redaction capabilities for privacy protection.
 """
 
-from typing import Dict, List, Optional, Any, Tuple
+import hashlib
+import json
+import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-import re
-import hashlib
-import json
+from typing import Any
 
 
 class PIIType(Enum):
@@ -54,8 +54,8 @@ class RedactionResult:
 
     original_text: str
     redacted_text: str
-    pii_matches: List[PIIMatch]
-    redaction_map: Dict[str, str]  # Maps redaction tokens to original values
+    pii_matches: list[PIIMatch]
+    redaction_map: dict[str, str]  # Maps redaction tokens to original values
     timestamp: datetime
     policy: RedactionPolicy
     reversible: bool
@@ -68,11 +68,11 @@ class RedactionAuditEntry:
     entry_id: str
     timestamp: datetime
     action: str  # "redact" or "restore"
-    pii_types: List[PIIType]
+    pii_types: list[PIIType]
     policy: RedactionPolicy
-    user_id: Optional[str]
+    user_id: str | None
     success: bool
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class EnhancedRedactionPipeline:
@@ -107,7 +107,7 @@ class EnhancedRedactionPipeline:
         enable_reversible: bool = False,
         context_window: int = 50,
         min_confidence: float = 0.85,
-        audit_log_path: Optional[str] = None,
+        audit_log_path: str | None = None,
     ):
         """Initialize the redaction pipeline.
 
@@ -132,7 +132,7 @@ class EnhancedRedactionPipeline:
         }
 
         # Audit trail storage
-        self.audit_trail: List[RedactionAuditEntry] = []
+        self.audit_trail: list[RedactionAuditEntry] = []
 
         # Statistics
         self.stats = {
@@ -141,7 +141,7 @@ class EnhancedRedactionPipeline:
             "accuracy_scores": [],
         }
 
-    def detect_pii(self, text: str, include_context: bool = True) -> List[PIIMatch]:
+    def detect_pii(self, text: str, include_context: bool = True) -> list[PIIMatch]:
         """Detect PII in text with high accuracy.
 
         Args:
@@ -188,7 +188,7 @@ class EnhancedRedactionPipeline:
         return matches
 
     def redact(
-        self, text: str, user_id: Optional[str] = None, preserve_utility: bool = True
+        self, text: str, user_id: str | None = None, preserve_utility: bool = True
     ) -> RedactionResult:
         """Redact PII from text with context-aware decisions.
 
@@ -268,9 +268,9 @@ class EnhancedRedactionPipeline:
     def restore(
         self,
         redaction_result: RedactionResult,
-        user_id: Optional[str] = None,
+        user_id: str | None = None,
         authorized: bool = False,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Restore original text from redacted version (if reversible).
 
         Args:
@@ -349,7 +349,7 @@ class EnhancedRedactionPipeline:
             # Luhn algorithm validation for credit cards
             if self._luhn_check(matched_text.replace(" ", "").replace("-", "")):
                 base_confidence += 0.10
-        elif pii_type == PIIType.EMAIL:
+        elif pii_type == PIIType.EMAIL:  # noqa: SIM102
             # Check for common email providers
             if any(
                 provider in matched_text.lower()
@@ -407,10 +407,10 @@ class EnhancedRedactionPipeline:
     def _log_audit(
         self,
         action: str,
-        pii_types: List[PIIType],
-        user_id: Optional[str],
+        pii_types: list[PIIType],
+        user_id: str | None,
         success: bool,
-        metadata: Dict[str, Any] = None,
+        metadata: dict[str, Any] = None,
     ):
         """Log redaction action to audit trail."""
         entry = RedactionAuditEntry(
@@ -446,7 +446,7 @@ class EnhancedRedactionPipeline:
             # Log error but don't fail the operation
             print(f"Warning: Failed to write audit log: {e}")
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get redaction pipeline statistics."""
         return {
             "total_redactions": self.stats["total_redactions"],
@@ -467,7 +467,7 @@ class EnhancedRedactionPipeline:
             return 0.96  # Target is >95%
         return sum(self.stats["accuracy_scores"]) / len(self.stats["accuracy_scores"])
 
-    def validate_detection_accuracy(self, test_cases: List[Tuple[str, List[PIIType]]]) -> float:
+    def validate_detection_accuracy(self, test_cases: list[tuple[str, list[PIIType]]]) -> float:
         """Validate PII detection accuracy against test cases.
 
         Args:

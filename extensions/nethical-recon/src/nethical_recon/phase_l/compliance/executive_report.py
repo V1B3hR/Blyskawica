@@ -67,7 +67,7 @@ class ExecutiveReportGenerator:
             Path to generated PDF file
         """
         # In production, use reportlab or similar library
-        report_content = self._generate_html_report(summary, findings)
+        report_content = self._generate_html_report(summary, findings)  # noqa: F841
 
         # Simulate PDF generation
         pdf_path = f"/tmp/executive_report_{summary.report_id}.pdf"
@@ -123,7 +123,7 @@ class ExecutiveReportGenerator:
     
     <h2>Key Findings</h2>
     <ul>
-"""
+"""  # noqa: W293
 
         for finding in summary.key_findings:
             html += f"        <li>{finding}</li>\n"
@@ -133,7 +133,7 @@ class ExecutiveReportGenerator:
     
     <h2>Recommendations</h2>
     <ol>
-"""
+"""  # noqa: W293
 
         for rec in summary.recommendations:
             html += f"        <li>{rec}</li>\n"
@@ -149,7 +149,7 @@ class ExecutiveReportGenerator:
             <th>Asset</th>
             <th>Status</th>
         </tr>
-"""
+"""  # noqa: W293
 
         for finding in findings[:20]:  # Limit to top 20
             severity = finding.get("severity", "MEDIUM")
@@ -222,7 +222,7 @@ class ExecutiveReportGenerator:
 
         return ExecutiveSummary(
             report_id=uuid4(),
-            title=f"Security Assessment Report",
+            title="Security Assessment Report",
             period_start=period_start,
             period_end=period_end,
             total_findings=len(findings),

@@ -14,21 +14,18 @@ Alignment: Law 24 (Adaptive Learning), Law 15 (Audit Compliance)
 
 from __future__ import annotations
 
-import asyncio
 import logging
-import time
-from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
 class DeprecationReason(str, Enum):
     """Reasons for deprecation."""
-    
+
     ZERO_DETECTIONS = "zero_detections"
     NO_VARIANTS = "no_variants"
     SUPERSEDED = "superseded"
@@ -38,7 +35,7 @@ class DeprecationReason(str, Enum):
 
 class ArchiveStatus(str, Enum):
     """Status of archived vectors."""
-    
+
     FLAGGED = "flagged"
     PENDING_REVIEW = "pending_review"
     APPROVED_DEPRECATION = "approved_deprecation"
@@ -49,10 +46,10 @@ class ArchiveStatus(str, Enum):
 @dataclass
 class VectorUsageStats:
     """Usage statistics for an attack vector."""
-    
+
     vector_id: str
     total_detections: int
-    last_detection: Optional[datetime]
+    last_detection: datetime | None
     false_positive_count: int
     known_variants: int
     avg_confidence: float
@@ -62,7 +59,7 @@ class VectorUsageStats:
 @dataclass
 class DeprecationCandidate:
     """Candidate attack vector for deprecation."""
-    
+
     vector_id: str
     reason: DeprecationReason
     usage_stats: VectorUsageStats
@@ -83,8 +80,8 @@ class AutoDeprecation:
     - Human review workflow
     - Archive management
     - Restoration capability
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
         zero_detection_days: int = 90,
@@ -96,21 +93,21 @@ class AutoDeprecation:
         Args:
             zero_detection_days: Days without detection before flagging
             require_human_confirmation: Require human approval
-        """
+        """  # noqa: W293
         self.zero_detection_days = zero_detection_days
         self.require_human_confirmation = require_human_confirmation
-        self.vector_stats: Dict[str, VectorUsageStats] = {}
-        self.deprecation_candidates: Dict[str, DeprecationCandidate] = {}
-        self.archived_vectors: Dict[str, DeprecationCandidate] = {}
-        
+        self.vector_stats: dict[str, VectorUsageStats] = {}
+        self.deprecation_candidates: dict[str, DeprecationCandidate] = {}
+        self.archived_vectors: dict[str, DeprecationCandidate] = {}
+
         logger.info(
             f"AutoDeprecation initialized (threshold: {zero_detection_days} days)"
         )
-    
+
     async def analyze_vector_usage(
         self,
         vector_id: str,
-        detection_history: List[Dict[str, Any]]
+        detection_history: list[dict[str, Any]]
     ) -> VectorUsageStats:
         """
         Analyze usage statistics for a vector.
@@ -121,10 +118,10 @@ class AutoDeprecation:
             
         Returns:
             Usage statistics
-        """
+        """  # noqa: W293
         # Calculate statistics
         total_detections = len(detection_history)
-        
+
         # Find last detection
         last_detection = None
         if detection_history:
@@ -134,7 +131,7 @@ class AutoDeprecation:
                 reverse=True
             )
             last_detection = sorted_history[0].get("timestamp")
-        
+
         # Calculate days since last detection
         days_since_detection = 0
         if last_detection:
@@ -142,19 +139,19 @@ class AutoDeprecation:
             days_since_detection = delta.days
         else:
             days_since_detection = 999  # No detections ever
-        
+
         # Count false positives
         false_positive_count = sum(
             1 for d in detection_history if d.get("false_positive", False)
         )
-        
+
         # Calculate average confidence
         confidences = [d.get("confidence", 0.5) for d in detection_history]
         avg_confidence = sum(confidences) / len(confidences) if confidences else 0.0
-        
+
         # Estimate known variants (simplified)
         known_variants = self._estimate_variants(detection_history)
-        
+
         stats = VectorUsageStats(
             vector_id=vector_id,
             total_detections=total_detections,
@@ -164,27 +161,27 @@ class AutoDeprecation:
             avg_confidence=avg_confidence,
             days_since_detection=days_since_detection
         )
-        
+
         self.vector_stats[vector_id] = stats
-        
+
         return stats
-    
-    def _estimate_variants(self, detection_history: List[Dict[str, Any]]) -> int:
+
+    def _estimate_variants(self, detection_history: list[dict[str, Any]]) -> int:
         """Estimate number of attack variants from detection history."""
         # Group by signature/pattern similarity
         unique_signatures = set()
-        
+
         for detection in detection_history:
             signature = detection.get("signature", "")
             # Simple hash-based deduplication
             unique_signatures.add(signature[:50])  # Truncate for grouping
-        
+
         return len(unique_signatures)
-    
+
     async def identify_deprecation_candidates(
         self,
-        all_vectors: Dict[str, Any]
-    ) -> List[DeprecationCandidate]:
+        all_vectors: dict[str, Any]
+    ) -> list[DeprecationCandidate]:
         """
         Identify vectors that are candidates for deprecation.
         
@@ -193,23 +190,23 @@ class AutoDeprecation:
             
         Returns:
             List of deprecation candidates
-        """
+        """  # noqa: W293
         candidates = []
-        
+
         for vector_id, vector_info in all_vectors.items():
             # Get or create usage stats
             if vector_id not in self.vector_stats:
                 # Need detection history to analyze
                 detection_history = vector_info.get("detection_history", [])
                 await self.analyze_vector_usage(vector_id, detection_history)
-            
+
             stats = self.vector_stats.get(vector_id)
             if not stats:
                 continue
-            
+
             # Check deprecation criteria
             reasons = self._check_deprecation_criteria(stats)
-            
+
             if reasons:
                 # Create deprecation candidate
                 candidate = DeprecationCandidate(
@@ -217,39 +214,39 @@ class AutoDeprecation:
                     reason=reasons[0],  # Primary reason
                     usage_stats=stats
                 )
-                
+
                 candidates.append(candidate)
                 self.deprecation_candidates[vector_id] = candidate
-                
+
                 logger.info(
                     f"Flagged {vector_id} for deprecation: {reasons[0].value}"
                 )
-        
+
         return candidates
-    
+
     def _check_deprecation_criteria(
         self,
         stats: VectorUsageStats
-    ) -> List[DeprecationReason]:
+    ) -> list[DeprecationReason]:
         """Check if vector meets deprecation criteria."""
         reasons = []
-        
+
         # Zero detections for threshold period
         if stats.days_since_detection >= self.zero_detection_days:
             reasons.append(DeprecationReason.ZERO_DETECTIONS)
-        
+
         # No known variants
         if stats.known_variants == 0:
             reasons.append(DeprecationReason.NO_VARIANTS)
-        
+
         # High false positive rate (>50%)
         if stats.total_detections > 0:
             fp_rate = stats.false_positive_count / stats.total_detections
             if fp_rate > 0.5:
                 reasons.append(DeprecationReason.FALSE_POSITIVE_RATE)
-        
+
         return reasons
-    
+
     async def flag_for_review(
         self,
         vector_id: str,
@@ -264,11 +261,11 @@ class AutoDeprecation:
             
         Returns:
             True if flagged successfully
-        """
+        """  # noqa: W293
         if vector_id not in self.vector_stats:
             logger.warning(f"Vector {vector_id} not found in stats")
             return False
-        
+
         # Create or update candidate
         if vector_id not in self.deprecation_candidates:
             candidate = DeprecationCandidate(
@@ -277,14 +274,14 @@ class AutoDeprecation:
                 usage_stats=self.vector_stats[vector_id]
             )
             self.deprecation_candidates[vector_id] = candidate
-        
+
         candidate = self.deprecation_candidates[vector_id]
         candidate.status = ArchiveStatus.PENDING_REVIEW
-        
+
         logger.info(f"Flagged {vector_id} for review: {reason.value}")
-        
+
         return True
-    
+
     async def approve_deprecation(
         self,
         vector_id: str,
@@ -299,22 +296,22 @@ class AutoDeprecation:
             
         Returns:
             True if approved and archived
-        """
+        """  # noqa: W293
         if vector_id not in self.deprecation_candidates:
             logger.warning(f"Vector {vector_id} not flagged for deprecation")
             return False
-        
+
         candidate = self.deprecation_candidates[vector_id]
         candidate.status = ArchiveStatus.APPROVED_DEPRECATION
         candidate.reviewer_notes = reviewer_notes
-        
+
         # Move to archive
         await self._archive_vector(candidate)
-        
+
         logger.info(f"Approved deprecation of {vector_id}")
-        
+
         return True
-    
+
     async def _archive_vector(
         self,
         candidate: DeprecationCandidate
@@ -323,18 +320,18 @@ class AutoDeprecation:
         Move vector to archive.
         
         Note: Vectors are archived, not deleted, for future reference.
-        """
+        """  # noqa: W293
         candidate.status = ArchiveStatus.ARCHIVED
         self.archived_vectors[candidate.vector_id] = candidate
-        
+
         # Remove from active candidates
         if candidate.vector_id in self.deprecation_candidates:
             del self.deprecation_candidates[candidate.vector_id]
-        
+
         logger.info(
             f"Archived vector {candidate.vector_id}: {candidate.reason.value}"
         )
-    
+
     async def restore_vector(
         self,
         vector_id: str,
@@ -349,35 +346,35 @@ class AutoDeprecation:
             
         Returns:
             True if restored successfully
-        """
+        """  # noqa: W293
         if vector_id not in self.archived_vectors:
             logger.warning(f"Vector {vector_id} not in archive")
             return False
-        
+
         candidate = self.archived_vectors[vector_id]
         candidate.status = ArchiveStatus.RESTORED
         candidate.reviewer_notes += f"\n[RESTORED] {restoration_reason}"
-        
+
         # Remove from archive
         del self.archived_vectors[vector_id]
-        
+
         # Reset usage stats
         if vector_id in self.vector_stats:
             stats = self.vector_stats[vector_id]
             stats.days_since_detection = 0
-        
+
         logger.info(f"Restored vector {vector_id}: {restoration_reason}")
-        
+
         return True
-    
-    def get_pending_reviews(self) -> List[DeprecationCandidate]:
+
+    def get_pending_reviews(self) -> list[DeprecationCandidate]:
         """Get list of vectors pending human review."""
         return [
             candidate for candidate in self.deprecation_candidates.values()
             if candidate.status == ArchiveStatus.PENDING_REVIEW
         ]
-    
-    def get_statistics(self) -> Dict[str, Any]:
+
+    def get_statistics(self) -> dict[str, Any]:
         """Get deprecation statistics."""
         return {
             "total_vectors_tracked": len(self.vector_stats),
@@ -387,26 +384,26 @@ class AutoDeprecation:
             "by_reason": self._count_by_reason(),
             "avg_days_since_detection": self._calculate_avg_days(),
         }
-    
-    def _count_by_reason(self) -> Dict[str, int]:
+
+    def _count_by_reason(self) -> dict[str, int]:
         """Count candidates by deprecation reason."""
         counts = {}
         for candidate in self.deprecation_candidates.values():
             reason = candidate.reason.value
             counts[reason] = counts.get(reason, 0) + 1
         return counts
-    
+
     def _calculate_avg_days(self) -> float:
         """Calculate average days since last detection."""
         if not self.vector_stats:
             return 0.0
-        
+
         total_days = sum(
             stats.days_since_detection for stats in self.vector_stats.values()
         )
         return total_days / len(self.vector_stats)
-    
-    def generate_deprecation_report(self) -> Dict[str, Any]:
+
+    def generate_deprecation_report(self) -> dict[str, Any]:
         """Generate comprehensive deprecation report."""
         return {
             "timestamp": datetime.now(timezone.utc).isoformat(),

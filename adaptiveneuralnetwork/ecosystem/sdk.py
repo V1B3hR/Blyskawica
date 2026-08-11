@@ -456,7 +456,7 @@ class BatchPredictor:
 
             # Split results back to individual requests
             start_idx = 0
-            for i, (future, batch_size) in enumerate(zip(futures, batch_sizes, strict=False)):
+            for i, (future, batch_size) in enumerate(zip(futures, batch_sizes, strict=False)):  # noqa: B007
                 end_idx = start_idx + batch_size
                 individual_result = {
                     **result,
@@ -511,7 +511,7 @@ class ModelTrainer:
             self.model.train()
             epoch_train_loss = 0.0
 
-            for batch_idx, (data, target) in enumerate(train_data):
+            for batch_idx, (data, target) in enumerate(train_data):  # noqa: B007
                 optimizer.zero_grad()
                 output = self.model(data)
                 loss = criterion(output, target)

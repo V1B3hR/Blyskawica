@@ -115,7 +115,7 @@ class TimeSeriesTracker:
         
         Security: SQLite by default prevents multi-statement execution,
         providing protection against compound SQL injection attacks.
-        """
+        """  # noqa: W293
         try:
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
@@ -135,15 +135,15 @@ class TimeSeriesTracker:
                 cursor.execute("""
                     CREATE INDEX IF NOT EXISTS idx_timestamp 
                     ON time_series(timestamp)
-                """)
+                """)  # noqa: W291
                 cursor.execute("""
                     CREATE INDEX IF NOT EXISTS idx_node_variable 
                     ON time_series(node_id, variable_name)
-                """)
+                """)  # noqa: W291
                 cursor.execute("""
                     CREATE INDEX IF NOT EXISTS idx_node_time 
                     ON time_series(node_id, timestamp)
-                """)
+                """)  # noqa: W291
 
                 conn.commit()
                 logger.info(f"Initialized time series database: {self.db_path}")
@@ -160,7 +160,7 @@ class TimeSeriesTracker:
             node_id: Unique identifier for the node
             state_data: Dictionary of variable_name -> value
             timestamp: Optional timestamp (uses current time if None)
-        """
+        """  # noqa: W293
         # Validate node_id type
         if not isinstance(node_id, int):
             try:
@@ -216,7 +216,7 @@ class TimeSeriesTracker:
                     INSERT INTO time_series 
                     (timestamp, node_id, variable_name, value, metadata)
                     VALUES (?, ?, ?, ?, ?)
-                """, (point.timestamp, point.node_id, point.variable_name,
+                """, (point.timestamp, point.node_id, point.variable_name,  # noqa: W291
                      point.value, metadata_json))
 
                 conn.commit()
@@ -233,7 +233,7 @@ class TimeSeriesTracker:
             
         Returns:
             List of TimeSeriesDataPoint objects matching the query
-        """
+        """  # noqa: W293
         # Validate and sanitize query parameters for security
         self._validate_query_parameters(query)
 
@@ -398,7 +398,7 @@ class TimeSeriesTracker:
             
         Returns:
             String containing the query execution plan
-        """
+        """  # noqa: W293
         # Validate parameters first
         self._validate_query_parameters(query)
 
@@ -503,7 +503,7 @@ class TimeSeriesTracker:
             
         Returns:
             matplotlib Figure object
-        """
+        """  # noqa: W293
         if variables is None:
             variables = self.DEFAULT_VARIABLES
 
@@ -587,7 +587,7 @@ class TimeSeriesTracker:
             
         Returns:
             matplotlib Figure object
-        """
+        """  # noqa: W293
         end_time = get_timestamp()
         start_time = end_time - (time_range_hours * 3600)
 
@@ -652,7 +652,7 @@ class TimeSeriesTracker:
             
         Returns:
             Path to the created file
-        """
+        """  # noqa: W293
         data_points = self.query(query)
 
         if format.lower() == "json":
@@ -725,7 +725,7 @@ def track_node_automatically(tracker: TimeSeriesTracker, node, timestamp: float 
         tracker: TimeSeriesTracker instance
         node: AliveLoopNode instance
         timestamp: Optional timestamp
-    """
+    """  # noqa: W293
     state_data = {
         "energy": node.energy,
         "anxiety": node.anxiety,

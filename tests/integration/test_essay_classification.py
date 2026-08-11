@@ -1,23 +1,24 @@
 import os
+
 #!/usr/bin/env python3
 """
 Test script for essay classification benchmark.
 
 This script runs comprehensive tests on the Human vs AI Generated Essays 
 classification benchmark to ensure it works correctly.
-"""
+"""  # noqa: W291
 
 
 # Add the current directory to Python path
-import sys
-import tempfile
-import unittest
-from pathlib import Path
+import sys  # noqa: E402
+import tempfile  # noqa: E402
+import unittest  # noqa: E402
+from pathlib import Path  # noqa: E402
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from adaptiveneuralnetwork.api import AdaptiveConfig
-from adaptiveneuralnetwork.benchmarks.nlp.text_classification import (
+from adaptiveneuralnetwork.api import AdaptiveConfig  # noqa: E402
+from adaptiveneuralnetwork.benchmarks.nlp.text_classification import (  # noqa: E402
     EssayDataset,
     SyntheticEssayDataset,
     TextClassificationBenchmark,
@@ -105,7 +106,7 @@ class TestEssayClassification(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as temp_dir:
             # Temporarily change results directory
-            original_path = Path("benchmark_results")
+            original_path = Path("benchmark_results")  # noqa: F841
             test_path = Path(temp_dir) / "test_results"
             test_path.mkdir(exist_ok=True)
 

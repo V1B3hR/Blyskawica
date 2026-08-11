@@ -1,7 +1,6 @@
-import os
 import argparse
-from pathlib import Path
 import json
+from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent / "adaptiveneuralnetwork"
 WORKSPACE_ROOT = Path(__file__).resolve().parent.parent
@@ -15,19 +14,19 @@ def get_body_shape():
         "immune_system": 0
     }
     total_lines = 0
-    
+
     for category in organs.keys():
         cat_path = BASE_DIR / category
         if cat_path.exists():
             for py_file in cat_path.rglob("*.py"):
                 try:
-                    with open(py_file, 'r', encoding='utf-8') as f:
+                    with open(py_file, encoding='utf-8') as f:
                         lines = len(f.readlines())
                         organs[category] += lines
                         total_lines += lines
                 except Exception:
                     pass
-                    
+
     return organs, total_lines
 
 def print_mirror():
@@ -45,13 +44,13 @@ def use_magnifying_glass():
     print("\n" + "-"*50)
     print(" 🔍 SZKŁO POWIĘKSZAJĄCE (Dynamiczny Odczyt Stanów Kwantowych)")
     print("-"*50)
-    
+
     # 1. Ground Loop Isolator / Watchdog Real-time State
     print("🌐 Odczyt z Quantum Integrity Watchdog:")
     watchdog_path = WORKSPACE_ROOT / "integrity_audit_latest.json"
     if watchdog_path.exists():
         try:
-            with open(watchdog_path, 'r', encoding='utf-8') as f:
+            with open(watchdog_path, encoding='utf-8') as f:
                 data = json.load(f)
             snap = data.get("snapshot", {})
             report = data.get("report", {})
@@ -72,7 +71,7 @@ def use_magnifying_glass():
     qml_path = WORKSPACE_ROOT / "qml_training_results.json"
     if qml_path.exists():
         try:
-            with open(qml_path, 'r', encoding='utf-8') as f:
+            with open(qml_path, encoding='utf-8') as f:
                 qml_data = json.load(f)
             reduction = qml_data.get('loss_reduction_pct', 0.0)
             print(f"  - Backend: {qml_data.get('backend', 'N/A').upper()}")
@@ -91,7 +90,7 @@ def use_magnifying_glass():
     teleport_path = WORKSPACE_ROOT / "quantum_teleportation_latest.json"
     if teleport_path.exists():
         try:
-            with open(teleport_path, 'r', encoding='utf-8') as f:
+            with open(teleport_path, encoding='utf-8') as f:
                 tele_data = json.load(f)
             print(f"  - Kanał teleportacyjny: {tele_data.get('backend', 'N/A')}")
             print(f"  - Kąt wejściowy theta: {tele_data.get('theta', 0.0):.4f} rad (Seed: {tele_data.get('seed', 'N/A')})")
@@ -107,7 +106,7 @@ def use_magnifying_glass():
     intuition_path = WORKSPACE_ROOT / "quantum_audit_results.json"
     if intuition_path.exists():
         try:
-            with open(intuition_path, 'r', encoding='utf-8') as f:
+            with open(intuition_path, encoding='utf-8') as f:
                 int_data = json.load(f)
             if int_data and isinstance(int_data, list):
                 first = int_data[0]
@@ -131,9 +130,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Lustro dla Błyskawicy")
     parser.add_argument("--magnify", action="store_true", help="Użyj szkła powiększającego")
     args = parser.parse_args()
-    
+
     print_mirror()
-    
+
     if args.magnify:
         use_magnifying_glass()
     else:

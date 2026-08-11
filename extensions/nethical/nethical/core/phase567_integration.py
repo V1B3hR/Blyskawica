@@ -28,14 +28,14 @@ Migration Guide:
         )
 """
 
-from typing import Dict, List, Optional, Any
-from datetime import datetime, timezone
 import time
 import warnings
+from datetime import datetime, timezone
+from typing import Any
 
-from .ml_shadow import MLShadowClassifier, MLModelType
-from .ml_blended_risk import MLBlendedRiskEngine
 from .anomaly_detector import AnomalyDriftMonitor
+from .ml_blended_risk import MLBlendedRiskEngine
+from .ml_shadow import MLModelType, MLShadowClassifier
 
 
 class Phase567IntegratedGovernance:
@@ -135,13 +135,13 @@ class Phase567IntegratedGovernance:
         agent_id: str,
         action_id: str,
         action_type: str,
-        features: Dict[str, float],
+        features: dict[str, float],
         rule_risk_score: float,
         rule_classification: str,
-        cohort: Optional[str] = None,
-        ml_confidence: Optional[float] = None,
-        context: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        cohort: str | None = None,
+        ml_confidence: float | None = None,
+        context: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Process action through all Phase 5-7 components.
 
         Args:
@@ -269,7 +269,7 @@ class Phase567IntegratedGovernance:
 
         return results
 
-    def set_baseline_distribution(self, risk_scores: List[float], cohort: str = "default") -> bool:
+    def set_baseline_distribution(self, risk_scores: list[float], cohort: str = "default") -> bool:
         """Set baseline distribution for drift detection.
 
         Args:
@@ -285,7 +285,7 @@ class Phase567IntegratedGovernance:
         self.anomaly_monitor.set_baseline_distribution(risk_scores)
         return True
 
-    def get_shadow_metrics(self) -> Dict[str, Any]:
+    def get_shadow_metrics(self) -> dict[str, Any]:
         """Get ML shadow mode metrics.
 
         Returns:
@@ -296,7 +296,7 @@ class Phase567IntegratedGovernance:
 
         return self.shadow_classifier.get_metrics_report()
 
-    def get_blending_metrics(self) -> Dict[str, Any]:
+    def get_blending_metrics(self) -> dict[str, Any]:
         """Get ML blending metrics.
 
         Returns:
@@ -307,7 +307,7 @@ class Phase567IntegratedGovernance:
 
         return self.blended_engine.get_metrics_report()
 
-    def get_anomaly_statistics(self) -> Dict[str, Any]:
+    def get_anomaly_statistics(self) -> dict[str, Any]:
         """Get anomaly detection statistics.
 
         Returns:
@@ -318,7 +318,7 @@ class Phase567IntegratedGovernance:
 
         return self.anomaly_monitor.get_statistics()
 
-    def get_drift_report(self, cohort: str = "default") -> Dict[str, Any]:
+    def get_drift_report(self, cohort: str = "default") -> dict[str, Any]:
         """Get drift analysis report for a cohort.
 
         Args:
@@ -344,7 +344,7 @@ class Phase567IntegratedGovernance:
             "timestamp": metrics.timestamp.isoformat(),
         }
 
-    def get_system_status(self) -> Dict[str, Any]:
+    def get_system_status(self) -> dict[str, Any]:
         """Get overall system status for Phase 5-7.
 
         Returns:

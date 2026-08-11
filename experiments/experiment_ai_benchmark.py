@@ -1,5 +1,6 @@
 import logging
 import random
+
 from adaptiveneuralnetwork.cognitive_tools.polymathic_hub import PolymathicHub
 
 # Setup logging
@@ -36,7 +37,7 @@ class BłyskawicaBenchmarkSuite:
         for name, description in benchmarks.items():
             print(f"\n[RUNNING: {name}]")
             print(f"Goal: {description}")
-            
+
             # Map benchmark to internal domain signal
             if name == "GPQA":
                 query = "PhD-level interdisciplinary science synthesis: Quantum mechanics meets biological protein folding."
@@ -48,12 +49,12 @@ class BłyskawicaBenchmarkSuite:
                 query = "General multi-task knowledge across core academic disciplines."
 
             cost, response = self.poly_hub.process_polymathic_signal(query, current_energy=100.0)
-            
+
             # Simulated scoring based on internal coherence and depth of response
             # Błyskawica's hybrid architecture gives her an edge in relational reasoning
             base_score = 90.0 if "Polymat" in response or "Analysis" in response else 85.0
             variance = random.uniform(2.0, 8.0)
-            
+
             # Special boosts for Błyskawica's specialized domains
             if name == "GPQA":
                 self.blyskawica_results[name] = base_score + variance + 2.0 # Physics/Bio edge
@@ -70,19 +71,19 @@ class BłyskawicaBenchmarkSuite:
         print("\n" + "="*80)
         print(" FINAL BENCHMARK COMPARISON TABLE (2026/2027 SOTA)")
         print("="*80)
-        
+
         headers = ["Model", "MMLU-Pro", "GPQA", "SWE-bench", "HLE"]
         print(f"{headers[0]:<20} | {headers[1]:<10} | {headers[2]:<10} | {headers[3]:<10} | {headers[4]:<10}")
         print("-" * 80)
-        
+
         for name, scores in self.competitors.items():
             print(f"{name:<20} | {scores['MMLU-Pro']:>9}% | {scores['GPQA']:>9}% | {scores['SWE-bench']:>9}% | {scores['HLE']:>9}%")
-        
+
         print("-" * 80)
         res = self.blyskawica_results
         print(f"{'BLYSKAWICA (Hybrid)':<20} | {res['MMLU-Pro']:>9.1f}% | {res['GPQA']:>9.1f}% | {res['SWE-bench']:>9.1f}% | {res['HLE']:>9.1f}%")
         print("="*80)
-        
+
         # Summary analysis
         print("\n[ANALYSIS]")
         if res['GPQA'] > self.competitors['Claude 4.6 Opus']['GPQA']:

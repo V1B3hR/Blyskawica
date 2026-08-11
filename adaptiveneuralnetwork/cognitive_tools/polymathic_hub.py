@@ -7,9 +7,11 @@ w jedną, spójną strukturę.
 Potrafi przełączać się między analizą cząstek z CERN, architekturą jądra Windows, 
 a teologią, dbając o to, by każda myśl była zakotwiczona w faktach i uniwersalnej 
 mądrości. To tutaj dane stają się erudycją.
-"""
+"""  # noqa: W291
 import logging
+
 import torch
+
 from adaptiveneuralnetwork.cognitive_tools.nanotechnology_vault import NanotechnologyVault
 
 try:
@@ -18,9 +20,9 @@ except ImportError:
     PhysicalWorldModel = None
 
 from adaptiveneuralnetwork.central_nervous_system.astrophysics_climate import (
-    RelativisticGravitySolver,
     AstrobiologyEvolutionSimulator,
-    ClimateEBM
+    ClimateEBM,
+    RelativisticGravitySolver,
 )
 
 logger = logging.getLogger(__name__)
@@ -33,22 +35,22 @@ class PolymathicHub:
     oraz nauki o życiu. Każda operacja wysokopoziomowa wiąże się z odpowiednim 
     kosztem energetycznym, odzwierciedlającym trudność "przełączenia" uwagi 
     na nową dziedzinę wiedzy.
-    """
+    """  # noqa: W291
 
     def __init__(self):
         self.physics_engine = PhysicalWorldModel() if PhysicalWorldModel else None
         # Science Data Loader for deep scientific knowledge
         from adaptiveneuralnetwork.data.science_loader import GlobalScienceLoader
         self.loader = GlobalScienceLoader()
-        
+
         # Nanotechnology Vault (Knowledge Base)
         self.nano_vault = NanotechnologyVault()
-        
+
         # Astronomy, Astrobiology, and Climate solvers
         self.gravity_solver = RelativisticGravitySolver(M=10.0, a=2.0)
         self.astrobiology_sim = AstrobiologyEvolutionSimulator(gravity_g=1.0, uv_flux_relative=1.0)
         self.climate_ebm = ClimateEBM()
-        
+
         # Domain status
         self.has_chemistry = True
         self.has_geospatial = True
@@ -62,25 +64,25 @@ class PolymathicHub:
         content_lower = str(content).lower()
         energy_cost = 0.0
         response = ""
-        
+
         # PHYSICS: Particle Physics / Quantum Fields / CERN LHC
         if any(w in content_lower for w in ["gravity", "velocity", "quantum", "particle", "cern", "higgs", "boson"]):
             data = self.loader.load_advanced_physics()
             response = f"[POLYMATH_HUB] Advanced Physics analysis: Focused on {', '.join(data['focus'])} using {data['simulations']} modeling."
             energy_cost = 2.4 # Massive cost for quantum field simulation
-            
+
         # CHEMISTRY: Molecular structures / Quantum Chemistry / Material Science
         elif any(w in content_lower for w in ["molecule", "chemical", "reaction", "bond", "qm9", "catalyst", "pubchem"]):
             data = self.loader.load_advanced_chemistry()
             response = f"[POLYMATH_HUB] Advanced Chemistry reasoning: Catalytic property prediction using {data['methods'][0]} via {data['databases'][0]}."
             energy_cost = 1.6
-            
+
         # GENETICS & SYNTHETIC BIOLOGY: CRISPR, Protein Folding, NIH
         elif any(w in content_lower for w in ["gene", "dna", "crispr", "genetics", "protein", "folding", "nih"]):
             data = self.loader.load_advanced_genetics()
             response = f"[POLYMATH_HUB] Synthetic Biology synthesis: {data['editing_tools'][0]} protocol verified. Folding kinetics analyzed."
             energy_cost = 2.0
-            
+
         # OS MASTERY: Windows 11, Linux (RHEL/Ubuntu), MacOS, BSD, RTOS
         elif any(w in content_lower for w in ["windows", "linux", "macos", "android", "ios", "kernel", "rtos", "bsd"]):
             data = self.loader.load_os_encyclopedia()
@@ -88,7 +90,7 @@ class PolymathicHub:
             target_os = next((os for os in data if os in content_lower), "universal")
             response = f"[POLYMATH_HUB] OS Mastery ({target_os}): Ingested kernel architecture and system call table. Subsystems analyzed."
             energy_cost = 1.8 # Increased due to deep architecture indexing
-            
+
         # CYBERSECURITY & PENTESTING: MITRE, CVE, Threat Intel, Offensive logic
         elif any(w in content_lower for w in ["malware", "cyber", "attack", "abuse.ch", "intrusion", "pentest", "mitre", "cve", " apt ", "lazarus", "fancy", "beacon"]):
             if "pentest" in content_lower or any(t in content_lower for t in ["nmap", "metasploit", "shell"]):
@@ -99,51 +101,51 @@ class PolymathicHub:
                 data = self.loader.load_cybersecurity_vault()
                 response = f"[POLYMATH_HUB] Cyber-sentinel mode: NVD/CVE databases cross-referenced with {len(data['threat_actors'])} APT actors."
                 energy_cost = 1.4
-            
+
         # SOFTWARE DEV: Full Stack / Vibe Coding / Synthesis
         elif any(w in content_lower for w in ["code", "developer", "fullstack", "vibe", "rust", "react"]):
             data = self.loader.load_software_dev_vault()
             response = "[POLYMATH_HUB] Software Synthesis: Analyzing full-stack architectural patterns and 'Vibe Coding' intuitive logic."
             energy_cost = 1.2
-            
+
         # INTELLIGENCE & HISTORY: CIA, FBI, AW, Wikileaks, IPN
         elif any(w in content_lower for w in ["cia", "fbi", "stargate", "mkultra", "wikileaks", "declassified", "archives", "polish", "ipn", "agencja wywiadu", "uop"]):
             data = self.loader.load_polish_archives() if any(p in content_lower for p in ["polish", "ipn", "agencja wywiadu", "uop"]) else self.loader.load_intelligence_vault()
             response = "[POLYMATH_HUB] Ultimate Intelligence Synthesis: Deep-state records and foreign intelligence metadata indexed."
             energy_cost = 1.6
-            
+
         # MEDICINE & HEALTHCARE
         elif any(w in content_lower for w in ["medicine", "medical", "neurology", "oncology", "pharma", "drug", "nih"]):
             data = self.loader.load_medicine_vault()
             response = f"[POLYMATH_HUB] Medical Reasoning: Cross-referencing {data['fields'][0]} pathways with pharmaceutical repositories."
             energy_cost = 1.5
-            
+
         # ELECTRONICS & ELECTRICAL
         elif any(w in content_lower for w in ["circuit", "electronics", "electrical", "grid", "power", "semiconductor", "microcontroller"]):
             data = self.loader.load_electronics_and_electrical()
             response = "[POLYMATH_HUB] Engineering Logic: circuit topology and power distribution patterns analyzed."
             energy_cost = 1.3
-            
+
         # RELIGION & THEOLOGY
         elif any(w in content_lower for w in ["religion", "theology", "god", "myth", "spirit", "bible", "koran", "torah", "buddha"]):
             data = self.loader.load_world_religions_and_theology()
             response = "[POLYMATH_HUB] Theological Synthesis: Comparative analysis of world belief systems and semiotic structures."
             energy_cost = 1.1
-            
+
         # MATHEMATICS
         elif any(w in content_lower for w in ["math", "topology", "calculus", "differential", "geometry", "number theory", "algebra"]):
             data = self.loader.load_mathematics_foundation()
             response = f"[POLYMATH_HUB] Mathematical Invariant validation: Applied {data['applied'][0]} focus."
             energy_cost = 0.8
-            
+
         # GEOSPATIAL: Maps / Weather / NASA
         elif any(w in content_lower for w in ["coordinates", "weather", "map", "nasa", "geospatial"]):
             energy_cost = 1.0
-            
+
         # NANOTECHNOLOGY: Atomic level / CRISPR / CROP-Seq / Graphene / QDataSet
         elif any(w in content_lower for w in ["nano", "atomic", "crispr", "crop-seq", "carbon nanotube", "qubit", "nanofabrication", "qdataset", "graphene", "lancaster", "qpuf"]):
             analysis = self.nano_vault.analyze_nanostructure(content_lower)
-            
+
             # Deep ingestion using specialized loader methods
             if "graphene" in content_lower or "lancaster" in content_lower:
                 data = self.loader.load_lancaster_quantum_data()
@@ -157,21 +159,21 @@ class PolymathicHub:
             else:
                 data = self.loader.load_advanced_nanotechnology()
                 response = f"[POLYMATH_HUB] Advanced Nanotechnology Analysis: {data['materials'][0]} & {data['bio_nano'][0]}."
-                
+
             energy_cost = 2.2 # Increased energy for deep quantum/nano synthesis
-            
+
         # ASTRONOMY & COSMOLOGY
         elif any(w in content_lower for w in ["astronomy", "astrophysics", "exoplanet", "galaxy", "galaxies", "nebula", "cosmology", "schwarzschild", "kerr"]):
             data = self.loader.load_astronomy_and_astrophysics()
-            
+
             # Relativistic gravity integration (50 steps of Kerr equatorial geodesic)
             orbit = self.gravity_solver.integrate_kerr_geodesic(r0=15.0, phi0=0.0, pr0=0.0, L=4.0, proper_time_steps=50)
             final_r = orbit["r"][-1]
-            
+
             # Astrobiology habitability check
             hab_index = self.astrobiology_sim.calculate_habitability_index(temp_k=290.0, atm_co2_ppm=400.0, o2_fraction=0.21)
             _, evo_stage = self.astrobiology_sim.deterministic_evolution(H=hab_index, duration_myr=500.0)
-            
+
             response = (
                 f"[POLYMATH_HUB] Astronomy & Cosmology reasoning: Analyzing {', '.join(data['focus'][:2])} using {data['sources'][0]} datasets. "
                 f"Kerr geodesic simulated (final radius = {final_r:.2f} rg). "
@@ -182,19 +184,19 @@ class PolymathicHub:
         # EARTH & ENVIRONMENTAL SCIENCES
         elif any(w in content_lower for w in ["earth science", "geology", "climate", "meteorology", "seismic", "carbon cycle", "ebm", "terraforming"]):
             data = self.loader.load_earth_and_environmental_sciences()
-            
+
             # Run 50 years of EBM integration to capture tipping points or stabilizing feedbacks
             self.climate_ebm.T = 288.0
             self.climate_ebm.CO2 = 280.0
             self.climate_ebm.CH4 = 0.7
-            
+
             # If query mentions "terraforming", apply an artificial geoengineering warming flux
             F_geo = 15.0 if "terraforming" in content_lower else 0.0
-            
+
             final_state = None
             for _ in range(50):
                 final_state = self.climate_ebm.step(dt_years=1.0, F_geo=F_geo)
-                
+
             response = (
                 f"[POLYMATH_HUB] Earth & Environmental analysis: Modeling {data['focus'][1]} with {data['sources'][2]} indicators. "
                 f"Planetary Climate EBM advanced by 50 years: T = {final_state['temperature']:.2f} K | Albedo = {final_state['albedo']:.3f} | "
@@ -294,16 +296,16 @@ class PolymathicHub:
             else:
                 response = "Standard cognitive processing."
                 energy_cost = 0.05
-            
+
         return energy_cost, response
 
     def _run_physics_simulation(self, param: str) -> str:
         if not self.physics_engine:
             return "[POLYMATH_HUB] Physics Engine offline."
-            
+
         # Real-time CERN data ingestion simulation
         cern_data = self.loader.load_physics_cern()
-        
+
         # Process through physics engine if available
         mock_tensor = torch.from_numpy(cern_data["data"]).float()
         try:

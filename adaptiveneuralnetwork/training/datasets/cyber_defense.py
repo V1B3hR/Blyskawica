@@ -8,7 +8,6 @@ into high-dimensional spike-compatible state representation vectors.
 
 import torch
 from torch.utils.data import Dataset
-import numpy as np
 
 
 class CyberDefenseDataset(Dataset):
@@ -52,7 +51,7 @@ class CyberDefenseDataset(Dataset):
 
         self.data = []
         self.targets = []
-        
+
         # Division of features into 6 blocks of input_dim // 6 each
         seg = input_dim // 6
 

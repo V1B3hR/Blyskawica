@@ -8,9 +8,9 @@ Provides common middleware functionality:
 All middleware adheres to the 25 Fundamental Laws.
 """
 
+from .error_handler import ErrorHandlerMiddleware
 from .request_context import RequestContextMiddleware
 from .response_headers import ResponseHeadersMiddleware
-from .error_handler import ErrorHandlerMiddleware
 
 __all__ = [
     "RequestContextMiddleware",

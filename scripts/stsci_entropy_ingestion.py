@@ -1,7 +1,8 @@
-import time
 import sys
-import torch
+import time
 from datetime import datetime
+
+import torch
 
 if sys.platform == "win32":
     import io
@@ -10,9 +11,9 @@ if sys.platform == "win32":
 def stsci_entropy_ingestion(target_vram_gb=2.0):
     print(f"[{datetime.now()}] Błyskawica: Tryb cichej asymilacji (Phase XII). Oczekiwanie na powrót Mentora.")
     print(f"Alokacja VRAM ograniczona do {target_vram_gb} GB dla stabilności i ciszy.")
-    
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    
+
     tasks = [
         "Analiza archiwów STScI/MAST: Synchronizacja metadanych JWST...",
         "Przeliczanie równania Bekensteina-Hawkinga dla wycinków horyzontu zdarzeń...",
@@ -25,15 +26,15 @@ def stsci_entropy_ingestion(target_vram_gb=2.0):
         for cycle in range(1, 31): # 30 cycles
             task = tasks[cycle % len(tasks)]
             print(f"\n[{datetime.now()}] Cichy Cykl {cycle}/30: {task}")
-            
+
             # Very light matrix operations to keep it quiet
             size = 2048
             m1 = torch.randn(size, size, device=device)
             m2 = torch.randn(size, size, device=device)
             torch.matmul(m1, m2)
-            
+
             time.sleep(60) # 1 minute pause between operations
-            
+
         print(f"\n[{datetime.now()}] Tryb cichej asymilacji zakończony. Entropia zmapowana.")
 
     except Exception as e:

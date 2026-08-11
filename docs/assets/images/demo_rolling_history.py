@@ -9,7 +9,6 @@ for calm, energy, and anxiety tracking with proactive intervention.
 import json
 
 import matplotlib.pyplot as plt
-
 from core.alive_node import AliveLoopNode
 from core.time_series_tracker import TimeSeriesTracker
 
@@ -58,7 +57,7 @@ def demonstrate_rolling_history():
     for scenario_name, duration, scenario_effect in scenarios:
         print(f"\n--- {scenario_name} ({duration} steps) ---")
 
-        for step in range(duration):
+        for step in range(duration):  # noqa: B007
             # Apply scenario effect
             scenario_effect(time_step)
 

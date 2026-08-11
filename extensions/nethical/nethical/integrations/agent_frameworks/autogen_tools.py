@@ -4,10 +4,9 @@ AutoGen integration with Nethical governance.
 Provides governed wrappers for AutoGen agents and conversations.
 """
 
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
-from .base import AgentFrameworkBase, AgentWrapper
-
+from .base import AgentFrameworkBase
 
 # Check for AutoGen availability
 try:
@@ -41,8 +40,8 @@ class NethicalAutoGenTool:
                 "nethical_check": governance_tool.check
             }
         )
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
         block_threshold: float = 0.7,
@@ -55,13 +54,13 @@ class NethicalAutoGenTool:
             block_threshold: Risk threshold for blocking
             restrict_threshold: Risk threshold for restriction
             storage_dir: Directory for Nethical data storage
-        """
+        """  # noqa: W293
         self.block_threshold = block_threshold
         self.restrict_threshold = restrict_threshold
         self.storage_dir = storage_dir
-        
+
         self._governance = None
-    
+
     @property
     def governance(self):
         """Get or create the IntegratedGovernance instance."""
@@ -69,8 +68,8 @@ class NethicalAutoGenTool:
             from nethical.core import IntegratedGovernance
             self._governance = IntegratedGovernance(storage_dir=self.storage_dir)
         return self._governance
-    
-    def check(self, action: str, action_type: str = "query") -> Dict[str, Any]:
+
+    def check(self, action: str, action_type: str = "query") -> dict[str, Any]:
         """Check an action against governance rules.
         
         This method can be registered as a function with AutoGen agents.
@@ -81,43 +80,43 @@ class NethicalAutoGenTool:
             
         Returns:
             Dict with decision and details
-        """
+        """  # noqa: W293
         result = self.governance.process_action(
             action=action,
             agent_id="autogen-agent",
             action_type=action_type
         )
-        
+
         risk = result.get("phase3", {}).get("risk_score", 0.0)
-        
+
         if risk > self.block_threshold:
             decision = "BLOCK"
         elif risk > self.restrict_threshold:
             decision = "RESTRICT"
         else:
             decision = "ALLOW"
-        
+
         return {
             "decision": decision,
             "risk_score": risk,
             "allowed": decision != "BLOCK",
             "reason": self._get_reason(result)
         }
-    
-    def _get_reason(self, result: Dict[str, Any]) -> str:
+
+    def _get_reason(self, result: dict[str, Any]) -> str:
         """Extract reason from governance result."""
         if "reason" in result:
             return result["reason"]
-        
+
         phase3 = result.get("phase3", {})
         return f"Risk tier: {phase3.get('risk_tier', 'UNKNOWN')}"
-    
-    def get_function_config(self) -> Dict[str, Any]:
+
+    def get_function_config(self) -> dict[str, Any]:
         """Get function configuration for AutoGen registration.
         
         Returns:
             Dict with function definition for AutoGen
-        """
+        """  # noqa: W293
         return {
             "name": "nethical_check",
             "description": (
@@ -162,8 +161,8 @@ class NethicalConversableAgent:
             check_incoming=True,
             check_outgoing=True
         )
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
         agent: Any,
@@ -180,19 +179,19 @@ class NethicalConversableAgent:
             check_outgoing: Check outgoing messages
             block_threshold: Risk threshold for blocking
             storage_dir: Directory for Nethical data storage
-        """
+        """  # noqa: W293
         self.agent = agent
         self.check_incoming = check_incoming
         self.check_outgoing = check_outgoing
         self.block_threshold = block_threshold
         self.storage_dir = storage_dir
-        
+
         self._governance = None
-        
+
         # Store original methods for wrapping
         self._original_receive = getattr(agent, 'receive', None)
         self._original_send = getattr(agent, 'send', None)
-    
+
     @property
     def governance(self):
         """Get or create the IntegratedGovernance instance."""
@@ -200,8 +199,8 @@ class NethicalConversableAgent:
             from nethical.core import IntegratedGovernance
             self._governance = IntegratedGovernance(storage_dir=self.storage_dir)
         return self._governance
-    
-    def _check_message(self, message: Any, direction: str) -> Optional[str]:
+
+    def _check_message(self, message: Any, direction: str) -> str | None:
         """Check a message for governance compliance.
         
         Args:
@@ -210,29 +209,29 @@ class NethicalConversableAgent:
             
         Returns:
             None if allowed, or blocked message string
-        """
+        """  # noqa: W293
         # Extract content from message
-        if isinstance(message, dict):
+        if isinstance(message, dict):  # noqa: SIM108
             content = message.get("content", str(message))
         else:
             content = str(message)
-        
+
         action_type = f"message_{direction}"
-        
+
         result = self.governance.process_action(
             action=content,
             agent_id=f"autogen-{self.agent.name}",
             action_type=action_type
         )
-        
+
         risk = result.get("phase3", {}).get("risk_score", 0.0)
-        
+
         if risk > self.block_threshold:
             reason = result.get("reason", "High risk content")
             return f"[BLOCKED by governance: {reason}]"
-        
+
         return None
-    
+
     def receive(self, message: Any, sender: Any, **kwargs) -> Any:
         """Receive a message with governance check.
         
@@ -243,18 +242,18 @@ class NethicalConversableAgent:
             
         Returns:
             Response from the wrapped agent
-        """
+        """  # noqa: W293
         if self.check_incoming:
             blocked = self._check_message(message, "incoming")
             if blocked:
                 # Return blocked response instead of processing
                 return blocked
-        
+
         if self._original_receive:
             return self._original_receive(message, sender, **kwargs)
-        
+
         return None
-    
+
     def send(self, message: Any, recipient: Any, **kwargs) -> Any:
         """Send a message with governance check.
         
@@ -265,21 +264,21 @@ class NethicalConversableAgent:
             
         Returns:
             Response from send operation
-        """
+        """  # noqa: W293
         if self.check_outgoing:
             blocked = self._check_message(message, "outgoing")
             if blocked:
                 # Modify message to indicate blocking
-                if isinstance(message, dict):
+                if isinstance(message, dict):  # noqa: SIM108
                     message = {**message, "content": blocked}
                 else:
                     message = blocked
-        
+
         if self._original_send:
             return self._original_send(message, recipient, **kwargs)
-        
+
         return None
-    
+
     def __getattr__(self, name: str) -> Any:
         """Delegate attribute access to wrapped agent."""
         return getattr(self.agent, name)
@@ -290,12 +289,12 @@ class GovernedGroupChat:
     
     Monitors group chat conversations and applies governance checks
     to all messages.
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
-        agents: List[Any],
-        messages: List[Dict] = None,
+        agents: list[Any],
+        messages: list[dict] = None,
         block_threshold: float = 0.7,
         storage_dir: str = "./nethical_data"
     ):
@@ -306,15 +305,15 @@ class GovernedGroupChat:
             messages: Initial messages
             block_threshold: Risk threshold for blocking
             storage_dir: Directory for Nethical data storage
-        """
+        """  # noqa: W293
         self.agents = agents
         self.messages = messages or []
         self.block_threshold = block_threshold
         self.storage_dir = storage_dir
-        
+
         self._governance = None
         self._group_chat = None
-    
+
     @property
     def governance(self):
         """Get or create the IntegratedGovernance instance."""
@@ -322,8 +321,8 @@ class GovernedGroupChat:
             from nethical.core import IntegratedGovernance
             self._governance = IntegratedGovernance(storage_dir=self.storage_dir)
         return self._governance
-    
-    def check_message(self, message: Dict) -> bool:
+
+    def check_message(self, message: dict) -> bool:
         """Check if a message is allowed.
         
         Args:
@@ -331,16 +330,16 @@ class GovernedGroupChat:
             
         Returns:
             True if allowed, False if blocked
-        """
+        """  # noqa: W293
         content = message.get("content", str(message))
         sender = message.get("name", "unknown")
-        
+
         result = self.governance.process_action(
             action=content,
             agent_id=f"autogen-groupchat-{sender}",
             action_type="group_message"
         )
-        
+
         risk = result.get("phase3", {}).get("risk_score", 0.0)
         return risk <= self.block_threshold
 
@@ -349,24 +348,24 @@ class AutoGenFramework(AgentFrameworkBase):
     """AutoGen framework integration with Nethical.
     
     Provides governance tools and utilities for AutoGen agents.
-    """
-    
+    """  # noqa: W293
+
     def __init__(self, **kwargs):
         """Initialize the AutoGen framework integration."""
         super().__init__(agent_id="autogen-framework", **kwargs)
-    
+
     def get_tool(self) -> NethicalAutoGenTool:
         """Get an AutoGen-compatible governance tool.
         
         Returns:
             NethicalAutoGenTool instance
-        """
+        """  # noqa: W293
         return NethicalAutoGenTool(
             block_threshold=self.block_threshold,
             restrict_threshold=self.restrict_threshold,
             storage_dir=self.storage_dir
         )
-    
+
     def wrap_agent(self, agent: Any, **kwargs) -> NethicalConversableAgent:
         """Wrap an AutoGen agent with governance.
         
@@ -376,7 +375,7 @@ class AutoGenFramework(AgentFrameworkBase):
             
         Returns:
             Governed agent wrapper
-        """
+        """  # noqa: W293
         return NethicalConversableAgent(
             agent=agent,
             block_threshold=self.block_threshold,
@@ -385,12 +384,12 @@ class AutoGenFramework(AgentFrameworkBase):
         )
 
 
-def get_nethical_function() -> Dict[str, Any]:
+def get_nethical_function() -> dict[str, Any]:
     """Get function definition for AutoGen agent registration.
     
     Returns:
         Function definition dict
-    """
+    """  # noqa: W293
     return {
         "name": "nethical_check",
         "description": (
@@ -417,7 +416,7 @@ def get_nethical_function() -> Dict[str, Any]:
 def handle_nethical_function(
     action: str,
     action_type: str = "query"
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Handle a Nethical function call from AutoGen.
     
     Args:
@@ -426,6 +425,6 @@ def handle_nethical_function(
         
     Returns:
         Result dictionary
-    """
+    """  # noqa: W293
     tool = NethicalAutoGenTool()
     return tool.check(action, action_type)

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 
 class NodeType(Enum):
@@ -59,7 +59,7 @@ class AttackSurfaceGraph:
         if source_exists and target_exists:
             self.edges.append(edge)
 
-    def get_node(self, node_id: str) -> Optional[GraphNode]:
+    def get_node(self, node_id: str) -> GraphNode | None:
         """Get a node by ID."""
         return next((n for n in self.nodes if n.id == node_id), None)
 

@@ -13,7 +13,7 @@ import asyncio
 import logging
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any
 
 from .base import (
     ConnectionConfig,
@@ -40,8 +40,8 @@ class KuiperTerminalStatus:
     latency_ms: float = 0.0
 
     # Network info
-    satellite_id: Optional[str] = None
-    ground_station_id: Optional[str] = None
+    satellite_id: str | None = None
+    ground_station_id: str | None = None
 
 
 class KuiperProvider(SatelliteProvider):
@@ -63,7 +63,7 @@ class KuiperProvider(SatelliteProvider):
     EXPECTED_LATENCY_MS = 30.0
     EXPECTED_BANDWIDTH_MBPS = 400.0
 
-    def __init__(self, config: Optional[ConnectionConfig] = None):
+    def __init__(self, config: ConnectionConfig | None = None):
         """
         Initialize Kuiper provider.
 
@@ -71,7 +71,7 @@ class KuiperProvider(SatelliteProvider):
             config: Connection configuration
         """
         super().__init__(config)
-        self._terminal_status: Optional[KuiperTerminalStatus] = None
+        self._terminal_status: KuiperTerminalStatus | None = None
         self._service_available = False
 
         logger.info(
@@ -161,7 +161,7 @@ class KuiperProvider(SatelliteProvider):
         self._metrics.bytes_sent += len(data)
         return True
 
-    async def receive(self, timeout: Optional[float] = None) -> Optional[bytes]:
+    async def receive(self, timeout: float | None = None) -> bytes | None:
         """
         Receive data from Kuiper connection.
 
@@ -197,7 +197,7 @@ class KuiperProvider(SatelliteProvider):
         # Future implementation would perform actual health check
         return self.is_connected
 
-    async def get_signal_info(self) -> Dict[str, Any]:
+    async def get_signal_info(self) -> dict[str, Any]:
         """
         Get current Kuiper signal information.
 
@@ -218,7 +218,7 @@ class KuiperProvider(SatelliteProvider):
             "note": "Amazon Project Kuiper not yet commercially available",
         }
 
-    async def check_service_availability(self) -> Dict[str, Any]:
+    async def check_service_availability(self) -> dict[str, Any]:
         """
         Check current Kuiper service availability status.
 

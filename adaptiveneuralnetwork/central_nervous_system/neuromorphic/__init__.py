@@ -9,25 +9,26 @@ This module provides advanced neuromorphic computing capabilities including:
 - Hardware backend abstractions for 3rd generation platforms
 """
 
-from .config import (
-    NeuromorphicPlatform,
-    PlasticityType,
-    AdaptationMode,
-    NeuronType,
-    SpikeEvent,
-    PlasticityRule,
-    RealTimeAdaptationConfig,
-    NeuromorphicConfig,
-)
-from .dynamics import BrainWaveOscillator, NeuromodulationSystem
 from .adaptation import EnvironmentalAdaptationEngine, RealTimeParameterManager
-from .hierarchy import NeuromorphicAdaptiveModel
 from .advanced_neurons import (
     AdaptiveThresholdNeuron,
     BurstingNeuron,
     MultiCompartmentNeuron,
     StochasticNeuron,
 )
+from .config import (
+    AdaptationMode,
+    NeuromorphicConfig,
+    NeuromorphicPlatform,
+    NeuronType,
+    PlasticityRule,
+    PlasticityType,
+    RealTimeAdaptationConfig,
+    SpikeEvent,
+)
+from .dynamics import BrainWaveOscillator, NeuromodulationSystem
+from .hierarchy import NeuromorphicAdaptiveModel
+from .lava_compiler import LavaCompiler
 from .network_topology import (
     DynamicConnectivity,
     HierarchicalNetwork,
@@ -47,7 +48,6 @@ from .temporal_coding import (
     TemporalPatternEncoder,
     VisualSpikeEncoder,
 )
-from .lava_compiler import LavaCompiler
 
 __all__ = [
     # Configuration & Enums

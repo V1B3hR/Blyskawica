@@ -8,17 +8,15 @@ Provides comprehensive API endpoints for:
 - Secure model parameter exchange
 - System status and health monitoring
 - Legacy labyrinth agent functionality
-"""
+"""  # noqa: W291
 
-from flask import request, jsonify, current_app, Blueprint
 import logging
-from typing import Dict, Any
-import traceback
 from datetime import datetime
 
+from flask import Blueprint, current_app, jsonify, request
+
 # Import security and training components
-from security.auth import require_auth, require_admin
-from remote_training_manager import RemoteTrainingManager
+from security.auth import require_admin, require_auth
 
 logger = logging.getLogger('aimedres.api')
 
@@ -39,23 +37,23 @@ def submit_training_job():
     Body: Training configuration JSON
     
     Returns: Job ID for tracking
-    """
+    """  # noqa: W293
     try:
         training_config = request.get_json()
         if not training_config:
             return jsonify({'error': 'Training configuration required'}), 400
-        
+
         user_id = request.user_info['user_id']
         training_manager = current_app.training_manager
-        
+
         job_id = training_manager.submit_training_job(user_id, training_config)
-        
+
         return jsonify({
             'success': True,
             'job_id': job_id,
             'message': 'Training job submitted successfully'
         }), 201
-        
+
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
     except Exception as e:
@@ -70,14 +68,14 @@ def get_training_status(job_id: str):
     
     Required: API key authentication
     Returns: Job status, progress, and results
-    """
+    """  # noqa: W293
     try:
         user_id = request.user_info['user_id']
         training_manager = current_app.training_manager
-        
+
         status = training_manager.get_job_status(job_id, user_id)
         return jsonify(status), 200
-        
+
     except ValueError as e:
         return jsonify({'error': str(e)}), 404
     except PermissionError as e:
@@ -94,15 +92,15 @@ def list_training_jobs():
     
     Required: API key authentication
     Query params: limit (optional, default 10)
-    """
+    """  # noqa: W293
     try:
         user_id = request.user_info['user_id']
         limit = int(request.args.get('limit', 10))
         training_manager = current_app.training_manager
-        
+
         jobs = training_manager.list_user_jobs(user_id, limit)
         return jsonify({'jobs': jobs}), 200
-        
+
     except Exception as e:
         logger.error(f"Job listing failed: {e}")
         return jsonify({'error': 'Internal server error'}), 500
@@ -114,13 +112,13 @@ def cancel_training_job(job_id: str):
     Cancel a training job.
     
     Required: API key authentication
-    """
+    """  # noqa: W293
     try:
         user_id = request.user_info['user_id']
         training_manager = current_app.training_manager
-        
+
         success = training_manager.cancel_job(job_id, user_id)
-        
+
         if success:
             return jsonify({
                 'success': True,
@@ -128,7 +126,7 @@ def cancel_training_job(job_id: str):
             }), 200
         else:
             return jsonify({'error': 'Failed to cancel job'}), 400
-            
+
     except ValueError as e:
         return jsonify({'error': str(e)}), 404
     except PermissionError as e:
@@ -145,19 +143,19 @@ def download_trained_model(job_id: str):
     
     Required: API key authentication
     Returns: Encrypted model data
-    """
+    """  # noqa: W293
     try:
         user_id = request.user_info['user_id']
         training_manager = current_app.training_manager
-        
+
         encrypted_model = training_manager.get_encrypted_model(job_id, user_id)
-        
+
         return jsonify({
             'success': True,
             'encrypted_model': encrypted_model,
             'job_id': job_id
         }), 200
-        
+
     except ValueError as e:
         return jsonify({'error': str(e)}), 404
     except PermissionError as e:
@@ -167,7 +165,7 @@ def download_trained_model(job_id: str):
         return jsonify({'error': 'Internal server error'}), 500
 
 # ============================================================================
-# SYSTEM MONITORING AND ADMIN ENDPOINTS  
+# SYSTEM MONITORING AND ADMIN ENDPOINTS
 # ============================================================================
 
 @api_bp.route('/admin/training/status', methods=['GET'])
@@ -178,12 +176,12 @@ def get_system_training_status():
     
     Required: Admin API key
     Returns: System capacity and job statistics
-    """
+    """  # noqa: W293
     try:
         training_manager = current_app.training_manager
         status = training_manager.get_system_status()
         return jsonify(status), 200
-        
+
     except Exception as e:
         logger.error(f"System status failed: {e}")
         return jsonify({'error': 'Internal server error'}), 500
@@ -194,7 +192,7 @@ def health_check():
     Health check endpoint (no authentication required).
     
     Returns: System health status
-    """
+    """  # noqa: W293
     try:
         # Basic health checks
         health_status = {
@@ -207,9 +205,9 @@ def health_check():
                 'security': 'operational' if hasattr(current_app, 'auth_manager') else 'unavailable'
             }
         }
-        
+
         return jsonify(health_status), 200
-        
+
     except Exception as e:
         logger.error(f"Health check failed: {e}")
         return jsonify({
@@ -223,7 +221,7 @@ def get_training_examples():
     Get example training configurations (no authentication required).
     
     Returns: Sample training configurations for different use cases
-    """
+    """  # noqa: W293
     examples = {
         'alzheimer_classifier_synthetic': {
             'model_type': 'alzheimer_classifier',
@@ -231,7 +229,7 @@ def get_training_examples():
             'description': 'Train Alzheimer\'s disease classifier on synthetic test data'
         },
         'alzheimer_classifier_kaggle': {
-            'model_type': 'alzheimer_classifier', 
+            'model_type': 'alzheimer_classifier',
             'dataset_source': 'kaggle_alzheimer',
             'description': 'Train Alzheimer\'s disease classifier on Kaggle dataset'
         },
@@ -241,7 +239,7 @@ def get_training_examples():
             'description': 'Train adaptive neural network with biological cycles'
         }
     }
-    
+
     return jsonify({
         'examples': examples,
         'usage': 'Submit one of these configurations to /api/v1/training/submit'
@@ -258,22 +256,22 @@ def labyrinth_reason():
     Legacy labyrinth agent reasoning endpoint.
     
     Required: API key authentication
-    """
+    """  # noqa: W293
     try:
         data = request.get_json()
         agent_idx = int(data.get("agent_idx", 0))
         task = data.get("task")
-        
+
         if not hasattr(current_app, 'labyrinth_agents') or not current_app.labyrinth_agents:
             return jsonify({'error': 'Labyrinth agents not initialized'}), 503
-        
+
         if agent_idx >= len(current_app.labyrinth_agents):
             return jsonify({'error': 'Invalid agent index'}), 400
-        
+
         agent = current_app.labyrinth_agents[agent_idx]
         result = agent.reason(task)
         return jsonify(result), 200
-        
+
     except (IndexError, ValueError):
         return jsonify({'error': 'Invalid agent index'}), 400
     except Exception as e:
@@ -287,14 +285,14 @@ def labyrinth_state():
     Get labyrinth agents state.
     
     Required: API key authentication
-    """
+    """  # noqa: W293
     try:
         if not hasattr(current_app, 'labyrinth_agents') or not current_app.labyrinth_agents:
             return jsonify({'error': 'Labyrinth agents not initialized'}), 503
-        
+
         states = [agent.get_state() for agent in current_app.labyrinth_agents]
         return jsonify({"labyrinth_agents": states}), 200
-        
+
     except Exception as e:
         logger.error(f"Labyrinth state failed: {e}")
         return jsonify({'error': 'Internal server error'}), 500
@@ -306,7 +304,7 @@ def labyrinth_state():
 def register_routes(app):
     """Register API routes and error handlers with Flask app."""
     app.register_blueprint(api_bp)
-    
+
     # Error handlers
     @app.errorhandler(401)
     def unauthorized(error):

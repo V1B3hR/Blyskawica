@@ -67,10 +67,9 @@ clinical decision-making without validation and regulatory clearance.
 from __future__ import annotations
 
 import argparse
-import dataclasses
+import hashlib
 import io
 import json
-import hashlib
 import logging
 import math
 import os
@@ -78,14 +77,14 @@ import sys
 import time
 import uuid
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from datetime import datetime
 from enum import Enum
 from functools import lru_cache, wraps
-from typing import Dict, List, Any, Optional, Tuple, Callable, Type, Union
+from typing import Any
 
-import numpy as np
 import pandas as pd
-from pydantic import BaseModel, Field, field_validator, ValidationError
+from pydantic import BaseModel, Field, ValidationError, field_validator
 
 # ==============================================================================
 # 0. MODULE VERSION
@@ -152,7 +151,7 @@ class QualityControlConfig(BaseModel):
     min_confidence_floor: float = 0.1
 
 class ImportanceBoostersConfig(BaseModel):
-    critical_keywords: List[str] = ["atrophy", "severe", "significant", "abnormal", "mass", "lesion"]
+    critical_keywords: list[str] = ["atrophy", "severe", "significant", "abnormal", "mass", "lesion"]
     keyword_boost_value: float = 0.2
     max_total_boost: float = 0.5
     anomaly_weight: float = 0.15
@@ -171,12 +170,12 @@ class RadiologyInsightConfig(BaseModel):
     importance_boosters: ImportanceBoostersConfig = ImportanceBoostersConfig()
     enable_percentiles: bool = True
     enable_composite_anomaly_score: bool = True
-    measure_aliases: Dict[str, str] = Field(default_factory=dict)
+    measure_aliases: dict[str, str] = Field(default_factory=dict)
     allow_missing_measures: bool = True
     strict_normative_lookup: bool = False
 
     @classmethod
-    def from_env(cls, **overrides) -> "RadiologyInsightConfig":
+    def from_env(cls, **overrides) -> RadiologyInsightConfig:
         """Build configuration applying environment variable overrides (if present)."""
         env_map = {
             "IMAGING_STRATEGY_NAME": "strategy_name",
@@ -190,14 +189,14 @@ class RadiologyInsightConfig(BaseModel):
         return cls(**data)
 
     @classmethod
-    def from_yaml(cls, path: str) -> "RadiologyInsightConfig":
+    def from_yaml(cls, path: str) -> RadiologyInsightConfig:
         try:
             import yaml
         except ImportError as e:
             raise ConfigError("pyyaml not installed; cannot load YAML config.") from e
         if not os.path.exists(path):
             raise ConfigError(f"Config file not found: {path}")
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             raw = yaml.safe_load(f) or {}
         return cls(**raw)
 
@@ -208,7 +207,7 @@ DEFAULT_CONFIG = RadiologyInsightConfig()
 # 4. DATA MODELS (Input & Output)
 # ==============================================================================
 
-class RiskLevel(str, Enum):
+class RiskLevel(str, Enum):  # noqa: UP042
     NORMAL = "normal"
     MILD = "mild"
     MODERATE = "moderate"
@@ -219,28 +218,28 @@ class ImagingInsight(BaseModel):
     Structured, clinically relevant insight derived from imaging data.
     """
     insight_id: str = Field(default_factory=lambda: f"insight_{uuid.uuid4().hex}")
-    patient_id: Optional[str] = None
+    patient_id: str | None = None
     modality: str
-    acquisition_date: Optional[datetime] = None
+    acquisition_date: datetime | None = None
 
-    key_findings: List[str]
-    quantitative_measures: Dict[str, float]
+    key_findings: list[str]
+    quantitative_measures: dict[str, float]
     clinical_significance: str
     confidence_score: float = Field(..., ge=0.0, le=1.0)
     risk_level: RiskLevel
-    composite_anomaly_score: Optional[float] = None
-    percentile_estimates: Dict[str, float] = Field(default_factory=dict)
+    composite_anomaly_score: float | None = None
+    percentile_estimates: dict[str, float] = Field(default_factory=dict)
 
     # Provenance / audit
     analysis_strategy: str
     strategy_config_hash: str
     normative_data_cohort: str
-    normative_dataset_hash: Optional[str] = None
-    source_data_references: Dict[str, Any] = Field(default_factory=dict)
+    normative_dataset_hash: str | None = None
+    source_data_references: dict[str, Any] = Field(default_factory=dict)
     module_version: str = MODULE_VERSION
     generated_at: datetime = Field(default_factory=datetime.utcnow)
 
-    def to_memory_dict(self, importance_config: ImportanceBoostersConfig | None = None) -> Dict[str, Any]:
+    def to_memory_dict(self, importance_config: ImportanceBoostersConfig | None = None) -> dict[str, Any]:
         importance = self._calculate_importance(importance_config or DEFAULT_CONFIG.importance_boosters)
         return {
             "content": self.summarize_for_memory(),
@@ -275,18 +274,18 @@ class FeatureSet(BaseModel):
     """
     Input features for analysis, with validation.
     """
-    patient_id: Optional[str] = None
+    patient_id: str | None = None
     age: int = Field(..., gt=0)
     sex: str = Field(..., pattern="^(M|F|O)$")
     modality: str
-    acquisition_date: Optional[datetime] = None
-    measurements: Dict[str, float]
-    quality_metrics: Dict[str, float] = Field(default_factory=dict)
-    source_dicom_uids: List[str] = Field(default_factory=list)
+    acquisition_date: datetime | None = None
+    measurements: dict[str, float]
+    quality_metrics: dict[str, float] = Field(default_factory=dict)
+    source_dicom_uids: list[str] = Field(default_factory=list)
 
     @field_validator("measurements")
     @classmethod
-    def non_negative(cls, v: Dict[str, float]):
+    def non_negative(cls, v: dict[str, float]):
         for k, val in v.items():
             if not isinstance(val, (int, float)):
                 raise ValueError(f"Measurement {k} must be numeric.")
@@ -304,19 +303,19 @@ class NormativeDataManager:
     """
 
     def __init__(self):
-        self._datasets: Dict[str, pd.DataFrame] = {}
-        self._dataset_raw_hash: Dict[str, str] = {}
+        self._datasets: dict[str, pd.DataFrame] = {}
+        self._dataset_raw_hash: dict[str, str] = {}
 
     def load_dataset_from_string(self, cohort_id: str, csv_data: str):
         self._datasets[cohort_id] = pd.read_csv(io.StringIO(csv_data))
         self._dataset_raw_hash[cohort_id] = hashlib.sha256(csv_data.encode()).hexdigest()
         LOGGER.info(f"Loaded normative dataset for cohort={cohort_id} rows={len(self._datasets[cohort_id])}")
 
-    def dataset_hash(self, cohort_id: str) -> Optional[str]:
+    def dataset_hash(self, cohort_id: str) -> str | None:
         return self._dataset_raw_hash.get(cohort_id)
 
-    @lru_cache(maxsize=256)
-    def get_stats(self, cohort_id: str, age: int, sex: str, measure: str) -> Optional[Tuple[float, float]]:
+    @lru_cache(maxsize=256)  # noqa: B019
+    def get_stats(self, cohort_id: str, age: int, sex: str, measure: str) -> tuple[float, float] | None:
         if cohort_id not in self._datasets:
             raise NormativeDataError(f"Normative cohort '{cohort_id}' not loaded.")
         df = self._datasets[cohort_id]
@@ -339,10 +338,10 @@ class NormativeDataManager:
 # 6. STRATEGY REGISTRY
 # ==============================================================================
 
-_STRATEGY_REGISTRY: Dict[str, Type["BaseAnalysisStrategy"]] = {}
+_STRATEGY_REGISTRY: dict[str, type[BaseAnalysisStrategy]] = {}
 
 def register_strategy(key: str):
-    def decorator(cls: Type["BaseAnalysisStrategy"]):
+    def decorator(cls: type[BaseAnalysisStrategy]):
         _STRATEGY_REGISTRY[key] = cls
         return cls
     return decorator
@@ -385,10 +384,10 @@ class BrainMRIVolumetryStrategy(BaseAnalysisStrategy):
     @timed
     def analyze(self, features: FeatureSet) -> ImagingInsight:
         LOGGER.debug(f"Starting analysis for patient={features.patient_id}")
-        quantitative: Dict[str, float] = {}
-        percentiles: Dict[str, float] = {}
-        findings: List[str] = []
-        anomaly_components: List[float] = []
+        quantitative: dict[str, float] = {}
+        percentiles: dict[str, float] = {}
+        findings: list[str] = []
+        anomaly_components: list[float] = []
 
         # Measurement iteration
         for raw_name, value in features.measurements.items():
@@ -464,7 +463,7 @@ class BrainMRIVolumetryStrategy(BaseAnalysisStrategy):
             source_data_references={"dicom_uids": features.source_dicom_uids},
         )
 
-    def _interpret_z_score(self, measure: str, z: float) -> Optional[str]:
+    def _interpret_z_score(self, measure: str, z: float) -> str | None:
         if z < self.thresholds.significant_atrophy:
             return f"Severe low volume in {measure.replace('_mm3','')} (Z={z:.2f}) indicating significant atrophy."
         if z < self.thresholds.mild_atrophy:
@@ -474,7 +473,7 @@ class BrainMRIVolumetryStrategy(BaseAnalysisStrategy):
         # borderline_high currently not separately verbalized; can be added if needed
         return None
 
-    def _summarize_clinical(self, findings: List[str]) -> str:
+    def _summarize_clinical(self, findings: list[str]) -> str:
         joined = " ".join(f.lower() for f in findings)
         if "severe" in joined:
             return "Findings strongly suggest clinically significant structural atrophy; urgent evaluation advised."
@@ -484,7 +483,7 @@ class BrainMRIVolumetryStrategy(BaseAnalysisStrategy):
             return "Unusually high regional volume observed; consider differential etiologies."
         return "Volumetric profile is within normal limits for age and sex."
 
-    def _compute_confidence(self, qm: Dict[str, float]) -> float:
+    def _compute_confidence(self, qm: dict[str, float]) -> float:
         confidence = 0.95
         snr = qm.get("snr")
         motion = qm.get("motion_score")
@@ -494,7 +493,7 @@ class BrainMRIVolumetryStrategy(BaseAnalysisStrategy):
             confidence -= self.qc.confidence_penalty_high_motion
         return max(self.qc.min_confidence_floor, min(confidence, 1.0))
 
-    def _derive_risk(self, findings: List[str], composite: Optional[float]) -> RiskLevel:
+    def _derive_risk(self, findings: list[str], composite: float | None) -> RiskLevel:
         lower = [f.lower() for f in findings]
         if any("severe" in f for f in lower):
             return RiskLevel.HIGH
@@ -519,7 +518,7 @@ class RadiologyInsightModule:
         self.config = config
         self.normative_manager = NormativeDataManager()
         self._load_default_normative()
-        self.strategies: Dict[str, BaseAnalysisStrategy] = {}
+        self.strategies: dict[str, BaseAnalysisStrategy] = {}
         self._instantiate_registered_strategies()
 
     def _instantiate_registered_strategies(self):
@@ -529,7 +528,7 @@ class RadiologyInsightModule:
             except Exception as e:
                 LOGGER.error(f"Failed to instantiate strategy '{key}': {e}")
 
-    def list_strategies(self) -> List[str]:
+    def list_strategies(self) -> list[str]:
         return list(self.strategies.keys())
 
     def _load_default_normative(self):
@@ -578,7 +577,7 @@ def _cli():
     module = RadiologyInsightModule(config=config)
 
     if args.input_json:
-        with open(args.input_json, "r", encoding="utf-8") as f:
+        with open(args.input_json, encoding="utf-8") as f:
             raw = json.load(f)
         features = FeatureSet(**raw)
     else:

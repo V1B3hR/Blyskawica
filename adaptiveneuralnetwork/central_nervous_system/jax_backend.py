@@ -11,7 +11,7 @@ try:
     import jax.numpy as jnp
     import optax
     from flax.training import train_state
-    from jax import grad, jit, random, vmap
+    from jax import grad, jit, random, vmap  # noqa: F401
     from jax.scipy.special import sigmoid
     JAX_AVAILABLE = True
 except ImportError:
@@ -57,7 +57,7 @@ if JAX_AVAILABLE:
         JAX-based node state management with functional programming paradigm.
         
         This replaces the PyTorch-based NodeState with JAX arrays and pure functions.
-        """
+        """  # noqa: W293
 
         def __init__(self, config: JAXNodeConfig, key: jax.random.PRNGKey | None = None):
             if not JAX_AVAILABLE:
@@ -155,7 +155,7 @@ if JAX_AVAILABLE:
         JAX/Flax implementation of adaptive dynamics.
         
         This replaces the PyTorch nn.Module with a Flax module for JAX compatibility.
-        """
+        """  # noqa: W293
 
         hidden_dim: int
         config: JAXNodeConfig
@@ -178,7 +178,7 @@ if JAX_AVAILABLE:
             
             Returns:
                 Updated (hidden_state, energy, activity)
-            """
+            """  # noqa: W293
             batch_size, num_nodes, _ = hidden_state.shape
 
             # Flatten for processing
@@ -241,7 +241,7 @@ if JAX_AVAILABLE:
             
             Returns:
                 (output, updated_state)
-            """
+            """  # noqa: W293
             batch_size = x.shape[0]
 
             # Expand state if needed
@@ -371,7 +371,7 @@ if JAX_AVAILABLE:
         
         Returns:
             (updated_state, loss, updated_node_state)
-        """
+        """  # noqa: W293
         def loss_fn(params):
             inputs, targets = batch
             outputs, new_node_state = state.apply_fn(params, inputs, node_state)
@@ -396,7 +396,7 @@ def convert_pytorch_to_jax_config(pytorch_config) -> JAXNodeConfig:
     
     Returns:
         JAX-compatible configuration
-    """
+    """  # noqa: W293
     return JAXNodeConfig(
         num_nodes=getattr(pytorch_config, 'num_nodes', 100),
         hidden_dim=getattr(pytorch_config, 'hidden_dim', 64),

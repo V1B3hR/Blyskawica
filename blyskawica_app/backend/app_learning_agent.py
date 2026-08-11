@@ -5,13 +5,13 @@ Gdy użytkownik pyta o nową aplikację, agent przeszukuje internet (DuckDuckGo)
 wyodrębnia skróty klawiszowe i instrukcje, po czym zapisuje je w lokalnej bazie.
 """
 
-import os
 import json
 import logging
-import urllib.parse
 import re
-import httpx
+import urllib.parse
 from pathlib import Path
+
+import httpx
 
 logger = logging.getLogger("AppLearningAgent")
 MEMORY_DIR = Path("c:/Projekty/Blyskawica_V8/blyskawica_app/memory")
@@ -27,9 +27,9 @@ class AppLearningAgent:
         try:
             if not self.db_path.parent.exists():
                 self.db_path.parent.mkdir(parents=True, exist_ok=True)
-            
+
             if self.db_path.exists():
-                with open(self.db_path, 'r', encoding='utf-8') as f:
+                with open(self.db_path, encoding='utf-8') as f:
                     self.manuals = json.load(f)
                 logger.info(f"[AppLearningAgent] Wczytano {len(self.manuals)} instrukcji z bazy.")
             else:
@@ -59,20 +59,20 @@ class AppLearningAgent:
             return self.manuals[app_key]
 
         logger.info(f"[AppLearningAgent] Nieznana aplikacja: '{app_name}'. Rozpoczęto wyszukiwanie wiedzy...")
-        
+
         # Przygotowanie zapytań do DuckDuckGo
         queries = [
             f"Jak używać {app_name} poradnik instrukcja skróty klawiszowe",
             f"{app_name} manual keyboard shortcuts guide"
         ]
-        
+
         all_snippets = []
-        
+
         for q in queries:
             try:
                 url = f"https://html.duckduckgo.com/html/?q={urllib.parse.quote(q)}"
                 headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.0.0 Safari/537.36'}
-                
+
                 async with httpx.AsyncClient(timeout=6.0, follow_redirects=True) as client:
                     res = await client.get(url, headers=headers)
                     if res.status_code == 200:
@@ -98,7 +98,7 @@ class AppLearningAgent:
 
         # Budowanie podręcznika na podstawie snippetów
         summary_text = "\n".join(all_snippets[:5])
-        
+
         # Ekstrakcja podstawowych skrótów klawiszowych (prosta heurystyka)
         shortcuts = []
         found_keys = re.findall(r'(ctrl\s*\+\s*[a-z0-9]|alt\s*\+\s*[a-z0-9]|shift\s*\+\s*[a-z0-9]|f[1-9][0-2]?)', summary_text.lower())
@@ -118,7 +118,7 @@ class AppLearningAgent:
         # Zapisz do pamięci
         self.manuals[app_key] = app_data
         self._save_db()
-        
+
         logger.info(f"[AppLearningAgent] Pomyślnie nauczono się obsługi: {app_name}. Znalezione skróty: {shortcuts[:8]}")
         return app_data
 
@@ -127,7 +127,7 @@ class AppLearningAgent:
         app_key = app_name.strip().lower()
         if app_key not in self.manuals:
             return ""
-            
+
         data = self.manuals[app_key]
         shortcuts_str = ", ".join(data["shortcuts"]) if data["shortcuts"] else "brak wykrytych"
         return (

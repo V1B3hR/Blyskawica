@@ -159,7 +159,7 @@ class CameraManager:
                 }
         else:
             # Run scans sequentially
-            for name, camera in self.cameras.items():
+            for name, camera in self.cameras.items():  # noqa: B007
                 result = self.scan_with_camera(name, target, async_mode=False)
                 results[name] = result
 

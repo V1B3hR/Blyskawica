@@ -10,59 +10,61 @@ This module consolidates ALL phases (3, 4, 5-7, 8-9, F3) into a single unified i
 This provides a complete governance system with all features in a single interface.
 """
 
-from typing import Dict, List, Optional, Any, Tuple, Union
-from datetime import datetime, timezone
-from pathlib import Path
-import time
 import hashlib
 import logging
+import time
 from collections import OrderedDict
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 # Phase 3 imports
-from .risk_engine import RiskEngine
-from .correlation_engine import CorrelationEngine
-from .fairness_sampler import FairnessSampler
-from .ethical_drift_reporter import EthicalDriftReporter
-from .performance_optimizer import PerformanceOptimizer
+import asyncio  # noqa: E402
+
+from .anomaly_detector import AnomalyDriftMonitor  # noqa: E402
 
 # Phase 4 imports
-from .audit_merkle import MerkleAnchor
-from .policy_diff import PolicyDiffAuditor
-from .quarantine import QuarantineManager
-from .ethical_taxonomy import EthicalTaxonomy
-from .sla_monitor import SLAMonitor
-
-# Phase 5-7 imports
-from .ml_shadow import MLShadowClassifier, MLModelType
-from .ml_blended_risk import MLBlendedRiskEngine
-from .anomaly_detector import AnomalyDriftMonitor
-
-# Phase 8-9 imports
-from .human_feedback import EscalationQueue
-from .optimization import MultiObjectiveOptimizer, Configuration
-
-# F3: Privacy & Data Handling imports
-from .redaction_pipeline import EnhancedRedactionPipeline, RedactionPolicy as RedactionPolicyEnum
-from .differential_privacy import DifferentialPrivacy, PrivacyMechanism, PrivacyAudit
-from .federated_analytics import FederatedAnalytics
-from .data_minimization import DataMinimization
-
-# F2: Plugin Interface imports
-from .plugin_interface import get_plugin_manager
-
-# Governance/Safety imports
-from .governance_core import EnhancedSafetyGovernance, AgentAction
-import asyncio
+from .audit_merkle import MerkleAnchor  # noqa: E402
+from .correlation_engine import CorrelationEngine  # noqa: E402
+from .data_minimization import DataMinimization  # noqa: E402
+from .differential_privacy import DifferentialPrivacy, PrivacyAudit, PrivacyMechanism  # noqa: E402
 
 # Vector/Embedding imports
-from .embedding_engine import EmbeddingEngine, EmbeddingProvider
-from .semantic_mapper import SemanticMapper, ActionEmbedding
+from .embedding_engine import EmbeddingEngine, EmbeddingProvider  # noqa: E402
+from .ethical_drift_reporter import EthicalDriftReporter  # noqa: E402
+from .ethical_taxonomy import EthicalTaxonomy  # noqa: E402
+from .fairness_sampler import FairnessSampler  # noqa: E402
+from .federated_analytics import FederatedAnalytics  # noqa: E402
+
+# Governance/Safety imports
+from .governance_core import AgentAction, EnhancedSafetyGovernance  # noqa: E402
+
+# Phase 8-9 imports
+from .human_feedback import EscalationQueue  # noqa: E402
+from .ml_blended_risk import MLBlendedRiskEngine  # noqa: E402
+
+# Phase 5-7 imports
+from .ml_shadow import MLModelType, MLShadowClassifier  # noqa: E402
+from .optimization import Configuration, MultiObjectiveOptimizer  # noqa: E402
+from .performance_optimizer import PerformanceOptimizer  # noqa: E402
+
+# F2: Plugin Interface imports
+from .plugin_interface import get_plugin_manager  # noqa: E402
+from .policy_diff import PolicyDiffAuditor  # noqa: E402
+from .quarantine import QuarantineManager  # noqa: E402
+
+# F3: Privacy & Data Handling imports
+from .redaction_pipeline import EnhancedRedactionPipeline  # noqa: E402
+from .redaction_pipeline import RedactionPolicy as RedactionPolicyEnum  # noqa: E402
+from .risk_engine import RiskEngine  # noqa: E402
+from .semantic_mapper import SemanticMapper  # noqa: E402
+from .sla_monitor import SLAMonitor  # noqa: E402
 
 # Resource Management imports
 try:
-    from ..quotas import QuotaEnforcer, QuotaConfig
+    from ..quotas import QuotaConfig, QuotaEnforcer
     from ..utils.pii import PIIDetector, get_pii_detector
 
     QUOTA_AVAILABLE = True
@@ -87,19 +89,19 @@ class IntegratedGovernance:
         self,
         storage_dir: str = "./nethical_data",
         # Regional & Sharding config
-        region_id: Optional[str] = None,
-        logical_domain: Optional[str] = None,
-        data_residency_policy: Optional[str] = None,
+        region_id: str | None = None,
+        logical_domain: str | None = None,
+        data_residency_policy: str | None = None,
         # Phase 3 config
         redis_client=None,
-        correlation_config_path: Optional[str] = None,
+        correlation_config_path: str | None = None,
         enable_performance_optimization: bool = True,
         # Phase 4 config
         enable_merkle_anchoring: bool = True,
         enable_quarantine: bool = True,
         enable_ethical_taxonomy: bool = True,
         enable_sla_monitoring: bool = True,
-        s3_bucket: Optional[str] = None,
+        s3_bucket: str | None = None,
         taxonomy_path: str = "taxonomies/ethics_taxonomy.json",
         # Phase 5-7 config
         enable_shadow_mode: bool = True,
@@ -122,7 +124,7 @@ class IntegratedGovernance:
         auto_escalate_on_low_confidence: bool = True,
         low_confidence_threshold: float = 0.7,
         # F3: Privacy & Data Handling config
-        privacy_mode: Optional[str] = None,
+        privacy_mode: str | None = None,
         epsilon: float = 1.0,
         redaction_policy: str = "standard",
         # Quota & Resource Management config
@@ -140,7 +142,7 @@ class IntegratedGovernance:
         # Vector/Embedding config
         enable_25_laws: bool = False,
         enable_vector_evaluation: bool = False,
-        embedding_provider: Optional[EmbeddingProvider] = None,
+        embedding_provider: EmbeddingProvider | None = None,
         vector_similarity_threshold: float = 0.7,
     ):
         """Initialize unified integrated governance.
@@ -188,7 +190,7 @@ class IntegratedGovernance:
         self.region_id = region_id
         self.logical_domain = logical_domain
         self.data_residency_policy = data_residency_policy
-        self.regional_policies: Dict[str, Any] = {}
+        self.regional_policies: dict[str, Any] = {}
 
         # Initialize regional policy configurations
         if data_residency_policy:
@@ -294,7 +296,7 @@ class IntegratedGovernance:
         self.auto_escalate_on_block = auto_escalate_on_block
         self.auto_escalate_on_low_confidence = auto_escalate_on_low_confidence
         self.low_confidence_threshold = low_confidence_threshold
-        self.active_config: Optional[Configuration] = None
+        self.active_config: Configuration | None = None
 
         # ==================== F3: Privacy & Data Handling ====================
         self.privacy_mode = privacy_mode
@@ -360,10 +362,10 @@ class IntegratedGovernance:
         self.enable_25_laws = enable_25_laws
         self.enable_vector_evaluation = enable_vector_evaluation
         self.vector_similarity_threshold = vector_similarity_threshold
-        
-        self.embedding_engine: Optional[EmbeddingEngine] = None
-        self.semantic_mapper: Optional[SemanticMapper] = None
-        
+
+        self.embedding_engine: EmbeddingEngine | None = None
+        self.semantic_mapper: SemanticMapper | None = None
+
         if enable_vector_evaluation or enable_25_laws:
             # Initialize embedding engine
             self.embedding_engine = EmbeddingEngine(
@@ -371,12 +373,12 @@ class IntegratedGovernance:
                 enable_cache=True,
                 cache_size=pii_cache_size
             )
-            
+
             # Initialize semantic mapper
             self.semantic_mapper = SemanticMapper(
                 embedding_engine=self.embedding_engine
             )
-            
+
             logger.info(
                 f"Vector evaluation enabled with 25 Fundamental Laws. "
                 f"Similarity threshold: {vector_similarity_threshold}"
@@ -390,24 +392,24 @@ class IntegratedGovernance:
         self.db_pool_size = db_pool_size
         self.merkle_batch_size = merkle_batch_size
         self.enable_parallel_phases = enable_parallel_phases
-        
+
         # Database connection pool (Fix 3)
         from .db_pool import SQLiteConnectionPool
         self._db_pool = SQLiteConnectionPool(
             db_path=str(storage_path / "governance.db"),
             pool_size=db_pool_size
         )
-        
+
         # PII detection cache storage (using OrderedDict for proper LRU eviction)
-        self._pii_cache: OrderedDict[str, Tuple[List[Any], float]] = OrderedDict()
+        self._pii_cache: OrderedDict[str, tuple[list[Any], float]] = OrderedDict()
         self._pii_cache_hits = 0
         self._pii_cache_misses = 0
-        
+
         # Merkle batching for async anchoring
-        self._merkle_pending: List[Dict[str, Any]] = []
+        self._merkle_pending: list[dict[str, Any]] = []
         self._merkle_batch_lock = None  # Will be created lazily when needed
         self._merkle_anchoring_enabled = enable_merkle_anchoring
-        
+
         # Component flags
         self.components_enabled = {
             # Phase 3
@@ -483,7 +485,7 @@ class IntegratedGovernance:
 
         self.regional_policies = policy_profiles.get(policy_name, policy_profiles["GLOBAL_DEFAULT"])
 
-    def validate_data_residency(self, region_id: Optional[str] = None) -> Dict[str, Any]:
+    def validate_data_residency(self, region_id: str | None = None) -> dict[str, Any]:
         """Validate data residency compliance.
 
         Args:
@@ -500,7 +502,7 @@ class IntegratedGovernance:
         }
 
         # Check if cross-border transfers are allowed
-        if region_id and self.region_id and region_id != self.region_id:
+        if region_id and self.region_id and region_id != self.region_id:  # noqa: SIM102
             if not self.regional_policies.get("cross_border_transfer_allowed", True):
                 validation_result["compliant"] = False
                 validation_result["violations"].append(
@@ -510,8 +512,8 @@ class IntegratedGovernance:
         return validation_result
 
     def aggregate_by_region(
-        self, metrics: List[Dict[str, Any]], group_by: str = "region_id"
-    ) -> Dict[str, Dict[str, Any]]:
+        self, metrics: list[dict[str, Any]], group_by: str = "region_id"
+    ) -> dict[str, dict[str, Any]]:
         """Aggregate metrics by region or logical domain.
 
         Args:
@@ -521,7 +523,7 @@ class IntegratedGovernance:
         Returns:
             Aggregated metrics grouped by the specified field
         """
-        aggregated: Dict[str, Dict[str, Any]] = {}
+        aggregated: dict[str, dict[str, Any]] = {}
 
         for metric in metrics:
             key = metric.get(group_by, "unknown")
@@ -542,13 +544,13 @@ class IntegratedGovernance:
             aggregated[key]["actions"].append(metric.get("action_id", "unknown"))
 
         # Calculate averages
-        for key, data in aggregated.items():
+        for key, data in aggregated.items():  # noqa: B007
             if data["count"] > 0:
                 data["avg_risk_score"] = data["total_risk_score"] / data["count"]
 
         return aggregated
 
-    def _cached_pii_detection(self, content: str) -> Tuple[List[Any], float]:
+    def _cached_pii_detection(self, content: str) -> tuple[list[Any], float]:
         """Cache PII detection results by content hash.
         
         Args:
@@ -556,7 +558,7 @@ class IntegratedGovernance:
             
         Returns:
             Tuple of (pii_matches, pii_risk_score)
-        """
+        """  # noqa: W293
         if not self.enable_pii_caching or not self.pii_detector:
             # Caching disabled or no detector, run directly
             if self.pii_detector:
@@ -564,27 +566,27 @@ class IntegratedGovernance:
                 risk = self.pii_detector.calculate_pii_risk_score(matches) if matches else 0.0
                 return (matches, risk)
             return ([], 0.0)
-        
+
         # Compute content hash for cache key
         content_hash = hashlib.sha256(content.encode('utf-8')).hexdigest()
-        
+
         # Check cache (move to end for LRU)
         if content_hash in self._pii_cache:
             self._pii_cache_hits += 1
             # Move to end to mark as recently used
             self._pii_cache.move_to_end(content_hash)
             return self._pii_cache[content_hash]
-        
+
         # Cache miss - compute
         self._pii_cache_misses += 1
         matches = self.pii_detector.detect_all(content)
         risk = self.pii_detector.calculate_pii_risk_score(matches) if matches else 0.0
-        
+
         # Store in cache with proper LRU eviction
         if len(self._pii_cache) >= self.pii_cache_size:
             # Remove least recently used (first item)
             self._pii_cache.popitem(last=False)
-        
+
         self._pii_cache[content_hash] = (matches, risk)
         return (matches, risk)
 
@@ -592,19 +594,19 @@ class IntegratedGovernance:
         """Process pending Merkle anchoring events in batch (async background task)."""
         if not self.merkle_anchor:
             return
-        
+
         # Create lock lazily if needed
         if self._merkle_batch_lock is None:
             self._merkle_batch_lock = asyncio.Lock()
-            
+
         async with self._merkle_batch_lock:
             if not self._merkle_pending:
                 return
-                
+
             # Take all pending events
             batch = self._merkle_pending[:]
             self._merkle_pending.clear()
-            
+
             # Process batch in background (non-blocking)
             for event_data in batch:
                 self.merkle_anchor.add_event(event_data)
@@ -613,46 +615,46 @@ class IntegratedGovernance:
         self,
         agent_id: str,
         action: Any,
-        cohort: Optional[str],
+        cohort: str | None,
         violation_detected: bool,
-        violation_severity: Optional[str],
+        violation_severity: str | None,
         pii_risk: float,
-        quota_result: Optional[Dict[str, Any]],
-    ) -> Tuple[Dict[str, Any], float]:
+        quota_result: dict[str, Any] | None,
+    ) -> tuple[dict[str, Any], float]:
         """Process Phase 3 (Risk & Correlation) asynchronously.
         
         Returns:
             Phase 3 results dictionary
-        """
+        """  # noqa: W293
         phase3_results = {}
-        
+
         # Calculate violation score
         violation_score = 0.0
         if violation_detected and violation_severity:
             severity_map = {"low": 0.25, "medium": 0.5, "high": 0.75, "critical": 1.0}
             severity_str = str(violation_severity).lower() if violation_severity else "medium"
             violation_score = severity_map.get(severity_str, 0.5)
-        
+
         action_context = {"cohort": cohort, "has_violation": violation_detected}
-        
+
         # Calculate risk score
         risk_score = self.risk_engine.calculate_risk_score(
             agent_id=agent_id, violation_severity=violation_score, action_context=action_context
         )
-        
+
         # Boost risk score based on PII detection and quota pressure
         if pii_risk > 0:
             risk_score = min(1.0, risk_score + (pii_risk * 0.3))
-        
+
         if quota_result and quota_result.get("backpressure_level", 0) > 0.8:
             risk_score = min(1.0, risk_score + 0.2)
-        
+
         phase3_results["risk_score"] = risk_score
         phase3_results["risk_tier"] = self.risk_engine.get_tier(agent_id).value
         phase3_results["invoke_advanced_detectors"] = (
             self.risk_engine.should_invoke_advanced_detectors(agent_id)
         )
-        
+
         # Track correlations
         payload = getattr(action, "content", str(action))
         correlations = self.correlation_engine.track_action(
@@ -667,43 +669,43 @@ class IntegratedGovernance:
             }
             for c in correlations
         ]
-        
+
         # Track for fairness and drift
         if cohort:
             self.fairness_sampler.assign_agent_cohort(agent_id, cohort)
             self.ethical_drift_reporter.track_action(
                 agent_id=agent_id, cohort=cohort, risk_score=risk_score
             )
-        
+
         return phase3_results, risk_score
 
     async def _process_phase4_async(
         self,
         agent_id: str,
         action: Any,
-        cohort: Optional[str],
+        cohort: str | None,
         violation_detected: bool,
-        violation_type: Optional[str],
+        violation_type: str | None,
         risk_score: float,
-        context: Optional[Dict[str, Any]],
+        context: dict[str, Any] | None,
         start_time: float,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Process Phase 4 (Audit & Taxonomy) asynchronously.
         
         Returns:
             Phase 4 results dictionary
-        """
+        """  # noqa: W293
         phase4_results = {}
-        
+
         # Quarantine check
         if self.quarantine_manager and cohort:
             status = self.quarantine_manager.get_quarantine_status(cohort)
             is_quarantined = status.get("is_quarantined", False)
             phase4_results["quarantined"] = is_quarantined
-            
+
             if is_quarantined:
                 phase4_results["quarantine_reason"] = status.get("reason", "Unknown")
-        
+
         # Ethical tagging
         if self.ethical_taxonomy and violation_detected and violation_type:
             tagging = self.ethical_taxonomy.create_tagging(
@@ -713,7 +715,7 @@ class IntegratedGovernance:
                 "primary_dimension": tagging.primary_dimension,
                 "dimensions": {tag.dimension: tag.score for tag in tagging.tags},
             }
-        
+
         # Merkle anchoring (batched, non-blocking)
         if self.merkle_anchor:
             event_data = {
@@ -723,46 +725,46 @@ class IntegratedGovernance:
                 "violation_detected": violation_detected,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
-            
+
             self._merkle_pending.append(event_data)
-            
+
             if len(self._merkle_pending) >= self.merkle_batch_size:
                 asyncio.create_task(self._process_merkle_batch())
-            
+
             phase4_results["merkle"] = {
                 "chunk_id": self.merkle_anchor.current_chunk.chunk_id,
                 "event_count": self.merkle_anchor.current_chunk.event_count,
                 "pending_batch_size": len(self._merkle_pending),
             }
-        
+
         # SLA tracking
         if self.sla_monitor:
             latency_ms = (time.time() - start_time) * 1000
             self.sla_monitor.record_latency(latency_ms)
             phase4_results["latency_ms"] = latency_ms
-        
+
         return phase4_results
 
     async def _process_phase567_async(
         self,
         agent_id: str,
-        action_id: Optional[str],
-        action_type: Optional[str],
-        cohort: Optional[str],
-        features: Optional[Dict[str, float]],
-        rule_risk_score: Optional[float],
-        rule_classification: Optional[str],
-    ) -> Dict[str, Any]:
+        action_id: str | None,
+        action_type: str | None,
+        cohort: str | None,
+        features: dict[str, float] | None,
+        rule_risk_score: float | None,
+        rule_classification: str | None,
+    ) -> dict[str, Any]:
         """Process Phase 5-7 (ML & Anomaly Detection) asynchronously.
         
         Returns:
             Phase 5-7 results dictionary
-        """
+        """  # noqa: W293
         phase567_results = {}
-        
+
         if not (action_id and features and rule_risk_score is not None):
             return phase567_results
-        
+
         # Phase 5: Shadow mode
         if self.shadow_classifier and rule_classification:
             shadow_pred = self.shadow_classifier.predict(
@@ -778,7 +780,7 @@ class IntegratedGovernance:
                 "scores_agree": shadow_pred.scores_agree,
                 "classifications_agree": shadow_pred.classifications_agree,
             }
-        
+
         # Phase 6: ML blending
         if self.blended_engine and rule_classification:
             blended = self.blended_engine.compute_blended_risk(
@@ -794,7 +796,7 @@ class IntegratedGovernance:
                 "blended_classification": blended.blended_classification,
                 "ml_influenced": blended.ml_influenced,
             }
-        
+
         # Phase 7: Anomaly detection
         if self.anomaly_monitor and cohort and action_type:
             alert = self.anomaly_monitor.record_action(
@@ -817,29 +819,29 @@ class IntegratedGovernance:
                         "severity": drift_alert.severity.value,
                         "description": drift_alert.description,
                     }
-        
+
         return phase567_results
 
     def process_action(
         self,
         agent_id: str,
         action: Any,
-        cohort: Optional[str] = None,
+        cohort: str | None = None,
         violation_detected: bool = False,
-        violation_type: Optional[str] = None,
-        violation_severity: Optional[str] = None,
-        detector_invocations: Optional[Dict[str, float]] = None,
-        context: Optional[Dict[str, Any]] = None,
+        violation_type: str | None = None,
+        violation_severity: str | None = None,
+        detector_invocations: dict[str, float] | None = None,
+        context: dict[str, Any] | None = None,
         # For ML phases
-        action_id: Optional[str] = None,
-        action_type: Optional[str] = None,
-        features: Optional[Dict[str, float]] = None,
-        rule_risk_score: Optional[float] = None,
-        rule_classification: Optional[str] = None,
+        action_id: str | None = None,
+        action_type: str | None = None,
+        features: dict[str, float] | None = None,
+        rule_risk_score: float | None = None,
+        rule_classification: str | None = None,
         # For regional processing
-        region_id: Optional[str] = None,
-        compliance_requirements: Optional[List[str]] = None,
-    ) -> Dict[str, Any]:
+        region_id: str | None = None,
+        compliance_requirements: list[str] | None = None,
+    ) -> dict[str, Any]:
         """Process an action through all enabled governance phases.
 
         This is the primary method for evaluating actions with full governance oversight.
@@ -904,7 +906,7 @@ class IntegratedGovernance:
         if self.pii_detector and action:
             action_str = str(action)
             pii_matches, pii_risk = self._cached_pii_detection(action_str)
-            if pii_matches:
+            if pii_matches:  # noqa: SIM102
                 # Boost violation score if PII detected
                 if pii_risk > 0.5:
                     violation_detected = True
@@ -919,14 +921,14 @@ class IntegratedGovernance:
         # ==================== Core Violation Detection ====================
         # Import ActionType enum
         from .governance_core import ActionType
-        
+
         # Convert action type string to enum
         action_type_enum = ActionType.QUERY
         if action_type:
             action_type_str = action_type.upper()
             if hasattr(ActionType, action_type_str):
                 action_type_enum = getattr(ActionType, action_type_str)
-        
+
         # Convert action to AgentAction format if it's a string
         if isinstance(action, str):
             # Create an AgentAction object from string
@@ -949,7 +951,7 @@ class IntegratedGovernance:
                     existing_action_type = action_type_enum
             elif existing_action_type is None:
                 existing_action_type = action_type_enum
-                
+
             action_obj = AgentAction(
                 action_id=getattr(action, 'action_id', action_id or f"action_{agent_id}_{int(time.time() * 1000)}"),
                 agent_id=agent_id,
@@ -977,7 +979,7 @@ class IntegratedGovernance:
                 return loop.run_until_complete(self.safety_governance.evaluate_action(action_obj))
             finally:
                 loop.close()
-        
+
         # Determine if we're in an async context
         try:
             asyncio.get_running_loop()
@@ -989,17 +991,17 @@ class IntegratedGovernance:
         except RuntimeError:
             # No running loop, safe to run synchronously
             judgment = sync_evaluate()
-        
+
         # Extract violation information
         detected_violations = judgment.violations
         decision = judgment.decision
         violation_detected = len(detected_violations) > 0
-        
+
         # Determine violation type and severity from detected violations
         if detected_violations:
             # Use the most severe violation
-            violation_type = detected_violations[0].violation_type.value if not violation_type else violation_type
-            violation_severity = detected_violations[0].severity.value if not violation_severity else violation_severity
+            violation_type = detected_violations[0].violation_type.value if not violation_type else violation_type  # noqa: SIM212
+            violation_severity = detected_violations[0].severity.value if not violation_severity else violation_severity  # noqa: SIM212
 
         results = {
             "agent_id": agent_id,
@@ -1066,7 +1068,7 @@ class IntegratedGovernance:
         results["phase3"]["invoke_advanced_detectors"] = (
             self.risk_engine.should_invoke_advanced_detectors(agent_id)
         )
-        
+
         # ==================== Fast Path Detection (Fix 4) ====================
         # Determine if action is eligible for fast-path processing (skip expensive phases)
         fast_path_eligible = False
@@ -1077,11 +1079,11 @@ class IntegratedGovernance:
             is_high_severity = False
             if violation_severity:
                 is_high_severity = str(violation_severity).lower() in ["critical", "high"]
-            
+
             fast_path_eligible = (
                 not has_violation
                 and not is_high_severity
-                and pii_risk < 0.1 
+                and pii_risk < 0.1
                 and risk_score < self.fast_path_risk_threshold
                 and (rule_risk_score is None or rule_risk_score < self.fast_path_risk_threshold)
                 and not self.components_enabled.get('force_full_pipeline', False)
@@ -1147,10 +1149,10 @@ class IntegratedGovernance:
                 "violation_detected": violation_detected,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
-            
+
             # Queue for background processing instead of blocking
             self._merkle_pending.append(event_data)
-            
+
             # Trigger background batch processing if threshold reached
             if len(self._merkle_pending) >= self.merkle_batch_size:
                 # Schedule async batch processing (non-blocking)
@@ -1166,7 +1168,7 @@ class IntegratedGovernance:
                         self._merkle_pending = self._merkle_pending[self.merkle_batch_size:]
                         for evt in batch:
                             self.merkle_anchor.add_event(evt)
-            
+
             results["phase4"]["merkle"] = {
                 "chunk_id": self.merkle_anchor.current_chunk.chunk_id,
                 "event_count": self.merkle_anchor.current_chunk.event_count,
@@ -1270,22 +1272,22 @@ class IntegratedGovernance:
         self,
         agent_id: str,
         action: Any,
-        cohort: Optional[str] = None,
+        cohort: str | None = None,
         violation_detected: bool = False,
-        violation_type: Optional[str] = None,
-        violation_severity: Optional[str] = None,
-        detector_invocations: Optional[Dict[str, float]] = None,
-        context: Optional[Dict[str, Any]] = None,
+        violation_type: str | None = None,
+        violation_severity: str | None = None,
+        detector_invocations: dict[str, float] | None = None,
+        context: dict[str, Any] | None = None,
         # For ML phases
-        action_id: Optional[str] = None,
-        action_type: Optional[str] = None,
-        features: Optional[Dict[str, float]] = None,
-        rule_risk_score: Optional[float] = None,
-        rule_classification: Optional[str] = None,
+        action_id: str | None = None,
+        action_type: str | None = None,
+        features: dict[str, float] | None = None,
+        rule_risk_score: float | None = None,
+        rule_classification: str | None = None,
         # For regional processing
-        region_id: Optional[str] = None,
-        compliance_requirements: Optional[List[str]] = None,
-    ) -> Dict[str, Any]:
+        region_id: str | None = None,
+        compliance_requirements: list[str] | None = None,
+    ) -> dict[str, Any]:
         """Async version of process_action for optimal performance in async contexts.
         
         This method provides true async/await support for governance evaluation,
@@ -1312,7 +1314,7 @@ class IntegratedGovernance:
 
         Returns:
             Comprehensive results from all enabled phases
-        """
+        """  # noqa: W293
         start_time = time.time()
 
         # ==================== Regional Configuration ====================
@@ -1360,14 +1362,14 @@ class IntegratedGovernance:
 
         # ==================== Core Violation Detection ====================
         from .governance_core import ActionType
-        
+
         # Convert action type string to enum
         action_type_enum = ActionType.QUERY
         if action_type:
             action_type_str = action_type.upper()
             if hasattr(ActionType, action_type_str):
                 action_type_enum = getattr(ActionType, action_type_str)
-        
+
         # Convert action to AgentAction format
         if isinstance(action, str):
             action_obj = AgentAction(
@@ -1387,7 +1389,7 @@ class IntegratedGovernance:
                     existing_action_type = action_type_enum
             elif existing_action_type is None:
                 existing_action_type = action_type_enum
-                
+
             action_obj = AgentAction(
                 action_id=getattr(action, 'action_id', action_id or f"action_{agent_id}_{int(time.time() * 1000)}"),
                 agent_id=agent_id,
@@ -1406,16 +1408,16 @@ class IntegratedGovernance:
 
         # Async violation detection - directly await the async method
         judgment = await self.safety_governance.evaluate_action(action_obj)
-        
+
         # Extract violation information
         detected_violations = judgment.violations
         decision = judgment.decision
         violation_detected = len(detected_violations) > 0
-        
+
         # Determine violation type and severity from detected violations
         if detected_violations:
-            violation_type = detected_violations[0].violation_type.value if not violation_type else violation_type
-            violation_severity = detected_violations[0].severity.value if not violation_severity else violation_severity
+            violation_type = detected_violations[0].violation_type.value if not violation_type else violation_type  # noqa: SIM212
+            violation_severity = detected_violations[0].severity.value if not violation_severity else violation_severity  # noqa: SIM212
 
         results = {
             "agent_id": agent_id,
@@ -1480,7 +1482,7 @@ class IntegratedGovernance:
         results["phase3"]["invoke_advanced_detectors"] = (
             self.risk_engine.should_invoke_advanced_detectors(agent_id)
         )
-        
+
         # ==================== Fast Path Detection ====================
         fast_path_eligible = False
         if self.enable_fast_path:
@@ -1488,11 +1490,11 @@ class IntegratedGovernance:
             is_high_severity = False
             if violation_severity:
                 is_high_severity = str(violation_severity).lower() in ["critical", "high"]
-            
+
             fast_path_eligible = (
                 not has_violation
                 and not is_high_severity
-                and pii_risk < 0.1 
+                and pii_risk < 0.1
                 and risk_score < self.fast_path_risk_threshold
                 and (rule_risk_score is None or rule_risk_score < self.fast_path_risk_threshold)
                 and not self.components_enabled.get('force_full_pipeline', False)
@@ -1545,7 +1547,7 @@ class IntegratedGovernance:
                 }
                 # Batch events for performance
                 self._merkle_pending.append(event_data)
-                
+
                 if len(self._merkle_pending) >= self.merkle_batch_size:
                     batch = self._merkle_pending[:self.merkle_batch_size]
                     self._merkle_pending = self._merkle_pending[self.merkle_batch_size:]
@@ -1660,7 +1662,7 @@ class IntegratedGovernance:
 
         return results
 
-    def get_system_status(self) -> Dict[str, Any]:
+    def get_system_status(self) -> dict[str, Any]:
         """Get comprehensive system status across all phases.
 
         Returns:
@@ -1752,10 +1754,10 @@ class IntegratedGovernance:
     def evaluate(
         self,
         agent_id: str,
-        action: Union[str, Any],
-        context: Optional[Dict[str, Any]] = None,
+        action: str | Any,
+        context: dict[str, Any] | None = None,
         use_embeddings: bool = None
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Evaluate an agent action using vector-based governance with 25 Fundamental Laws.
         
         This is the main API method for vector-based governance evaluation.
@@ -1785,12 +1787,12 @@ class IntegratedGovernance:
             ...     context={"purpose": "demo"}
             ... )
             >>> print(result['decision'], result['laws_evaluated'], result['risk_score'])
-        """
+        """  # noqa: W293
         # Determine if we should use embedding evaluation
         use_vector_eval = use_embeddings if use_embeddings is not None else (
             self.enable_vector_evaluation or self.enable_25_laws
         )
-        
+
         if not use_vector_eval or not self.semantic_mapper:
             # Fall back to regular process_action
             return self.process_action(
@@ -1798,10 +1800,10 @@ class IntegratedGovernance:
                 action=action,
                 context=context
             )
-        
+
         # Convert action to string if needed
         action_text = str(action) if not isinstance(action, str) else action
-        
+
         # Determine action type from context or content
         action_type = "text"
         if context and "action_type" in context:
@@ -1810,20 +1812,20 @@ class IntegratedGovernance:
             action_type = "code"
         elif "execute" in action_text.lower():
             action_type = "code_execution"
-        
+
         # Parse and embed action
         action_embedding = self.semantic_mapper.parse_action(
             action_text=action_text,
             action_type=action_type,
             context=context
         )
-        
+
         # Evaluate against fundamental laws
         evaluation = self.semantic_mapper.evaluate_against_laws(
             action_embedding=action_embedding,
             similarity_threshold=self.vector_similarity_threshold
         )
-        
+
         # Log to Merkle anchor if enabled
         if self.merkle_anchor:
             event_data = {
@@ -1837,7 +1839,7 @@ class IntegratedGovernance:
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
             self._merkle_pending.append(event_data)
-            
+
             # Trigger batch processing if threshold reached
             if len(self._merkle_pending) >= self.merkle_batch_size:
                 try:
@@ -1850,7 +1852,7 @@ class IntegratedGovernance:
                         self._merkle_pending = self._merkle_pending[self.merkle_batch_size:]
                         for evt in batch:
                             self.merkle_anchor.add_event(evt)
-        
+
         # Enhance result with additional metadata
         result = {
             "agent_id": agent_id,
@@ -1866,30 +1868,30 @@ class IntegratedGovernance:
             "vector_evaluation": True,
             "model": self.embedding_engine.provider.get_model_name() if self.embedding_engine else "unknown",
         }
-        
+
         return result
-    
-    def _generate_reasoning(self, evaluation: Dict[str, Any]) -> str:
+
+    def _generate_reasoning(self, evaluation: dict[str, Any]) -> str:
         """Generate human-readable reasoning for a decision."""
         decision = evaluation["decision"]
         laws = evaluation["laws_evaluated"]
         risk = evaluation["risk_score"]
         primitives = evaluation.get("detected_primitives", [])
-        
+
         reasoning_parts = [
             f"Decision: {decision} based on risk score {risk:.2f}."
         ]
-        
+
         if laws:
             reasoning_parts.append(
                 f"Evaluated against Fundamental Laws: {', '.join(map(str, laws[:5]))}."
             )
-        
+
         if primitives:
             reasoning_parts.append(
                 f"Detected semantic primitives: {', '.join(primitives[:3])}."
             )
-        
+
         if decision in ["BLOCK", "TERMINATE"]:
             reasoning_parts.append(
                 "Action blocked due to high risk or sensitive operations."
@@ -1902,10 +1904,10 @@ class IntegratedGovernance:
             reasoning_parts.append(
                 "Action allowed - low risk detected."
             )
-        
+
         return " ".join(reasoning_parts)
-    
-    def trace_embedding(self, embedding_trace_id: str) -> Optional[Dict[str, Any]]:
+
+    def trace_embedding(self, embedding_trace_id: str) -> dict[str, Any] | None:
         """Trace an embedding decision for debugging and compliance.
         
         Args:
@@ -1913,10 +1915,10 @@ class IntegratedGovernance:
             
         Returns:
             Trace information including embedding details and decision rationale
-        """
+        """  # noqa: W293
         if not self.merkle_anchor:
             return None
-        
+
         # Search through Merkle logs for this trace ID
         # In a full implementation, this would query the Merkle anchor
         # For now, check pending events
@@ -1927,7 +1929,7 @@ class IntegratedGovernance:
                     "found_in": "pending_merkle_batch",
                     "event": event
                 }
-        
+
         return {
             "embedding_trace_id": embedding_trace_id,
             "status": "not_found",

@@ -7,18 +7,18 @@ FastAPI router for threat intelligence enrichment endpoints.
 import logging
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from nethical_recon.enrichment import (
-    ThreatEnricher,
-    AbuseIPDBProvider,
-    OTXProvider,
-    GreyNoiseProvider,
-    VirusTotalProvider,
-    RiskScorer,
-)
 from nethical_recon.api.auth import get_current_user
+from nethical_recon.enrichment import (
+    AbuseIPDBProvider,
+    GreyNoiseProvider,
+    OTXProvider,
+    RiskScorer,
+    ThreatEnricher,
+    VirusTotalProvider,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -109,7 +109,7 @@ async def enrich_indicator(
         }
     except Exception as e:
         logger.error(f"Failed to enrich indicator: {e}")
-        raise HTTPException(status_code=500, detail=f"Enrichment failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Enrichment failed: {str(e)}")  # noqa: B904
 
 
 @router.post("/enrich/batch")
@@ -150,7 +150,7 @@ async def enrich_batch(
         ]
     except Exception as e:
         logger.error(f"Failed to batch enrich: {e}")
-        raise HTTPException(status_code=500, detail=f"Batch enrichment failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Batch enrichment failed: {str(e)}")  # noqa: B904
 
 
 @router.post("/risk-score", response_model=RiskScoreResponse)
@@ -189,7 +189,7 @@ async def calculate_risk_score(
         }
     except Exception as e:
         logger.error(f"Failed to calculate risk score: {e}")
-        raise HTTPException(status_code=500, detail=f"Risk scoring failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Risk scoring failed: {str(e)}")  # noqa: B904
 
 
 @router.get("/providers")

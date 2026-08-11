@@ -100,7 +100,7 @@ class ThreatPredictor:
             Risk forecast
         """
         current_risk = current_state.get("risk_score", 5.0)
-        threats = current_state.get("threats", [])
+        threats = current_state.get("threats", [])  # noqa: F841
         trend = current_state.get("trend", "stable")
 
         # Calculate forecast

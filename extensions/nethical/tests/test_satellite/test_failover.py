@@ -1,20 +1,20 @@
 """Tests for failover manager."""
 
-import pytest
 from datetime import datetime
-from unittest.mock import MagicMock, AsyncMock, patch
+from unittest.mock import MagicMock
 
+import pytest
+
+from nethical.connectivity.satellite.base import (
+    ConnectionMetrics,
+    ConnectionState,
+)
 from nethical.connectivity.satellite.failover import (
-    FailoverManager,
+    ConnectionType,
     FailoverConfig,
     FailoverEvent,
+    FailoverManager,
     FailoverReason,
-    ConnectionType,
-)
-from nethical.connectivity.satellite.base import (
-    ConnectionState,
-    ConnectionConfig,
-    ConnectionMetrics,
 )
 
 

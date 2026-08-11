@@ -4,8 +4,8 @@ Validates that markers remain persistent and detectable
 """
 
 import logging
+from datetime import datetime
 from typing import Any
-from datetime import datetime, timedelta
 
 
 class MarkerPersistenceValidator:

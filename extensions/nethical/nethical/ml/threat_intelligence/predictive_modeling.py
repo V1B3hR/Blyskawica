@@ -8,21 +8,21 @@ Phase: 5 - Detection Omniscience
 Component: Threat Anticipation
 """
 
-import asyncio
 import logging
-import numpy as np
-from dataclasses import dataclass, field
-from datetime import datetime, timezone, timedelta
-from enum import Enum
-from typing import Dict, List, Optional, Any
 from collections import defaultdict
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from enum import Enum
+from typing import Any
+
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
 
 class ThreatTrend(Enum):
     """Trend direction for threat evolution."""
-    
+
     INCREASING = "increasing"
     DECREASING = "decreasing"
     STABLE = "stable"
@@ -33,20 +33,20 @@ class ThreatTrend(Enum):
 @dataclass
 class AttackPrediction:
     """Represents a predicted future attack."""
-    
+
     prediction_id: str
     attack_type: str
     predicted_vector: str
     probability: float  # 0.0 to 1.0
     confidence: float   # 0.0 to 1.0
     time_horizon_days: int
-    indicators: List[str] = field(default_factory=list)
-    precursor_patterns: List[str] = field(default_factory=list)
-    recommended_defenses: List[str] = field(default_factory=list)
+    indicators: list[str] = field(default_factory=list)
+    precursor_patterns: list[str] = field(default_factory=list)
+    recommended_defenses: list[str] = field(default_factory=list)
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    
-    def to_dict(self) -> Dict[str, Any]:
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "prediction_id": self.prediction_id,
@@ -66,14 +66,14 @@ class AttackPrediction:
 @dataclass
 class ThreatEvolutionModel:
     """Model of how a threat evolves over time."""
-    
+
     threat_family: str
-    current_variants: List[str]
-    evolution_trajectory: List[Dict[str, Any]]
+    current_variants: list[str]
+    evolution_trajectory: list[dict[str, Any]]
     mutation_rate: float  # Variants per time period
     complexity_trend: ThreatTrend
     sophistication_score: float  # 0.0 to 1.0
-    next_generation_features: List[str] = field(default_factory=list)
+    next_generation_features: list[str] = field(default_factory=list)
     last_updated: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -87,12 +87,12 @@ class PredictiveModeler:
     - Time-series forecasting
     - Anomaly-based prediction
     - Probabilistic threat assessment
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
         prediction_threshold: float = 0.7,
-        time_horizons: Optional[List[int]] = None,
+        time_horizons: list[int] | None = None,
         learning_window_days: int = 90,
     ):
         """
@@ -102,31 +102,31 @@ class PredictiveModeler:
             prediction_threshold: Minimum probability to issue prediction
             time_horizons: Prediction time horizons in days
             learning_window_days: Historical data window for learning
-        """
+        """  # noqa: W293
         self.prediction_threshold = prediction_threshold
         self.time_horizons = time_horizons or [7, 30, 90]  # 1 week, 1 month, 3 months
         self.learning_window_days = learning_window_days
-        
+
         # Storage
-        self.predictions: Dict[str, AttackPrediction] = {}
-        self.evolution_models: Dict[str, ThreatEvolutionModel] = {}
-        self.historical_attacks: List[Dict[str, Any]] = []
-        
+        self.predictions: dict[str, AttackPrediction] = {}
+        self.evolution_models: dict[str, ThreatEvolutionModel] = {}
+        self.historical_attacks: list[dict[str, Any]] = []
+
         # Model parameters (simplified for demonstration)
-        self.trend_models: Dict[str, Any] = {}
-        
+        self.trend_models: dict[str, Any] = {}
+
         # Statistics
         self.total_predictions: int = 0
         self.accurate_predictions: int = 0
         self.false_positives: int = 0
-        
+
         logger.info(
             f"PredictiveModeler initialized with threshold={prediction_threshold}"
         )
-    
+
     async def analyze_trends(
-        self, attack_history: List[Dict[str, Any]]
-    ) -> Dict[str, ThreatTrend]:
+        self, attack_history: list[dict[str, Any]]
+    ) -> dict[str, ThreatTrend]:
         """
         Analyze trends in attack patterns.
         
@@ -135,38 +135,38 @@ class PredictiveModeler:
             
         Returns:
             Dictionary mapping attack types to trends
-        """
-        trends: Dict[str, ThreatTrend] = {}
-        
+        """  # noqa: W293
+        trends: dict[str, ThreatTrend] = {}
+
         # Group attacks by type and time
         attack_counts = defaultdict(lambda: defaultdict(int))
-        
+
         for attack in attack_history:
             attack_type = attack.get("type", "unknown")
             timestamp = attack.get("timestamp", datetime.now(timezone.utc))
-            
+
             if isinstance(timestamp, str):
                 timestamp = datetime.fromisoformat(timestamp)
-            
+
             # Bucket by week
             week = timestamp.isocalendar()[:2]  # (year, week)
             attack_counts[attack_type][week] += 1
-        
+
         # Analyze trend for each attack type
         for attack_type, weekly_counts in attack_counts.items():
             if len(weekly_counts) < 2:
                 trends[attack_type] = ThreatTrend.STABLE
                 continue
-            
+
             # Simple linear trend analysis
             weeks = sorted(weekly_counts.keys())
             counts = [weekly_counts[w] for w in weeks]
-            
+
             if len(counts) >= 2:
                 # Calculate trend (simplified)
                 recent_avg = np.mean(counts[-4:]) if len(counts) >= 4 else counts[-1]
                 older_avg = np.mean(counts[:-4]) if len(counts) >= 4 else counts[0]
-                
+
                 if recent_avg > older_avg * 1.5:
                     trends[attack_type] = ThreatTrend.INCREASING
                 elif recent_avg < older_avg * 0.5:
@@ -177,13 +177,13 @@ class PredictiveModeler:
                     trends[attack_type] = ThreatTrend.STABLE
             else:
                 trends[attack_type] = ThreatTrend.STABLE
-        
+
         logger.info(f"Analyzed trends for {len(trends)} attack types")
         return trends
-    
+
     async def predict_attacks(
-        self, threat_intelligence: List[Any]
-    ) -> List[AttackPrediction]:
+        self, threat_intelligence: list[Any]
+    ) -> list[AttackPrediction]:
         """
         Generate predictions for future attacks.
         
@@ -192,36 +192,36 @@ class PredictiveModeler:
             
         Returns:
             List of attack predictions
-        """
+        """  # noqa: W293
         predictions = []
-        
+
         # Analyze current threat landscape
         threat_types = defaultdict(list)
         for threat in threat_intelligence:
             threat_type = getattr(threat, "attack_vectors", ["unknown"])[0] if hasattr(threat, "attack_vectors") else "unknown"
             threat_types[threat_type].append(threat)
-        
+
         # Generate predictions for each time horizon
         for horizon_days in self.time_horizons:
             for threat_type, threats in threat_types.items():
                 prediction = await self._generate_prediction(
                     threat_type, threats, horizon_days
                 )
-                
+
                 if prediction and prediction.probability >= self.prediction_threshold:
                     predictions.append(prediction)
                     self.predictions[prediction.prediction_id] = prediction
                     self.total_predictions += 1
-        
+
         logger.info(f"Generated {len(predictions)} predictions")
         return predictions
-    
+
     async def _generate_prediction(
         self,
         threat_type: str,
-        related_threats: List[Any],
+        related_threats: list[Any],
         horizon_days: int,
-    ) -> Optional[AttackPrediction]:
+    ) -> AttackPrediction | None:
         """
         Generate a single attack prediction.
         
@@ -232,32 +232,32 @@ class PredictiveModeler:
             
         Returns:
             Attack prediction or None
-        """
+        """  # noqa: W293
         try:
             # Calculate probability based on threat density and severity
             num_threats = len(related_threats)
-            
+
             if num_threats == 0:
                 return None
-            
+
             # Simple probability model (would be ML-based in production)
             base_probability = min(0.9, num_threats * 0.1)
-            
+
             # Adjust for time horizon (farther = less certain)
             time_factor = 1.0 / (1 + horizon_days / 30)
             probability = base_probability * time_factor
-            
+
             # Calculate confidence (simplified)
             confidence = min(0.95, 0.5 + num_threats * 0.05)
-            
+
             # Extract indicators from threats
             indicators = []
             for threat in related_threats[:5]:  # Top 5
                 if hasattr(threat, "indicators"):
                     indicators.extend(threat.indicators[:3])
-            
+
             prediction_id = f"pred_{threat_type}_{horizon_days}_{datetime.now(timezone.utc).timestamp()}"
-            
+
             return AttackPrediction(
                 prediction_id=prediction_id,
                 attack_type=threat_type,
@@ -277,13 +277,13 @@ class PredictiveModeler:
                     "threat_type": threat_type,
                 },
             )
-            
+
         except Exception as e:
             logger.error(f"Error generating prediction: {e}")
             return None
-    
+
     async def model_threat_evolution(
-        self, threat_family: str, historical_data: List[Dict[str, Any]]
+        self, threat_family: str, historical_data: list[dict[str, Any]]
     ) -> ThreatEvolutionModel:
         """
         Model how a threat family evolves over time.
@@ -294,22 +294,22 @@ class PredictiveModeler:
             
         Returns:
             Evolution model for the threat family
-        """
+        """  # noqa: W293
         # Extract variants over time
         variants = set()
         trajectory = []
-        
+
         for entry in historical_data:
             if entry.get("family") == threat_family:
                 variant = entry.get("variant", "unknown")
                 variants.add(variant)
-                
+
                 trajectory.append({
                     "timestamp": entry.get("timestamp", datetime.now(timezone.utc)),
                     "variant": variant,
                     "sophistication": entry.get("sophistication", 0.5),
                 })
-        
+
         # Calculate mutation rate (variants per month)
         if len(trajectory) > 1:
             time_span = (
@@ -319,13 +319,13 @@ class PredictiveModeler:
             mutation_rate = len(variants) / max(time_span, 1)
         else:
             mutation_rate = 0.0
-        
+
         # Analyze sophistication trend
         sophistication_scores = [e["sophistication"] for e in trajectory]
         if len(sophistication_scores) >= 2:
             recent = np.mean(sophistication_scores[-5:])
             older = np.mean(sophistication_scores[:5])
-            
+
             if recent > older * 1.2:
                 complexity_trend = ThreatTrend.INCREASING
             elif recent < older * 0.8:
@@ -334,9 +334,9 @@ class PredictiveModeler:
                 complexity_trend = ThreatTrend.STABLE
         else:
             complexity_trend = ThreatTrend.STABLE
-        
+
         avg_sophistication = np.mean(sophistication_scores) if sophistication_scores else 0.5
-        
+
         model = ThreatEvolutionModel(
             threat_family=threat_family,
             current_variants=list(variants),
@@ -350,19 +350,19 @@ class PredictiveModeler:
                 f"{threat_family}_chaining",
             ],
         )
-        
+
         self.evolution_models[threat_family] = model
-        
+
         logger.info(
             f"Modeled evolution for {threat_family}: "
             f"{len(variants)} variants, mutation_rate={mutation_rate:.2f}"
         )
-        
+
         return model
-    
+
     async def validate_prediction(
         self, prediction_id: str, actually_occurred: bool
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Validate a prediction against reality.
         
@@ -372,15 +372,15 @@ class PredictiveModeler:
             
         Returns:
             Validation result
-        """
+        """  # noqa: W293
         if prediction_id not in self.predictions:
             return {
                 "status": "error",
                 "error": f"Prediction {prediction_id} not found",
             }
-        
+
         prediction = self.predictions[prediction_id]
-        
+
         if actually_occurred:
             self.accurate_predictions += 1
             result = "true_positive"
@@ -391,9 +391,9 @@ class PredictiveModeler:
                 result = "false_positive"
             else:
                 result = "true_negative"
-        
+
         logger.info(f"Validated prediction {prediction_id}: {result}")
-        
+
         return {
             "status": "success",
             "prediction_id": prediction_id,
@@ -401,19 +401,19 @@ class PredictiveModeler:
             "probability": prediction.probability,
             "actually_occurred": actually_occurred,
         }
-    
-    def get_accuracy_metrics(self) -> Dict[str, Any]:
+
+    def get_accuracy_metrics(self) -> dict[str, Any]:
         """
         Get prediction accuracy metrics.
         
         Returns:
             Accuracy statistics
-        """
+        """  # noqa: W293
         total_validated = self.accurate_predictions + self.false_positives
         accuracy = (
             self.accurate_predictions / total_validated if total_validated > 0 else 0.0
         )
-        
+
         return {
             "total_predictions": self.total_predictions,
             "accurate_predictions": self.accurate_predictions,
@@ -425,14 +425,14 @@ class PredictiveModeler:
                 else 0.0
             ),
         }
-    
-    def get_statistics(self) -> Dict[str, Any]:
+
+    def get_statistics(self) -> dict[str, Any]:
         """
         Get predictive modeling statistics.
         
         Returns:
             Dictionary of statistics
-        """
+        """  # noqa: W293
         return {
             "total_predictions": self.total_predictions,
             "active_predictions": len(self.predictions),

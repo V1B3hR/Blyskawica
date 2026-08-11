@@ -18,7 +18,7 @@ def test_random_labels_poor_performance(make_loader):
     
     This is a critical sanity check - if a model achieves high accuracy
     on random labels, it indicates data leakage or overfitting.
-    """
+    """  # noqa: W293
     # Create a simple model for testing
     class SimpleModel(nn.Module):
         def __init__(self, input_dim: int = 32, num_classes: int = 5):
@@ -43,7 +43,7 @@ def test_random_labels_poor_performance(make_loader):
 
     # Train for a few epochs (should not achieve high accuracy on random labels)
     model.train()
-    for epoch in range(5):
+    for epoch in range(5):  # noqa: B007
         for batch_x, batch_y in train_loader:
             optimizer.zero_grad()
             output = model(batch_x)
@@ -84,7 +84,7 @@ def test_random_vs_structured_labels_difference(make_loader):
     
     This verifies that our test setup can distinguish between meaningful
     and random patterns.
-    """
+    """  # noqa: W293
     # Create the same model architecture
     class SimpleModel(nn.Module):
         def __init__(self, input_dim: int = 32, num_classes: int = 5):
@@ -105,7 +105,7 @@ def test_random_vs_structured_labels_difference(make_loader):
 
         # Train
         model.train()
-        for epoch in range(10):  # More epochs for structured data
+        for epoch in range(10):  # More epochs for structured data  # noqa: B007
             for batch_x, batch_y in train_loader:
                 optimizer.zero_grad()
                 output = model(batch_x)

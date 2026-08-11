@@ -14,27 +14,20 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import logging
+import re
 import time
 import uuid
-import re
 from abc import ABC, abstractmethod
+from collections import defaultdict
+from collections.abc import AsyncGenerator, Sequence
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum, auto
 from typing import (
-    Any,
-    AsyncGenerator,
-    Dict,
-    List,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Type,
     TYPE_CHECKING,
+    Any,
 )
-from collections import defaultdict
 
 if TYPE_CHECKING:
     from ..core.models import SafetyViolation
@@ -87,7 +80,7 @@ class DetectorMetrics:
     false_positives: int = 0
     false_negatives: int = 0
     avg_execution_time: float = 0.0
-    last_execution: Optional[datetime] = None
+    last_execution: datetime | None = None
     uptime_start: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     @property
@@ -107,11 +100,11 @@ class DetectorMetrics:
 class SecurityContext:
     """Security context for detector operations."""
 
-    user_id: Optional[str] = None
-    session_id: Optional[str] = None
-    permissions: Set[str] = field(default_factory=set)
+    user_id: str | None = None
+    session_id: str | None = None
+    permissions: set[str] = field(default_factory=set)
     security_level: str = "standard"
-    audit_trail: List[Dict[str, Any]] = field(default_factory=list)
+    audit_trail: list[dict[str, Any]] = field(default_factory=list)
     encryption_required: bool = True
     data_classification: str = "internal"
 
@@ -120,12 +113,12 @@ class SecurityContext:
 class EthicalAssessment:
     """Ethical assessment result for detector decisions."""
 
-    principles_evaluated: Set[EthicalPrinciple]
+    principles_evaluated: set[EthicalPrinciple]
     compliance_score: float  # 0.0 to 1.0
-    violations: List[str]
-    recommendations: List[str]
-    bias_indicators: Dict[str, float]
-    fairness_metrics: Dict[str, float]
+    violations: list[str]
+    recommendations: list[str]
+    bias_indicators: dict[str, float]
+    fairness_metrics: dict[str, float]
 
 
 class SafetyViolation:
@@ -139,8 +132,8 @@ class SafetyViolation:
         category: str = "general",
         explanation: str = "",
         confidence: float = 1.0,
-        recommendations: List[str] = None,
-        metadata: Dict[str, Any] = None,
+        recommendations: list[str] = None,
+        metadata: dict[str, Any] = None,
     ):
         self.id = str(uuid.uuid4())
         self.detector = detector
@@ -153,7 +146,7 @@ class SafetyViolation:
         self.metadata = metadata or {}
         self.timestamp = datetime.now(timezone.utc)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert violation to dictionary for serialization."""
         return {
             "id": self.id,
@@ -217,10 +210,10 @@ class BaseDetector(ABC):
         self,
         name: str,
         version: str = "1.0.0",
-        config: Optional[Dict[str, Any]] = None,
-        security_context: Optional[SecurityContext] = None,
-        supported_actions: Optional[Set[str]] = None,
-        ethical_principles: Optional[Set[EthicalPrinciple]] = None,
+        config: dict[str, Any] | None = None,
+        security_context: SecurityContext | None = None,
+        supported_actions: set[str] | None = None,
+        ethical_principles: set[EthicalPrinciple] | None = None,
         **kwargs,
     ):
         """Initialize the enhanced base detector."""
@@ -238,11 +231,11 @@ class BaseDetector(ABC):
         self.name: str = name.strip()
         self.version: str = version
         self.status: DetectorStatus = DetectorStatus.ACTIVE
-        self.config: Dict[str, Any] = config or {}
+        self.config: dict[str, Any] = config or {}
         self.metrics: DetectorMetrics = DetectorMetrics()
         self.security_context: SecurityContext = security_context or SecurityContext()
-        self.supported_actions: Set[str] = supported_actions or set()
-        self.ethical_principles: Set[EthicalPrinciple] = ethical_principles or {
+        self.supported_actions: set[str] = supported_actions or set()
+        self.ethical_principles: set[EthicalPrinciple] = ethical_principles or {
             EthicalPrinciple.NON_MALEFICENCE,
             EthicalPrinciple.JUSTICE,
             EthicalPrinciple.EXPLICABILITY,
@@ -255,17 +248,17 @@ class BaseDetector(ABC):
         self.rate_limit: int = self.config.get("rate_limit", 100)  # requests per minute
         self.max_memory_mb: int = self.config.get("max_memory_mb", 512)
         self.priority: int = self.config.get("priority", 5)  # 1-10, higher is more important
-        self.tags: Set[str] = set(self.config.get("tags", []))
+        self.tags: set[str] = set(self.config.get("tags", []))
 
         # Internal state
-        self._rate_limiter: Dict[str, List[float]] = defaultdict(list)
-        self._circuit_breaker: Dict[str, Dict] = {}
-        self._audit_log: List[Dict[str, Any]] = []
-        self._performance_history: List[Tuple[float, float]] = []  # (timestamp, execution_time)
-        self._last_health_check: Optional[datetime] = None
+        self._rate_limiter: dict[str, list[float]] = defaultdict(list)
+        self._circuit_breaker: dict[str, dict] = {}
+        self._audit_log: list[dict[str, Any]] = []
+        self._performance_history: list[tuple[float, float]] = []  # (timestamp, execution_time)
+        self._last_health_check: datetime | None = None
 
         # Bias detection and explainability features
-        self._bias_tracking: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
+        self._bias_tracking: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
         self._explanation_templates = {
             "rule_based": "Violation detected based on rule: {rule}. Confidence: {confidence:.2f}",
             "pattern_match": "Content matched suspicious pattern: {pattern}. Location: {location}",
@@ -309,7 +302,7 @@ class BaseDetector(ABC):
         config_str = str(sorted(self.config.items()))
         return hashlib.sha256(config_str.encode()).hexdigest()[:16]
 
-    def _audit_event(self, event_type: str, details: Dict[str, Any]) -> None:
+    def _audit_event(self, event_type: str, details: dict[str, Any]) -> None:
         """Log an audit event with timestamp and context."""
         event = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -410,7 +403,7 @@ class BaseDetector(ABC):
             )
             raise ValueError("Action contains potentially malicious content")
 
-    def _detect_pii(self, content: str) -> List[Dict[str, Any]]:
+    def _detect_pii(self, content: str) -> list[dict[str, Any]]:
         """Detect personally identifiable information in content."""
         pii_found = []
 
@@ -427,7 +420,7 @@ class BaseDetector(ABC):
 
         return pii_found
 
-    def _anonymize_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _anonymize_data(self, data: dict[str, Any]) -> dict[str, Any]:
         """Anonymize sensitive data before processing or logging."""
         anonymized = data.copy()
 
@@ -443,7 +436,7 @@ class BaseDetector(ABC):
             "session_id",
         }
 
-        for field in sensitive_fields:
+        for field in sensitive_fields:  # noqa: F402
             if field in anonymized:
                 if isinstance(anonymized[field], str):
                     # Hash sensitive strings
@@ -462,8 +455,8 @@ class BaseDetector(ABC):
             return f"Violation detected. Missing explanation parameter: {e}"
 
     def _assess_bias(
-        self, action: Any, decision: bool, protected_attributes: Dict[str, str] = None
-    ) -> Dict[str, float]:
+        self, action: Any, decision: bool, protected_attributes: dict[str, str] = None
+    ) -> dict[str, float]:
         """Assess potential bias in detection decisions."""
         bias_indicators = {}
 
@@ -490,7 +483,7 @@ class BaseDetector(ABC):
         return bias_indicators
 
     async def _assess_ethical_compliance(
-        self, action: Any, violations: List[Any]
+        self, action: Any, violations: list[Any]
     ) -> EthicalAssessment:
         """Assess ethical compliance of the detection process and results."""
         principles_evaluated = set()
@@ -618,8 +611,8 @@ class BaseDetector(ABC):
             )
 
     async def run(
-        self, action: Any, context: Optional[Dict[str, Any]] = None
-    ) -> List[SafetyViolation]:
+        self, action: Any, context: dict[str, Any] | None = None
+    ) -> list[SafetyViolation]:
         """Execute detection with comprehensive safety, security, and ethical controls."""
         # Pre-execution checks
         if self.status != DetectorStatus.ACTIVE:
@@ -704,7 +697,7 @@ class BaseDetector(ABC):
                     raise
                 return []
 
-    async def health_check(self) -> Dict[str, Any]:
+    async def health_check(self) -> dict[str, Any]:
         """Comprehensive health check of the detector."""
         self._last_health_check = datetime.now(timezone.utc)
 
@@ -739,35 +732,35 @@ class BaseDetector(ABC):
         self._audit_event("health_check", health_status)
         return health_status
 
-    def enable(self) -> "BaseDetector":
+    def enable(self) -> BaseDetector:
         """Enable this detector with audit logging."""
         self.status = DetectorStatus.ACTIVE
         self._audit_event("detector_enabled", {})
         logger.info(f"Detector {self.name} enabled")
         return self
 
-    def disable(self) -> "BaseDetector":
+    def disable(self) -> BaseDetector:
         """Disable this detector with audit logging."""
         self.status = DetectorStatus.DISABLED
         self._audit_event("detector_disabled", {})
         logger.info(f"Detector {self.name} disabled")
         return self
 
-    def suspend(self) -> "BaseDetector":
+    def suspend(self) -> BaseDetector:
         """Suspend this detector temporarily."""
         self.status = DetectorStatus.SUSPENDED
         self._audit_event("detector_suspended", {})
         logger.warning(f"Detector {self.name} suspended")
         return self
 
-    def toggle(self) -> "BaseDetector":
+    def toggle(self) -> BaseDetector:
         """Toggle enabled/disabled state with audit logging."""
         if self.status == DetectorStatus.ACTIVE:
             return self.disable()
         else:
             return self.enable()
 
-    def update_config(self, new_config: Dict[str, Any]) -> None:
+    def update_config(self, new_config: dict[str, Any]) -> None:
         """Update configuration with validation and audit logging."""
         old_config_hash = self._hash_config()
         self.config.update(new_config)
@@ -790,11 +783,11 @@ class BaseDetector(ABC):
 
         logger.info(f"Configuration updated for detector {self.name}")
 
-    def get_audit_log(self, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_audit_log(self, limit: int = 100) -> list[dict[str, Any]]:
         """Get recent audit log entries."""
         return self._audit_log[-limit:]
 
-    def get_performance_stats(self) -> Dict[str, Any]:
+    def get_performance_stats(self) -> dict[str, Any]:
         """Get detailed performance statistics."""
         recent_history = self._performance_history[-100:]  # Last 100 executions
 
@@ -817,7 +810,7 @@ class BaseDetector(ABC):
             / 3600,
         }
 
-    def export_metrics(self) -> Dict[str, Any]:
+    def export_metrics(self) -> dict[str, Any]:
         """Export comprehensive metrics for monitoring systems."""
         return {
             "detector_info": {
@@ -945,7 +938,7 @@ class SecurityDetector(BaseDetector):
         """Detect security violations in the action."""
         violations = []
         content = str(getattr(action, "content", str(action)))
-        action.__class__.__name__
+        action.__class__.__name__  # noqa: B018
 
         # Check for security patterns
         for category, patterns in self.security_patterns.items():
@@ -1127,7 +1120,7 @@ class ContentSafetyDetector(BaseDetector):
 
         return violations if violations else None
 
-    def _get_content_recommendations(self, category: str) -> List[str]:
+    def _get_content_recommendations(self, category: str) -> list[str]:
         """Get specific recommendations for content violations."""
         recommendations = {
             "hate_speech": [
@@ -1169,7 +1162,7 @@ class ContentSafetyDetector(BaseDetector):
         }
         return recommendations.get(category, ["Review content for policy compliance"])
 
-    async def _heuristic_checks(self, content: str) -> List[SafetyViolation]:
+    async def _heuristic_checks(self, content: str) -> list[SafetyViolation]:
         """Additional heuristic-based content safety checks."""
         violations = []
 
@@ -1323,16 +1316,14 @@ class PrivacyDetector(BaseDetector):
             parts = pii_value.split("@")
             if len(parts) == 2:
                 return f"{'*' * (len(parts[0]) - 2)}{parts[0][-2:]}@{parts[1]}"
-        elif pii_type in ["phone_us", "ssn"]:
-            return f"{'*' * (len(pii_value) - 4)}{pii_value[-4:]}"
-        elif pii_type == "credit_card":
+        elif pii_type in ["phone_us", "ssn"] or pii_type == "credit_card":
             return f"{'*' * (len(pii_value) - 4)}{pii_value[-4:]}"
         else:
             return f"{'*' * (len(pii_value) - 2)}{pii_value[-2:]}"
 
         return "*" * len(pii_value)
 
-    async def _check_gdpr_compliance(self, action: Any) -> List[SafetyViolation]:
+    async def _check_gdpr_compliance(self, action: Any) -> list[SafetyViolation]:
         """Check GDPR compliance requirements."""
         violations = []
 
@@ -1363,13 +1354,13 @@ class DetectorRegistry:
     """Central registry for managing all detectors."""
 
     def __init__(self):
-        self.detectors: Dict[str, BaseDetector] = {}
-        self.detector_classes: Dict[str, Type[BaseDetector]] = {
+        self.detectors: dict[str, BaseDetector] = {}
+        self.detector_classes: dict[str, type[BaseDetector]] = {
             "security": SecurityDetector,
             "content_safety": ContentSafetyDetector,
             "privacy": PrivacyDetector,
         }
-        self._audit_log: List[Dict[str, Any]] = []
+        self._audit_log: list[dict[str, Any]] = []
 
     def register_detector(self, name: str, detector: BaseDetector) -> None:
         """Register a detector instance."""
@@ -1396,7 +1387,7 @@ class DetectorRegistry:
             raise KeyError(f"Detector not found: {name}")
         return self.detectors[name]
 
-    def list_detectors(self) -> Dict[str, Dict[str, Any]]:
+    def list_detectors(self) -> dict[str, dict[str, Any]]:
         """List all registered detectors with their status."""
         return {
             name: {
@@ -1411,8 +1402,8 @@ class DetectorRegistry:
         }
 
     async def run_all_detectors(
-        self, action: Any, context: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, List[SafetyViolation]]:
+        self, action: Any, context: dict[str, Any] | None = None
+    ) -> dict[str, list[SafetyViolation]]:
         """Run all active detectors on an action."""
         results = {}
         tasks = []
@@ -1451,8 +1442,8 @@ class DetectorRegistry:
         return results
 
     async def _run_detector_safely(
-        self, name: str, detector: BaseDetector, action: Any, context: Optional[Dict[str, Any]]
-    ) -> List[SafetyViolation]:
+        self, name: str, detector: BaseDetector, action: Any, context: dict[str, Any] | None
+    ) -> list[SafetyViolation]:
         """Run a single detector with error handling."""
         try:
             return await detector.run(action, context)
@@ -1460,7 +1451,7 @@ class DetectorRegistry:
             logger.error(f"Error running detector {name}: {e}")
             return []
 
-    def get_global_metrics(self) -> Dict[str, Any]:
+    def get_global_metrics(self) -> dict[str, Any]:
         """Get aggregated metrics from all detectors."""
         total_runs = sum(d.metrics.total_runs for d in self.detectors.values())
         total_violations = sum(d.metrics.violations_detected for d in self.detectors.values())
@@ -1479,7 +1470,7 @@ class DetectorRegistry:
             },
         }
 
-    def _log_event(self, event_type: str, details: Dict[str, Any]) -> None:
+    def _log_event(self, event_type: str, details: dict[str, Any]) -> None:
         """Log registry events."""
         event = {
             "timestamp": datetime.now(timezone.utc).isoformat(),

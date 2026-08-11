@@ -1,15 +1,22 @@
 
 import logging
+
 import tensorflow as tf
+from spektral.layers import (
+    GATConv,
+    GCNConv,
+    GraphSageConv,
+)
 from tensorflow.keras.layers import (
-    Input, Dense, BatchNormalization, Dropout, LayerNormalization,
-    TimeDistributed, Conv1D, LSTM, Flatten, Concatenate, GlobalAveragePooling1D
+    BatchNormalization,
+    Concatenate,
+    Dense,
+    Dropout,
+    Input,
+    LayerNormalization,
 )
 from tensorflow.keras.models import Model
-from spektral.layers import (
-    GATConv, GCNConv, GraphSageConv,
-    GlobalAvgPool, GlobalMaxPool, GlobalSumPool, GlobalAttnSumPool
-)
+
 
 # -------- Gradient Reversal Layer --------
 @tf.custom_gradient
@@ -42,7 +49,7 @@ class GCSModelFactory:
         This is the safety gatekeeper for the model builder.
         """
         logging.info("Validating model configuration...")
-        
+
         # --- Required Keys ---
         required_keys = ["cortical_nodes", "timesteps"]
         for key in required_keys:
@@ -59,7 +66,7 @@ class GCSModelFactory:
             "train_subjects": 10, "kernel_initializer": "glorot_uniform", "l2_reg": 1e-4,
             "emotion_dense_layers": [128, 64], "adversary_lambda": 0.1
         }
-        
+
         # Merge user config with defaults
         validated_config = {**defaults, **config}
 
@@ -68,7 +75,7 @@ class GCSModelFactory:
             raise ValueError(f"Invalid gnn_type: '{validated_config['gnn_type']}'. Must be 'gat', 'gcn', or 'sage'.")
         if validated_config["pooling"] not in ["avg", "max", "sum", "attention"]:
             raise ValueError(f"Invalid pooling: '{validated_config['pooling']}'.")
-        
+
         logging.info("Configuration validated successfully.")
         return validated_config
 
@@ -86,7 +93,7 @@ class GCSModelFactory:
                                kernel_initializer=kernel_initializer, kernel_regularizer=kernel_regularizer,
                                return_attn_coeffs=return_attn)
             return layer_builder
-        
+
         # FULL IMPLEMENTATION of other GNN types
         elif gnn_type == "gcn":
             return lambda: GCNConv(gnn_channels, activation="relu", kernel_initializer=kernel_initializer,
@@ -114,7 +121,7 @@ class GCSModelFactory:
         # Process with dense layers: (batch, nodes) -> (batch, nodes, features)
         x_eeg = tf.keras.layers.Dense(config["temporal_features"], activation="relu")(x_eeg)
         x_eeg = apply_norm_and_dropout(x_eeg, config)
-        
+
         # Flatten to get a proper feature vector
         graph_embedding = tf.keras.layers.Flatten()(x_eeg)
 

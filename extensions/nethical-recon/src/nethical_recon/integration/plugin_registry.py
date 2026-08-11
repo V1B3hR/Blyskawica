@@ -5,17 +5,17 @@ Manages plugin ecosystem, versioning, and community extensions.
 Enhances existing marketplace functionality from phase_l.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
-from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
 
-class ExtensionType(str, Enum):
+class ExtensionType(str, Enum):  # noqa: UP042
     """Types of extensions"""
 
     SENSOR = "sensor"
@@ -26,7 +26,7 @@ class ExtensionType(str, Enum):
     INTEGRATION = "integration"
 
 
-class ExtensionStatus(str, Enum):
+class ExtensionStatus(str, Enum):  # noqa: UP042
     """Status of extension"""
 
     PENDING_REVIEW = "pending_review"
@@ -46,12 +46,12 @@ class ExtensionMetadata:
     author: str
     description: str
     extension_type: ExtensionType
-    tags: List[str] = field(default_factory=list)
-    homepage: Optional[str] = None
-    repository: Optional[str] = None
+    tags: list[str] = field(default_factory=list)
+    homepage: str | None = None
+    repository: str | None = None
     license: str = "MIT"
     min_platform_version: str = "1.0.0"
-    dependencies: List[str] = field(default_factory=list)
+    dependencies: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -59,17 +59,17 @@ class Extension:
     """Plugin extension"""
 
     id: UUID = field(default_factory=uuid4)
-    metadata: Optional[ExtensionMetadata] = None
+    metadata: ExtensionMetadata | None = None
     status: ExtensionStatus = ExtensionStatus.PENDING_REVIEW
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    review_notes: List[str] = field(default_factory=list)
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    review_notes: list[str] = field(default_factory=list)
     downloads: int = 0
     rating: float = 0.0
     reviews_count: int = 0
 
     # Runtime attributes
-    implementation: Optional[Callable] = None
+    implementation: Callable | None = None
     enabled: bool = False
 
 
@@ -83,7 +83,7 @@ class ExtensionInfo(BaseModel):
     description: str
     extension_type: str
     status: str
-    tags: List[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
     downloads: int = 0
     rating: float = 0.0
     created_at: datetime
@@ -99,14 +99,14 @@ class PluginRegistry:
     """
 
     def __init__(self):
-        self.extensions: Dict[UUID, Extension] = {}
-        self.name_index: Dict[str, UUID] = {}  # name -> id mapping
-        self.type_index: Dict[ExtensionType, List[UUID]] = {t: [] for t in ExtensionType}
+        self.extensions: dict[UUID, Extension] = {}
+        self.name_index: dict[str, UUID] = {}  # name -> id mapping
+        self.type_index: dict[ExtensionType, list[UUID]] = {t: [] for t in ExtensionType}
 
     def register_extension(
         self,
         metadata: ExtensionMetadata,
-        implementation: Optional[Callable] = None,
+        implementation: Callable | None = None,
     ) -> UUID:
         """
         Register new extension.
@@ -142,14 +142,14 @@ class PluginRegistry:
 
         return extension.id
 
-    def approve_extension(self, extension_id: UUID, reviewer_notes: Optional[str] = None):
+    def approve_extension(self, extension_id: UUID, reviewer_notes: str | None = None):
         """Approve extension for marketplace"""
         if extension_id not in self.extensions:
             raise ValueError(f"Extension {extension_id} not found")
 
         extension = self.extensions[extension_id]
         extension.status = ExtensionStatus.APPROVED
-        extension.updated_at = datetime.now(timezone.utc)
+        extension.updated_at = datetime.now(UTC)
 
         if reviewer_notes:
             extension.review_notes.append(f"APPROVED: {reviewer_notes}")
@@ -161,7 +161,7 @@ class PluginRegistry:
 
         extension = self.extensions[extension_id]
         extension.status = ExtensionStatus.REJECTED
-        extension.updated_at = datetime.now(timezone.utc)
+        extension.updated_at = datetime.now(UTC)
         extension.review_notes.append(f"REJECTED: {reason}")
 
     def deprecate_extension(self, extension_id: UUID, reason: str):
@@ -171,7 +171,7 @@ class PluginRegistry:
 
         extension = self.extensions[extension_id]
         extension.status = ExtensionStatus.DEPRECATED
-        extension.updated_at = datetime.now(timezone.utc)
+        extension.updated_at = datetime.now(UTC)
         extension.review_notes.append(f"DEPRECATED: {reason}")
 
     def enable_extension(self, extension_id: UUID):
@@ -182,7 +182,7 @@ class PluginRegistry:
         extension = self.extensions[extension_id]
 
         if extension.status != ExtensionStatus.APPROVED:
-            raise ValueError(f"Extension must be approved before enabling")
+            raise ValueError("Extension must be approved before enabling")
 
         extension.enabled = True
         extension.status = ExtensionStatus.ACTIVE
@@ -196,11 +196,11 @@ class PluginRegistry:
         extension.enabled = False
         extension.status = ExtensionStatus.INACTIVE
 
-    def get_extension(self, extension_id: UUID) -> Optional[Extension]:
+    def get_extension(self, extension_id: UUID) -> Extension | None:
         """Get extension by ID"""
         return self.extensions.get(extension_id)
 
-    def get_extension_by_name(self, name: str) -> Optional[Extension]:
+    def get_extension_by_name(self, name: str) -> Extension | None:
         """Get extension by name"""
         extension_id = self.name_index.get(name)
         if extension_id:
@@ -209,10 +209,10 @@ class PluginRegistry:
 
     def list_extensions(
         self,
-        extension_type: Optional[ExtensionType] = None,
-        status: Optional[ExtensionStatus] = None,
+        extension_type: ExtensionType | None = None,
+        status: ExtensionStatus | None = None,
         enabled_only: bool = False,
-    ) -> List[Extension]:
+    ) -> list[Extension]:
         """
         List extensions with filters.
 
@@ -259,7 +259,7 @@ class PluginRegistry:
         extension.reviews_count += 1
         extension.rating = total_ratings / extension.reviews_count
 
-    def search_extensions(self, query: str) -> List[Extension]:
+    def search_extensions(self, query: str) -> list[Extension]:
         """Search extensions by name, description, or tags"""
         query_lower = query.lower()
         results = []
@@ -289,7 +289,7 @@ class ExtensionAPI:
 
     def __init__(self, registry: PluginRegistry):
         self.registry = registry
-        self.hooks: Dict[str, List[Callable]] = {}
+        self.hooks: dict[str, list[Callable]] = {}
 
     def register_hook(self, hook_name: str, callback: Callable):
         """
@@ -303,7 +303,7 @@ class ExtensionAPI:
             self.hooks[hook_name] = []
         self.hooks[hook_name].append(callback)
 
-    async def execute_hook(self, hook_name: str, **context) -> List[Any]:
+    async def execute_hook(self, hook_name: str, **context) -> list[Any]:
         """
         Execute all callbacks for a hook.
 
@@ -320,7 +320,7 @@ class ExtensionAPI:
         results = []
         for callback in self.hooks[hook_name]:
             try:
-                if hasattr(callback, "__call__"):
+                if hasattr(callback, "__call__"):  # noqa: B004
                     result = callback(**context)
                     # Handle async callbacks
                     if hasattr(result, "__await__"):
@@ -331,13 +331,13 @@ class ExtensionAPI:
 
         return results
 
-    def list_hooks(self) -> List[str]:
+    def list_hooks(self) -> list[str]:
         """List available hook points"""
         return list(self.hooks.keys())
 
 
 # Global registry instance
-_plugin_registry: Optional[PluginRegistry] = None
+_plugin_registry: PluginRegistry | None = None
 
 
 def get_plugin_registry() -> PluginRegistry:

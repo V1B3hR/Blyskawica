@@ -14,7 +14,8 @@ import torch
 import torch.nn as nn
 
 from adaptiveneuralnetwork.central_nervous_system.neuromorphic import NeuromorphicPlatform
-from adaptiveneuralnetwork.central_nervous_system.neuromorphic_v3 import *
+from adaptiveneuralnetwork.central_nervous_system.neuromorphic_v3 import *  # noqa: F403
+
 from .hardware_backends import (
     BaseHardwareBackend,
     HardwareConstraints,
@@ -173,7 +174,7 @@ class GenericV3Backend(BaseHardwareBackend):
             'sparse_coding': False
         }
 
-        for name, module in model.named_modules():
+        for name, module in model.named_modules():  # noqa: B007
             module_type = type(module).__name__
 
             # Check for advanced neurons
@@ -726,21 +727,21 @@ class GenericV3Backend(BaseHardwareBackend):
             raise ValueError(f"Deployment {deployment_id} not found")
 
         deployment = self.deployments[deployment_id]
-        compiled_model = deployment['compiled_model']
+        compiled_model = deployment['compiled_model']  # noqa: F841
 
         # Apply V3-specific optimizations
         # 1. Enable adaptive mechanisms
         self.simulator_state['adaptation_enabled'] = True
 
         # 2. Optimize sparsity levels
-        for encoder_id, encoder in self.simulator_state['temporal_patterns'].items():
+        for encoder_id, encoder in self.simulator_state['temporal_patterns'].items():  # noqa: B007
             if encoder['type'] == 'SparseDistributedRepresentation':
                 # Increase sparsity for power savings
                 if 'sparsity_target' in encoder['parameters']:
                     encoder['parameters']['sparsity_target'] *= 0.8
 
         # 3. Reduce oscillatory activity if not critical
-        for system_id, system in self.simulator_state['oscillatory_dynamics'].items():
+        for system_id, system in self.simulator_state['oscillatory_dynamics'].items():  # noqa: B007
             system['power_optimized'] = True
 
         logger.info(f"Applied V3 power optimizations to {deployment_id}")

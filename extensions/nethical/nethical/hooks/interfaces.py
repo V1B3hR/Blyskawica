@@ -14,20 +14,16 @@ Design goals:
 - Compatibility with high-assurance and zero-trust environments
 """
 
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from enum import Enum
-from typing import (
+from collections.abc import Iterable, Mapping  # noqa: E402
+from dataclasses import dataclass, field  # noqa: E402
+from datetime import datetime, timezone  # noqa: E402
+from enum import Enum  # noqa: E402
+from typing import (  # noqa: E402
     Any,
-    Dict,
-    Iterable,
-    Mapping,
-    Optional,
+    NewType,
     Protocol,
-    Tuple,
     TypedDict,
     runtime_checkable,
-    NewType,
 )
 
 # --------- Type aliases for security-critical identifiers ---------
@@ -85,8 +81,8 @@ class Evidence(TypedDict, total=False):
     tcb_version: str  # Trusted Computing Base version
     cert_chain_pem: str  # PEM-encoded verifier/attester chain
     verifier: str  # Name/version of verifier used
-    measurements: Dict[str, str]  # Component -> hash/measurement
-    meta: Dict[str, Any]  # Free-form metadata (stable keys preferred)
+    measurements: dict[str, str]  # Component -> hash/measurement
+    meta: dict[str, Any]  # Free-form metadata (stable keys preferred)
 
 
 class TokenMeta(TypedDict, total=False):
@@ -102,7 +98,7 @@ class TokenMeta(TypedDict, total=False):
     expires_at: float
     key_id: str
     algorithm: str
-    meta: Dict[str, Any]
+    meta: dict[str, Any]
 
 
 class OfflineEvent(TypedDict):
@@ -112,8 +108,8 @@ class OfflineEvent(TypedDict):
 
     type: str
     ts: float  # epoch seconds (UTC)
-    payload: Dict[str, Any]
-    meta: Dict[str, Any]
+    payload: dict[str, Any]
+    meta: dict[str, Any]
 
 
 class OfflineSnapshot(TypedDict, total=False):
@@ -123,7 +119,7 @@ class OfflineSnapshot(TypedDict, total=False):
 
     events: Iterable[OfflineEvent]
     last_event_id: str
-    meta: Dict[str, Any]
+    meta: dict[str, Any]
 
 
 # --------- Results ---------
@@ -143,8 +139,8 @@ class AttestationResult:
 
     ok: bool
     evidence: Evidence
-    reason: Optional[str] = None
-    code: Optional[str] = None
+    reason: str | None = None
+    code: str | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -162,10 +158,10 @@ class SignalResult:
     """
 
     ok: bool
-    token: Optional[TokenStr] = None
-    meta: Optional[TokenMeta] = None
-    reason: Optional[str] = None
-    code: Optional[str] = None
+    token: TokenStr | None = None
+    meta: TokenMeta | None = None
+    reason: str | None = None
+    code: str | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -263,7 +259,7 @@ class GeoFenceProvider(Protocol):
         """
         ...
 
-    def current_zone(self) -> Optional[ZoneName]:
+    def current_zone(self) -> ZoneName | None:
         """
         Return the current geofence zone name if known (e.g., 'EU', 'US-CA').
         """
@@ -290,7 +286,7 @@ class OfflineStore(Protocol):
         """
         ...
 
-    def flush_to_remote(self) -> Tuple[bool, Optional[str]]:
+    def flush_to_remote(self) -> tuple[bool, str | None]:
         """
         Attempt to flush pending events to a remote durable store.
         Returns (ok, reason) where reason is filled on failure.

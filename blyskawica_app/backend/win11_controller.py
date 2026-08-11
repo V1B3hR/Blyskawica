@@ -5,10 +5,11 @@ Pobiera dane o aktywnym oknie, uruchomionych procesach oraz dostępności
 aplikacji Microsoft 365/Office bez nadmiernego obciążania procesora.
 """
 
-import sys
-import os
 import logging
+import os
+import sys
 import winreg
+
 import psutil
 
 logger = logging.getLogger("Win11Controller")
@@ -86,7 +87,7 @@ class Win11Controller:
                             result["process_name"] = os.path.basename(path_buffer.value)
                     finally:
                         kernel32.CloseHandle(process_handle)
-                
+
                 # Fallback, jeśli win32 API nie pobierze nazwy, użyj psutil
                 if result["process_name"] == "unknown":
                     try:

@@ -1,6 +1,7 @@
 import logging
 import time
 
+
 class NeuromodulationController:
     """
     An abstraction layer to control external, physical neuromodulation hardware.
@@ -12,7 +13,7 @@ class NeuromodulationController:
             logging.warning("Neuromodulation Controller is DISABLED in config.")
             self.is_ready = False
             return
-        
+
         self.target = self.config.get("default_target_nerve", "None")
         self.is_ready = self._initialize_hardware()
         logging.info(f"Neuromodulation Controller Initialized. Default Target: {self.target.upper()}.")
@@ -26,7 +27,7 @@ class NeuromodulationController:
 
     def set_target(self, target: str):
         """Allows changing the target nerve or brain region for stimulation."""
-        if not self.is_ready: return
+        if not self.is_ready: return  # noqa: E701
         logging.info(f"[HW_CMD] Retargeting system to: {target.upper()}")
         self.target = target
 
@@ -39,12 +40,12 @@ class NeuromodulationController:
         if modality not in self.config.get("available_modalities", []):
             logging.error(f"[HW] Modality '{modality}' not supported.")
             return
-        
+
         duration = params.get('duration_s', 0.5)
         logging.warning(f"[HW_CMD] FIRING '{modality.upper()}' STIMULUS on '{self.target.upper()}' for {duration}s.")
         logging.info(f"[HW_CMD] Parameters: {params}")
-        
+
         # This would block until the hardware confirms the action is complete.
         time.sleep(duration)
-        
-        logging.warning(f"[HW] Stimulus delivery complete.")
+
+        logging.warning("[HW] Stimulus delivery complete.")

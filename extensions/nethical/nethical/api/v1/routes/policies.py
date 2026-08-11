@@ -12,9 +12,8 @@ Endpoints:
 
 from __future__ import annotations
 
-import uuid
 from datetime import datetime, timezone
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
@@ -28,20 +27,20 @@ router = APIRouter(prefix="/policies", tags=["Policy Management"])
 
 class PolicyRule(BaseModel):
     """A single rule within a policy."""
-    
+
     id: str = Field(..., description="Rule identifier")
     condition: str = Field(..., description="Condition expression")
     action: str = Field(..., description="Action: ALLOW, RESTRICT, BLOCK, TERMINATE")
     priority: int = Field(default=0, description="Rule priority (higher = first)")
-    description: Optional[str] = Field(None, description="Rule description")
+    description: str | None = Field(None, description="Rule description")
 
 
 class PolicyCreate(BaseModel):
     """Request to create a new policy."""
-    
+
     policy_id: str = Field(..., min_length=1, max_length=255, description="Unique policy identifier")
     name: str = Field(..., min_length=1, max_length=255, description="Policy name")
-    description: Optional[str] = Field(None, description="Policy description")
+    description: str | None = Field(None, description="Policy description")
     version: str = Field(default="1.0.0", description="Policy version")
     policy_type: str = Field(default="governance", description="Policy type")
     priority: int = Field(default=100, description="Policy priority")
@@ -50,7 +49,7 @@ class PolicyCreate(BaseModel):
     scope: str = Field(default="global", description="Policy scope")
     fundamental_laws: list[int] = Field(default_factory=list, description="Fundamental Laws")
     metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
-    
+
     model_config = {
         "json_schema_extra": {
             "examples": [
@@ -85,26 +84,26 @@ class PolicyCreate(BaseModel):
 
 class PolicyUpdate(BaseModel):
     """Request to update a policy."""
-    
-    name: Optional[str] = Field(None, min_length=1, max_length=255, description="Policy name")
-    description: Optional[str] = Field(None, description="Policy description")
-    version: Optional[str] = Field(None, description="Policy version")
-    policy_type: Optional[str] = Field(None, description="Policy type")
-    priority: Optional[int] = Field(None, description="Policy priority")
-    status: Optional[str] = Field(None, description="Policy status")
-    rules: Optional[list[PolicyRule]] = Field(None, description="Policy rules")
-    scope: Optional[str] = Field(None, description="Policy scope")
-    fundamental_laws: Optional[list[int]] = Field(None, description="Fundamental Laws")
-    metadata: Optional[dict[str, Any]] = Field(None, description="Additional metadata")
+
+    name: str | None = Field(None, min_length=1, max_length=255, description="Policy name")
+    description: str | None = Field(None, description="Policy description")
+    version: str | None = Field(None, description="Policy version")
+    policy_type: str | None = Field(None, description="Policy type")
+    priority: int | None = Field(None, description="Policy priority")
+    status: str | None = Field(None, description="Policy status")
+    rules: list[PolicyRule] | None = Field(None, description="Policy rules")
+    scope: str | None = Field(None, description="Policy scope")
+    fundamental_laws: list[int] | None = Field(None, description="Fundamental Laws")
+    metadata: dict[str, Any] | None = Field(None, description="Additional metadata")
 
 
 class PolicyResponse(BaseModel):
     """Policy response model."""
-    
+
     id: int
     policy_id: str
     name: str
-    description: Optional[str]
+    description: str | None
     version: str
     policy_type: str
     priority: int
@@ -115,14 +114,14 @@ class PolicyResponse(BaseModel):
     metadata: dict[str, Any]
     created_at: str
     updated_at: str
-    activated_at: Optional[str]
-    deprecated_at: Optional[str]
-    created_by: Optional[str]
+    activated_at: str | None
+    deprecated_at: str | None
+    created_by: str | None
 
 
 class PolicyListResponse(BaseModel):
     """Paginated list of policies."""
-    
+
     policies: list[PolicyResponse]
     total: int
     page: int
@@ -151,7 +150,7 @@ async def create_policy(
     Raises:
         HTTPException: 409 if policy_id already exists
         HTTPException: 422 if validation fails
-    """
+    """  # noqa: W293
     # Check if policy_id already exists
     existing = db.query(Policy).filter(Policy.policy_id == policy.policy_id).first()
     if existing:
@@ -159,7 +158,7 @@ async def create_policy(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Policy with policy_id '{policy.policy_id}' already exists"
         )
-    
+
     # Validate rules
     for rule in policy.rules:
         if rule.action not in ["ALLOW", "RESTRICT", "BLOCK", "TERMINATE"]:
@@ -167,7 +166,7 @@ async def create_policy(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail=f"Invalid action '{rule.action}' in rule '{rule.id}'. Must be ALLOW, RESTRICT, BLOCK, or TERMINATE"
             )
-    
+
     # Create new policy
     db_policy = Policy(
         policy_id=policy.policy_id,
@@ -184,11 +183,11 @@ async def create_policy(
         created_by=current_user.username,
         activated_at=datetime.now(timezone.utc) if policy.status == "active" else None,
     )
-    
+
     db.add(db_policy)
     db.commit()
     db.refresh(db_policy)
-    
+
     return PolicyResponse(**db_policy.to_dict())
 
 
@@ -198,9 +197,9 @@ async def list_policies(
     current_user: Annotated[User, Depends(get_current_user)],
     page: int = Query(1, ge=1, description="Page number"),
     per_page: int = Query(50, ge=1, le=100, description="Items per page"),
-    status: Optional[str] = Query(None, description="Filter by status"),
-    policy_type: Optional[str] = Query(None, description="Filter by policy type"),
-    scope: Optional[str] = Query(None, description="Filter by scope"),
+    status: str | None = Query(None, description="Filter by status"),
+    policy_type: str | None = Query(None, description="Filter by policy type"),
+    scope: str | None = Query(None, description="Filter by scope"),
 ) -> PolicyListResponse:
     """List all policies with pagination and filtering.
     
@@ -217,9 +216,9 @@ async def list_policies(
         
     Returns:
         Paginated list of policies
-    """
+    """  # noqa: W293
     query = db.query(Policy)
-    
+
     # Apply filters
     if status:
         query = query.filter(Policy.status == status)
@@ -227,13 +226,13 @@ async def list_policies(
         query = query.filter(Policy.policy_type == policy_type)
     if scope:
         query = query.filter(Policy.scope == scope)
-    
+
     # Get total count
     total = query.count()
-    
+
     # Apply pagination
     policies = query.order_by(Policy.priority.desc()).offset((page - 1) * per_page).limit(per_page).all()
-    
+
     return PolicyListResponse(
         policies=[PolicyResponse(**policy.to_dict()) for policy in policies],
         total=total,
@@ -263,14 +262,14 @@ async def get_policy(
         
     Raises:
         HTTPException: 404 if policy not found
-    """
+    """  # noqa: W293
     policy = db.query(Policy).filter(Policy.policy_id == policy_id).first()
     if not policy:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Policy '{policy_id}' not found"
         )
-    
+
     return PolicyResponse(**policy.to_dict())
 
 
@@ -297,14 +296,14 @@ async def update_policy(
     Raises:
         HTTPException: 404 if policy not found
         HTTPException: 422 if validation fails
-    """
+    """  # noqa: W293
     policy = db.query(Policy).filter(Policy.policy_id == policy_id).first()
     if not policy:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Policy '{policy_id}' not found"
         )
-    
+
     # Validate rules if provided
     if policy_update.rules:
         for rule in policy_update.rules:
@@ -313,7 +312,7 @@ async def update_policy(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail=f"Invalid action '{rule.action}' in rule '{rule.id}'"
                 )
-    
+
     # Update fields
     update_data = policy_update.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -321,20 +320,20 @@ async def update_policy(
             setattr(policy, field, [rule.model_dump() if hasattr(rule, "model_dump") else rule for rule in value])
         else:
             setattr(policy, field, value)
-    
+
     # Update activated_at if status changes to active
     if policy_update.status == "active" and policy.activated_at is None:
         policy.activated_at = datetime.now(timezone.utc)
-    
+
     # Update deprecated_at if status changes to deprecated
     if policy_update.status == "deprecated" and policy.deprecated_at is None:
         policy.deprecated_at = datetime.now(timezone.utc)
-    
+
     policy.updated_at = datetime.now(timezone.utc)
-    
+
     db.commit()
     db.refresh(policy)
-    
+
     return PolicyResponse(**policy.to_dict())
 
 
@@ -355,13 +354,13 @@ async def delete_policy(
         
     Raises:
         HTTPException: 404 if policy not found
-    """
+    """  # noqa: W293
     policy = db.query(Policy).filter(Policy.policy_id == policy_id).first()
     if not policy:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Policy '{policy_id}' not found"
         )
-    
+
     db.delete(policy)
     db.commit()

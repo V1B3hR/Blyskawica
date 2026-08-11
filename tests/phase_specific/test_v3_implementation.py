@@ -11,7 +11,10 @@ import torch
 import torch.nn as nn
 
 # Import base neuromorphic
-from adaptiveneuralnetwork.central_nervous_system.neuromorphic import NeuromorphicConfig, NeuromorphicPlatform
+from adaptiveneuralnetwork.central_nervous_system.neuromorphic import (
+    NeuromorphicConfig,
+    NeuromorphicPlatform,
+)
 
 # Import V3 components
 from adaptiveneuralnetwork.central_nervous_system.neuromorphic_v3 import (
@@ -37,13 +40,17 @@ from adaptiveneuralnetwork.central_nervous_system.neuromorphic_v3 import (
 from adaptiveneuralnetwork.central_nervous_system.neuromorphic_v3.advanced_neurons import (
     NeuronV3Config,
 )
-from adaptiveneuralnetwork.central_nervous_system.neuromorphic_v3.network_topology import TopologyConfig
+from adaptiveneuralnetwork.central_nervous_system.neuromorphic_v3.network_topology import (
+    TopologyConfig,
+)
 from adaptiveneuralnetwork.central_nervous_system.neuromorphic_v3.plasticity import (
     HomeostaticConfig,
     MetaplasticityConfig,
     STDPConfig,
 )
-from adaptiveneuralnetwork.central_nervous_system.neuromorphic_v3.temporal_coding import TemporalConfig
+from adaptiveneuralnetwork.central_nervous_system.neuromorphic_v3.temporal_coding import (
+    TemporalConfig,
+)
 
 # Import hardware backends
 from adaptiveneuralnetwork.neuromorphic import GenericV3Backend, Loihi2Backend, SpiNNaker2Backend
@@ -103,7 +110,7 @@ def test_advanced_neurons():
     stochastic_neuron = StochasticNeuron(neuron_config)
 
     spike_variability = []
-    for trial in range(5):
+    for trial in range(5):  # noqa: B007
         spikes_trial = []
         for t in range(10):
             input_current = torch.ones(1, 1) * 0.7
@@ -300,7 +307,7 @@ def test_temporal_coding():
         input_size=50, representation_size=200, config=temporal_config
     )
 
-    for iteration in range(10):
+    for iteration in range(10):  # noqa: B007
         input_activation = torch.rand(2, 50)
         sparse_output, sparsity_info = sparse_repr(input_activation, adapt_sparsity=True)
 
@@ -409,7 +416,7 @@ def test_integration():
 
             # Base configuration
             base_config = NeuromorphicConfig(generation=3)
-            neuron_config = NeuronV3Config(base_config=base_config)
+            neuron_config = NeuronV3Config(base_config=base_config)  # noqa: F841
             temporal_config = TemporalConfig()
             topology_config = TopologyConfig(layer_sizes=[30, 20, 10])
 

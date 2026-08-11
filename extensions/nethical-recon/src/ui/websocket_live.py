@@ -3,8 +3,8 @@ WebSocket Live Updates for Dashboard
 """
 
 import logging
-from typing import Any
 from datetime import datetime
+from typing import Any
 
 
 class DashboardWebSocketManager:
@@ -31,6 +31,6 @@ class DashboardWebSocketManager:
 
     def broadcast_update(self, update_type: str, data: dict[str, Any]):
         """Broadcast update to all connections"""
-        message = {"type": update_type, "data": data, "timestamp": datetime.now().isoformat()}
+        message = {"type": update_type, "data": data, "timestamp": datetime.now().isoformat()}  # noqa: F841
         self.update_count += 1
         self.logger.debug(f"Broadcasting {update_type} to {len(self.connections)} connections")

@@ -9,7 +9,7 @@ Showcases:
 4. Distributed trust consensus mechanisms
 5. Byzantine fault tolerance improvements
 6. Advanced neuromorphic integration
-"""
+"""  # noqa: W291
 
 import os
 import sys
@@ -76,7 +76,7 @@ def demo_energy_system_hardening():
 
     # Test energy attack detection
     console.print("[red]🚨[/red] Simulating energy attack...")
-    for i in range(3):
+    for i in range(3):  # noqa: B007
         node.record_energy_drain(2.0, source="attack")
 
     attack_detected = node.energy_attack_detected
@@ -116,7 +116,7 @@ def demo_trust_visualization():
         (5, 0.1, "Very suspicious")
     ]
 
-    for node_id, trust_level, desc in trust_relationships:
+    for node_id, trust_level, desc in trust_relationships:  # noqa: B007
         node.trust_network_system.set_trust(node_id, trust_level)
 
     # Generate visualization data
@@ -249,7 +249,7 @@ def demo_neuromorphic_integration():
         from adaptiveneuralnetwork.central_nervous_system.neuromorphic import (
             BrainWaveOscillator,
             NeuromodulationSystem,
-            NeuromorphicAdaptiveModel,
+            NeuromorphicAdaptiveModel,  # noqa: F401
             NeuromorphicConfig,
         )
 

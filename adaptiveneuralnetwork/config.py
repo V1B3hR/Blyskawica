@@ -96,7 +96,7 @@ class AdaptiveNeuralNetworkConfig:
     
     This class unifies all configuration parameters and provides methods for
     loading from files, environment variables, and runtime updates.
-    """
+    """  # noqa: W293
 
     # Sub-configurations
     trend_analysis: TrendAnalysisConfig = field(default_factory=TrendAnalysisConfig)
@@ -227,7 +227,7 @@ class AdaptiveNeuralNetworkConfig:
             if value is not None:
                 try:
                     # Convert string values to appropriate types
-                    if type_func == bool:
+                    if type_func == bool:  # noqa: E721
                         converted_value = value.lower() in ('true', '1', 'yes', 'on')
                     else:
                         converted_value = type_func(value)
@@ -384,7 +384,7 @@ def load_config(
     2. Environment variables 
     3. Configuration file (lowest precedence)
     4. Defaults
-    """
+    """  # noqa: W291
     config = AdaptiveNeuralNetworkConfig()
 
     # Load from file if provided

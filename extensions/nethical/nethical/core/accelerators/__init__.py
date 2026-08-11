@@ -31,7 +31,7 @@ import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union  # noqa: UP035
 
 import numpy as np
 
@@ -82,16 +82,16 @@ class AcceleratorConfig:
         batch_size: Default batch size for inference
     """
 
-    backend: Optional[AcceleratorBackend] = None
+    backend: AcceleratorBackend | None = None
     device_id: int = 0
     mixed_precision: bool = True
     memory_fraction: float = 0.9
     compile_models: bool = True
     async_execution: bool = False
     batch_size: int = 32
-    extra_options: Dict[str, Any] = field(default_factory=dict)
+    extra_options: dict[str, Any] = field(default_factory=dict)
 
-    def validate(self) -> Tuple[bool, str]:
+    def validate(self) -> tuple[bool, str]:
         """Validate configuration.
 
         Returns:
@@ -126,9 +126,9 @@ class AcceleratorInfo:
     total_memory_gb: float
     compute_capability: str
     is_available: bool = True
-    specs: Dict[str, Any] = field(default_factory=dict)
+    specs: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "backend": self.backend.value,
@@ -230,7 +230,7 @@ class AcceleratorInterface(ABC):
         pass
 
     @abstractmethod
-    def get_memory_info(self) -> Dict[str, float]:
+    def get_memory_info(self) -> dict[str, float]:
         """Get memory usage information.
 
         Returns:
@@ -252,7 +252,7 @@ class AcceleratorInterface(ABC):
         self,
         model: Any,
         inputs: np.ndarray,
-        batch_size: Optional[int] = None,
+        batch_size: int | None = None,
     ) -> np.ndarray:
         """Execute batch inference with automatic batching.
 
@@ -321,7 +321,7 @@ class CPUAccelerator(AcceleratorInterface):
 
     def execute(self, model: Any, inputs: Any) -> Any:
         """Execute model on CPU."""
-        if hasattr(model, "__call__"):
+        if hasattr(model, "__call__"):  # noqa: B004
             return model(inputs)
         raise ValueError("Model must be callable")
 
@@ -329,7 +329,7 @@ class CPUAccelerator(AcceleratorInterface):
         """No-op for CPU."""
         pass
 
-    def get_memory_info(self) -> Dict[str, float]:
+    def get_memory_info(self) -> dict[str, float]:
         """Get system memory info."""
         try:
             import psutil
@@ -360,10 +360,10 @@ class AcceleratorManager:
     Implements automatic backend detection and fallback.
     """
 
-    _instance: Optional["AcceleratorManager"] = None
-    _accelerators: Dict[str, AcceleratorInterface] = {}
+    _instance: AcceleratorManager | None = None
+    _accelerators: dict[str, AcceleratorInterface] = {}
 
-    def __new__(cls) -> "AcceleratorManager":
+    def __new__(cls) -> AcceleratorManager:
         """Singleton pattern for global accelerator management."""
         if cls._instance is None:
             cls._instance = super().__new__(cls)
@@ -371,11 +371,11 @@ class AcceleratorManager:
         return cls._instance
 
     @classmethod
-    def get_instance(cls) -> "AcceleratorManager":
+    def get_instance(cls) -> AcceleratorManager:
         """Get the singleton instance."""
         return cls()
 
-    def detect_available_backends(self) -> List[AcceleratorBackend]:
+    def detect_available_backends(self) -> list[AcceleratorBackend]:
         """Detect all available acceleration backends.
 
         Returns:
@@ -417,7 +417,7 @@ class AcceleratorManager:
 
     def create_accelerator(
         self,
-        config: Optional[AcceleratorConfig] = None,
+        config: AcceleratorConfig | None = None,
     ) -> AcceleratorInterface:
         """Create an accelerator based on configuration.
 
@@ -490,9 +490,9 @@ class AcceleratorManager:
 
     def get_accelerator(
         self,
-        backend: Optional[AcceleratorBackend] = None,
+        backend: AcceleratorBackend | None = None,
         device_id: int = 0,
-    ) -> Optional[AcceleratorInterface]:
+    ) -> AcceleratorInterface | None:
         """Get a cached accelerator instance.
 
         Args:
@@ -514,13 +514,13 @@ class AcceleratorManager:
         for accelerator in self._accelerators.values():
             try:
                 accelerator.shutdown()
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 log.error(f"Error shutting down accelerator: {e}")
         self._accelerators.clear()
         log.info("All accelerators shutdown")
 
 
-def get_available_accelerators() -> List[AcceleratorInfo]:
+def get_available_accelerators() -> list[AcceleratorInfo]:
     """Get information about all available accelerators.
 
     Returns:
@@ -537,13 +537,13 @@ def get_available_accelerators() -> List[AcceleratorInfo]:
             if accelerator.initialize():
                 infos.append(accelerator.get_info())
                 accelerator.shutdown()
-        except Exception as e:
+        except Exception as e:  # noqa: PERF203
             log.warning(f"Could not get info for {backend.value}: {e}")
 
     return infos
 
 
-def get_best_accelerator(config: Optional[AcceleratorConfig] = None) -> AcceleratorInterface:
+def get_best_accelerator(config: AcceleratorConfig | None = None) -> AcceleratorInterface:
     """Get the best available accelerator.
 
     Auto-detects the highest priority accelerator and returns

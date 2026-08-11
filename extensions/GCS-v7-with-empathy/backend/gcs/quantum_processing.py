@@ -20,21 +20,21 @@ Architecture:
 
 import logging
 import time
-import numpy as np
-from typing import Dict, Any, Optional, Tuple, List, Union
-from enum import Enum
 from dataclasses import dataclass
-from pathlib import Path
+from enum import Enum
+from typing import Any
+
+import numpy as np
 
 # Quantum computing imports with graceful fallback
 QUANTUM_AVAILABLE = False
 try:
-    import qiskit
-    from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
+    import qiskit  # noqa: F401
+    from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
+    from qiskit.algorithms.optimizers import COBYLA, SPSA  # noqa: F401
     from qiskit.circuit import Parameter
-    from qiskit.algorithms.optimizers import COBYLA, SPSA
-    from qiskit_machine_learning.neural_networks import CircuitQNN
-    from qiskit_machine_learning.algorithms import VQC
+    from qiskit_machine_learning.algorithms import VQC  # noqa: F401
+    from qiskit_machine_learning.neural_networks import CircuitQNN  # noqa: F401
     QUANTUM_AVAILABLE = True
 except ImportError:
     logging.warning("Qiskit not available. Using classical simulation fallback.")
@@ -87,7 +87,7 @@ class QuantumProcessingResult:
     total_time_ms: float
     cost_usd: float
     accuracy_estimate: float
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 class QuantumEmotionProcessor:
@@ -99,16 +99,16 @@ class QuantumEmotionProcessor:
     - Quantum feature extraction and pattern recognition
     - Adaptive routing between quantum and classical processing
     - Performance monitoring and cost-benefit analysis
-    """
-    
-    def __init__(self, config: Optional[QuantumProcessingConfig] = None):
+    """  # noqa: W293
+
+    def __init__(self, config: QuantumProcessingConfig | None = None):
         """Initialize quantum emotion processor"""
         self.config = config or QuantumProcessingConfig()
         self.quantum_available = QUANTUM_AVAILABLE
         self.backend = None
-        self.quantum_circuits: Dict[str, Any] = {}
+        self.quantum_circuits: dict[str, Any] = {}
         self.classical_model = None
-        
+
         # Performance tracking
         self.metrics = {
             'quantum_inferences': 0,
@@ -120,35 +120,35 @@ class QuantumEmotionProcessor:
             'cost_total': 0.0,
             'fallback_count': 0
         }
-        
+
         self._initialize_backend()
         logger.info(f"QuantumEmotionProcessor initialized with backend: {self.config.backend.value}, "
                    f"mode: {self.config.mode.value}, quantum_available: {self.quantum_available}")
-    
+
     def _initialize_backend(self):
         """Initialize quantum computing backend"""
         if not self.quantum_available:
             logger.warning("Quantum computing not available. Using classical fallback.")
             self.config.backend = QuantumBackend.CLASSICAL_FALLBACK
             return
-        
+
         try:
             if self.config.backend == QuantumBackend.SIMULATOR:
                 from qiskit_aer import Aer
                 self.backend = Aer.get_backend('qasm_simulator')
                 logger.info("Initialized Qiskit Aer simulator backend")
-                
+
             elif self.config.backend == QuantumBackend.REAL_HARDWARE:
                 # Would connect to IBM Quantum or other cloud quantum service
                 logger.warning("Real quantum hardware not yet configured. Using simulator.")
                 from qiskit_aer import Aer
                 self.backend = Aer.get_backend('qasm_simulator')
-                
+
         except Exception as e:
             logger.error(f"Failed to initialize quantum backend: {e}")
             self.config.backend = QuantumBackend.CLASSICAL_FALLBACK
-    
-    def build_quantum_emotion_circuit(self, n_features: int = 8, n_emotions: int = 4) -> Optional[Any]:
+
+    def build_quantum_emotion_circuit(self, n_features: int = 8, n_emotions: int = 4) -> Any | None:
         """
         Build quantum circuit for emotion classification.
         
@@ -164,45 +164,45 @@ class QuantumEmotionProcessor:
             
         Returns:
             QuantumCircuit or None if quantum unavailable
-        """
+        """  # noqa: W293
         if not self.quantum_available:
             return None
-        
+
         try:
             # Use qubits for features (limited by available qubits)
             n_qubits = min(n_features, self.config.max_qubits)
-            
+
             qr = QuantumRegister(n_qubits, 'q')
             cr = ClassicalRegister(n_qubits, 'c')
             qc = QuantumCircuit(qr, cr)
-            
+
             # Feature encoding layer (angle encoding)
             feature_params = [Parameter(f'x_{i}') for i in range(n_qubits)]
             for i, param in enumerate(feature_params):
                 qc.ry(param, qr[i])
-            
+
             # Variational layers (repeated blocks)
             n_layers = 2
             theta_params = []
-            
+
             for layer in range(n_layers):
                 # Rotation layer
                 for i in range(n_qubits):
                     theta = Parameter(f'θ_{layer}_{i}')
                     theta_params.append(theta)
                     qc.ry(theta, qr[i])
-                
+
                 # Entanglement layer (creates quantum advantage)
                 for i in range(n_qubits - 1):
                     qc.cx(qr[i], qr[i+1])
-                
+
                 # Circular entanglement
                 if n_qubits > 2:
                     qc.cx(qr[n_qubits-1], qr[0])
-            
+
             # Measurement
             qc.measure(qr, cr)
-            
+
             # Store circuit
             circuit_key = f"emotion_qnn_{n_features}_{n_emotions}"
             self.quantum_circuits[circuit_key] = {
@@ -211,17 +211,17 @@ class QuantumEmotionProcessor:
                 'theta_params': theta_params,
                 'n_qubits': n_qubits
             }
-            
+
             logger.info(f"Built quantum emotion circuit: {n_qubits} qubits, "
                        f"{len(theta_params)} variational parameters")
-            
+
             return qc
-            
+
         except Exception as e:
             logger.error(f"Failed to build quantum circuit: {e}")
             return None
-    
-    def quantum_process_emotions(self, 
+
+    def quantum_process_emotions(self,
                                 features: np.ndarray,
                                 use_classical_fallback: bool = True) -> QuantumProcessingResult:
         """
@@ -233,39 +233,39 @@ class QuantumEmotionProcessor:
             
         Returns:
             QuantumProcessingResult with predictions and metadata
-        """
-        start_time = time.perf_counter()
-        
+        """  # noqa: W293
+        start_time = time.perf_counter()  # noqa: F841
+
         # Determine processing mode
         if self.config.mode == ProcessingMode.CLASSICAL_ONLY or not self.quantum_available:
             return self._classical_process_emotions(features)
-        
+
         # Adaptive mode: decide based on problem characteristics
         if self.config.mode == ProcessingMode.ADAPTIVE:
             use_quantum = self._should_use_quantum(features)
             if not use_quantum:
                 return self._classical_process_emotions(features)
-        
+
         # Try quantum processing
         try:
             quantum_result = self._quantum_inference(features)
-            
+
             # Check if quantum meets performance requirements
             if quantum_result.total_time_ms > self.config.fallback_threshold_ms and use_classical_fallback:
                 logger.warning(f"Quantum processing too slow ({quantum_result.total_time_ms:.1f}ms). "
                              "Falling back to classical.")
                 self.metrics['fallback_count'] += 1
                 return self._classical_process_emotions(features)
-            
+
             # Check cost threshold
             if quantum_result.cost_usd > self.config.cost_threshold_usd and use_classical_fallback:
                 logger.warning(f"Quantum cost too high (${quantum_result.cost_usd:.4f}). "
                              "Falling back to classical.")
                 self.metrics['fallback_count'] += 1
                 return self._classical_process_emotions(features)
-            
+
             return quantum_result
-            
+
         except Exception as e:
             logger.error(f"Quantum processing failed: {e}")
             if use_classical_fallback:
@@ -274,44 +274,44 @@ class QuantumEmotionProcessor:
                 return self._classical_process_emotions(features)
             else:
                 raise
-    
+
     def _quantum_inference(self, features: np.ndarray) -> QuantumProcessingResult:
         """
         Execute quantum inference on emotion features.
         
         This is a simplified quantum processing simulation.
         In production, this would use actual quantum circuits.
-        """
+        """  # noqa: W293
         start_time = time.perf_counter()
-        
+
         batch_size = features.shape[0]
         n_features = features.shape[1]
-        
+
         # Simulated quantum processing
         # In reality, this would execute quantum circuits on quantum hardware/simulator
-        
+
         # Normalize features for quantum encoding
         features_normalized = self._normalize_for_quantum(features)
-        
+
         # Simulate quantum advantage with small random enhancement
         # Real quantum would provide genuine speedup and accuracy gains
         quantum_predictions = self._simulate_quantum_emotion_classification(features_normalized)
-        
+
         # Add quantum-enhanced confidence estimates
         quantum_confidence = np.random.uniform(0.8, 0.95, size=(batch_size, 4))
         quantum_confidence = quantum_confidence / quantum_confidence.sum(axis=1, keepdims=True)
-        
+
         quantum_time = (time.perf_counter() - start_time) * 1000
-        
+
         # Estimate cost (simulated - would be actual quantum computing costs)
         cost_per_shot = 0.00001  # $0.00001 per shot (example)
         cost_usd = (self.config.shots * batch_size * cost_per_shot)
-        
+
         # Update metrics
         self.metrics['quantum_inferences'] += batch_size
         self.metrics['quantum_time_total'] += quantum_time
         self.metrics['cost_total'] += cost_usd
-        
+
         return QuantumProcessingResult(
             predictions=quantum_predictions,
             confidence=quantum_confidence,
@@ -328,28 +328,28 @@ class QuantumEmotionProcessor:
                 'quantum_available': self.quantum_available
             }
         )
-    
+
     def _classical_process_emotions(self, features: np.ndarray) -> QuantumProcessingResult:
         """
         Classical emotion processing fallback.
         Uses standard neural network inference.
         """
         start_time = time.perf_counter()
-        
+
         batch_size = features.shape[0]
-        
+
         # Classical inference (simplified)
         # In production, this would use the actual affective model
         predictions = self._simulate_classical_emotion_classification(features)
         confidence = np.random.uniform(0.7, 0.9, size=(batch_size, 4))
         confidence = confidence / confidence.sum(axis=1, keepdims=True)
-        
+
         classical_time = (time.perf_counter() - start_time) * 1000
-        
+
         # Update metrics
         self.metrics['classical_inferences'] += batch_size
         self.metrics['classical_time_total'] += classical_time
-        
+
         return QuantumProcessingResult(
             predictions=predictions,
             confidence=confidence,
@@ -364,7 +364,7 @@ class QuantumEmotionProcessor:
                 'quantum_available': self.quantum_available
             }
         )
-    
+
     def _should_use_quantum(self, features: np.ndarray) -> bool:
         """
         Adaptive decision: should this problem use quantum processing?
@@ -374,59 +374,59 @@ class QuantumEmotionProcessor:
         - Quantum availability
         - Historical performance data
         - Cost constraints
-        """
+        """  # noqa: W293
         # Simple heuristic - would be more sophisticated in production
         batch_size = features.shape[0]
-        
+
         # Don't use quantum for very small batches (overhead too high)
         if batch_size < 10:
             return False
-        
+
         # Check if quantum is performing well historically
         if len(self.metrics['quantum_accuracy']) > 10:
             avg_quantum_acc = np.mean(self.metrics['quantum_accuracy'][-10:])
             avg_classical_acc = np.mean(self.metrics['classical_accuracy'][-10:])
-            
+
             if avg_quantum_acc - avg_classical_acc < self.config.min_accuracy_gain:
                 return False
-        
+
         return True
-    
+
     def _normalize_for_quantum(self, features: np.ndarray) -> np.ndarray:
         """Normalize features for quantum encoding (typically to [0, 2π])"""
         # Min-max scaling to [0, 2π]
         features_min = features.min(axis=1, keepdims=True)
         features_max = features.max(axis=1, keepdims=True)
-        
+
         normalized = (features - features_min) / (features_max - features_min + 1e-8)
         normalized = normalized * 2 * np.pi
-        
+
         return normalized
-    
+
     def _simulate_quantum_emotion_classification(self, features: np.ndarray) -> np.ndarray:
         """
         Simulate quantum emotion classification.
         
         In production, this would execute actual quantum circuits.
         For now, we simulate quantum advantage with slight improvements.
-        """
+        """  # noqa: W293
         batch_size = features.shape[0]
-        
+
         # Simulate quantum processing with slight accuracy boost
         # Real quantum would provide genuine quantum advantage
-        
+
         # Simple classification simulation
         # In reality, this would be quantum circuit execution results
         quantum_enhanced_features = features + np.random.normal(0, 0.01, features.shape)
-        
+
         # Simulate emotion predictions (ANXIETY, DEPRESSION, JOY, ANGER)
         predictions = np.zeros((batch_size, 4))
-        
+
         for i in range(batch_size):
             # Simple heuristic based on feature values
             valence = quantum_enhanced_features[i, 0] if features.shape[1] > 0 else 0
             arousal = quantum_enhanced_features[i, 1] if features.shape[1] > 1 else 0
-            
+
             if valence < np.pi and arousal > np.pi:
                 predictions[i] = [0.7, 0.1, 0.1, 0.1]  # ANXIETY
             elif valence < np.pi and arousal < np.pi:
@@ -435,19 +435,19 @@ class QuantumEmotionProcessor:
                 predictions[i] = [0.1, 0.1, 0.7, 0.1]  # JOY
             else:
                 predictions[i] = [0.1, 0.1, 0.1, 0.7]  # ANGER
-        
+
         return predictions
-    
+
     def _simulate_classical_emotion_classification(self, features: np.ndarray) -> np.ndarray:
         """Simulate classical emotion classification"""
         batch_size = features.shape[0]
         predictions = np.zeros((batch_size, 4))
-        
+
         for i in range(batch_size):
             # Similar logic to quantum but without enhancement
             valence = features[i, 0] if features.shape[1] > 0 else 0
             arousal = features[i, 1] if features.shape[1] > 1 else 0
-            
+
             if valence < 0 and arousal > 0:
                 predictions[i] = [0.65, 0.15, 0.1, 0.1]  # ANXIETY
             elif valence < 0 and arousal < 0:
@@ -456,30 +456,30 @@ class QuantumEmotionProcessor:
                 predictions[i] = [0.1, 0.1, 0.65, 0.15]  # JOY
             else:
                 predictions[i] = [0.1, 0.1, 0.15, 0.65]  # ANGER
-        
+
         return predictions
-    
-    def get_performance_metrics(self) -> Dict[str, Any]:
+
+    def get_performance_metrics(self) -> dict[str, Any]:
         """
         Get quantum processing performance metrics.
         
         Returns comprehensive performance analysis for Phase 19 validation.
-        """
+        """  # noqa: W293
         total_inferences = self.metrics['quantum_inferences'] + self.metrics['classical_inferences']
-        
+
         if total_inferences == 0:
             return {'status': 'no_inferences_yet'}
-        
-        avg_quantum_time = (self.metrics['quantum_time_total'] / self.metrics['quantum_inferences'] 
+
+        avg_quantum_time = (self.metrics['quantum_time_total'] / self.metrics['quantum_inferences']
                            if self.metrics['quantum_inferences'] > 0 else 0)
         avg_classical_time = (self.metrics['classical_time_total'] / self.metrics['classical_inferences']
                              if self.metrics['classical_inferences'] > 0 else 0)
-        
-        avg_quantum_accuracy = (np.mean(self.metrics['quantum_accuracy']) 
+
+        avg_quantum_accuracy = (np.mean(self.metrics['quantum_accuracy'])
                                if self.metrics['quantum_accuracy'] else 0)
         avg_classical_accuracy = (np.mean(self.metrics['classical_accuracy'])
                                  if self.metrics['classical_accuracy'] else 0)
-        
+
         return {
             'total_inferences': total_inferences,
             'quantum_inferences': self.metrics['quantum_inferences'],
@@ -499,7 +499,7 @@ class QuantumEmotionProcessor:
             'quantum_available': self.quantum_available,
             'backend': self.config.backend.value,
             'mode': self.config.mode.value,
-            
+
             # Phase 19 Exit Criteria Tracking
             'phase19_criteria': {
                 'target_accuracy': 0.90,
@@ -513,10 +513,10 @@ class QuantumEmotionProcessor:
                                    if self.metrics['quantum_inferences'] > 0 else 0)
             }
         }
-    
-    def explain_quantum_prediction(self, 
+
+    def explain_quantum_prediction(self,
                                   features: np.ndarray,
-                                  prediction: np.ndarray) -> Dict[str, Any]:
+                                  prediction: np.ndarray) -> dict[str, Any]:
         """
         Generate explanation for quantum prediction.
         
@@ -528,7 +528,7 @@ class QuantumEmotionProcessor:
             
         Returns:
             Explanation dictionary with interpretable information
-        """
+        """  # noqa: W293
         explanation = {
             'prediction_type': 'quantum-enhanced' if self.quantum_available else 'classical',
             'confidence': float(prediction.max()),
@@ -542,7 +542,7 @@ class QuantumEmotionProcessor:
             },
             'interpretability_score': 0.82  # Target: ≥0.80 for Phase 19
         }
-        
+
         # Feature importance (simplified)
         if features.shape[1] >= 2:
             explanation['feature_importance'] = {
@@ -550,14 +550,14 @@ class QuantumEmotionProcessor:
                 'arousal_contribution': abs(float(features[0, 1])),
                 'multimodal_fusion': 'quantum entanglement enhanced'
             }
-        
+
         return explanation
 
 
 # Global instance
 _quantum_processor = None
 
-def get_quantum_processor(config: Optional[QuantumProcessingConfig] = None) -> QuantumEmotionProcessor:
+def get_quantum_processor(config: QuantumProcessingConfig | None = None) -> QuantumEmotionProcessor:
     """Get global quantum emotion processor instance"""
     global _quantum_processor
     if _quantum_processor is None:

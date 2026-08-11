@@ -209,7 +209,7 @@ class SensorDataProcessor(nn.Module):
             
         Returns:
             Dictionary with processed sensor features
-        """
+        """  # noqa: W293
         # Group by sensor type
         sensor_groups = {}
         for sensor_data in sensor_batch:

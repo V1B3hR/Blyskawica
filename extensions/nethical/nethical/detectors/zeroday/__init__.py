@@ -15,10 +15,10 @@ Law Alignment:
 - Law 25 (Ethical Evolution): Maintain vigilance
 """
 
-from .pattern_detector import ZeroDayPatternDetector
-from .polymorphic_detector import PolymorphicDetector
 from .attack_chain_detector import AttackChainDetector
 from .living_off_land_detector import LivingOffLandDetector
+from .pattern_detector import ZeroDayPatternDetector
+from .polymorphic_detector import PolymorphicDetector
 
 __all__ = [
     'ZeroDayPatternDetector',

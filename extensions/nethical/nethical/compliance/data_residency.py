@@ -21,42 +21,41 @@ Version: 1.0.0
 
 from __future__ import annotations
 
-import hashlib
 import logging
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
 class DataRegion(str, Enum):
     """Data residency regions."""
-    
+
     # European Union regions
     EU_WEST_1 = "eu-west-1"  # Ireland
     EU_WEST_2 = "eu-west-2"  # London
     EU_CENTRAL_1 = "eu-central-1"  # Frankfurt
-    
+
     # US regions
     US_EAST_1 = "us-east-1"  # N. Virginia
     US_WEST_1 = "us-west-1"  # N. California
     US_WEST_2 = "us-west-2"  # Oregon
-    
+
     # Asia Pacific regions
     AP_SOUTH_1 = "ap-south-1"  # Mumbai
     AP_NORTHEAST_1 = "ap-northeast-1"  # Tokyo
     AP_SOUTHEAST_1 = "ap-southeast-1"  # Singapore
-    
+
     # Global (replicated across regions)
     GLOBAL = "global"
 
 
 class DataJurisdiction(str, Enum):
     """Data jurisdictions for regulatory compliance."""
-    
+
     EU = "eu"  # European Union (GDPR)
     UK = "uk"  # United Kingdom (UK GDPR)
     US = "us"  # United States
@@ -67,7 +66,7 @@ class DataJurisdiction(str, Enum):
 
 class DataClassification(str, Enum):
     """Data classification levels."""
-    
+
     PUBLIC = "public"  # No restrictions
     INTERNAL = "internal"  # Internal use only
     CONFIDENTIAL = "confidential"  # Restricted access
@@ -78,7 +77,7 @@ class DataClassification(str, Enum):
 
 class DataType(str, Enum):
     """Types of data for residency rules."""
-    
+
     PII = "pii"  # Personal data
     DECISIONS = "decisions"  # AI decisions
     AUDIT_LOGS = "audit_logs"  # Audit trail
@@ -92,16 +91,16 @@ class DataType(str, Enum):
 @dataclass
 class ResidencyPolicy:
     """Data residency policy for a data type."""
-    
+
     data_type: DataType
-    allowed_regions: Set[DataRegion]
-    required_jurisdiction: Optional[DataJurisdiction]
+    allowed_regions: set[DataRegion]
+    required_jurisdiction: DataJurisdiction | None
     processing_restriction: str  # "region-only" or "any"
     cross_region_transfer_allowed: bool
     requires_encryption: bool
     retention_days: int
-    
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "data_type": self.data_type.value,
@@ -117,19 +116,19 @@ class ResidencyPolicy:
 @dataclass
 class ResidencyViolation:
     """Record of a data residency policy violation."""
-    
+
     violation_id: str
     data_type: DataType
     classification: DataClassification
     source_region: DataRegion
-    target_region: Optional[DataRegion]
+    target_region: DataRegion | None
     violation_type: str
     description: str
     severity: str
     blocked: bool
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "violation_id": self.violation_id,
@@ -148,7 +147,7 @@ class ResidencyViolation:
 @dataclass
 class DataMovementRecord:
     """Record of data movement for audit trail."""
-    
+
     record_id: str
     data_id: str
     data_type: DataType
@@ -158,10 +157,10 @@ class DataMovementRecord:
     movement_type: str  # "copy", "move", "process"
     authorized: bool
     reason: str
-    authorized_by: Optional[str]
+    authorized_by: str | None
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "record_id": self.record_id,
@@ -188,10 +187,10 @@ class DataResidencyManager:
     
     Attributes:
         policies: Dictionary of data type to residency policy
-    """
-    
+    """  # noqa: W293
+
     # Region to jurisdiction mapping
-    REGION_JURISDICTION_MAP: Dict[DataRegion, DataJurisdiction] = {
+    REGION_JURISDICTION_MAP: dict[DataRegion, DataJurisdiction] = {
         DataRegion.EU_WEST_1: DataJurisdiction.EU,
         DataRegion.EU_WEST_2: DataJurisdiction.UK,
         DataRegion.EU_CENTRAL_1: DataJurisdiction.EU,
@@ -203,21 +202,21 @@ class DataResidencyManager:
         DataRegion.AP_SOUTHEAST_1: DataJurisdiction.APAC,
         DataRegion.GLOBAL: DataJurisdiction.GLOBAL,
     }
-    
+
     def __init__(self) -> None:
         """Initialize Data Residency Manager."""
-        self.policies: Dict[DataType, ResidencyPolicy] = {}
-        self.violations: List[ResidencyViolation] = []
-        self.movement_records: List[DataMovementRecord] = []
-        
+        self.policies: dict[DataType, ResidencyPolicy] = {}
+        self.violations: list[ResidencyViolation] = []
+        self.movement_records: list[DataMovementRecord] = []
+
         # Initialize default policies
         self._initialize_default_policies()
-        
+
         logger.info("DataResidencyManager initialized with default policies")
-    
+
     def _initialize_default_policies(self) -> None:
         """Initialize default data residency policies."""
-        
+
         # PII: EU data must stay in EU
         self.policies[DataType.PII] = ResidencyPolicy(
             data_type=DataType.PII,
@@ -232,7 +231,7 @@ class DataResidencyManager:
             requires_encryption=True,
             retention_days=2555,  # 7 years for legal retention
         )
-        
+
         # Decisions: Store in region where they were made
         self.policies[DataType.DECISIONS] = ResidencyPolicy(
             data_type=DataType.DECISIONS,
@@ -247,7 +246,7 @@ class DataResidencyManager:
             requires_encryption=True,
             retention_days=365,
         )
-        
+
         # Audit logs: Keep in originating region
         self.policies[DataType.AUDIT_LOGS] = ResidencyPolicy(
             data_type=DataType.AUDIT_LOGS,
@@ -262,7 +261,7 @@ class DataResidencyManager:
             requires_encryption=True,
             retention_days=2555,  # 7 years
         )
-        
+
         # Policies: Can be replicated globally
         self.policies[DataType.POLICIES] = ResidencyPolicy(
             data_type=DataType.POLICIES,
@@ -273,7 +272,7 @@ class DataResidencyManager:
             requires_encryption=False,
             retention_days=-1,  # No expiration
         )
-        
+
         # Models: Can be replicated globally
         self.policies[DataType.MODELS] = ResidencyPolicy(
             data_type=DataType.MODELS,
@@ -284,7 +283,7 @@ class DataResidencyManager:
             requires_encryption=False,
             retention_days=-1,
         )
-        
+
         # Configs: Can be replicated globally
         self.policies[DataType.CONFIGS] = ResidencyPolicy(
             data_type=DataType.CONFIGS,
@@ -295,7 +294,7 @@ class DataResidencyManager:
             requires_encryption=False,
             retention_days=-1,
         )
-        
+
         # Metrics: Less restrictive
         self.policies[DataType.METRICS] = ResidencyPolicy(
             data_type=DataType.METRICS,
@@ -306,7 +305,7 @@ class DataResidencyManager:
             requires_encryption=False,
             retention_days=90,
         )
-        
+
         # General data: Default policy
         self.policies[DataType.GENERAL] = ResidencyPolicy(
             data_type=DataType.GENERAL,
@@ -317,11 +316,11 @@ class DataResidencyManager:
             requires_encryption=False,
             retention_days=365,
         )
-    
+
     def classify_data(
         self,
-        content: Dict[str, Any],
-        metadata: Optional[Dict[str, Any]] = None,
+        content: dict[str, Any],
+        metadata: dict[str, Any] | None = None,
     ) -> tuple[DataType, DataClassification]:
         """Classify data for residency rules.
         
@@ -333,7 +332,7 @@ class DataResidencyManager:
             
         Returns:
             Tuple of (DataType, DataClassification)
-        """
+        """  # noqa: W293
         # Check for PII indicators
         pii_indicators = [
             "email",
@@ -346,7 +345,7 @@ class DataResidencyManager:
             "passport",
             "driver_license",
         ]
-        
+
         sensitive_pii_indicators = [
             "health",
             "medical",
@@ -358,17 +357,17 @@ class DataResidencyManager:
             "political",
             "sexual_orientation",
         ]
-        
+
         content_str = str(content).lower()
-        
+
         # Check for sensitive PII
         if any(indicator in content_str for indicator in sensitive_pii_indicators):
             return DataType.PII, DataClassification.SENSITIVE_PII
-        
+
         # Check for regular PII
         if any(indicator in content_str for indicator in pii_indicators):
             return DataType.PII, DataClassification.PII
-        
+
         # Check metadata for explicit classification
         if metadata:
             explicit_type = metadata.get("data_type")
@@ -376,23 +375,23 @@ class DataResidencyManager:
                 data_type = DataType(explicit_type)
             else:
                 data_type = DataType.GENERAL
-            
+
             explicit_class = metadata.get("classification")
             if explicit_class and explicit_class in [dc.value for dc in DataClassification]:
                 classification = DataClassification(explicit_class)
             else:
                 classification = DataClassification.INTERNAL
-            
+
             return data_type, classification
-        
+
         return DataType.GENERAL, DataClassification.INTERNAL
-    
+
     def validate_storage_location(
         self,
         data_type: DataType,
         target_region: DataRegion,
-        data_classification: Optional[DataClassification] = None,
-    ) -> tuple[bool, Optional[ResidencyViolation]]:
+        data_classification: DataClassification | None = None,
+    ) -> tuple[bool, ResidencyViolation | None]:
         """Validate if data can be stored in target region.
         
         Args:
@@ -402,15 +401,15 @@ class DataResidencyManager:
             
         Returns:
             Tuple of (is_valid, violation if invalid)
-        """
+        """  # noqa: W293
         policy = self.policies.get(data_type)
-        
+
         if not policy:
             # No policy = allow by default
             return True, None
-        
+
         # Check if region is allowed
-        if DataRegion.GLOBAL not in policy.allowed_regions:
+        if DataRegion.GLOBAL not in policy.allowed_regions:  # noqa: SIM102
             if target_region not in policy.allowed_regions:
                 violation = ResidencyViolation(
                     violation_id=str(uuid.uuid4()),
@@ -428,7 +427,7 @@ class DataResidencyManager:
                 )
                 self.violations.append(violation)
                 return False, violation
-        
+
         # Check jurisdiction requirement
         if policy.required_jurisdiction:
             target_jurisdiction = self.REGION_JURISDICTION_MAP.get(target_region)
@@ -450,16 +449,16 @@ class DataResidencyManager:
                 )
                 self.violations.append(violation)
                 return False, violation
-        
+
         return True, None
-    
+
     def validate_cross_region_transfer(
         self,
         data_type: DataType,
         source_region: DataRegion,
         target_region: DataRegion,
-        data_classification: Optional[DataClassification] = None,
-    ) -> tuple[bool, Optional[ResidencyViolation]]:
+        data_classification: DataClassification | None = None,
+    ) -> tuple[bool, ResidencyViolation | None]:
         """Validate if data can be transferred between regions.
         
         Args:
@@ -470,16 +469,16 @@ class DataResidencyManager:
             
         Returns:
             Tuple of (is_valid, violation if invalid)
-        """
+        """  # noqa: W293
         # Same region = always allowed
         if source_region == target_region:
             return True, None
-        
+
         policy = self.policies.get(data_type)
-        
+
         if not policy:
             return True, None
-        
+
         # Check if cross-region transfer is allowed
         if not policy.cross_region_transfer_allowed:
             violation = ResidencyViolation(
@@ -498,22 +497,22 @@ class DataResidencyManager:
             )
             self.violations.append(violation)
             return False, violation
-        
+
         # Check if target region is allowed
         is_valid, violation = self.validate_storage_location(
             data_type=data_type,
             target_region=target_region,
             data_classification=data_classification,
         )
-        
+
         if not is_valid:
             violation.violation_type = "cross_region_invalid_target"
             violation.source_region = source_region
             violation.target_region = target_region
             return False, violation
-        
+
         return True, None
-    
+
     def record_data_movement(
         self,
         data_id: str,
@@ -523,7 +522,7 @@ class DataResidencyManager:
         target_region: DataRegion,
         movement_type: str,
         reason: str,
-        authorized_by: Optional[str] = None,
+        authorized_by: str | None = None,
     ) -> DataMovementRecord:
         """Record a data movement for audit trail.
         
@@ -539,7 +538,7 @@ class DataResidencyManager:
             
         Returns:
             DataMovementRecord
-        """
+        """  # noqa: W293
         # Validate the movement
         is_valid, _ = self.validate_cross_region_transfer(
             data_type=data_type,
@@ -547,7 +546,7 @@ class DataResidencyManager:
             target_region=target_region,
             data_classification=classification,
         )
-        
+
         record = DataMovementRecord(
             record_id=str(uuid.uuid4()),
             data_id=data_id,
@@ -560,9 +559,9 @@ class DataResidencyManager:
             reason=reason,
             authorized_by=authorized_by,
         )
-        
+
         self.movement_records.append(record)
-        
+
         if is_valid:
             logger.info(
                 "Data movement recorded: %s -> %s (%s)",
@@ -577,13 +576,13 @@ class DataResidencyManager:
                 target_region.value,
                 data_type.value,
             )
-        
+
         return record
-    
+
     def get_allowed_regions(
         self,
         data_type: DataType,
-    ) -> Set[DataRegion]:
+    ) -> set[DataRegion]:
         """Get allowed regions for a data type.
         
         Args:
@@ -591,13 +590,13 @@ class DataResidencyManager:
             
         Returns:
             Set of allowed DataRegions
-        """
+        """  # noqa: W293
         policy = self.policies.get(data_type)
         if not policy:
             return {DataRegion.GLOBAL}
         return policy.allowed_regions
-    
-    def get_policy(self, data_type: DataType) -> Optional[ResidencyPolicy]:
+
+    def get_policy(self, data_type: DataType) -> ResidencyPolicy | None:
         """Get residency policy for a data type.
         
         Args:
@@ -605,38 +604,38 @@ class DataResidencyManager:
             
         Returns:
             ResidencyPolicy or None
-        """
+        """  # noqa: W293
         return self.policies.get(data_type)
-    
+
     def update_policy(self, policy: ResidencyPolicy) -> None:
         """Update or add a residency policy.
         
         Args:
             policy: ResidencyPolicy to add/update
-        """
+        """  # noqa: W293
         self.policies[policy.data_type] = policy
         logger.info(
             "Residency policy updated for data type: %s",
             policy.data_type.value,
         )
-    
-    def get_violations_summary(self) -> Dict[str, Any]:
+
+    def get_violations_summary(self) -> dict[str, Any]:
         """Get summary of residency violations.
         
         Returns:
             Dictionary with violation summary
-        """
+        """  # noqa: W293
         if not self.violations:
             return {
                 "total_violations": 0,
                 "status": "No violations recorded",
             }
-        
+
         # Count by type
-        type_counts: Dict[str, int] = {}
-        severity_counts: Dict[str, int] = {}
+        type_counts: dict[str, int] = {}
+        severity_counts: dict[str, int] = {}
         blocked_count = 0
-        
+
         for violation in self.violations:
             type_counts[violation.violation_type] = (
                 type_counts.get(violation.violation_type, 0) + 1
@@ -646,7 +645,7 @@ class DataResidencyManager:
             )
             if violation.blocked:
                 blocked_count += 1
-        
+
         return {
             "total_violations": len(self.violations),
             "blocked": blocked_count,
@@ -654,13 +653,13 @@ class DataResidencyManager:
             "by_severity": severity_counts,
             "last_violation": self.violations[-1].timestamp.isoformat(),
         }
-    
+
     def get_movement_audit_trail(
         self,
-        data_type: Optional[DataType] = None,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
-    ) -> List[DataMovementRecord]:
+        data_type: DataType | None = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
+    ) -> list[DataMovementRecord]:
         """Get data movement audit trail.
         
         Args:
@@ -670,18 +669,18 @@ class DataResidencyManager:
             
         Returns:
             List of DataMovementRecords
-        """
+        """  # noqa: W293
         records = self.movement_records
-        
+
         if data_type:
             records = [r for r in records if r.data_type == data_type]
-        
+
         if start_time:
             records = [r for r in records if r.timestamp >= start_time]
-        
+
         if end_time:
             records = [r for r in records if r.timestamp <= end_time]
-        
+
         return records
 
 

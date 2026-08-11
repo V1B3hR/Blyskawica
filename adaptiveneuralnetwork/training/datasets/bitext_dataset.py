@@ -21,7 +21,7 @@ class BitextDatasetLoader:
     
     This class provides a clean API for loading bitext datasets either from
     Kaggle (if credentials are available) or from local CSV files.
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
@@ -46,7 +46,7 @@ class BitextDatasetLoader:
             sampling_fraction: Optional fraction to sample (0.0-1.0)
             normalize_text: Whether to apply basic text normalization
             random_seed: Random seed for reproducibility
-        """
+        """  # noqa: W293
         self.dataset_name = dataset_name
         self.local_path = Path(local_path) if local_path else None
         self.use_kaggle = use_kaggle
@@ -89,7 +89,7 @@ class BitextDatasetLoader:
         
         Returns:
             Path to downloaded dataset directory, or None if failed
-        """
+        """  # noqa: W293
         if not self.has_kagglehub:
             logger.warning("kagglehub not available. Install with: pip install 'adaptiveneuralnetwork[nlp]'")
             return None
@@ -112,13 +112,13 @@ class BitextDatasetLoader:
             logger.error(f"Failed to download dataset from Kaggle: {e}")
             return None
 
-    def _load_csv(self, csv_path: Path) -> Optional['pandas.DataFrame']:
+    def _load_csv(self, csv_path: Path) -> Optional['pandas.DataFrame']:  # noqa: F821
         """
         Load CSV file using pandas.
         
         Returns:
             DataFrame or None if loading failed
-        """
+        """  # noqa: W293
         if not self.has_pandas:
             logger.error("pandas required for CSV loading")
             return None
@@ -155,7 +155,7 @@ class BitextDatasetLoader:
 
         return text
 
-    def _preprocess_dataframe(self, df: 'pandas.DataFrame') -> 'pandas.DataFrame':
+    def _preprocess_dataframe(self, df: 'pandas.DataFrame') -> 'pandas.DataFrame':  # noqa: F821
         """
         Apply preprocessing to the dataframe.
         
@@ -164,7 +164,7 @@ class BitextDatasetLoader:
             
         Returns:
             Preprocessed dataframe
-        """
+        """  # noqa: W293
         # Apply sampling if requested
         if self.sampling_fraction is not None and 0 < self.sampling_fraction < 1.0:
             logger.info(f"Sampling {self.sampling_fraction:.2%} of data")
@@ -181,7 +181,7 @@ class BitextDatasetLoader:
         logger.info(f"Preprocessed dataset size: {len(df)} samples")
         return df
 
-    def _split_dataset(self, df: 'pandas.DataFrame', val_split: float = 0.2) -> tuple['pandas.DataFrame', 'pandas.DataFrame']:
+    def _split_dataset(self, df: 'pandas.DataFrame', val_split: float = 0.2) -> tuple['pandas.DataFrame', 'pandas.DataFrame']:  # noqa: F821
         """
         Split dataset into train and validation sets.
         
@@ -191,7 +191,7 @@ class BitextDatasetLoader:
             
         Returns:
             Tuple of (train_df, val_df)
-        """
+        """  # noqa: W293
         if not self.has_sklearn:
             logger.warning("scikit-learn not available for stratified split, using random split")
             # Simple random split
@@ -234,7 +234,7 @@ class BitextDatasetLoader:
         self,
         val_split: float = 0.2,
         force_local: bool = False
-    ) -> tuple[Optional['pandas.DataFrame'], Optional['pandas.DataFrame']]:
+    ) -> tuple[Optional['pandas.DataFrame'], Optional['pandas.DataFrame']]:  # noqa: F821
         """
         Load the bitext dataset.
         
@@ -244,7 +244,7 @@ class BitextDatasetLoader:
             
         Returns:
             Tuple of (train_df, val_df) or (None, None) if loading failed
-        """
+        """  # noqa: W293
         df = None
 
         # Try Kaggle download first (if enabled and not forced local)
@@ -284,7 +284,7 @@ class BitextDatasetLoader:
         
         Returns:
             Dictionary with dataset information
-        """
+        """  # noqa: W293
         return {
             "dataset_name": self.dataset_name,
             "local_path": str(self.local_path) if self.local_path else None,
@@ -306,7 +306,7 @@ def create_synthetic_bitext_data(
     text_length_range: tuple[int, int] = (10, 100),
     num_classes: int = 2,
     random_seed: int = 42
-) -> tuple['pandas.DataFrame', 'pandas.DataFrame']:
+) -> tuple['pandas.DataFrame', 'pandas.DataFrame']:  # noqa: F821
     """
     Create synthetic bitext data for testing and demonstration.
     
@@ -318,7 +318,7 @@ def create_synthetic_bitext_data(
         
     Returns:
         Tuple of (train_df, val_df)
-    """
+    """  # noqa: W293
     try:
         import random
 

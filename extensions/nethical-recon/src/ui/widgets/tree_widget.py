@@ -51,7 +51,7 @@ class TreeWidget:
         tree = RichTree(f"{tree_icon} [bold {style}]{self.name}[/bold {style}]", guide_style=style)
 
         # Add trunk info
-        trunk = tree.add("🪵 Trunk (OS/Kernel)")
+        trunk = tree.add("🪵 Trunk (OS/Kernel)")  # noqa: F841
 
         # Add branches
         if self.branches:

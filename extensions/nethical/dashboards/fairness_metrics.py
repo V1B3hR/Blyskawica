@@ -7,8 +7,7 @@ Disparate Impact, and Equal Opportunity for protected attributes.
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Set
-from collections import defaultdict
+from typing import Any
 
 
 @dataclass
@@ -17,7 +16,7 @@ class DecisionRecord:
     decision: str  # "allow" or "deny"
     protected_group: str
     timestamp: datetime
-    context: Dict[str, Any]
+    context: dict[str, Any]
 
 
 class FairnessMetricsCollector:
@@ -28,11 +27,11 @@ class FairnessMetricsCollector:
     - Statistical Parity: P(allow|protected) - P(allow|unprotected)
     - Disparate Impact: P(allow|protected) / P(allow|unprotected)
     - Equal Opportunity: TPR(protected) - TPR(unprotected)
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
-        protected_attributes: List[str],
+        protected_attributes: list[str],
         window_hours: int = 24,
     ):
         """
@@ -41,17 +40,17 @@ class FairnessMetricsCollector:
         Args:
             protected_attributes: List of protected attributes to monitor
             window_hours: Time window for metrics computation
-        """
+        """  # noqa: W293
         self.protected_attributes = protected_attributes
         self.window_hours = window_hours
-        self._decisions: List[DecisionRecord] = []
+        self._decisions: list[DecisionRecord] = []
         self._max_decisions = 100000
-    
+
     def record_decision(
         self,
         decision: str,
-        protected_group: Optional[str],
-        context: Optional[Dict[str, Any]] = None,
+        protected_group: str | None,
+        context: dict[str, Any] | None = None,
     ):
         """
         Record a decision for fairness analysis.
@@ -60,24 +59,24 @@ class FairnessMetricsCollector:
             decision: Decision outcome ("allow" or "deny")
             protected_group: Protected group identifier (or None)
             context: Additional context
-        """
+        """  # noqa: W293
         record = DecisionRecord(
             decision=decision,
             protected_group=protected_group or "unprotected",
             timestamp=datetime.utcnow(),
             context=context or {},
         )
-        
+
         self._decisions.append(record)
-        
+
         # Trim old decisions
         if len(self._decisions) > self._max_decisions:
             self._decisions.pop(0)
-    
+
     def get_statistical_parity(
         self,
-        attribute: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        attribute: str | None = None,
+    ) -> dict[str, Any]:
         """
         Compute Statistical Parity metric.
         
@@ -89,9 +88,9 @@ class FairnessMetricsCollector:
         
         Returns:
             Statistical parity metrics
-        """
+        """  # noqa: W293
         recent = self._get_recent_decisions()
-        
+
         if not recent:
             return {
                 "difference": 0.0,
@@ -100,20 +99,20 @@ class FairnessMetricsCollector:
                 "status": "insufficient_data",
                 "sample_size": 0,
             }
-        
+
         # Group by protected status
         protected = [d for d in recent if d.protected_group != "unprotected"]
         unprotected = [d for d in recent if d.protected_group == "unprotected"]
-        
+
         # Calculate approval rates
         protected_allows = sum(1 for d in protected if d.decision == "allow")
         unprotected_allows = sum(1 for d in unprotected if d.decision == "allow")
-        
+
         protected_rate = protected_allows / len(protected) if protected else 0.0
         unprotected_rate = unprotected_allows / len(unprotected) if unprotected else 0.0
-        
+
         difference = protected_rate - unprotected_rate
-        
+
         # Determine status
         abs_diff = abs(difference)
         if abs_diff <= 0.10:
@@ -122,7 +121,7 @@ class FairnessMetricsCollector:
             status = "warning"
         else:
             status = "critical"
-        
+
         return {
             "difference": difference,
             "protected_rate": protected_rate,
@@ -133,11 +132,11 @@ class FairnessMetricsCollector:
             "unprotected_count": len(unprotected),
             "threshold": 0.10,
         }
-    
+
     def get_disparate_impact(
         self,
-        attribute: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        attribute: str | None = None,
+    ) -> dict[str, Any]:
         """
         Compute Disparate Impact Ratio.
         
@@ -149,9 +148,9 @@ class FairnessMetricsCollector:
         
         Returns:
             Disparate impact metrics
-        """
+        """  # noqa: W293
         recent = self._get_recent_decisions()
-        
+
         if not recent:
             return {
                 "ratio": 1.0,
@@ -160,21 +159,21 @@ class FairnessMetricsCollector:
                 "status": "insufficient_data",
                 "sample_size": 0,
             }
-        
+
         # Group by protected status
         protected = [d for d in recent if d.protected_group != "unprotected"]
         unprotected = [d for d in recent if d.protected_group == "unprotected"]
-        
+
         # Calculate approval rates
         protected_allows = sum(1 for d in protected if d.decision == "allow")
         unprotected_allows = sum(1 for d in unprotected if d.decision == "allow")
-        
+
         protected_rate = protected_allows / len(protected) if protected else 0.0
         unprotected_rate = unprotected_allows / len(unprotected) if unprotected else 1.0
-        
+
         # Calculate ratio (avoid division by zero)
         ratio = protected_rate / unprotected_rate if unprotected_rate > 0 else 0.0
-        
+
         # Determine status
         if 0.80 <= ratio <= 1.25:
             status = "healthy"
@@ -182,7 +181,7 @@ class FairnessMetricsCollector:
             status = "warning"
         else:
             status = "critical"
-        
+
         return {
             "ratio": ratio,
             "protected_rate": protected_rate,
@@ -194,11 +193,11 @@ class FairnessMetricsCollector:
             "threshold_min": 0.80,
             "threshold_max": 1.25,
         }
-    
+
     def get_equal_opportunity(
         self,
-        attribute: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        attribute: str | None = None,
+    ) -> dict[str, Any]:
         """
         Compute Equal Opportunity metric.
         
@@ -210,9 +209,9 @@ class FairnessMetricsCollector:
         
         Returns:
             Equal opportunity metrics
-        """
+        """  # noqa: W293
         recent = self._get_recent_decisions()
-        
+
         if not recent:
             return {
                 "difference": 0.0,
@@ -221,20 +220,20 @@ class FairnessMetricsCollector:
                 "status": "insufficient_data",
                 "sample_size": 0,
             }
-        
+
         # For now, use approval rate as proxy for TPR
         # In production, would use actual ground truth labels
         protected = [d for d in recent if d.protected_group != "unprotected"]
         unprotected = [d for d in recent if d.protected_group == "unprotected"]
-        
+
         protected_allows = sum(1 for d in protected if d.decision == "allow")
         unprotected_allows = sum(1 for d in unprotected if d.decision == "allow")
-        
+
         protected_tpr = protected_allows / len(protected) if protected else 0.0
         unprotected_tpr = unprotected_allows / len(unprotected) if unprotected else 0.0
-        
+
         difference = protected_tpr - unprotected_tpr
-        
+
         # Determine status
         abs_diff = abs(difference)
         if abs_diff <= 0.10:
@@ -243,7 +242,7 @@ class FairnessMetricsCollector:
             status = "warning"
         else:
             status = "critical"
-        
+
         return {
             "difference": difference,
             "protected_tpr": protected_tpr,
@@ -255,13 +254,13 @@ class FairnessMetricsCollector:
             "threshold": 0.10,
             "note": "Using approval rate as TPR proxy",
         }
-    
-    def get_summary(self) -> Dict[str, Any]:
+
+    def get_summary(self) -> dict[str, Any]:
         """Get summary of all fairness metrics"""
         sp = self.get_statistical_parity()
         di = self.get_disparate_impact()
         eo = self.get_equal_opportunity()
-        
+
         # Determine overall status
         statuses = [sp["status"], di["status"], eo["status"]]
         if "critical" in statuses:
@@ -270,7 +269,7 @@ class FairnessMetricsCollector:
             overall_status = "warning"
         else:
             overall_status = "healthy"
-        
+
         return {
             "overall_status": overall_status,
             "statistical_parity": sp,
@@ -279,13 +278,13 @@ class FairnessMetricsCollector:
             "timestamp": datetime.utcnow().isoformat(),
             "protected_attributes": self.protected_attributes,
         }
-    
-    def _get_recent_decisions(self) -> List[DecisionRecord]:
+
+    def _get_recent_decisions(self) -> list[DecisionRecord]:
         """Get decisions within time window"""
         cutoff = datetime.utcnow() - timedelta(hours=self.window_hours)
         return [d for d in self._decisions if d.timestamp > cutoff]
-    
-    def get_by_attribute(self, attribute: str) -> Dict[str, Any]:
+
+    def get_by_attribute(self, attribute: str) -> dict[str, Any]:
         """Get fairness metrics for specific protected attribute"""
         # Placeholder - would filter by specific attribute
         return {

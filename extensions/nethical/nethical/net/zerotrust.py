@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Iterable, Mapping, Optional, Set, Tuple, List, Union
 import fnmatch
+from collections.abc import Iterable, Mapping
+from typing import Any
 
 from nethical.hooks.interfaces import CommsPolicy
-
 
 # =======================================
 # Simple, permissive policy (unchanged)
@@ -74,12 +74,12 @@ class MTLSCommsPolicy(CommsPolicy):
     def __init__(
         self,
         trust_domain: str,
-        allowed_identities: Optional[Iterable[str]] = None,
-        denied_identities: Optional[Iterable[str]] = None,
+        allowed_identities: Iterable[str] | None = None,
+        denied_identities: Iterable[str] | None = None,
         *,
-        allowed_regions: Optional[Iterable[str]] = None,
-        allowed_purposes: Optional[Iterable[str]] = None,
-        required_roles: Optional[Iterable[str]] = None,
+        allowed_regions: Iterable[str] | None = None,
+        allowed_purposes: Iterable[str] | None = None,
+        required_roles: Iterable[str] | None = None,
         require_all_roles: bool = True,
         require_device_attested: bool = False,
         require_runtime_attested: bool = False,
@@ -92,12 +92,12 @@ class MTLSCommsPolicy(CommsPolicy):
         self.trust_domain: str = normalized_domain
 
         # Original pattern sets (preserved for display).
-        self.allowed: Set[str] = _as_str_set(allowed_identities)
-        self.denied: Set[str] = _as_str_set(denied_identities)
+        self.allowed: set[str] = _as_str_set(allowed_identities)
+        self.denied: set[str] = _as_str_set(denied_identities)
 
-        self.allowed_regions: Set[str] = _as_str_set(allowed_regions)
-        self.allowed_purposes: Set[str] = _as_str_set(allowed_purposes)
-        self.required_roles: Set[str] = _as_str_set(required_roles)
+        self.allowed_regions: set[str] = _as_str_set(allowed_regions)
+        self.allowed_purposes: set[str] = _as_str_set(allowed_purposes)
+        self.required_roles: set[str] = _as_str_set(required_roles)
         self.require_all_roles: bool = bool(require_all_roles)
 
         self.require_device_attested: bool = bool(require_device_attested)
@@ -119,26 +119,26 @@ class MTLSCommsPolicy(CommsPolicy):
 
     def evaluate(
         self, peer_id: str, context: Mapping[str, Any], *, explain: bool = False
-    ) -> Union[bool, Tuple[bool, List[str]]]:
+    ) -> bool | tuple[bool, list[str]]:
         """
         Perform the full policy evaluation. If explain=True, returns (allowed, reasons)
         with a stepwise trace; otherwise returns only a boolean.
 
         This is an extended interface; connection_allowed() still provides the legacy bool.
         """
-        reasons: List[str] = [] if explain else None
+        reasons: list[str] = [] if explain else None
 
         spiffe_id = _as_opt_str(context.get("spiffe_id"))
         mtls_san = _as_opt_str(context.get("mtls_peer_san"))
         candidates_raw = {c for c in (peer_id, spiffe_id, mtls_san) if c}
 
-        if not self.case_sensitive:
+        if not self.case_sensitive:  # noqa: SIM108
             candidates = {c.lower() for c in candidates_raw}
         else:
             candidates = candidates_raw
 
         # 1) Deny patterns
-        if self.denied:
+        if self.denied:  # noqa: SIM102
             if _match_any_globs(
                 candidates,
                 self._normalized_denied,
@@ -150,7 +150,7 @@ class MTLSCommsPolicy(CommsPolicy):
                 return False
 
         # 2) Allow patterns (if provided, require at least one match)
-        if self.allowed:
+        if self.allowed:  # noqa: SIM102
             if not _match_any_globs(
                 candidates,
                 self._normalized_allowed,
@@ -272,7 +272,7 @@ class MTLSCommsPolicy(CommsPolicy):
     # -----------------------
 
     @classmethod
-    def from_config(cls, cfg: Mapping[str, Any]) -> "MTLSCommsPolicy":
+    def from_config(cls, cfg: Mapping[str, Any]) -> MTLSCommsPolicy:
         """
         Build a policy from a dict-like config.
 
@@ -333,7 +333,7 @@ def _normalize_trust_domain(raw: str) -> str:
     return s
 
 
-def _spiffe_trust_domain(spiffe_id: str) -> Optional[str]:
+def _spiffe_trust_domain(spiffe_id: str) -> str | None:
     """
     Extract the trust domain from a SPIFFE ID of form 'spiffe://domain/path'.
     Returns None if malformed.
@@ -355,8 +355,8 @@ def _spiffe_trust_domain(spiffe_id: str) -> Optional[str]:
 
 
 def _match_any_globs(
-    candidates: Set[str],
-    patterns: Set[str],
+    candidates: set[str],
+    patterns: set[str],
     *,
     case_sensitive: bool = True,
 ) -> bool:
@@ -395,7 +395,7 @@ def _as_iterable(value: Any) -> Iterable[Any]:
         return [value]
 
 
-def _as_opt_str(value: Any) -> Optional[str]:
+def _as_opt_str(value: Any) -> str | None:
     if value is None:
         return None
     try:
@@ -405,10 +405,10 @@ def _as_opt_str(value: Any) -> Optional[str]:
         return None
 
 
-def _as_str_set(values: Optional[Iterable[Any]]) -> Set[str]:
+def _as_str_set(values: Iterable[Any] | None) -> set[str]:
     if not values:
         return set()
-    out: Set[str] = set()
+    out: set[str] = set()
     for v in values:
         s = _as_opt_str(v)
         if s:

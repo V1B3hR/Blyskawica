@@ -19,10 +19,12 @@ logger = logging.getLogger("identity_garderoba_benchmark")
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import NeuromodulationState
-from adaptiveneuralnetwork.applications.identity_garderoba_pipeline import (
-    IdentityGarderobaEngine, 
-    TextDocumentSample
+from adaptiveneuralnetwork.applications.identity_garderoba_pipeline import (  # noqa: E402
+    IdentityGarderobaEngine,
+    TextDocumentSample,
+)
+from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import (  # noqa: E402
+    NeuromodulationState,  # noqa: E402
 )
 
 

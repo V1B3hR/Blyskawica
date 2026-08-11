@@ -6,7 +6,6 @@ Centralized marketplace for custom Nethical Recon plugins
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Any
 from uuid import UUID, uuid4
 
 

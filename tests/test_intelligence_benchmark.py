@@ -11,7 +11,10 @@ import tempfile
 import unittest
 
 from adaptiveneuralnetwork.central_nervous_system.ai_ethics import audit_decision
-from adaptiveneuralnetwork.central_nervous_system.intelligence_benchmark import IntelligenceBenchmark, run_intelligence_validation
+from adaptiveneuralnetwork.central_nervous_system.intelligence_benchmark import (
+    IntelligenceBenchmark,
+    run_intelligence_validation,
+)
 
 
 class TestIntelligenceBenchmark(unittest.TestCase):

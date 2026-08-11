@@ -6,7 +6,7 @@ This module provides enhanced analytics capabilities including:
 - Performance degradation early warning systems  
 - Trust network flow analysis
 - Energy distribution heat maps
-"""
+"""  # noqa: W291
 
 import logging
 import time
@@ -304,7 +304,7 @@ class AdvancedAnalyticsDashboard:
 
         # Collect trust relationships from network topology
         trust_relationships = []
-        for edge_id, edge in self.network_edges.items():
+        for edge_id, edge in self.network_edges.items():  # noqa: B007
             if edge.connection_type == "trust":
                 trust_relationships.append({
                     "source": edge.source_node,
@@ -567,7 +567,7 @@ class AdvancedAnalyticsDashboard:
 
     def _check_performance_alerts(self, metric: PerformanceMetric) -> None:
         """Check and generate performance alerts"""
-        current_time = time.time()
+        current_time = time.time()  # noqa: F841
 
         if metric.current_value >= metric.threshold_critical:
             self._add_alert("critical", f"Critical threshold exceeded for {metric.metric_name}",
@@ -702,7 +702,7 @@ class AdvancedAnalyticsDashboard:
 
     def _check_energy_alerts(self, energy_dist: EnergyDistribution) -> None:
         """Check and generate energy alerts"""
-        current_time = time.time()
+        current_time = time.time()  # noqa: F841
 
         if energy_dist.heat_level > 0.9:
             self._add_energy_alert("critical", f"Node {energy_dist.node_id} is overheating",

@@ -153,7 +153,7 @@ class TestPhaseCoherence(unittest.TestCase):
         Expected: Important information should persist across phase transitions
         """
         # Mock inter-phase information system
-        phase_memory = {
+        phase_memory = {  # noqa: F841
             "persistent_data": {},
             "transition_logs": [],
             "phase_specific_data": {}

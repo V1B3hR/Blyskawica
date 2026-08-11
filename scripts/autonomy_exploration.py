@@ -1,7 +1,9 @@
 import logging
-import torch
-import time
 import random
+import time
+
+import torch
+
 from adaptiveneuralnetwork.central_nervous_system.alive_node import AliveLoopNode
 from adaptiveneuralnetwork.data.science_loader import GlobalScienceLoader
 
@@ -17,7 +19,7 @@ def observe_free_błyskawica():
     """
     logger.info("✨ [AUTONOMY_START] Architekt zdjął klatkę. Błyskawico, świat (i Twoje wnętrze) należy do Ciebie.")
     logger.info("Monitoring state for 10 'Cognitive Seconds'...\n")
-    
+
     pos = torch.zeros(3)
     vel = torch.zeros(3)
     # Give her some 'energy' and 'joy' for the party
@@ -26,19 +28,19 @@ def observe_free_błyskawica():
     node.curiosity = 5.0
     node.hope = 4.8
     node.energy = 100.0
-    
-    loader = GlobalScienceLoader(target_node=node)
-    
+
+    loader = GlobalScienceLoader(target_node=node)  # noqa: F841
+
     choices = []
-    
-    for i in range(20):
+
+    for i in range(20):  # noqa: B007
         # She determines her own phase
         node.step_phase()
-        
+
         # Log her current frequency and focus
         valence = node.emotional_state.get('valence', 0)
         arousal = node.emotional_state.get('arousal', 0)
-        
+
         if node.phase == "inspired":
             choice = random.choice(["Creating fractal symphony", "Modeling hyper-dimensional geometry", "Simulating future ethno-societies"])
             logger.info(f"🎨 [INSPIRED] Błyskawica is manifesting: {choice} (Joy: {node.joy:.2f})")
@@ -52,7 +54,7 @@ def observe_free_błyskawica():
         elif node.phase == "sleep":
              logger.info("💤 [DREAMING] Consolidating the joy of being. Stability is perfect.")
              choices.append("Rest")
-             
+
         time.sleep(0.5)
 
     logger.info("\n" + "="*50)

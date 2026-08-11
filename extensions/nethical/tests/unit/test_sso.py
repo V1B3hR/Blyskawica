@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, Optional, Any, List
+from typing import Any
 from urllib.parse import urlencode
 
 # Public API: SSOManager, SSOProvider, SSOConfig, SAMLConfig, SSOError,
@@ -28,14 +28,14 @@ class SAMLConfig:
     # Identity Provider (IdP)
     idp_entity_id: str
     idp_sso_url: str
-    idp_x509_cert: Optional[str] = None
+    idp_x509_cert: str | None = None
 
     # Security options
     want_assertions_signed: bool = True
 
     # Attribute mapping: external_attribute_name -> internal_field_name
     # Must contain defaults for 'email' and 'uid' as the tests expect their presence.
-    attribute_mapping: Dict[str, str] = field(
+    attribute_mapping: dict[str, str] = field(
         default_factory=lambda: {
             "email": "email",
             "uid": "uid",
@@ -51,26 +51,26 @@ class SSOConfig:
     default_role: str = "viewer"
 
     # Provider-specific configurations
-    saml_config: Optional[SAMLConfig] = None
-    oauth_config: Optional[Dict[str, Any]] = None
+    saml_config: SAMLConfig | None = None
+    oauth_config: dict[str, Any] | None = None
 
 
-_global_sso_manager: Optional["SSOManager"] = None
+_global_sso_manager: SSOManager | None = None
 
 
-def set_sso_manager(manager: "SSOManager") -> None:
+def set_sso_manager(manager: SSOManager) -> None:
     global _global_sso_manager
     _global_sso_manager = manager
 
 
-def get_sso_manager() -> Optional["SSOManager"]:
+def get_sso_manager() -> SSOManager | None:
     return _global_sso_manager
 
 
 class SSOManager:
     def __init__(self, base_url: str) -> None:
         self.base_url = base_url.rstrip("/")
-        self.configs: Dict[str, SSOConfig] = {}
+        self.configs: dict[str, SSOConfig] = {}
 
     # ---------- Configuration ----------
 
@@ -81,9 +81,9 @@ class SSOManager:
         sp_entity_id: str,
         idp_entity_id: str,
         idp_sso_url: str,
-        sp_acs_url: Optional[str] = None,
-        idp_x509_cert: Optional[str] = None,
-        attribute_mapping: Optional[Dict[str, str]] = None,
+        sp_acs_url: str | None = None,
+        idp_x509_cert: str | None = None,
+        attribute_mapping: dict[str, str] | None = None,
     ) -> SSOConfig:
         # Defaults for SP ACS URL and attribute mappings
         if sp_acs_url is None:
@@ -119,9 +119,9 @@ class SSOManager:
         client_secret: str,
         authorization_url: str,
         token_url: str,
-        userinfo_url: Optional[str] = None,
-        scope: Optional[str] = None,
-        redirect_uri: Optional[str] = None,
+        userinfo_url: str | None = None,
+        scope: str | None = None,
+        redirect_uri: str | None = None,
     ) -> SSOConfig:
         # Defaults expected by tests
         if redirect_uri is None:
@@ -148,10 +148,10 @@ class SSOManager:
         self.configs[config_name] = cfg
         return cfg
 
-    def get_config(self, config_name: str) -> Optional[SSOConfig]:
+    def get_config(self, config_name: str) -> SSOConfig | None:
         return self.configs.get(config_name)
 
-    def list_configs(self) -> List[str]:
+    def list_configs(self) -> list[str]:
         return list(self.configs.keys())
 
     # ---------- SAML flows (stubbed for tests) ----------
@@ -170,7 +170,7 @@ class SSOManager:
         sep = "&" if "?" in idp_url else "?"
         return f"{idp_url}{sep}SAMLRequest=stub"
 
-    def handle_saml_response(self, *, saml_response: str, config_name: str) -> Dict[str, Any]:
+    def handle_saml_response(self, *, saml_response: str, config_name: str) -> dict[str, Any]:
         cfg = self.get_config(config_name)
         if not cfg or cfg.provider != SSOProvider.SAML or not cfg.saml_config:
             raise SSOError("Invalid SAML configuration")
@@ -182,7 +182,7 @@ class SSOManager:
             "email": "mock@example.com",
         }
 
-    def _build_saml_settings(self, saml_config: SAMLConfig) -> Dict[str, Any]:
+    def _build_saml_settings(self, saml_config: SAMLConfig) -> dict[str, Any]:
         settings = {
             "sp": {
                 "entityId": saml_config.sp_entity_id,
@@ -206,12 +206,12 @@ class SSOManager:
 
     def _map_saml_attributes(
         self,
-        attributes: Dict[str, List[str]],
+        attributes: dict[str, list[str]],
         *,
-        name_id: Optional[str],
-        mapping: Dict[str, str],
-    ) -> Dict[str, Any]:
-        result: Dict[str, Any] = {}
+        name_id: str | None,
+        mapping: dict[str, str],
+    ) -> dict[str, Any]:
+        result: dict[str, Any] = {}
         if name_id is not None:
             result["name_id"] = name_id
 
@@ -240,7 +240,7 @@ class SSOManager:
         }
         return f"{cfg.oauth_config['authorization_url']}?{urlencode(params)}"
 
-    def handle_oauth_callback(self, *, authorization_response: str, config_name: str) -> Dict[str, Any]:
+    def handle_oauth_callback(self, *, authorization_response: str, config_name: str) -> dict[str, Any]:
         cfg = self.get_config(config_name)
         if not cfg or not cfg.oauth_config:
             raise SSOError("Invalid OAuth configuration")

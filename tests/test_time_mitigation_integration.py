@@ -7,7 +7,11 @@ import unittest
 
 from adaptiveneuralnetwork.central_nervous_system.alive_node import AliveLoopNode
 from adaptiveneuralnetwork.central_nervous_system.network import AdaptiveClockNetwork
-from adaptiveneuralnetwork.central_nervous_system.time_manager import TimeConfig, TimeManager, set_time_manager
+from adaptiveneuralnetwork.central_nervous_system.time_manager import (
+    TimeConfig,
+    TimeManager,
+    set_time_manager,
+)
 
 
 class TestTimeMitigation(unittest.TestCase):
@@ -78,7 +82,7 @@ class TestTimeMitigation(unittest.TestCase):
         self.time_manager.reset()
 
         # Perform several network ticks
-        for i in range(5):
+        for i in range(5):  # noqa: B007
             stimuli = [1.0, 2.0]
             network.network_tick(stimuli)
 
@@ -105,7 +109,7 @@ class TestTimeMitigation(unittest.TestCase):
         set_time_manager(scaled_tm)
 
         # Simulate network tick (which should advance time based on scale)
-        initial_time = time.time()
+        initial_time = time.time()  # noqa: F841
         time.sleep(0.01)  # Small delay
         scaled_tm.network_tick()
 

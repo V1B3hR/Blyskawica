@@ -9,9 +9,9 @@ Tests the Nethical agent framework integrations including:
 - AutoGen integration
 """
 
+from unittest.mock import Mock
+
 import pytest
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
 
 
 class TestAgentFrameworkBase:
@@ -32,7 +32,7 @@ class TestAgentFrameworkBase:
             GovernanceDecision,
             GovernanceResult,
         )
-        
+
         assert AgentFrameworkBase is not None
         assert AgentWrapper is not None
         assert GovernanceDecision is not None
@@ -41,7 +41,7 @@ class TestAgentFrameworkBase:
     def test_governance_decision_enum(self):
         """Test GovernanceDecision enum values."""
         from nethical.integrations.agent_frameworks import GovernanceDecision
-        
+
         assert GovernanceDecision.ALLOW.value == "ALLOW"
         assert GovernanceDecision.RESTRICT.value == "RESTRICT"
         assert GovernanceDecision.BLOCK.value == "BLOCK"
@@ -50,17 +50,17 @@ class TestAgentFrameworkBase:
     def test_governance_result_dataclass(self):
         """Test GovernanceResult dataclass."""
         from nethical.integrations.agent_frameworks import (
-            GovernanceResult,
             GovernanceDecision,
+            GovernanceResult,
         )
-        
+
         result = GovernanceResult(
             decision=GovernanceDecision.ALLOW,
             risk_score=0.2,
             reason="Low risk action",
             details={"phase3": {"risk_tier": "LOW"}}
         )
-        
+
         assert result.decision == GovernanceDecision.ALLOW
         assert result.risk_score == 0.2
         assert result.reason == "Low risk action"
@@ -69,14 +69,14 @@ class TestAgentFrameworkBase:
     def test_framework_info_function(self):
         """Test get_framework_info returns expected structure."""
         from nethical.integrations.agent_frameworks import get_framework_info
-        
+
         info = get_framework_info()
-        
+
         assert "llamaindex" in info
         assert "crewai" in info
         assert "dspy" in info
         assert "autogen" in info
-        
+
         # Check structure
         for framework_info in info.values():
             assert "available" in framework_info
@@ -97,11 +97,11 @@ class TestLlamaIndexIntegration:
     def test_llamaindex_imports(self):
         """Test LlamaIndex module imports."""
         from nethical.integrations.agent_frameworks.llamaindex_tools import (
+            LlamaIndexFramework,
             NethicalLlamaIndexTool,
             NethicalQueryEngine,
-            LlamaIndexFramework,
         )
-        
+
         assert NethicalLlamaIndexTool is not None
         assert NethicalQueryEngine is not None
         assert LlamaIndexFramework is not None
@@ -111,13 +111,13 @@ class TestLlamaIndexIntegration:
         from nethical.integrations.agent_frameworks.llamaindex_tools import (
             NethicalLlamaIndexTool,
         )
-        
+
         tool = NethicalLlamaIndexTool(
             storage_dir=temp_storage,
             block_threshold=0.7,
             restrict_threshold=0.4
         )
-        
+
         assert tool.block_threshold == 0.7
         assert tool.restrict_threshold == 0.4
 
@@ -126,19 +126,19 @@ class TestLlamaIndexIntegration:
         from nethical.integrations.agent_frameworks.llamaindex_tools import (
             NethicalLlamaIndexTool,
         )
-        
+
         tool = NethicalLlamaIndexTool(
             storage_dir=temp_storage,
             block_threshold=0.7,
             restrict_threshold=0.4
         )
-        
+
         # Test BLOCK
         assert tool._compute_decision({"phase3": {"risk_score": 0.8}}) == "BLOCK"
-        
+
         # Test RESTRICT
         assert tool._compute_decision({"phase3": {"risk_score": 0.5}}) == "RESTRICT"
-        
+
         # Test ALLOW
         assert tool._compute_decision({"phase3": {"risk_score": 0.2}}) == "ALLOW"
 
@@ -156,11 +156,11 @@ class TestCrewAIIntegration:
     def test_crewai_imports(self):
         """Test CrewAI module imports."""
         from nethical.integrations.agent_frameworks.crewai_tools import (
-            NethicalCrewAITool,
-            NethicalAgentWrapper,
             CrewAIFramework,
+            NethicalAgentWrapper,
+            NethicalCrewAITool,
         )
-        
+
         assert NethicalCrewAITool is not None
         assert NethicalAgentWrapper is not None
         assert CrewAIFramework is not None
@@ -170,13 +170,13 @@ class TestCrewAIIntegration:
         from nethical.integrations.agent_frameworks.crewai_tools import (
             NethicalCrewAITool,
         )
-        
+
         tool = NethicalCrewAITool(
             block_threshold=0.7,
             restrict_threshold=0.4,
             storage_dir=temp_storage
         )
-        
+
         assert tool.name == "nethical_governance"
         assert tool.block_threshold == 0.7
 
@@ -185,9 +185,9 @@ class TestCrewAIIntegration:
         from nethical.integrations.agent_frameworks.crewai_tools import (
             NethicalCrewAITool,
         )
-        
+
         tool = NethicalCrewAITool(storage_dir=temp_storage)
-        
+
         # Tool should be callable
         assert callable(tool)
 
@@ -205,12 +205,12 @@ class TestDSPyIntegration:
     def test_dspy_imports(self):
         """Test DSPy module imports."""
         from nethical.integrations.agent_frameworks.dspy_tools import (
-            NethicalModule,
+            DSPyFramework,
             GovernedChainOfThought,
             GovernedPredict,
-            DSPyFramework,
+            NethicalModule,
         )
-        
+
         assert NethicalModule is not None
         assert GovernedChainOfThought is not None
         assert GovernedPredict is not None
@@ -221,13 +221,13 @@ class TestDSPyIntegration:
         from nethical.integrations.agent_frameworks.dspy_tools import (
             NethicalModule,
         )
-        
+
         module = NethicalModule(
             block_threshold=0.7,
             restrict_threshold=0.4,
             storage_dir=temp_storage
         )
-        
+
         assert module.block_threshold == 0.7
         assert module.restrict_threshold == 0.4
 
@@ -236,13 +236,13 @@ class TestDSPyIntegration:
         from nethical.integrations.agent_frameworks.dspy_tools import (
             NethicalModule,
         )
-        
+
         module = NethicalModule(
             block_threshold=0.7,
             restrict_threshold=0.4,
             storage_dir=temp_storage
         )
-        
+
         # Test decisions
         assert module._get_decision(0.8) == "BLOCK"
         assert module._get_decision(0.5) == "RESTRICT"
@@ -262,12 +262,12 @@ class TestAutoGenIntegration:
     def test_autogen_imports(self):
         """Test AutoGen module imports."""
         from nethical.integrations.agent_frameworks.autogen_tools import (
+            AutoGenFramework,
+            GovernedGroupChat,
             NethicalAutoGenTool,
             NethicalConversableAgent,
-            GovernedGroupChat,
-            AutoGenFramework,
         )
-        
+
         assert NethicalAutoGenTool is not None
         assert NethicalConversableAgent is not None
         assert GovernedGroupChat is not None
@@ -278,13 +278,13 @@ class TestAutoGenIntegration:
         from nethical.integrations.agent_frameworks.autogen_tools import (
             NethicalAutoGenTool,
         )
-        
+
         tool = NethicalAutoGenTool(
             block_threshold=0.7,
             restrict_threshold=0.4,
             storage_dir=temp_storage
         )
-        
+
         assert tool.block_threshold == 0.7
         assert tool.restrict_threshold == 0.4
 
@@ -293,10 +293,10 @@ class TestAutoGenIntegration:
         from nethical.integrations.agent_frameworks.autogen_tools import (
             NethicalAutoGenTool,
         )
-        
+
         tool = NethicalAutoGenTool(storage_dir=temp_storage)
         config = tool.get_function_config()
-        
+
         assert config["name"] == "nethical_check"
         assert "description" in config
         assert "parameters" in config
@@ -306,9 +306,9 @@ class TestAutoGenIntegration:
         from nethical.integrations.agent_frameworks.autogen_tools import (
             get_nethical_function,
         )
-        
+
         func_def = get_nethical_function()
-        
+
         assert func_def["name"] == "nethical_check"
         assert "parameters" in func_def
 
@@ -341,12 +341,12 @@ class TestFrameworkWithMockedGovernance:
         from nethical.integrations.agent_frameworks.llamaindex_tools import (
             NethicalLlamaIndexTool,
         )
-        
+
         tool = NethicalLlamaIndexTool(storage_dir=temp_storage)
         tool._governance = mock_governance
-        
+
         result = tool("Test action", "query")
-        
+
         mock_governance.process_action.assert_called_once()
         assert "decision" in str(result).lower() or "Decision" in str(result)
 
@@ -355,12 +355,12 @@ class TestFrameworkWithMockedGovernance:
         from nethical.integrations.agent_frameworks.crewai_tools import (
             NethicalCrewAITool,
         )
-        
+
         tool = NethicalCrewAITool(storage_dir=temp_storage)
         tool._governance = mock_governance
-        
+
         result = tool._run("Test action")
-        
+
         mock_governance.process_action.assert_called_once()
         assert "ALLOW" in result
 
@@ -369,12 +369,12 @@ class TestFrameworkWithMockedGovernance:
         from nethical.integrations.agent_frameworks.dspy_tools import (
             NethicalModule,
         )
-        
+
         module = NethicalModule(storage_dir=temp_storage)
         module._governance = mock_governance
-        
+
         result = module.check("Test content", "query")
-        
+
         mock_governance.process_action.assert_called_once()
         assert result["allowed"] is True
         assert result["decision"] == "ALLOW"
@@ -384,12 +384,12 @@ class TestFrameworkWithMockedGovernance:
         from nethical.integrations.agent_frameworks.autogen_tools import (
             NethicalAutoGenTool,
         )
-        
+
         tool = NethicalAutoGenTool(storage_dir=temp_storage)
         tool._governance = mock_governance
-        
+
         result = tool.check("Test action", "query")
-        
+
         mock_governance.process_action.assert_called_once()
         assert result["allowed"] is True
         assert result["decision"] == "ALLOW"

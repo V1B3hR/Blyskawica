@@ -44,7 +44,7 @@ class TemporalPatternEncoder(nn.Module):
     
     Detects and encodes precise temporal sequences and correlations
     in spike trains for pattern-based information processing.
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
@@ -119,7 +119,7 @@ class TemporalPatternEncoder(nn.Module):
             
         Returns:
             Tuple of (pattern_activations, encoding_info)
-        """
+        """  # noqa: W293
         if dt is None:
             dt = 0.001
 
@@ -209,7 +209,7 @@ class PhaseEncoder(nn.Module):
     
     Encodes information in the phase relationship between spikes
     and underlying oscillations (e.g., gamma, theta rhythms).
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
@@ -247,7 +247,7 @@ class PhaseEncoder(nn.Module):
             
         Returns:
             Tuple of (phase_encoded_output, phase_info)
-        """
+        """  # noqa: W293
         if dt is None:
             dt = 0.001
 
@@ -265,7 +265,7 @@ class PhaseEncoder(nn.Module):
         # Update phase bins for spiking inputs
         current_phases = self.current_phases.to(device)
         phase_bins = self.phase_bins.to(device)
-        
+
         spike_mask = input_spikes[0] > 0  # Use first batch
 
         # Update phase bins for spiking inputs
@@ -296,7 +296,7 @@ class PhaseEncoder(nn.Module):
         phase_weights = torch.cos(current_phases.unsqueeze(-1) -
                                 torch.linspace(0, 2*math.pi, self.config.phase_resolution, device=device))
 
-        weighted_output = phase_weights * phase_bins
+        weighted_output = phase_weights * phase_bins  # noqa: F841
 
         phase_info = {
             'current_phases': current_phases.clone(),
@@ -315,7 +315,7 @@ class OscillatoryDynamics(nn.Module):
     
     Implements multiple coupled oscillators representing different
     frequency bands (theta, alpha, beta, gamma) with cross-frequency coupling.
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
@@ -357,7 +357,7 @@ class OscillatoryDynamics(nn.Module):
 
         # Detect device and batch size
         device = external_input.device if external_input is not None else self.phases.device
-        
+
         # Detach persistent state from previous batches
         self.phases = self.phases.detach()
         self.amplitudes = self.amplitudes.detach()
@@ -391,7 +391,7 @@ class OscillatoryDynamics(nn.Module):
 
         # Update phases with coupling
         phases = (phases + coupling_effects * dt) % (2 * math.pi)
-        
+
         # Write back to buffer
         self.phases.copy_(phases)
 
@@ -442,7 +442,7 @@ class SparseDistributedRepresentation(nn.Module):
     
     Implements sparse coding principles with lateral inhibition
     to create distributed but sparse neural representations.
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
@@ -491,7 +491,7 @@ class SparseDistributedRepresentation(nn.Module):
             
         Returns:
             Tuple of (sparse_representation, sparsity_info)
-        """
+        """  # noqa: W293
         if dt is None:
             dt = 0.001
 
@@ -503,7 +503,7 @@ class SparseDistributedRepresentation(nn.Module):
 
         # Apply lateral inhibition iteratively
         current_activations = raw_activations.clone()
-        
+
         # Ensure buffers and parameters are on device
         lateral_weights = self.lateral_weights.to(device)
         inhibition_mask = self.inhibition_mask.to(device)
@@ -597,29 +597,29 @@ class VisualSpikeEncoder(nn.Module):
         Args:
             pixels: Input images [batch, C, H, W] normalized 0-1.
             current_time: Time within the current encoding window.
-        """
+        """  # noqa: W293
         batch_size = pixels.size(0)
         flat_pixels = pixels.view(batch_size, -1)
-        
+
         if self.encoding_type == "latency":
             # Latency Encoding: Stronger pixels fire EARLIER in the window
             # t_spike = (1 - pixel_intensity) * time_window
-            
+
             # Reset current time relative to window start
             window_step = current_time % self.time_window
-            
+
             # Calculate target firing times for each pixel
             target_times = (1.0 - flat_pixels) * self.time_window
-            
-            # Spikes occur when current window_step exceeds target_time 
+
+            # Spikes occur when current window_step exceeds target_time
             # and it's the first time it happened in this window
             spikes = (window_step >= target_times) & (window_step < (target_times + dt))
             return spikes.float()
-            
+
         elif self.encoding_type == "poisson":
             # Poisson Encoding: Probability of firing at each dt proportional to intensity
             prob = flat_pixels * (self.max_rate * dt)
             spikes = torch.rand_like(flat_pixels) < prob
             return spikes.float()
-            
+
         return torch.zeros_like(flat_pixels)

@@ -3,9 +3,10 @@ Mathematical Insight: Abstract Reasoning Module.
 Maps formal mathematics (numbers, operators, spaces) into neural geometry.
 """
 
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
+
 
 class MathematicalInsight(nn.Module):
     """
@@ -36,7 +37,7 @@ class MathematicalInsight(nn.Module):
         """
         wave_a = self.perceive_number(val_a)
         wave_b = self.perceive_number(val_b)
-        
+
         if op == "plus":
             # Interference pattern
             return (wave_a + wave_b) / 2
@@ -47,8 +48,8 @@ class MathematicalInsight(nn.Module):
 
 if __name__ == "__main__":
     math_core = MathematicalInsight()
-    
+
     # Example: Błyskawica 'visualizes' 7 + 3
     result_wave = math_core.perceive_operation(7, 3, "plus")
     print(f"[MATH] Visualizing 7 + 3. Activation Mean: {result_wave.mean().item():.4f}")
-    print(f"[MATH] Symbolic to Geometric transformation complete. 📐⚡️")
+    print("[MATH] Symbolic to Geometric transformation complete. 📐⚡️")

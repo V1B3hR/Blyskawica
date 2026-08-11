@@ -10,7 +10,7 @@ This script demonstrates the newly implemented features:
 - Phase 3.2: Ethics in Learning
 
 Run with: python demos/demonstrate_phase2_phase3.py
-"""
+"""  # noqa: W291
 
 import os
 import sys
@@ -19,6 +19,11 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from unittest.mock import Mock
 
+from core.ethical_learning import EthicalDilemmaBenchmark, EthicalLearningMonitor, LearningPhase
+from core.explainable_ai import DecisionType, ExplainableDecisionLogger, ReasoningStep
+from core.real_world_adapter import RealWorldSimulator, TransferLearningValidator
+from core.social_learning import MultiAgentSocialLearningEnvironment
+
 from adaptiveneuralnetwork.training.continual import domain_shift_evaluation
 
 # Import our new modules
@@ -26,10 +31,6 @@ from adaptiveneuralnetwork.training.datasets import (
     create_cross_domain_loaders,
     create_synthetic_loaders,
 )
-from core.ethical_learning import EthicalDilemmaBenchmark, EthicalLearningMonitor, LearningPhase
-from core.explainable_ai import DecisionType, ExplainableDecisionLogger, ReasoningStep
-from core.real_world_adapter import RealWorldSimulator, TransferLearningValidator
-from core.social_learning import MultiAgentSocialLearningEnvironment
 
 
 def demonstrate_cross_domain_generalization():

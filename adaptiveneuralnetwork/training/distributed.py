@@ -372,7 +372,7 @@ def run_distributed_training(
     
     This function can be called directly for single-process training,
     or launched via torch.distributed.launch for multi-process training.
-    """
+    """  # noqa: W293
     # Create distributed config
     if distributed_config is None:
         distributed_config = DistributedConfig(
@@ -462,7 +462,7 @@ def launch_distributed_training(
         
     Returns:
         Completed process result
-    """
+    """  # noqa: W293
     cmd = [
         sys.executable, "-m", "torch.distributed.launch",
         "--nproc_per_node", str(num_processes),

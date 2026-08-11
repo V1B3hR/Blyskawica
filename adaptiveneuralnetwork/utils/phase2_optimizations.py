@@ -97,7 +97,7 @@ def try_compile(model: nn.Module, mode: str = "default") -> nn.Module:
         
     Returns:
         Compiled model or original model if compilation not possible
-    """
+    """  # noqa: W293
     # Check if torch.compile is available (PyTorch 2.0+)
     if not hasattr(torch, 'compile'):
         print("torch.compile not available (requires PyTorch 2.0+)")
@@ -129,7 +129,7 @@ def mixed_precision_wrapper(
         
     Returns:
         Wrapped function with mixed precision support
-    """
+    """  # noqa: W293
     if not enabled or not supports_amp(device):
         return forward_fn
 
@@ -152,7 +152,7 @@ class Phase2OptimizedModel(nn.Module):
     - Optional torch.compile
     - Optional mixed precision (AMP)
     - Optimized tensor operations
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
@@ -210,7 +210,7 @@ def optimize_model_phase2(
         
     Returns:
         Optimized model
-    """
+    """  # noqa: W293
     return Phase2OptimizedModel(
         model,
         enable_compile=enable_compile,

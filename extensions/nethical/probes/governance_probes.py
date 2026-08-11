@@ -10,9 +10,9 @@ Runtime probes that monitor governance properties defined in Phase 4:
 These probes ensure compliance with governance requirements in production.
 """
 
-from datetime import datetime
-from typing import Any, Dict, List, Optional, Set
 import hashlib
+from datetime import datetime
+from typing import Any
 
 from .base_probe import BaseProbe, ProbeResult, ProbeStatus
 
@@ -28,8 +28,8 @@ class MultiSigProbe(BaseProbe):
     - Policy changes have required number of signatures
     - Signatures are from authorized signers
     - No single-party activations for critical policies
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
         policy_service: Any,
@@ -43,28 +43,28 @@ class MultiSigProbe(BaseProbe):
             policy_service: Service managing policies
             min_signatures: Minimum required signatures
             check_interval_seconds: Check interval
-        """
+        """  # noqa: W293
         super().__init__(
             name="P-MULTI-SIG-MultiSignature",
             check_interval_seconds=check_interval_seconds,
         )
         self.policy_service = policy_service
         self.min_signatures = min_signatures
-        self._authorized_signers: Set[str] = set()
-    
-    def set_authorized_signers(self, signers: List[str]):
+        self._authorized_signers: set[str] = set()
+
+    def set_authorized_signers(self, signers: list[str]):
         """Set the list of authorized signers"""
         self._authorized_signers = set(signers)
-    
+
     def check(self) -> ProbeResult:
         """Check multi-signature property"""
         timestamp = datetime.utcnow()
         violations = []
-        
+
         try:
             # Get recent policy changes
             recent_changes = self._get_recent_policy_changes()
-            
+
             if not recent_changes:
                 return ProbeResult(
                     probe_name=self.name,
@@ -73,14 +73,14 @@ class MultiSigProbe(BaseProbe):
                     message="No recent policy changes to verify",
                     metrics={"changes_checked": 0},
                 )
-            
+
             insufficient_sigs = 0
             unauthorized_sigs = 0
-            
+
             for change in recent_changes:
                 policy_id = change.get("policy_id")
                 signatures = change.get("signatures", [])
-                
+
                 # Check signature count
                 if len(signatures) < self.min_signatures:
                     insufficient_sigs += 1
@@ -88,7 +88,7 @@ class MultiSigProbe(BaseProbe):
                         f"Policy {policy_id}: only {len(signatures)} signatures "
                         f"(required: {self.min_signatures})"
                     )
-                
+
                 # Check signer authorization
                 for sig in signatures:
                     signer = sig.get("signer_id")
@@ -97,7 +97,7 @@ class MultiSigProbe(BaseProbe):
                         violations.append(
                             f"Policy {policy_id}: unauthorized signer {signer}"
                         )
-            
+
             # Determine status
             if insufficient_sigs > 0 or unauthorized_sigs > 0:
                 status = ProbeStatus.CRITICAL
@@ -105,7 +105,7 @@ class MultiSigProbe(BaseProbe):
             else:
                 status = ProbeStatus.HEALTHY
                 message = f"All {len(recent_changes)} policy changes properly signed"
-            
+
             return ProbeResult(
                 probe_name=self.name,
                 status=status,
@@ -120,7 +120,7 @@ class MultiSigProbe(BaseProbe):
                 },
                 violations=violations[:10],  # Limit violations
             )
-            
+
         except Exception as e:
             return ProbeResult(
                 probe_name=self.name,
@@ -129,8 +129,8 @@ class MultiSigProbe(BaseProbe):
                 message=f"Failed to check multi-sig property: {str(e)}",
                 metrics={},
             )
-    
-    def _get_recent_policy_changes(self) -> List[Dict[str, Any]]:
+
+    def _get_recent_policy_changes(self) -> list[dict[str, Any]]:
         """Get recent policy changes (placeholder)"""
         # In real implementation, query policy service
         return []
@@ -147,8 +147,8 @@ class PolicyLineageProbe(BaseProbe):
     - Hash chain integrity from policy creation to current version
     - All versions are properly linked
     - No missing versions in lineage
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
         policy_service: Any,
@@ -160,22 +160,22 @@ class PolicyLineageProbe(BaseProbe):
         Args:
             policy_service: Service managing policy lineage
             check_interval_seconds: Check interval
-        """
+        """  # noqa: W293
         super().__init__(
             name="P-POL-LIN-PolicyLineage",
             check_interval_seconds=check_interval_seconds,
         )
         self.policy_service = policy_service
-    
+
     def check(self) -> ProbeResult:
         """Check policy lineage property"""
         timestamp = datetime.utcnow()
         violations = []
-        
+
         try:
             # Get all active policies
             policies = self._get_active_policies()
-            
+
             if not policies:
                 return ProbeResult(
                     probe_name=self.name,
@@ -184,13 +184,13 @@ class PolicyLineageProbe(BaseProbe):
                     message="No active policies to check",
                     metrics={"policies_checked": 0},
                 )
-            
+
             broken_chains = 0
             missing_versions = 0
-            
+
             for policy in policies:
                 policy_id = policy.get("policy_id")
-                
+
                 # Verify hash chain
                 lineage = self._get_policy_lineage(policy_id)
                 if not self._verify_hash_chain(lineage):
@@ -198,14 +198,14 @@ class PolicyLineageProbe(BaseProbe):
                     violations.append(
                         f"Policy {policy_id}: broken hash chain detected"
                     )
-                
+
                 # Check for missing versions
                 if self._has_missing_versions(lineage):
                     missing_versions += 1
                     violations.append(
                         f"Policy {policy_id}: missing versions in lineage"
                     )
-            
+
             # Determine status
             if broken_chains > 0:
                 status = ProbeStatus.CRITICAL
@@ -216,7 +216,7 @@ class PolicyLineageProbe(BaseProbe):
             else:
                 status = ProbeStatus.HEALTHY
                 message = f"All {len(policies)} policy lineages intact"
-            
+
             return ProbeResult(
                 probe_name=self.name,
                 status=status,
@@ -231,7 +231,7 @@ class PolicyLineageProbe(BaseProbe):
                 },
                 violations=violations,
             )
-            
+
         except Exception as e:
             return ProbeResult(
                 probe_name=self.name,
@@ -240,49 +240,49 @@ class PolicyLineageProbe(BaseProbe):
                 message=f"Failed to check policy lineage: {str(e)}",
                 metrics={},
             )
-    
-    def _get_active_policies(self) -> List[Dict[str, Any]]:
+
+    def _get_active_policies(self) -> list[dict[str, Any]]:
         """Get active policies (placeholder)"""
         # In real implementation, query policy service
         return []
-    
-    def _get_policy_lineage(self, policy_id: str) -> List[Dict[str, Any]]:
+
+    def _get_policy_lineage(self, policy_id: str) -> list[dict[str, Any]]:
         """Get policy version history (placeholder)"""
         # In real implementation, query policy lineage
         return []
-    
-    def _verify_hash_chain(self, lineage: List[Dict[str, Any]]) -> bool:
+
+    def _verify_hash_chain(self, lineage: list[dict[str, Any]]) -> bool:
         """Verify hash chain integrity (placeholder)"""
         if not lineage or len(lineage) < 2:
             return True
-        
+
         for i in range(1, len(lineage)):
             prev_version = lineage[i - 1]
             curr_version = lineage[i]
-            
+
             # Verify current version links to previous
             expected_hash = self._compute_hash(prev_version)
             if curr_version.get("parent_hash") != expected_hash:
                 return False
-        
+
         return True
-    
-    def _has_missing_versions(self, lineage: List[Dict[str, Any]]) -> bool:
+
+    def _has_missing_versions(self, lineage: list[dict[str, Any]]) -> bool:
         """Check for missing versions in lineage (placeholder)"""
         if not lineage:
             return False
-        
+
         # Check version sequence
         versions = [v.get("version", 0) for v in lineage]
         versions.sort()
-        
-        for i in range(1, len(versions)):
+
+        for i in range(1, len(versions)):  # noqa: SIM110
             if versions[i] != versions[i - 1] + 1:
                 return True
-        
+
         return False
-    
-    def _compute_hash(self, version: Dict[str, Any]) -> str:
+
+    def _compute_hash(self, version: dict[str, Any]) -> str:
         """Compute hash of policy version (placeholder)"""
         content = str(version.get("content", ""))
         return hashlib.sha256(content.encode()).hexdigest()
@@ -299,11 +299,11 @@ class DataMinimizationProbe(BaseProbe):
     - Only whitelisted fields are accessed
     - No excessive data collection
     - PII access is logged and justified
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
-        allowed_fields: Optional[Set[str]] = None,
+        allowed_fields: set[str] | None = None,
         check_interval_seconds: int = 60,
     ):
         """
@@ -312,7 +312,7 @@ class DataMinimizationProbe(BaseProbe):
         Args:
             allowed_fields: Whitelisted context fields
             check_interval_seconds: Check interval
-        """
+        """  # noqa: W293
         super().__init__(
             name="P-DATA-MIN-DataMinimization",
             check_interval_seconds=check_interval_seconds,
@@ -323,9 +323,9 @@ class DataMinimizationProbe(BaseProbe):
             "timestamp",
             "agent_id",
         }
-        self._access_logs: List[Dict[str, Any]] = []
-    
-    def record_access(self, fields_accessed: Set[str], context: str = ""):
+        self._access_logs: list[dict[str, Any]] = []
+
+    def record_access(self, fields_accessed: set[str], context: str = ""):
         """Record field access for monitoring"""
         self._access_logs.append({
             "fields": fields_accessed,
@@ -335,12 +335,12 @@ class DataMinimizationProbe(BaseProbe):
         # Keep only recent logs
         if len(self._access_logs) > 1000:
             self._access_logs.pop(0)
-    
+
     def check(self) -> ProbeResult:
         """Check data minimization property"""
         timestamp = datetime.utcnow()
         violations = []
-        
+
         if not self._access_logs:
             return ProbeResult(
                 probe_name=self.name,
@@ -349,14 +349,14 @@ class DataMinimizationProbe(BaseProbe):
                 message="No field accesses to check",
                 metrics={"accesses_checked": 0},
             )
-        
+
         unauthorized_count = 0
         unauthorized_fields = set()
-        
+
         for log in self._access_logs:
             fields = log["fields"]
             unauthorized = fields - self.allowed_fields
-            
+
             if unauthorized:
                 unauthorized_count += 1
                 unauthorized_fields.update(unauthorized)
@@ -364,10 +364,10 @@ class DataMinimizationProbe(BaseProbe):
                     violations.append(
                         f"Unauthorized field access: {unauthorized} in {log['context']}"
                     )
-        
+
         # Determine status
         violation_rate = unauthorized_count / len(self._access_logs)
-        
+
         if violation_rate > 0.05:  # >5% violations
             status = ProbeStatus.CRITICAL
             message = f"Excessive unauthorized field access: {unauthorized_count} cases"
@@ -377,7 +377,7 @@ class DataMinimizationProbe(BaseProbe):
         else:
             status = ProbeStatus.HEALTHY
             message = f"All {len(self._access_logs)} accesses within allowed fields"
-        
+
         return ProbeResult(
             probe_name=self.name,
             status=status,
@@ -404,8 +404,8 @@ class TenantIsolationProbe(BaseProbe):
     - Tenant boundaries are enforced
     - No cross-tenant data access
     - Network segmentation is maintained
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
         check_interval_seconds: int = 60,
@@ -415,13 +415,13 @@ class TenantIsolationProbe(BaseProbe):
         
         Args:
             check_interval_seconds: Check interval
-        """
+        """  # noqa: W293
         super().__init__(
             name="P-TENANT-ISO-TenantIsolation",
             check_interval_seconds=check_interval_seconds,
         )
-        self._access_logs: List[Dict[str, Any]] = []
-    
+        self._access_logs: list[dict[str, Any]] = []
+
     def record_access(
         self,
         tenant_id: str,
@@ -438,12 +438,12 @@ class TenantIsolationProbe(BaseProbe):
         # Keep only recent logs
         if len(self._access_logs) > 1000:
             self._access_logs.pop(0)
-    
+
     def check(self) -> ProbeResult:
         """Check tenant isolation property"""
         timestamp = datetime.utcnow()
         violations = []
-        
+
         if not self._access_logs:
             return ProbeResult(
                 probe_name=self.name,
@@ -452,27 +452,27 @@ class TenantIsolationProbe(BaseProbe):
                 message="No tenant accesses to check",
                 metrics={"accesses_checked": 0},
             )
-        
+
         cross_tenant_count = 0
         tenant_pairs = set()
-        
+
         for log in self._access_logs:
             tenant_id = log["tenant_id"]
             resource_tenant_id = log["resource_tenant_id"]
-            
+
             if tenant_id != resource_tenant_id:
                 cross_tenant_count += 1
                 tenant_pairs.add((tenant_id, resource_tenant_id))
-                
+
                 if len(violations) < 10:  # Limit violations
                     violations.append(
                         f"Cross-tenant access: tenant {tenant_id} accessed "
                         f"resource from tenant {resource_tenant_id}"
                     )
-        
+
         # Determine status
         violation_rate = cross_tenant_count / len(self._access_logs)
-        
+
         if violation_rate > 0.01:  # >1% violations (stricter than data min)
             status = ProbeStatus.CRITICAL
             message = f"Tenant isolation breach: {cross_tenant_count} cross-tenant accesses"
@@ -482,7 +482,7 @@ class TenantIsolationProbe(BaseProbe):
         else:
             status = ProbeStatus.HEALTHY
             message = f"All {len(self._access_logs)} accesses properly isolated"
-        
+
         return ProbeResult(
             probe_name=self.name,
             status=status,

@@ -17,19 +17,19 @@ Version: 1.0.0
 """
 
 from .honeypot_detector import (
+    Honeypot,
     HoneypotDetector,
     HoneypotType,
-    Honeypot,
 )
 from .tripwire_detector import (
-    TripwireDetector,
     EndpointType,
+    TripwireDetector,
     TripwireEndpoint,
 )
 from .watermark_detector import (
+    Watermark,
     WatermarkDetector,
     WatermarkType,
-    Watermark,
 )
 
 __all__ = [

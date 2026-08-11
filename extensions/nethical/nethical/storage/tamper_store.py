@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-import json
 import hashlib
+import json
 import time
-from dataclasses import dataclass, field, asdict
+from collections.abc import Iterable
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from threading import RLock
-from typing import Dict, Any, Optional, Tuple, List, Iterable, Literal
+from typing import Any, Literal
 
 
 def _utc_iso(ts: float) -> str:
@@ -43,11 +44,11 @@ class Event:
     ts: float
     ts_iso: str
     leaf: str
-    payload: Dict[str, Any] = field(default_factory=dict)
-    correlation_id: Optional[str] = None
-    prev_root: Optional[str] = None
+    payload: dict[str, Any] = field(default_factory=dict)
+    correlation_id: str | None = None
+    prev_root: str | None = None
 
-    def to_record(self) -> Dict[str, Any]:
+    def to_record(self) -> dict[str, Any]:
         return {
             "type": "event",
             "seq": self.seq,
@@ -66,10 +67,10 @@ class Anchor:
     root: str
     ts: float
     ts_iso: str
-    url: Optional[str] = None
-    receipt: Optional[str] = None  # opaque receipt/assertion (e.g., RFC3161 token)
+    url: str | None = None
+    receipt: str | None = None  # opaque receipt/assertion (e.g., RFC3161 token)
 
-    def to_record(self) -> Dict[str, Any]:
+    def to_record(self) -> dict[str, Any]:
         return {
             "type": "anchor",
             "anchor_type": self.type,
@@ -90,14 +91,14 @@ class MerkleAppender:
 
     def __init__(self, algorithm: str = "sha256"):
         self.algorithm = algorithm
-        self._leaves: List[str] = []
+        self._leaves: list[str] = []
 
     @property
     def size(self) -> int:
         return len(self._leaves)
 
     @property
-    def leaves(self) -> List[str]:
+    def leaves(self) -> list[str]:
         return self._leaves
 
     def add_leaf(self, data: bytes) -> str:
@@ -105,12 +106,12 @@ class MerkleAppender:
         self._leaves.append(leaf)
         return leaf
 
-    def root(self) -> Optional[str]:
+    def root(self) -> str | None:
         nodes = self._leaves[:]
         if not nodes:
             return None
         while len(nodes) > 1:
-            nxt: List[str] = []
+            nxt: list[str] = []
             # pairwise combine, duplicate last if odd length
             for i in range(0, len(nodes), 2):
                 a = nodes[i]
@@ -119,17 +120,17 @@ class MerkleAppender:
             nodes = nxt
         return nodes[0]
 
-    def _level_nodes(self, nodes: List[str]) -> List[str]:
+    def _level_nodes(self, nodes: list[str]) -> list[str]:
         if len(nodes) == 1:
             return nodes
-        nxt: List[str] = []
+        nxt: list[str] = []
         for i in range(0, len(nodes), 2):
             a = nodes[i]
             b = nodes[i + 1] if i + 1 < len(nodes) else a
             nxt.append(_hex(_digest(self.algorithm, bytes.fromhex(a) + bytes.fromhex(b))))
         return nxt
 
-    def prove(self, index: int) -> List[Dict[str, Any]]:
+    def prove(self, index: int) -> list[dict[str, Any]]:
         """
         Build an inclusion proof for leaf at index (0-based).
         Proof is a list of dicts: {"hash": hex, "left": bool}
@@ -140,7 +141,7 @@ class MerkleAppender:
 
         nodes = self._leaves[:]
         i = index
-        proof: List[Dict[str, Any]] = []
+        proof: list[dict[str, Any]] = []
 
         while len(nodes) > 1:
             # sibling within this level
@@ -168,8 +169,8 @@ class MerkleAppender:
     def verify(
         self,
         leaf: str,
-        proof: Iterable[Dict[str, Any]],
-        expected_root: Optional[str] = None,
+        proof: Iterable[dict[str, Any]],
+        expected_root: str | None = None,
     ) -> str:
         """
         Verify a proof against an optional expected_root.
@@ -205,23 +206,23 @@ class TamperEvidentOfflineStore:
 
     def __init__(
         self,
-        tsa_url: Optional[str] = None,
+        tsa_url: str | None = None,
         digest: str = "sha256",
     ):
         self.tsa_url = tsa_url
         self._digest = digest
         self._merkle = MerkleAppender(algorithm=digest)
-        self._events: List[Event] = []
-        self._anchors: List[Anchor] = []
+        self._events: list[Event] = []
+        self._anchors: list[Anchor] = []
         self._lock = RLock()
 
     # --------------- Core API ---------------
 
     def append_event(
         self,
-        payload: Dict[str, Any],
+        payload: dict[str, Any],
         *,
-        correlation_id: Optional[str] = None,
+        correlation_id: str | None = None,
     ) -> str:
         """
         Append a payload as an event. Returns the hex leaf hash.
@@ -253,7 +254,7 @@ class TamperEvidentOfflineStore:
             self._events.append(ev)
             return leaf
 
-    def append_bytes(self, blob: bytes, *, correlation_id: Optional[str] = None) -> str:
+    def append_bytes(self, blob: bytes, *, correlation_id: str | None = None) -> str:
         """
         Append arbitrary bytes as an event payload container under {"_raw_b64": ...} to preserve determinism.
         """
@@ -265,7 +266,7 @@ class TamperEvidentOfflineStore:
             correlation_id=correlation_id,
         )
 
-    def root(self) -> Optional[str]:
+    def root(self) -> str | None:
         with self._lock:
             return self._merkle.root()
 
@@ -279,7 +280,7 @@ class TamperEvidentOfflineStore:
                 raise TamperStoreError("Sequence out of range")
             return self._events[seq - 1]
 
-    def prove(self, seq: int) -> Dict[str, Any]:
+    def prove(self, seq: int) -> dict[str, Any]:
         """
         Build an inclusion proof for the event at sequence 'seq' (1-based).
         """
@@ -298,7 +299,7 @@ class TamperEvidentOfflineStore:
             }
 
     @staticmethod
-    def verify_proof(proof_bundle: Dict[str, Any]) -> bool:
+    def verify_proof(proof_bundle: dict[str, Any]) -> bool:
         """
         Verify an inclusion proof bundle produced by prove().
         """
@@ -312,7 +313,7 @@ class TamperEvidentOfflineStore:
         computed = merkle.verify(leaf=leaf, proof=proof, expected_root=root)
         return computed == root
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         with self._lock:
             return {
                 "schema_version": self.SCHEMA_VERSION,
@@ -330,9 +331,9 @@ class TamperEvidentOfflineStore:
         *,
         anchor: bool = True,
         anchor_type: Literal["tsa", "file", "custom"] = "tsa",
-        anchor_url: Optional[str] = None,
-        receipt: Optional[str] = None,
-    ) -> Tuple[bool, Optional[str]]:
+        anchor_url: str | None = None,
+        receipt: str | None = None,
+    ) -> tuple[bool, str | None]:
         """
         No-op remote push placeholder. Optionally records an anchor.
         Returns (ok, root).
@@ -382,12 +383,12 @@ class TamperEvidentOfflineStore:
 
     # --------------- Export / Import ---------------
 
-    def export_records(self) -> List[Dict[str, Any]]:
+    def export_records(self) -> list[dict[str, Any]]:
         """
         Export a sequence of records suitable for durable persistence (e.g., JSONL).
         """
         with self._lock:
-            recs: List[Dict[str, Any]] = [
+            recs: list[dict[str, Any]] = [
                 {
                     "type": "header",
                     "schema_version": self.SCHEMA_VERSION,
@@ -401,12 +402,12 @@ class TamperEvidentOfflineStore:
             return recs
 
     @classmethod
-    def import_records(cls, records: Iterable[Dict[str, Any]]) -> TamperEvidentOfflineStore:
+    def import_records(cls, records: Iterable[dict[str, Any]]) -> TamperEvidentOfflineStore:
         """
         Build a store from exported records. Verifies integrity as it loads.
         """
         digest = "sha256"
-        tsa_url: Optional[str] = None
+        tsa_url: str | None = None
 
         # find header if present
         for r in records:

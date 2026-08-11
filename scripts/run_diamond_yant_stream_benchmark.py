@@ -5,7 +5,7 @@ Stream 4: Diamond Yant (Semantics & 16x16 Cymatic Resonance) Benchmark Script
 Ingests Stanford SNAP graph network topology and OpenML non-linear dataset streams.
 Evaluates 16x16 Diamond Yant matrix projection, spatial symmetry computation, 
 Serotonin coherence modulation, and disinformation filtering.
-"""
+"""  # noqa: W291
 
 import json
 import logging
@@ -13,6 +13,7 @@ import math
 import sys
 import time
 from pathlib import Path
+
 import torch
 
 # Configure logging
@@ -21,16 +22,18 @@ logger = logging.getLogger("diamond_yant_benchmark")
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import NeuromodulationState
-from adaptiveneuralnetwork.central_nervous_system.diamond_yant_stream_pipeline import (
-    DiamondYantCymaticEngine, 
-    GraphNetworkSample
+from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import (  # noqa: E402
+    NeuromodulationState,  # noqa: E402
+)
+from adaptiveneuralnetwork.central_nervous_system.diamond_yant_stream_pipeline import (  # noqa: E402
+    DiamondYantCymaticEngine,
+    GraphNetworkSample,
 )
 
 
 def generate_synthetic_graphs() -> dict[str, list[GraphNetworkSample]]:
     """Generates synthetic SNAP network graphs with symmetric vs asymmetric topology."""
-    
+
     # 1. Symmetric 16x16 grid (Coherent Knowledge Graph)
     grid_16 = torch.zeros(16, 16)
     for r in range(16):

@@ -11,35 +11,33 @@ A comprehensive system for clinical scenario simulation that includes:
 - Authentication & RBAC: Clinician vs Developer vs Auditor roles
 """
 
-import asyncio
 import json
 import logging
-import uuid
-from datetime import datetime, timedelta
-from dataclasses import dataclass, field
-from typing import Dict, List, Any, Optional, Union, Callable
-from concurrent.futures import ThreadPoolExecutor
-import threading
-import time
-import redis
 import sqlite3
+import time
+import uuid
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
+from typing import Any
+
+import redis
+import uvicorn
 
 # FastAPI and web components
-from fastapi import FastAPI, HTTPException, Depends, WebSocket, WebSocketDisconnect
+from fastapi import Depends, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, FileResponse
-from pydantic import BaseModel, Field
-import uvicorn
+from fastapi.responses import HTMLResponse
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from pydantic import BaseModel
 
 # Import existing components
 try:
-    from aimedres.clinical.decision_support import ClinicalDecisionSupportSystem
-    from aimedres.agents.specialized_medical_agents import MedicalKnowledgeAgent
-    from labyrinth_adaptive import UnifiedAdaptiveAgent
-    from secure_medical_processor import SecureMedicalDataProcessor
+    from aimedres.agents.specialized_medical_agents import MedicalKnowledgeAgent  # noqa: F401
+    from aimedres.clinical.decision_support import ClinicalDecisionSupportSystem  # noqa: F401
+    from labyrinth_adaptive import UnifiedAdaptiveAgent  # noqa: F401
+    from secure_medical_processor import SecureMedicalDataProcessor  # noqa: F401
 except ImportError as e:
     logging.warning(f"Some modules not available: {e}")
 
@@ -52,11 +50,11 @@ class PatientProfile:
     patient_id: str
     age: int
     gender: str
-    conditions: List[str] = field(default_factory=list)
-    medications: List[str] = field(default_factory=list)
-    vitals: Dict[str, float] = field(default_factory=dict)
-    lab_values: Dict[str, float] = field(default_factory=dict)
-    medical_history: List[str] = field(default_factory=list)
+    conditions: list[str] = field(default_factory=list)
+    medications: list[str] = field(default_factory=list)
+    vitals: dict[str, float] = field(default_factory=dict)
+    lab_values: dict[str, float] = field(default_factory=dict)
+    medical_history: list[str] = field(default_factory=list)
 
 @dataclass
 class TimelineEvent:
@@ -64,7 +62,7 @@ class TimelineEvent:
     event_id: str
     timestamp: datetime
     event_type: str  # 'medication_change', 'vital_change', 'lab_result', 'condition_onset'
-    parameters: Dict[str, Any] = field(default_factory=dict)
+    parameters: dict[str, Any] = field(default_factory=dict)
     description: str = ""
 
 @dataclass
@@ -74,8 +72,8 @@ class SimulationScenario:
     name: str
     description: str
     patient_profile: PatientProfile
-    timeline_events: List[TimelineEvent] = field(default_factory=list)
-    parameters: Dict[str, Any] = field(default_factory=dict)
+    timeline_events: list[TimelineEvent] = field(default_factory=list)
+    parameters: dict[str, Any] = field(default_factory=dict)
     created_by: str = ""
     created_at: datetime = field(default_factory=datetime.now)
 
@@ -85,53 +83,53 @@ class SimulationTick:
     scenario_id: str
     tick: int
     timestamp: datetime
-    agents: Dict[str, Dict[str, Any]]
+    agents: dict[str, dict[str, Any]]
     patient_context_hash: str
-    recommendations: List[Dict[str, Any]]
+    recommendations: list[dict[str, Any]]
     safety_state: str
-    memory_events: List[Dict[str, Any]]
-    metrics: Dict[str, float] = field(default_factory=dict)
+    memory_events: list[dict[str, Any]]
+    metrics: dict[str, float] = field(default_factory=dict)
 
 # Pydantic Models for API
 class PatientProfileModel(BaseModel):
     patient_id: str
     age: int
     gender: str
-    conditions: List[str] = []
-    medications: List[str] = []
-    vitals: Dict[str, float] = {}
-    lab_values: Dict[str, float] = {}
-    medical_history: List[str] = []
+    conditions: list[str] = []
+    medications: list[str] = []
+    vitals: dict[str, float] = {}
+    lab_values: dict[str, float] = {}
+    medical_history: list[str] = []
 
 class TimelineEventModel(BaseModel):
     event_id: str
     timestamp: datetime
     event_type: str
-    parameters: Dict[str, Any] = {}
+    parameters: dict[str, Any] = {}
     description: str = ""
 
 class SimulationScenarioModel(BaseModel):
     name: str
     description: str
     patient_profile: PatientProfileModel
-    timeline_events: List[TimelineEventModel] = []
-    parameters: Dict[str, Any] = {}
+    timeline_events: list[TimelineEventModel] = []
+    parameters: dict[str, Any] = {}
 
 class InterventionRequest(BaseModel):
     scenario_id: str
     intervention_type: str  # 'pause', 'override', 'inject_memory', 'force_fallback'
-    parameters: Dict[str, Any] = {}
+    parameters: dict[str, Any] = {}
 
 # Core Dashboard Components
 
 class ClinicalScenarioValidator:
     """Validates clinical scenarios for medical accuracy and safety"""
-    
+
     def __init__(self):
         self.validation_rules = self._initialize_validation_rules()
         self.medical_constraints = self._initialize_medical_constraints()
-    
-    def _initialize_validation_rules(self) -> List[Dict[str, Any]]:
+
+    def _initialize_validation_rules(self) -> list[dict[str, Any]]:
         """Initialize clinical validation rules"""
         return [
             {
@@ -155,8 +153,8 @@ class ClinicalScenarioValidator:
                 'severity': 'high'
             }
         ]
-    
-    def _initialize_medical_constraints(self) -> Dict[str, Any]:
+
+    def _initialize_medical_constraints(self) -> dict[str, Any]:
         """Initialize medical constraints and normal ranges"""
         return {
             'vitals': {
@@ -179,8 +177,8 @@ class ClinicalScenarioValidator:
                 'metformin': []  # Special handling for kidney function
             }
         }
-    
-    def validate_scenario(self, scenario: SimulationScenario) -> Dict[str, Any]:
+
+    def validate_scenario(self, scenario: SimulationScenario) -> dict[str, Any]:
         """Validate complete clinical scenario"""
         validation_results = {
             'valid': True,
@@ -188,38 +186,38 @@ class ClinicalScenarioValidator:
             'warnings': [],
             'recommendations': []
         }
-        
+
         # Run all validation rules
         for rule in self.validation_rules:
             try:
                 result = rule['validator'](scenario)
-                
+
                 if not result['valid']:
                     validation_results['valid'] = False
-                    
+
                     if rule['severity'] == 'critical':
                         validation_results['errors'].extend(result['messages'])
                     elif rule['severity'] == 'high':
                         validation_results['errors'].extend(result['messages'])
                     else:
                         validation_results['warnings'].extend(result['messages'])
-                
+
                 if 'recommendations' in result:
                     validation_results['recommendations'].extend(result['recommendations'])
-                    
+
             except Exception as e:
                 validation_results['errors'].append(f"Validation rule {rule['name']} failed: {str(e)}")
                 validation_results['valid'] = False
-        
+
         return validation_results
-    
-    def _validate_age_vitals_consistency(self, scenario: SimulationScenario) -> Dict[str, Any]:
+
+    def _validate_age_vitals_consistency(self, scenario: SimulationScenario) -> dict[str, Any]:
         """Validate that vitals are consistent with patient age"""
         result = {'valid': True, 'messages': [], 'recommendations': []}
-        
+
         age = scenario.patient_profile.age
         vitals = scenario.patient_profile.vitals
-        
+
         # Age-specific vital sign validation
         if age < 18:  # Pediatric
             if vitals.get('heart_rate', 80) < 70:
@@ -228,17 +226,17 @@ class ClinicalScenarioValidator:
         elif age > 80:  # Geriatric
             if vitals.get('systolic_bp', 120) > 180:
                 result['warnings'] = result.get('warnings', [])
-                result['warnings'].append(f"High blood pressure in geriatric patient - consider medication review")
-        
+                result['warnings'].append("High blood pressure in geriatric patient - consider medication review")
+
         return result
-    
-    def _validate_medication_contraindications(self, scenario: SimulationScenario) -> Dict[str, Any]:
+
+    def _validate_medication_contraindications(self, scenario: SimulationScenario) -> dict[str, Any]:
         """Validate medication combinations for safety"""
         result = {'valid': True, 'messages': [], 'recommendations': []}
-        
+
         medications = scenario.patient_profile.medications
         contraindications = self.medical_constraints['medication_contraindications']
-        
+
         for med in medications:
             if med in contraindications:
                 contraindicated_meds = contraindications[med]
@@ -251,20 +249,20 @@ class ClinicalScenarioValidator:
                         result['recommendations'].append(
                             f"Consider alternative to {other_med} or discontinue {med}"
                         )
-        
+
         return result
-    
-    def _validate_lab_ranges(self, scenario: SimulationScenario) -> Dict[str, Any]:
+
+    def _validate_lab_ranges(self, scenario: SimulationScenario) -> dict[str, Any]:
         """Validate laboratory values are within acceptable ranges"""
         result = {'valid': True, 'messages': [], 'recommendations': []}
-        
+
         lab_values = scenario.patient_profile.lab_values
         lab_constraints = self.medical_constraints['lab_values']
-        
+
         for lab_name, value in lab_values.items():
             if lab_name in lab_constraints:
                 constraints = lab_constraints[lab_name]
-                
+
                 if value < constraints['min'] or value > constraints['max']:
                     result['valid'] = False
                     result['messages'].append(
@@ -275,24 +273,24 @@ class ClinicalScenarioValidator:
                     result['recommendations'].append(
                         f"{lab_name} value {value} outside normal range - monitor closely"
                     )
-        
+
         return result
-    
-    def _validate_timeline_logic(self, scenario: SimulationScenario) -> Dict[str, Any]:
+
+    def _validate_timeline_logic(self, scenario: SimulationScenario) -> dict[str, Any]:
         """Validate timeline events for medical logic"""
         result = {'valid': True, 'messages': [], 'recommendations': []}
-        
+
         events = sorted(scenario.timeline_events, key=lambda e: e.timestamp)
-        
+
         # Check for medically impossible sequences
         for i in range(len(events) - 1):
             current_event = events[i]
             next_event = events[i + 1]
-            
+
             # Check time intervals for medication changes
-            if (current_event.event_type == 'medication_change' and 
+            if (current_event.event_type == 'medication_change' and
                 next_event.event_type == 'medication_change'):
-                
+
                 time_diff = (next_event.timestamp - current_event.timestamp).total_seconds()
                 if time_diff < 3600:  # Less than 1 hour
                     result['messages'].append(
@@ -301,18 +299,18 @@ class ClinicalScenarioValidator:
                     result['recommendations'].append(
                         "Consider spacing medication changes by at least 1 hour"
                     )
-        
+
         return result
 
 
 class ScenarioBuilder:
     """Compose patient profile + timeline events and parameter sweeps"""
-    
+
     def __init__(self, db_path: str = "simulation_scenarios.db"):
         self.db_path = db_path
         self.validator = ClinicalScenarioValidator()
         self._init_database()
-    
+
     def _init_database(self):
         """Initialize the database for scenario storage"""
         conn = sqlite3.connect(self.db_path)
@@ -330,14 +328,14 @@ class ScenarioBuilder:
         """)
         conn.commit()
         conn.close()
-    
-    def create_scenario(self, scenario_data: SimulationScenarioModel, user_id: str) -> Dict[str, Any]:
+
+    def create_scenario(self, scenario_data: SimulationScenarioModel, user_id: str) -> dict[str, Any]:
         """Create a new simulation scenario with validation"""
         scenario_id = str(uuid.uuid4())
-        
+
         patient_profile = PatientProfile(**scenario_data.patient_profile.model_dump())
         timeline_events = [TimelineEvent(**event.model_dump()) for event in scenario_data.timeline_events]
-        
+
         scenario = SimulationScenario(
             scenario_id=scenario_id,
             name=scenario_data.name,
@@ -348,10 +346,10 @@ class ScenarioBuilder:
             created_by=user_id,
             created_at=datetime.now()
         )
-        
+
         # Validate scenario before storing
         validation_result = self.validator.validate_scenario(scenario)
-        
+
         if not validation_result['valid']:
             return {
                 'status': 'validation_failed',
@@ -360,7 +358,7 @@ class ScenarioBuilder:
                 'validation_warnings': validation_result['warnings'],
                 'recommendations': validation_result['recommendations']
             }
-        
+
         # Store in database
         conn = sqlite3.connect(self.db_path)
         conn.execute("""
@@ -377,7 +375,7 @@ class ScenarioBuilder:
         ))
         conn.commit()
         conn.close()
-        
+
         logger.info(f"Created scenario {scenario_id}: {scenario.name}")
         return {
             'status': 'success',
@@ -385,8 +383,8 @@ class ScenarioBuilder:
             'validation_warnings': validation_result.get('warnings', []),
             'recommendations': validation_result.get('recommendations', [])
         }
-    
-    def get_scenario(self, scenario_id: str) -> Optional[SimulationScenario]:
+
+    def get_scenario(self, scenario_id: str) -> SimulationScenario | None:
         """Retrieve a simulation scenario"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.execute("""
@@ -394,18 +392,18 @@ class ScenarioBuilder:
         """, (scenario_id,))
         row = cursor.fetchone()
         conn.close()
-        
+
         if not row:
             return None
-        
+
         # Reconstruct scenario object
         patient_profile_data = json.loads(row[3])
         timeline_events_data = json.loads(row[4])
         parameters = json.loads(row[5])
-        
+
         patient_profile = PatientProfile(**patient_profile_data)
         timeline_events = [TimelineEvent(**event) for event in timeline_events_data]
-        
+
         return SimulationScenario(
             scenario_id=row[0],
             name=row[1],
@@ -416,21 +414,21 @@ class ScenarioBuilder:
             created_by=row[6],
             created_at=datetime.fromisoformat(row[7])
         )
-    
-    def list_scenarios(self, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
+
+    def list_scenarios(self, user_id: str | None = None) -> list[dict[str, Any]]:
         """List all scenarios or scenarios by user"""
         conn = sqlite3.connect(self.db_path)
         if user_id:
             cursor = conn.execute("""
                 SELECT scenario_id, name, description, created_by, created_at 
                 FROM scenarios WHERE created_by = ?
-            """, (user_id,))
+            """, (user_id,))  # noqa: W291
         else:
             cursor = conn.execute("""
                 SELECT scenario_id, name, description, created_by, created_at 
                 FROM scenarios
-            """)
-        
+            """)  # noqa: W291
+
         scenarios = []
         for row in cursor.fetchall():
             scenarios.append({
@@ -440,23 +438,23 @@ class ScenarioBuilder:
                 'created_by': row[3],
                 'created_at': row[4]
             })
-        
+
         conn.close()
         return scenarios
 
 
 class ExecutionOrchestrator:
     """Launch ephemeral simulation workers with isolation"""
-    
+
     def __init__(self, redis_url: str = "redis://localhost:6379"):
         self.redis_client = redis.from_url(redis_url)
-        self.active_simulations: Dict[str, Dict] = {}
+        self.active_simulations: dict[str, dict] = {}
         self.worker_pool = ThreadPoolExecutor(max_workers=10)
-    
+
     async def start_simulation(self, scenario: SimulationScenario, user_id: str) -> str:
         """Start a new simulation"""
         simulation_id = str(uuid.uuid4())
-        
+
         simulation_info = {
             'simulation_id': simulation_id,
             'scenario_id': scenario.scenario_id,
@@ -466,44 +464,44 @@ class ExecutionOrchestrator:
             'current_tick': 0,
             'total_events': len(scenario.timeline_events)
         }
-        
+
         self.active_simulations[simulation_id] = simulation_info
-        
+
         # Start simulation in worker thread
         self.worker_pool.submit(self._run_simulation_worker, scenario, simulation_id)
-        
+
         logger.info(f"Started simulation {simulation_id} for scenario {scenario.scenario_id}")
         return simulation_id
-    
+
     def _run_simulation_worker(self, scenario: SimulationScenario, simulation_id: str):
         """Worker function to run simulation"""
         try:
             simulation_info = self.active_simulations[simulation_id]
             simulation_info['status'] = 'running'
-            
+
             # Initialize agents
             agents = self._initialize_agents(scenario)
-            
+
             # Process timeline events
             for tick, event in enumerate(scenario.timeline_events):
                 if simulation_info.get('status') != 'running':
                     break
-                
+
                 simulation_info['current_tick'] = tick
-                
+
                 # Apply event to patient state
                 patient_state = self._apply_event(scenario.patient_profile, event)
-                
+
                 # Run agent processing
                 agent_results = {}
                 recommendations = []
                 memory_events = []
-                
+
                 for agent_name, agent in agents.items():
                     try:
                         result = self._process_agent(agent, patient_state, event)
                         agent_results[agent_name] = result
-                        
+
                         if 'recommendations' in result:
                             recommendations.extend(result['recommendations'])
                         if 'memory_events' in result:
@@ -511,7 +509,7 @@ class ExecutionOrchestrator:
                     except Exception as e:
                         logger.error(f"Agent {agent_name} error: {e}")
                         agent_results[agent_name] = {'state': 'error', 'error': str(e)}
-                
+
                 # Create simulation tick
                 tick_data = SimulationTick(
                     scenario_id=scenario.scenario_id,
@@ -524,25 +522,25 @@ class ExecutionOrchestrator:
                     memory_events=memory_events,
                     metrics=self._calculate_metrics(agent_results)
                 )
-                
+
                 # Broadcast tick data
                 self._broadcast_tick(simulation_id, tick_data)
-                
+
                 # Simulate real-time delay
                 time.sleep(0.1)
-            
+
             simulation_info['status'] = 'completed'
             simulation_info['end_time'] = datetime.now()
-            
+
         except Exception as e:
             logger.error(f"Simulation {simulation_id} failed: {e}")
             simulation_info['status'] = 'failed'
             simulation_info['error'] = str(e)
-    
-    def _initialize_agents(self, scenario: SimulationScenario) -> Dict[str, Any]:
+
+    def _initialize_agents(self, scenario: SimulationScenario) -> dict[str, Any]:
         """Initialize simulation agents"""
         agents = {}
-        
+
         # Create mock agents for demonstration
         agents['risk_assessor'] = {
             'name': 'risk_assessor',
@@ -554,10 +552,10 @@ class ExecutionOrchestrator:
             'type': 'treatment_recommendation',
             'initialized': True
         }
-        
+
         return agents
-    
-    def _apply_event(self, patient_profile: PatientProfile, event: TimelineEvent) -> Dict[str, Any]:
+
+    def _apply_event(self, patient_profile: PatientProfile, event: TimelineEvent) -> dict[str, Any]:
         """Apply timeline event to patient state"""
         patient_state = {
             'patient_id': patient_profile.patient_id,
@@ -570,7 +568,7 @@ class ExecutionOrchestrator:
             'medical_history': patient_profile.medical_history.copy(),
             'current_event': event.__dict__
         }
-        
+
         # Apply event modifications
         if event.event_type == 'medication_change':
             if 'add' in event.parameters:
@@ -579,20 +577,20 @@ class ExecutionOrchestrator:
                 for med in event.parameters['remove']:
                     if med in patient_state['medications']:
                         patient_state['medications'].remove(med)
-        
+
         elif event.event_type == 'vital_change':
             patient_state['vitals'].update(event.parameters)
-        
+
         elif event.event_type == 'lab_result':
             patient_state['lab_values'].update(event.parameters)
-        
+
         elif event.event_type == 'condition_onset':
             if 'condition' in event.parameters:
                 patient_state['conditions'].append(event.parameters['condition'])
-        
+
         return patient_state
-    
-    def _process_agent(self, agent: Dict[str, Any], patient_state: Dict[str, Any], event: TimelineEvent) -> Dict[str, Any]:
+
+    def _process_agent(self, agent: dict[str, Any], patient_state: dict[str, Any], event: TimelineEvent) -> dict[str, Any]:
         """Process agent with current patient state"""
         # Mock agent processing for demonstration
         if agent['type'] == 'medical_risk':
@@ -613,7 +611,7 @@ class ExecutionOrchestrator:
                     'risk_score': risk_score
                 }]
             }
-        
+
         elif agent['type'] == 'treatment_recommendation':
             confidence = 0.8 + (hash(str(patient_state)) % 20) / 100.0
             return {
@@ -631,39 +629,39 @@ class ExecutionOrchestrator:
                     'confidence': confidence
                 }]
             }
-        
+
         return {'state': 'unknown', 'latency_ms': 0}
-    
-    def _hash_patient_state(self, patient_state: Dict[str, Any]) -> str:
+
+    def _hash_patient_state(self, patient_state: dict[str, Any]) -> str:
         """Generate hash for patient state"""
         return str(hash(json.dumps(patient_state, sort_keys=True, default=str)))[:16]
-    
-    def _assess_safety_state(self, agent_results: Dict[str, Dict[str, Any]]) -> str:
+
+    def _assess_safety_state(self, agent_results: dict[str, dict[str, Any]]) -> str:
         """Assess overall safety state"""
         errors = sum(1 for result in agent_results.values() if result.get('state') == 'error')
-        
+
         if errors > 0:
             return 'critical'
-        
+
         # Check risk scores
         risk_scores = [result.get('risk_score', 0) for result in agent_results.values()]
         if any(score > 0.8 for score in risk_scores):
             return 'warning'
-        
+
         return 'normal'
-    
-    def _calculate_metrics(self, agent_results: Dict[str, Dict[str, Any]]) -> Dict[str, float]:
+
+    def _calculate_metrics(self, agent_results: dict[str, dict[str, Any]]) -> dict[str, float]:
         """Calculate simulation metrics"""
         latencies = [result.get('latency_ms', 0) for result in agent_results.values()]
-        
+
         return {
             'avg_latency_ms': sum(latencies) / len(latencies) if latencies else 0,
             'max_latency_ms': max(latencies) if latencies else 0,
             'agent_count': len(agent_results),
-            'success_rate': sum(1 for result in agent_results.values() 
+            'success_rate': sum(1 for result in agent_results.values()
                               if result.get('state') == 'completed') / len(agent_results)
         }
-    
+
     def _broadcast_tick(self, simulation_id: str, tick_data: SimulationTick):
         """Broadcast simulation tick to subscribers"""
         try:
@@ -672,11 +670,11 @@ class ExecutionOrchestrator:
             self.redis_client.publish("simulation:all", message)
         except Exception as e:
             logger.error(f"Failed to broadcast tick: {e}")
-    
-    def get_simulation_status(self, simulation_id: str) -> Optional[Dict[str, Any]]:
+
+    def get_simulation_status(self, simulation_id: str) -> dict[str, Any] | None:
         """Get current simulation status"""
         return self.active_simulations.get(simulation_id)
-    
+
     def stop_simulation(self, simulation_id: str) -> bool:
         """Stop a running simulation"""
         if simulation_id in self.active_simulations:
@@ -687,16 +685,16 @@ class ExecutionOrchestrator:
 
 class InterventionPanel:
     """Manual override capabilities"""
-    
+
     def __init__(self, orchestrator: ExecutionOrchestrator):
         self.orchestrator = orchestrator
         self.intervention_log = []
-    
-    def apply_intervention(self, request: InterventionRequest, user_id: str) -> Dict[str, Any]:
+
+    def apply_intervention(self, request: InterventionRequest, user_id: str) -> dict[str, Any]:
         """Apply manual intervention to simulation"""
         intervention_id = str(uuid.uuid4())
         timestamp = datetime.now()
-        
+
         intervention_record = {
             'intervention_id': intervention_id,
             'simulation_id': request.scenario_id,  # Note: using scenario_id as simulation_id for simplicity
@@ -706,7 +704,7 @@ class InterventionPanel:
             'parameters': request.parameters,
             'status': 'applied'
         }
-        
+
         simulation_info = self.orchestrator.active_simulations.get(request.scenario_id)
         if not simulation_info:
             intervention_record['status'] = 'failed'
@@ -724,13 +722,13 @@ class InterventionPanel:
             elif request.intervention_type == 'inject_memory':
                 # Would inject synthetic memory event
                 pass
-        
+
         self.intervention_log.append(intervention_record)
         logger.info(f"Applied intervention {intervention_id}: {request.intervention_type}")
-        
+
         return intervention_record
-    
-    def get_intervention_history(self, simulation_id: Optional[str] = None) -> List[Dict[str, Any]]:
+
+    def get_intervention_history(self, simulation_id: str | None = None) -> list[dict[str, Any]]:
         """Get intervention history"""
         if simulation_id:
             return [i for i in self.intervention_log if i['simulation_id'] == simulation_id]
@@ -739,7 +737,7 @@ class InterventionPanel:
 
 class MetricsCollector:
     """Collect and track key simulation metrics"""
-    
+
     def __init__(self):
         self.metrics = {
             'scenario_throughput': 0,  # scenarios per hour
@@ -752,29 +750,29 @@ class MetricsCollector:
             'failed_simulations': 0
         }
         self.start_time = datetime.now()
-    
+
     def update_metrics(self, orchestrator: ExecutionOrchestrator):
         """Update metrics based on current state"""
-        active_count = sum(1 for sim in orchestrator.active_simulations.values() 
+        active_count = sum(1 for sim in orchestrator.active_simulations.values()
                           if sim['status'] in ['running', 'starting'])
-        completed_count = sum(1 for sim in orchestrator.active_simulations.values() 
+        completed_count = sum(1 for sim in orchestrator.active_simulations.values()
                              if sim['status'] == 'completed')
-        failed_count = sum(1 for sim in orchestrator.active_simulations.values() 
+        failed_count = sum(1 for sim in orchestrator.active_simulations.values()
                           if sim['status'] == 'failed')
-        
+
         self.metrics.update({
             'active_simulations': active_count,
             'completed_simulations': completed_count,
             'failed_simulations': failed_count,
             'total_simulations': len(orchestrator.active_simulations)
         })
-        
+
         # Calculate throughput
         hours_elapsed = (datetime.now() - self.start_time).total_seconds() / 3600
         if hours_elapsed > 0:
             self.metrics['scenario_throughput'] = completed_count / hours_elapsed
-    
-    def get_metrics(self) -> Dict[str, Any]:
+
+    def get_metrics(self) -> dict[str, Any]:
         """Get current metrics snapshot"""
         return self.metrics.copy()
 
@@ -799,20 +797,20 @@ metrics_collector = MetricsCollector()
 # WebSocket connections for real-time updates
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: List[WebSocket] = []
-    
+        self.active_connections: list[WebSocket] = []
+
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
         self.active_connections.append(websocket)
-    
+
     def disconnect(self, websocket: WebSocket):
         self.active_connections.remove(websocket)
-    
+
     async def broadcast(self, message: str):
         for connection in self.active_connections:
             try:
                 await connection.send_text(message)
-            except:
+            except:  # noqa: E722
                 pass
 
 manager = ConnectionManager()
@@ -852,7 +850,7 @@ async def get_scenario(scenario_id: str, user: dict = Depends(get_current_user))
     scenario = scenario_builder.get_scenario(scenario_id)
     if not scenario:
         raise HTTPException(status_code=404, detail="Scenario not found")
-    
+
     return {
         "scenario_id": scenario.scenario_id,
         "name": scenario.name,
@@ -872,10 +870,10 @@ async def start_simulation(
     """Start a new simulation"""
     scenario_id = request.get("scenario_id")
     scenario = scenario_builder.get_scenario(scenario_id)
-    
+
     if not scenario:
         raise HTTPException(status_code=404, detail="Scenario not found")
-    
+
     simulation_id = await orchestrator.start_simulation(scenario, user["user_id"])
     return {"simulation_id": simulation_id, "status": "started"}
 
@@ -885,7 +883,7 @@ async def get_simulation_status(simulation_id: str, user: dict = Depends(get_cur
     status = orchestrator.get_simulation_status(simulation_id)
     if not status:
         raise HTTPException(status_code=404, detail="Simulation not found")
-    
+
     return status
 
 @app.post("/api/simulations/{simulation_id}/intervention")
@@ -1265,17 +1263,17 @@ def get_dashboard_html():
     </script>
 </body>
 </html>
-    """
+    """  # noqa: W293
 
 if __name__ == "__main__":
     # Create database directory if it doesn't exist
     Path("simulation_scenarios.db").parent.mkdir(parents=True, exist_ok=True)
-    
+
     # Configure logging
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
-    
+
     logger.info("Starting AiMedRes Simulation Dashboard")
     uvicorn.run(app, host="0.0.0.0", port=8000)

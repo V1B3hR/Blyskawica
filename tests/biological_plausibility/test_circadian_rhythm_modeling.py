@@ -184,12 +184,12 @@ class TestCircadianRhythmModeling(unittest.TestCase):
         memory_system.add_memory("trivial_detail", 0.1, 3)
 
         # Simulate sleep consolidation over multiple cycles
-        for cycle in range(15):  # More cycles to ensure consolidation
+        for cycle in range(15):  # More cycles to ensure consolidation  # noqa: B007
             sleep_depth = 0.8  # Deep sleep
             memory_system.consolidate_during_sleep(sleep_depth)
 
         # Test that important memories consolidate first
-        consolidated_contents = [mem["content"] for mem in memory_system.consolidated_memories]
+        consolidated_contents = [mem["content"] for mem in memory_system.consolidated_memories]  # noqa: F841
 
         # Check consolidation strength instead if not fully consolidated
         safety_memory = next((mem for mem in memory_system.memories
@@ -213,7 +213,7 @@ class TestCircadianRhythmModeling(unittest.TestCase):
         memory_system_shallow.add_memory("test_memory", 0.7, 0)
 
         # Shallow sleep consolidation
-        for cycle in range(10):
+        for cycle in range(10):  # noqa: B007
             memory_system_shallow.consolidate_during_sleep(0.3)  # Shallow sleep
 
         shallow_consolidation = memory_system_shallow.memories[0]["consolidation_strength"]
@@ -222,7 +222,7 @@ class TestCircadianRhythmModeling(unittest.TestCase):
         memory_system_deep = MemoryConsolidationSystem()
         memory_system_deep.add_memory("test_memory", 0.7, 0)
 
-        for cycle in range(10):
+        for cycle in range(10):  # noqa: B007
             memory_system_deep.consolidate_during_sleep(0.9)  # Deep sleep
 
         deep_consolidation = memory_system_deep.memories[0]["consolidation_strength"]
@@ -328,7 +328,7 @@ class TestCircadianRhythmModeling(unittest.TestCase):
             Simulate homeostatic sleep pressure
             wake_duration: hours awake
             sleep_duration: hours asleep  
-            """
+            """  # noqa: W291
             # Pressure builds during wake (exponential saturation)
             max_pressure = 1.0
             wake_pressure = max_pressure * (1 - math.exp(-wake_duration * pressure_buildup_rate))

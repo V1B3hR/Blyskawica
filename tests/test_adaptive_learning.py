@@ -69,7 +69,7 @@ class TestAdaptiveLearning(unittest.TestCase):
         Expected: Node should integrate valuable shared knowledge
         """
         # Create a source node with valuable memory
-        source_node = AliveLoopNode(position=(1, 1), velocity=(0, 0), initial_energy=10.0, node_id=2)
+        source_node = AliveLoopNode(position=(1, 1), velocity=(0, 0), initial_energy=10.0, node_id=2)  # noqa: F841
 
         # Establish trust relationship
         self.node.trust_network[2] = 0.8

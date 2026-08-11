@@ -6,30 +6,24 @@ lateral movement detection, kill chain analysis, cloud discovery, and digital tw
 """
 
 from datetime import datetime, timedelta
-from uuid import uuid4
 
 # Enterprise Intelligence imports
 from nethical_recon.enterprise import (
     AnomalyDetectionService,
-    AnomalyType,
-    LateralMovementDetector,
-    MovementType,
-    KillChainAnalyzer,
-    KillChainPhase,
     AssetInventoryIntegration,
-    AssetCriticality,
+    KillChainAnalyzer,
+    LateralMovementDetector,
 )
 
 # Global Intelligence imports
 from nethical_recon.global_intelligence import (
+    CloudAssetDiscovery,
+    DigitalTwin,
+    OrganizationRiskMapper,
     OrganizationScanner,
     OrganizationScope,
     ScopeType,
-    CloudAssetDiscovery,
-    CloudProvider,
     ShadowITDetector,
-    OrganizationRiskMapper,
-    DigitalTwin,
 )
 
 
@@ -58,7 +52,7 @@ def example_anomaly_detection():
 
     baseline = service.create_baseline(entity_id="host-web-01", entity_type="host", historical_data=historical_data)
 
-    print(f"\nBaseline created for host-web-01")
+    print("\nBaseline created for host-web-01")
     print(f"  Confidence: {baseline.confidence_level:.2f}")
     print(f"  Metrics: {len(baseline.metrics)} features")
 
@@ -124,7 +118,7 @@ def example_lateral_movement():
         pattern = detector.analyze_authentication(event)
         if pattern:
             patterns.append(pattern)
-            print(f"\n  Lateral movement detected!")
+            print("\n  Lateral movement detected!")
             print(f"    From: {pattern.source_host} -> To: {pattern.destination_host}")
             print(f"    Method: {pattern.movement_type.value}")
             print(f"    Confidence: {pattern.confidence:.2f}")
@@ -205,7 +199,7 @@ def example_asset_inventory():
 
     enriched = integration.enrich_reconnaissance_data(recon_data)
 
-    print(f"\nEnrichment result:")
+    print("\nEnrichment result:")
     if enriched.cmdb_data:
         print(f"  Asset matched: {enriched.cmdb_data.name}")
         print(f"    Criticality: {enriched.cmdb_data.criticality.value}")
@@ -249,12 +243,12 @@ def example_organization_scan():
 
     print(f"\n  Scan completed: {result.status}")
     print(f"  Duration: {(result.end_time - result.start_time).total_seconds():.1f}s")
-    print(f"\n  Statistics:")
+    print("\n  Statistics:")
     print(f"    Total assets: {result.statistics['total_assets']}")
     print(f"    Subdomains: {result.statistics['subdomains']}")
     print(f"    IP addresses: {result.statistics['ip_addresses']}")
 
-    print(f"\n  Sample subdomains (first 5):")
+    print("\n  Sample subdomains (first 5):")
     for subdomain in result.subdomains[:5]:
         print(f"    - {subdomain}")
 
@@ -273,12 +267,12 @@ def example_cloud_discovery():
 
     print(f"  Status: {aws_result.status}")
     print(f"  Regions scanned: {', '.join(aws_result.regions_scanned)}")
-    print(f"\n  Statistics:")
+    print("\n  Statistics:")
     print(f"    Total assets: {aws_result.statistics['total_assets']}")
     print(f"    Public assets: {aws_result.statistics['public_assets']}")
     print(f"    Assets with risks: {aws_result.statistics['assets_with_risks']}")
 
-    print(f"\n  Discovered assets:")
+    print("\n  Discovered assets:")
     for asset in aws_result.assets[:5]:
         print(f"\n    {asset.resource_type.value}: {asset.name}")
         print(f"      Region: {asset.region}")
@@ -353,7 +347,7 @@ def example_risk_mapping():
     print(f"  High-risk assets: {risk_map.high_risk_assets}")
     print(f"  Attack surface score: {risk_map.attack_surface_score:.1f}/100")
 
-    print(f"\n  Risk Zones:")
+    print("\n  Risk Zones:")
     for zone in risk_map.zones:
         print(f"\n    {zone.name}:")
         print(f"      Risk level: {zone.risk_level}")
@@ -361,7 +355,7 @@ def example_risk_mapping():
         print(f"      Assets: {zone.asset_count} ({zone.critical_assets} critical)")
         print(f"      Mitigation priority: {zone.mitigation_priority}/10")
 
-    print(f"\n  Top Recommendations:")
+    print("\n  Top Recommendations:")
     for rec in risk_map.recommendations[:3]:
         print(f"    - {rec}")
 

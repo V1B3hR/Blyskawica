@@ -9,27 +9,29 @@ for AI agents, including:
 - Judge system for action evaluation and feedback
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional  # noqa: UP035
 
 from .core.governance import (
-    SafetyGovernance,
-    AgentAction as _AgentAction,
-    SafetyViolation,
+    ActionType,
     JudgmentResult,
     MonitoringConfig,
-    ActionType,
+    SafetyGovernance,
+    SafetyViolation,
+)
+from .core.governance import (
+    AgentAction as _AgentAction,
 )
 
 
-def AgentAction(
-    id: Optional[str] = None,
-    action_id: Optional[str] = None,
-    agent_id: Optional[str] = None,
-    stated_intent: Optional[str] = None,
-    actual_action: Optional[str] = None,
-    content: Optional[str] = None,
-    action_type: Optional[ActionType] = None,
-    context: Optional[Dict[str, Any]] = None,
+def AgentAction(  # noqa: N802
+    id: str | None = None,
+    action_id: str | None = None,
+    agent_id: str | None = None,
+    stated_intent: str | None = None,
+    actual_action: str | None = None,
+    content: str | None = None,
+    action_type: ActionType | None = None,
+    context: dict[str, Any] | None = None,
     **kwargs: Any,
 ) -> _AgentAction:
     """Compatibility wrapper for AgentAction that accepts both old and new APIs."""
@@ -72,7 +74,7 @@ def AgentAction(
 __version__ = "0.1.0"
 
 # Import vector API components
-from .api.vector_api import Nethical, Agent, EvaluationResult, create_nethical
+from .api.vector_api import Agent, EvaluationResult, Nethical, create_nethical  # noqa: E402
 
 __all__ = [
     "SafetyGovernance",

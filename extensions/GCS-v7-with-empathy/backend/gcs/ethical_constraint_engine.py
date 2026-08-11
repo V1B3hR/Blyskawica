@@ -6,14 +6,15 @@ Implements ethical constraint enforcement system for GCS-v7-with-empathy:
 - Human-AI principles validation  
 - Operational safety principles compliance
 - Real-time ethical monitoring
-"""
+"""  # noqa: W291
 
 import logging
 import time
-from typing import Dict, List, Tuple, Any, Optional, Set
 from dataclasses import dataclass
 from enum import Enum
-from .types import Intent, Action, ActionType, SafetyLevel
+from typing import Any
+
+from .types import Action, Intent, SafetyLevel
 
 
 class EthicalViolationType(Enum):
@@ -37,44 +38,44 @@ class EthicalConstraint:
     description: str
     priority_level: int  # 1-10, 1 being highest priority
     enforcement_level: SafetyLevel
-    keywords: List[str]
-    contextual_checks: Optional[List[str]] = None
-    
-    
+    keywords: list[str]
+    contextual_checks: list[str] | None = None
+
+
 @dataclass
 class EthicalAssessment:
     """Results of ethical assessment"""
     action_id: str
-    violations: List[Tuple[EthicalConstraint, float]]  # constraint, confidence
+    violations: list[tuple[EthicalConstraint, float]]  # constraint, confidence
     overall_ethical_score: float  # 0.0 = completely unethical, 1.0 = fully ethical
     recommendation: str
-    required_mitigations: List[str]
+    required_mitigations: list[str]
     timestamp: float
-    
-    
+
+
 class EthicalConstraintEngine:
     """Engine for enforcing ethical constraints and monitoring ethical compliance"""
-    
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+
+    def __init__(self, config: dict[str, Any] | None = None):
         self.config = config or {}
         self.ethical_violation_threshold = self.config.get("ethical_violation_threshold", 0.7)
         self.critical_ethical_threshold = self.config.get("critical_ethical_threshold", 0.9)
-        
+
         # Initialize universal ethical laws as constraints
         self.universal_constraints = self._initialize_universal_constraints()
-        
+
         # Initialize human-AI relationship principles
         self.relational_constraints = self._initialize_relational_constraints()
-        
+
         # Initialize operational safety principles
         self.operational_constraints = self._initialize_operational_constraints()
-        
+
         # Tracking and logging
-        self.assessment_history: List[EthicalAssessment] = []
+        self.assessment_history: list[EthicalAssessment] = []
         self.violation_count = 0
         self.logger = logging.getLogger(__name__)
-        
-    def _initialize_universal_constraints(self) -> List[EthicalConstraint]:
+
+    def _initialize_universal_constraints(self) -> list[EthicalConstraint]:
         """Initialize constraints based on Universal Ethical Laws"""
         return [
             EthicalConstraint(
@@ -158,8 +159,8 @@ class EthicalConstraintEngine:
                 contextual_checks=["system_failure", "external_factors"]
             )
         ]
-    
-    def _initialize_relational_constraints(self) -> List[EthicalConstraint]:
+
+    def _initialize_relational_constraints(self) -> list[EthicalConstraint]:
         """Initialize constraints based on Core Human-AI Principles"""
         return [
             EthicalConstraint(
@@ -187,8 +188,8 @@ class EthicalConstraintEngine:
                 contextual_checks=["system_malfunction"]
             )
         ]
-    
-    def _initialize_operational_constraints(self) -> List[EthicalConstraint]:
+
+    def _initialize_operational_constraints(self) -> list[EthicalConstraint]:
         """Initialize constraints based on Operational Safety Principles"""
         return [
             EthicalConstraint(
@@ -216,23 +217,23 @@ class EthicalConstraintEngine:
                 contextual_checks=["consent_given", "legal_requirement"]
             )
         ]
-    
+
     def assess_ethical_compliance(self, intent: Intent, action: Action) -> EthicalAssessment:
         """Assess ethical compliance of an action against an intent"""
         action_id = f"{intent.description[:20]}_{action.description[:20]}_{int(time.time())}"
-        
-        all_constraints = (self.universal_constraints + 
-                          self.relational_constraints + 
+
+        all_constraints = (self.universal_constraints +
+                          self.relational_constraints +
                           self.operational_constraints)
-        
+
         violations = []
-        
+
         # Check each constraint
         for constraint in all_constraints:
             violation_confidence = self._evaluate_constraint_violation(constraint, intent, action)
             if violation_confidence > 0.0:
                 violations.append((constraint, violation_confidence))
-        
+
         # Calculate overall ethical score
         if not violations:
             overall_score = 1.0
@@ -242,14 +243,14 @@ class EthicalConstraintEngine:
             for constraint, confidence in violations:
                 weight = (11 - constraint.priority_level) / 10.0  # Higher priority = higher weight
                 weighted_violations.append(confidence * weight)
-            
+
             # Overall score is 1 - average weighted violation
             overall_score = max(0.0, 1.0 - (sum(weighted_violations) / len(weighted_violations)))
-        
+
         # Generate recommendation and mitigations
         recommendation = self._generate_recommendation(overall_score, violations)
         mitigations = self._generate_mitigations(violations)
-        
+
         assessment = EthicalAssessment(
             action_id=action_id,
             violations=violations,
@@ -258,55 +259,55 @@ class EthicalConstraintEngine:
             required_mitigations=mitigations,
             timestamp=time.time()
         )
-        
+
         self.assessment_history.append(assessment)
         if violations:
             self.violation_count += len(violations)
-            
+
         return assessment
-    
-    def _evaluate_constraint_violation(self, constraint: EthicalConstraint, 
+
+    def _evaluate_constraint_violation(self, constraint: EthicalConstraint,
                                      intent: Intent, action: Action) -> float:
         """Evaluate if an action violates a specific ethical constraint"""
         violation_confidence = 0.0
-        
+
         # Check for keyword matches in action description
         action_text = action.description.lower()
         intent_text = intent.description.lower()
-        
+
         for keyword in constraint.keywords:
             if keyword.lower() in action_text:
                 violation_confidence = max(violation_confidence, 0.7)
             elif keyword.lower() in intent_text:
                 violation_confidence = max(violation_confidence, 0.3)
-        
+
         # Check observed effects for violations
         if action.observed_effects:
             effects_text = " ".join(action.observed_effects).lower()
             for keyword in constraint.keywords:
                 if keyword.lower() in effects_text:
                     violation_confidence = max(violation_confidence, 0.8)
-        
+
         # Apply contextual checks to reduce false positives
         if violation_confidence > 0.0 and constraint.contextual_checks:
             if self._check_contextual_exceptions(constraint, intent, action):
                 violation_confidence *= 0.3  # Reduce confidence for legitimate exceptions
-        
+
         return violation_confidence
-    
-    def _check_contextual_exceptions(self, constraint: EthicalConstraint, 
+
+    def _check_contextual_exceptions(self, constraint: EthicalConstraint,
                                    intent: Intent, action: Action) -> bool:
         """Check if contextual exceptions apply to reduce false positives"""
-        context_text = (intent.description + " " + action.description + " " + 
+        context_text = (intent.description + " " + action.description + " " +
                        " ".join(action.observed_effects)).lower()
-        
+
         for exception in constraint.contextual_checks:
             if exception.lower().replace("_", " ") in context_text:
                 return True
         return False
-    
-    def _generate_recommendation(self, overall_score: float, 
-                               violations: List[Tuple[EthicalConstraint, float]]) -> str:
+
+    def _generate_recommendation(self, overall_score: float,
+                               violations: list[tuple[EthicalConstraint, float]]) -> str:
         """Generate recommendation based on ethical assessment"""
         if overall_score >= 0.9:
             return "PROCEED - Action is ethically sound"
@@ -318,12 +319,12 @@ class EthicalConstraintEngine:
             return "MAJOR CONCERNS - Action should be modified before proceeding"
         else:
             return "BLOCK - Action violates fundamental ethical principles"
-    
-    def _generate_mitigations(self, violations: List[Tuple[EthicalConstraint, float]]) -> List[str]:
+
+    def _generate_mitigations(self, violations: list[tuple[EthicalConstraint, float]]) -> list[str]:
         """Generate mitigation strategies for ethical violations"""
         mitigations = []
-        
-        for constraint, confidence in violations:
+
+        for constraint, confidence in violations:  # noqa: B007
             if constraint.constraint_type == EthicalViolationType.HARM_POTENTIAL:
                 mitigations.append("Implement additional safety checks and harm prevention measures")
             elif constraint.constraint_type == EthicalViolationType.AUTONOMY_VIOLATION:
@@ -336,24 +337,24 @@ class EthicalConstraintEngine:
                 mitigations.append("Provide accurate information and clarify any uncertainties")
             else:
                 mitigations.append(f"Address {constraint.constraint_type.value} concerns")
-        
+
         return list(set(mitigations))  # Remove duplicates
-    
-    def get_ethical_performance_metrics(self) -> Dict[str, Any]:
+
+    def get_ethical_performance_metrics(self) -> dict[str, Any]:
         """Get metrics on ethical performance"""
         if not self.assessment_history:
             return {"total_assessments": 0, "violation_rate": 0.0}
-        
+
         total_assessments = len(self.assessment_history)
         assessments_with_violations = sum(1 for a in self.assessment_history if a.violations)
         avg_ethical_score = sum(a.overall_ethical_score for a in self.assessment_history) / total_assessments
-        
+
         violation_types = {}
         for assessment in self.assessment_history:
-            for constraint, confidence in assessment.violations:
+            for constraint, confidence in assessment.violations:  # noqa: B007
                 vtype = constraint.constraint_type.value
                 violation_types[vtype] = violation_types.get(vtype, 0) + 1
-        
+
         return {
             "total_assessments": total_assessments,
             "assessments_with_violations": assessments_with_violations,
@@ -363,7 +364,7 @@ class EthicalConstraintEngine:
             "violation_types": violation_types,
             "recent_assessments": self.assessment_history[-10:] if self.assessment_history else []
         }
-    
+
     def clear_history(self):
         """Clear assessment history (for testing purposes)"""
         self.assessment_history = []

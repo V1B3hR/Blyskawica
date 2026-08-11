@@ -27,12 +27,12 @@ def main():
     print()
     print("=" * 80)
     print()
-    
+
     # Change to repo root
     repo_root = Path(__file__).parent.parent.parent
     import os
     os.chdir(repo_root)
-    
+
     # Run the command via the CLI entry point (in dry-run mode for demo)
     cmd = [
         sys.executable, "src/aimedres/cli/commands.py",
@@ -45,19 +45,19 @@ def main():
         "--dry-run",
         "--only", "als", "alzheimers"  # Just two jobs for demo
     ]
-    
+
     print("Executing command (dry-run mode):")
     print(f"  {' '.join(cmd)}")
     print()
     print("=" * 80)
     print()
-    
+
     result = subprocess.run(cmd, capture_output=False, text=True)
-    
+
     print()
     print("=" * 80)
     print()
-    
+
     if result.returncode == 0:
         print("✅ SUCCESS!")
         print()

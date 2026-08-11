@@ -8,7 +8,6 @@ This demo showcases the unified Phase 5-7 integration:
 """
 
 import sys
-import time
 from pathlib import Path
 
 # Add parent directory to path
@@ -27,9 +26,9 @@ def print_section(title):
 def demo_shadow_mode(gov):
     """Demo ML shadow mode functionality."""
     print_section("1. Phase 5: ML Shadow Mode - Passive Prediction")
-    
+
     print("Processing actions with shadow ML predictions...")
-    
+
     test_cases = [
         {
             'agent_id': 'agent_1',
@@ -56,10 +55,10 @@ def demo_shadow_mode(gov):
             'rule_classification': 'warn'
         }
     ]
-    
+
     for i, case in enumerate(test_cases, 1):
         result = gov.process_action(**case)
-        
+
         print(f"Test {i}:")
         print(f"  Rule: {result['rule_risk_score']:.2f} ({result['rule_classification']})")
         if 'shadow' in result:
@@ -68,7 +67,7 @@ def demo_shadow_mode(gov):
             print(f"  Agreement: Scores={shadow['scores_agree']}, "
                   f"Classifications={shadow['classifications_agree']}")
         print()
-    
+
     # Get shadow metrics
     metrics = gov.get_shadow_metrics()
     print("Shadow Mode Metrics:")
@@ -80,16 +79,16 @@ def demo_shadow_mode(gov):
 def demo_blended_risk(gov):
     """Demo ML blended risk functionality."""
     print_section("2. Phase 6: ML Blended Risk - Gray Zone Assistance")
-    
+
     print("Testing blended risk in different risk zones...")
-    
+
     test_cases = [
         ('Clear Allow Zone', 0.2, 'allow'),
         ('Gray Zone - Low', 0.45, 'warn'),
         ('Gray Zone - High', 0.55, 'warn'),
         ('Clear Deny Zone', 0.8, 'deny')
     ]
-    
+
     for label, rule_score, classification in test_cases:
         result = gov.process_action(
             agent_id='test_agent',
@@ -99,19 +98,19 @@ def demo_blended_risk(gov):
             rule_risk_score=rule_score,
             rule_classification=classification
         )
-        
+
         print(f"{label}:")
         print(f"  Rule Score: {rule_score:.2f}")
-        
+
         if 'blended' in result:
             blended = result['blended']
             print(f"  Blended Score: {blended['blended_risk_score']:.2f}")
             print(f"  Risk Zone: {blended['risk_zone']}")
             print(f"  ML Influenced: {blended['ml_influenced']}")
             if blended['classification_changed']:
-                print(f"  ⚠️ Classification Changed!")
+                print("  ⚠️ Classification Changed!")
         print()
-    
+
     # Get blending metrics
     metrics = gov.get_blending_metrics()
     print("Blending Metrics:")
@@ -123,12 +122,12 @@ def demo_blended_risk(gov):
 def demo_anomaly_detection(gov):
     """Demo anomaly and drift detection functionality."""
     print_section("3. Phase 7: Anomaly & Drift Detection")
-    
+
     print("Setting baseline distribution...")
     baseline_scores = [0.2, 0.3, 0.25, 0.35] * 25
     gov.set_baseline_distribution(baseline_scores, cohort="production")
     print(f"✓ Baseline set with {len(baseline_scores)} samples\n")
-    
+
     print("Processing normal actions...")
     for i in range(5):
         result = gov.process_action(
@@ -141,7 +140,7 @@ def demo_anomaly_detection(gov):
             cohort='production'
         )
     print("✓ No anomalies detected in normal behavior\n")
-    
+
     print("Simulating anomalous behavior...")
     # Simulate repeated high-risk actions
     for i in range(10):
@@ -154,10 +153,10 @@ def demo_anomaly_detection(gov):
             rule_classification='deny',
             cohort='production'
         )
-    
+
     if result.get('anomaly_alert'):
         alert = result['anomaly_alert']
-        print(f"⚠️ Anomaly Detected!")
+        print("⚠️ Anomaly Detected!")
         print(f"  Type: {alert['anomaly_type']}")
         print(f"  Severity: {alert['severity']}")
         print(f"  Score: {alert['anomaly_score']:.3f}")
@@ -165,7 +164,7 @@ def demo_anomaly_detection(gov):
         print(f"  Message: {alert['message']}")
     else:
         print("  (Anomaly threshold not yet reached)")
-    
+
     # Get anomaly statistics
     stats = gov.get_anomaly_statistics()
     print("\nAnomaly Detection Statistics:")
@@ -179,9 +178,9 @@ def demo_anomaly_detection(gov):
 def demo_system_status(gov):
     """Demo system status reporting."""
     print_section("4. System Status & Reporting")
-    
+
     status = gov.get_system_status()
-    
+
     print("Component Status:")
     for component, info in status['components'].items():
         enabled_icon = "✅" if info.get('enabled') else "❌"
@@ -192,16 +191,16 @@ def demo_system_status(gov):
                     print(f"    {key}: {value:.3f}")
                 else:
                     print(f"    {key}: {value}")
-    
+
     print("\n" + "-" * 70)
     print("\nExporting comprehensive report...")
     report = gov.export_phase567_report()
-    
+
     # Print first part of report
     lines = report.split('\n')
     for line in lines[:30]:
         print(line)
-    
+
     if len(lines) > 30:
         print(f"\n... ({len(lines) - 30} more lines)")
 
@@ -212,7 +211,7 @@ def main():
     print("  Phase 5-7 Integration Demo")
     print("  ML Shadow Mode + Blended Risk + Anomaly Detection")
     print("=" * 70)
-    
+
     # Initialize with all components enabled
     print("\nInitializing Phase 5-7 Integrated Governance...")
     gov = Phase567IntegratedGovernance(
@@ -226,13 +225,13 @@ def main():
         ml_weight=0.3
     )
     print("✓ Initialization complete\n")
-    
+
     # Run demos
     demo_shadow_mode(gov)
     demo_blended_risk(gov)
     demo_anomaly_detection(gov)
     demo_system_status(gov)
-    
+
     print("\n" + "=" * 70)
     print("  Demo Complete!")
     print("=" * 70)

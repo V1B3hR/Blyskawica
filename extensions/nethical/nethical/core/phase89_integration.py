@@ -48,24 +48,24 @@ Usage:
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Dict, List, Optional, Any, Tuple
 import warnings
+from pathlib import Path
+from typing import Any
 
 from .human_feedback import (
+    EscalationCase,
     EscalationQueue,
     FeedbackTag,
-    ReviewPriority,
     HumanFeedback,
-    EscalationCase,
+    ReviewPriority,
     SLAMetrics,
 )
 from .optimization import (
-    MultiObjectiveOptimizer,
-    Configuration,
-    PerformanceMetrics,
-    AdaptiveThresholdTuner,
     ABTestingFramework,
+    AdaptiveThresholdTuner,
+    Configuration,
+    MultiObjectiveOptimizer,
+    PerformanceMetrics,
 )
 
 
@@ -141,13 +141,13 @@ class Phase89IntegratedGovernance:
         self.low_confidence_threshold = low_confidence_threshold
 
         # Current active configuration
-        self.active_config: Optional[Configuration] = None
+        self.active_config: Configuration | None = None
 
     # ==================== Phase 8: Escalation & Review ====================
 
     def should_escalate(
-        self, decision: str, confidence: float, violations: List[Dict[str, Any]]
-    ) -> Tuple[bool, ReviewPriority]:
+        self, decision: str, confidence: float, violations: list[dict[str, Any]]
+    ) -> tuple[bool, ReviewPriority]:
         """Determine if case should be escalated.
 
         Args:
@@ -186,9 +186,9 @@ class Phase89IntegratedGovernance:
         agent_id: str,
         decision: str,
         confidence: float,
-        violations: List[Dict[str, Any]],
-        context: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        violations: list[dict[str, Any]],
+        context: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Process action and escalate if needed.
 
         Args:
@@ -228,7 +228,7 @@ class Phase89IntegratedGovernance:
 
         return result
 
-    def get_next_case(self, reviewer_id: str) -> Optional[EscalationCase]:
+    def get_next_case(self, reviewer_id: str) -> EscalationCase | None:
         """Get next case for review.
 
         Args:
@@ -243,11 +243,11 @@ class Phase89IntegratedGovernance:
         self,
         case_id: str,
         reviewer_id: str,
-        feedback_tags: List[FeedbackTag],
+        feedback_tags: list[FeedbackTag],
         rationale: str,
-        corrected_decision: Optional[str] = None,
+        corrected_decision: str | None = None,
         confidence: float = 1.0,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> HumanFeedback:
         """Submit feedback for a case.
 
@@ -281,7 +281,7 @@ class Phase89IntegratedGovernance:
         """
         return self.escalation_queue.get_sla_metrics()
 
-    def get_feedback_summary(self) -> Dict[str, Any]:
+    def get_feedback_summary(self) -> dict[str, Any]:
         """Get feedback summary for continuous improvement.
 
         Returns:
@@ -340,9 +340,9 @@ class Phase89IntegratedGovernance:
     def optimize_configuration(
         self,
         technique: str = "random_search",
-        base_config: Optional[Configuration] = None,
+        base_config: Configuration | None = None,
         **kwargs,
-    ) -> List[Tuple[Configuration, PerformanceMetrics]]:
+    ) -> list[tuple[Configuration, PerformanceMetrics]]:
         """Optimize configuration using specified technique.
 
         Args:
@@ -430,7 +430,7 @@ class Phase89IntegratedGovernance:
         else:
             raise ValueError(f"Unknown technique: {technique}")
 
-    def check_promotion_gate(self, candidate_id: str, baseline_id: str) -> Tuple[bool, List[str]]:
+    def check_promotion_gate(self, candidate_id: str, baseline_id: str) -> tuple[bool, list[str]]:
         """Check if candidate passes promotion gate.
 
         Args:
@@ -456,7 +456,7 @@ class Phase89IntegratedGovernance:
             self.active_config = self.optimizer.configurations[config_id]
         return promoted
 
-    def get_best_configuration(self) -> Optional[Tuple[Configuration, PerformanceMetrics]]:
+    def get_best_configuration(self) -> tuple[Configuration, PerformanceMetrics] | None:
         """Get best configuration by fitness.
 
         Returns:
@@ -466,7 +466,7 @@ class Phase89IntegratedGovernance:
 
     # ==================== Continuous Improvement Loop ====================
 
-    def continuous_improvement_cycle(self) -> Dict[str, Any]:
+    def continuous_improvement_cycle(self) -> dict[str, Any]:
         """Run one cycle of continuous improvement.
 
         Process:
@@ -528,8 +528,8 @@ class Phase89IntegratedGovernance:
         predicted_outcome: str,
         actual_outcome: str,
         confidence: float,
-        human_feedback: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        human_feedback: str | None = None,
+    ) -> dict[str, Any]:
         """Record outcome for adaptive learning.
 
         This method feeds outcome data into the adaptive threshold tuner,
@@ -565,7 +565,7 @@ class Phase89IntegratedGovernance:
             "performance_stats": stats,
         }
 
-    def get_adaptive_thresholds(self, agent_id: Optional[str] = None) -> Dict[str, float]:
+    def get_adaptive_thresholds(self, agent_id: str | None = None) -> dict[str, float]:
         """Get current adaptive thresholds.
 
         Args:
@@ -576,7 +576,7 @@ class Phase89IntegratedGovernance:
         """
         return self.adaptive_tuner.get_thresholds(agent_id)
 
-    def set_agent_thresholds(self, agent_id: str, thresholds: Dict[str, float]) -> None:
+    def set_agent_thresholds(self, agent_id: str, thresholds: dict[str, float]) -> None:
         """Set agent-specific thresholds.
 
         Args:
@@ -585,7 +585,7 @@ class Phase89IntegratedGovernance:
         """
         self.adaptive_tuner.set_agent_thresholds(agent_id, thresholds)
 
-    def get_tuning_performance(self) -> Dict[str, Any]:
+    def get_tuning_performance(self) -> dict[str, Any]:
         """Get performance statistics from adaptive tuner.
 
         Returns:
@@ -598,7 +598,7 @@ class Phase89IntegratedGovernance:
         control_config: Configuration,
         treatment_config: Configuration,
         traffic_split: float = 0.1,
-    ) -> Tuple[str, str]:
+    ) -> tuple[str, str]:
         """Create A/B test for threshold variants.
 
         Args:
@@ -622,7 +622,7 @@ class Phase89IntegratedGovernance:
 
     def check_ab_significance(
         self, control_variant_id: str, treatment_variant_id: str, metric: str = "detection_recall"
-    ) -> Tuple[bool, float, str]:
+    ) -> tuple[bool, float, str]:
         """Check statistical significance of A/B test.
 
         Args:
@@ -663,7 +663,7 @@ class Phase89IntegratedGovernance:
         """
         return self.ab_testing.rollback_variant(variant_id)
 
-    def get_ab_summary(self) -> Dict[str, Any]:
+    def get_ab_summary(self) -> dict[str, Any]:
         """Get A/B test summary.
 
         Returns:

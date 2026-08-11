@@ -97,7 +97,7 @@ class IssueExporter:
         priority = self.config.severity_mapping.get(severity, "Medium")
 
         # Build issue data
-        issue_data = {
+        issue_data = {  # noqa: F841
             "fields": {
                 "project": {"key": self.config.project_key},
                 "summary": finding.get("title", "Security Finding"),
@@ -134,7 +134,7 @@ class IssueExporter:
         severity = finding.get("severity", "MEDIUM")
 
         # Build issue data
-        issue_data = {
+        issue_data = {  # noqa: F841
             "title": finding.get("title", "Security Finding"),
             "body": self._format_description_github(finding),
             "labels": self._get_github_labels(severity, custom_labels),
@@ -166,7 +166,7 @@ class IssueExporter:
         severity = finding.get("severity", "MEDIUM")
 
         # Build issue data
-        issue_data = {
+        issue_data = {  # noqa: F841
             "title": finding.get("title", "Security Finding"),
             "description": self._format_description_github(finding),
             "labels": ",".join(self._get_github_labels(severity, custom_labels)),

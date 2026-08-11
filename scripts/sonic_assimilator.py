@@ -1,13 +1,12 @@
 import json
-import os
-import random
 import time
+
 
 class SonicAssimilator:
     def __init__(self):
         self.matrix_path = "docs/curriculum/sonic_resonance/matrix.json"
         self.track_path = "docs/curriculum/sonic_resonance/tracking.md"
-        with open(self.matrix_path, "r", encoding="utf-8") as f:
+        with open(self.matrix_path, encoding="utf-8") as f:
             self.matrix = json.load(f)
 
     def save(self):
@@ -24,9 +23,9 @@ class SonicAssimilator:
             stats.append((p['phase'], p['title'], p_c, p_m))
             total_m += sum(n['mastery'] for n in p['nodes'])
             total_n += len(p['nodes'])
-        
+
         overall = total_m / total_n
-        
+
         content = f"""# SONIC EMOTION & CULTURAL RESONANCE CHAIN - Tracking
 
 ## Progress Summary
@@ -40,7 +39,7 @@ class SonicAssimilator:
 """
         for s in stats:
             content += f"| {s[0]} | {s[1]} | {s[2]}/5 | {s[3]:.2f}% |\n"
-            
+
         with open(self.track_path, "w", encoding="utf-8") as f:
             f.write(content)
 
@@ -52,7 +51,7 @@ class SonicAssimilator:
             print(f" -> Analiza: {node['title']}...")
             node['mastery'] = 100.0
             time.sleep(0.5)
-        
+
         self.save()
         self.update_tracking()
         print(f"✅ Faza {phase['phase']} zasymilowana.")

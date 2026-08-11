@@ -5,8 +5,7 @@ from __future__ import annotations
 import hashlib
 import shutil
 import subprocess
-import tempfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 from uuid import UUID
@@ -110,7 +109,7 @@ class NmapAdapter:
         Returns:
             ToolRun object with results
         """
-        started_at = datetime.now(timezone.utc)
+        started_at = datetime.now(UTC)
         command = self.build_command(target, options)
         version = self.get_version()
 
@@ -133,7 +132,7 @@ class NmapAdapter:
                 timeout=timeout,
             )
 
-            completed_at = datetime.now(timezone.utc)
+            completed_at = datetime.now(UTC)
             duration = (completed_at - started_at).total_seconds()
 
             tool_run.exit_code = result.returncode
@@ -150,12 +149,12 @@ class NmapAdapter:
         except subprocess.TimeoutExpired:
             tool_run.status = ToolStatus.FAILED
             tool_run.stderr = f"Nmap scan timed out after {timeout} seconds"
-            tool_run.completed_at = datetime.now(timezone.utc)
+            tool_run.completed_at = datetime.now(UTC)
             tool_run.duration_seconds = (tool_run.completed_at - started_at).total_seconds()
         except Exception as e:
             tool_run.status = ToolStatus.FAILED
             tool_run.stderr = f"Error running nmap: {e}"
-            tool_run.completed_at = datetime.now(timezone.utc)
+            tool_run.completed_at = datetime.now(UTC)
             tool_run.duration_seconds = (tool_run.completed_at - started_at).total_seconds()
 
         return tool_run
@@ -194,7 +193,7 @@ class NmapAdapter:
             file_path=str(file_path) if file_path else None,
             sha256=sha256,
             md5=md5,
-            captured_at=tool_run.completed_at or datetime.now(timezone.utc),
+            captured_at=tool_run.completed_at or datetime.now(UTC),
         )
 
         return evidence

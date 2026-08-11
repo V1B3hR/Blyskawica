@@ -6,8 +6,8 @@ Predefined playbooks for common reconnaissance and incident response scenarios.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID, uuid4
 
 
@@ -18,11 +18,11 @@ class PlaybookResult:
     playbook_name: str
     success: bool
     execution_id: UUID = field(default_factory=uuid4)
-    started_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    completed_at: Optional[datetime] = None
-    outputs: Dict[str, Any] = field(default_factory=dict)
-    errors: List[str] = field(default_factory=list)
-    steps_completed: List[str] = field(default_factory=list)
+    started_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    completed_at: datetime | None = None
+    outputs: dict[str, Any] = field(default_factory=dict)
+    errors: list[str] = field(default_factory=list)
+    steps_completed: list[str] = field(default_factory=list)
 
 
 class Playbook(ABC):
@@ -112,16 +112,16 @@ class DomainReconPlaybook(Playbook):
             result.outputs["vulnerabilities"] = vulnerabilities
 
             result.success = True
-            result.completed_at = datetime.now(timezone.utc)
+            result.completed_at = datetime.now(UTC)
 
         except Exception as e:
             result.errors.append(str(e))
             result.success = False
-            result.completed_at = datetime.now(timezone.utc)
+            result.completed_at = datetime.now(UTC)
 
         return result
 
-    async def _enumerate_dns(self, domain: str) -> Dict[str, Any]:
+    async def _enumerate_dns(self, domain: str) -> dict[str, Any]:
         """Enumerate DNS records"""
         # Placeholder - would integrate with DNS resolution modules
         return {
@@ -133,17 +133,17 @@ class DomainReconPlaybook(Playbook):
             "CNAME": [],
         }
 
-    async def _discover_subdomains(self, domain: str, deep: bool) -> List[str]:
+    async def _discover_subdomains(self, domain: str, deep: bool) -> list[str]:
         """Discover subdomains"""
         # Placeholder - would integrate with subdomain enumeration tools
         return [domain, f"www.{domain}", f"mail.{domain}"]
 
-    async def _scan_ports(self, targets: List[str], deep: bool) -> Dict[str, List[int]]:
+    async def _scan_ports(self, targets: list[str], deep: bool) -> dict[str, list[int]]:
         """Scan ports on targets"""
         # Placeholder - would integrate with port scanning modules
         return {target: [80, 443, 22] for target in targets}
 
-    async def _fingerprint_services(self, open_ports: Dict[str, List[int]]) -> List[Dict[str, Any]]:
+    async def _fingerprint_services(self, open_ports: dict[str, list[int]]) -> list[dict[str, Any]]:
         """Fingerprint running services"""
         # Placeholder - would integrate with service fingerprinting
         services = []
@@ -152,12 +152,12 @@ class DomainReconPlaybook(Playbook):
                 services.append({"host": host, "port": port, "service": "unknown", "version": None})
         return services
 
-    async def _detect_technologies(self, targets: List[str]) -> List[Dict[str, Any]]:
+    async def _detect_technologies(self, targets: list[str]) -> list[dict[str, Any]]:
         """Detect web technologies"""
         # Placeholder - would integrate with technology detection
         return [{"host": target, "technologies": []} for target in targets]
 
-    async def _assess_vulnerabilities(self, services: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    async def _assess_vulnerabilities(self, services: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Assess vulnerabilities in services"""
         # Placeholder - would integrate with vulnerability scanning
         return []
@@ -213,7 +213,7 @@ class AlertEscalationPlaybook(Playbook):
             if not is_valid:
                 result.success = True
                 result.outputs["action"] = "false_positive_suppressed"
-                result.completed_at = datetime.now(timezone.utc)
+                result.completed_at = datetime.now(UTC)
                 return result
 
             # Step 2: Enrich with Threat Intelligence
@@ -244,12 +244,12 @@ class AlertEscalationPlaybook(Playbook):
                 result.outputs["containment"] = containment_actions
 
             result.success = True
-            result.completed_at = datetime.now(timezone.utc)
+            result.completed_at = datetime.now(UTC)
 
         except Exception as e:
             result.errors.append(str(e))
             result.success = False
-            result.completed_at = datetime.now(timezone.utc)
+            result.completed_at = datetime.now(UTC)
 
         return result
 
@@ -258,17 +258,17 @@ class AlertEscalationPlaybook(Playbook):
         # Placeholder - would check against false positive patterns
         return True
 
-    async def _enrich_threat_intel(self, asset: str, alert_type: str) -> Dict[str, Any]:
+    async def _enrich_threat_intel(self, asset: str, alert_type: str) -> dict[str, Any]:
         """Enrich with threat intelligence"""
         # Placeholder - would query threat intelligence sources
         return {"reputation": "unknown", "known_threats": []}
 
-    async def _assess_impact(self, asset: str, severity: str, context: Dict[str, Any]) -> str:
+    async def _assess_impact(self, asset: str, severity: str, context: dict[str, Any]) -> str:
         """Assess impact level"""
         # Placeholder - would assess based on asset criticality and context
         return "medium"
 
-    async def _notify_teams(self, severity: str, impact: str, alert_id: str) -> List[str]:
+    async def _notify_teams(self, severity: str, impact: str, alert_id: str) -> list[str]:
         """Send notifications to appropriate teams"""
         # Placeholder - would send via email, Slack, etc.
         return ["security_team", "soc"]
@@ -278,7 +278,7 @@ class AlertEscalationPlaybook(Playbook):
         # Placeholder - would create in JIRA/ServiceNow
         return f"INC-{uuid4().hex[:8]}"
 
-    async def _execute_containment(self, asset: str) -> List[str]:
+    async def _execute_containment(self, asset: str) -> list[str]:
         """Execute containment actions"""
         # Placeholder - would isolate asset, block IPs, etc.
         return ["asset_isolated", "firewall_rule_added"]
@@ -307,7 +307,7 @@ class IncidentResponsePlaybook(Playbook):
         self,
         incident_id: str,
         incident_type: str,
-        affected_assets: List[str],
+        affected_assets: list[str],
         **kwargs,
     ) -> PlaybookResult:
         """
@@ -355,32 +355,32 @@ class IncidentResponsePlaybook(Playbook):
             result.outputs["documentation"] = documentation
 
             result.success = True
-            result.completed_at = datetime.now(timezone.utc)
+            result.completed_at = datetime.now(UTC)
 
         except Exception as e:
             result.errors.append(str(e))
             result.success = False
-            result.completed_at = datetime.now(timezone.utc)
+            result.completed_at = datetime.now(UTC)
 
         return result
 
-    async def _classify_incident(self, incident_type: str, assets: List[str]) -> Dict[str, Any]:
+    async def _classify_incident(self, incident_type: str, assets: list[str]) -> dict[str, Any]:
         """Classify incident severity and scope"""
         return {"severity": "high", "scope": "contained", "type": incident_type}
 
-    async def _collect_evidence(self, assets: List[str]) -> Dict[str, Any]:
+    async def _collect_evidence(self, assets: list[str]) -> dict[str, Any]:
         """Collect forensic evidence"""
         return {"logs_collected": True, "snapshots_taken": True}
 
-    async def _contain_incident(self, assets: List[str], classification: Dict[str, Any]) -> List[str]:
+    async def _contain_incident(self, assets: list[str], classification: dict[str, Any]) -> list[str]:
         """Contain incident spread"""
         return ["network_isolated", "accounts_disabled"]
 
-    async def _eradicate_threat(self, assets: List[str], incident_type: str) -> List[str]:
+    async def _eradicate_threat(self, assets: list[str], incident_type: str) -> list[str]:
         """Eradicate threat from systems"""
         return ["malware_removed", "backdoors_closed"]
 
-    async def _recover_systems(self, assets: List[str]) -> Dict[str, Any]:
+    async def _recover_systems(self, assets: list[str]) -> dict[str, Any]:
         """Recover affected systems"""
         return {"systems_restored": True, "services_online": True}
 

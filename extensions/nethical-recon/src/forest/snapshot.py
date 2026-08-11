@@ -3,11 +3,11 @@ Forest Snapshot and Diff
 Captures forest state snapshots and compares them to detect changes
 """
 
-import logging
+import hashlib
 import json
+import logging
 from datetime import datetime
 from typing import Any
-import hashlib
 
 
 class ForestSnapshot:
@@ -184,15 +184,15 @@ class ForestDiff:
     def get_summary(self) -> str:
         """Get human-readable summary of changes"""
         lines = [
-            f"Forest Diff Summary",
-            f"===================",
+            "Forest Diff Summary",
+            "===================",
             f"From: {self.old_snapshot.timestamp.strftime('%Y-%m-%d %H:%M:%S')}",
             f"To:   {self.new_snapshot.timestamp.strftime('%Y-%m-%d %H:%M:%S')}",
-            f"",
+            "",
             f"Trees Added:    {len(self.trees_added)}",
             f"Trees Removed:  {len(self.trees_removed)}",
             f"Trees Modified: {len(self.trees_modified)}",
-            f"",
+            "",
             f"Health Change:  {self.health_change:+.1f}",
             f"Threat Change:  {self.threat_change:+d}",
         ]
@@ -379,7 +379,7 @@ class ForestSnapshotManager:
             ForestSnapshot instance or None if failed
         """
         try:
-            with open(filename, "r") as f:
+            with open(filename) as f:
                 snapshot = ForestSnapshot.from_json(f.read())
 
             # Store the loaded snapshot

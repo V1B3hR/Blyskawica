@@ -8,11 +8,11 @@ This module implements:
 """
 
 import statistics
-from typing import Dict, List, Optional, Any, Deque
+from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
-from collections import deque
 from enum import Enum
+from typing import Any
 
 
 class SLAStatus(str, Enum):
@@ -28,8 +28,8 @@ class SLAStatus(str, Enum):
 class LatencyWindow:
     """Sliding window of latency measurements."""
 
-    measurements: Deque[float] = field(default_factory=lambda: deque(maxlen=10000))
-    timestamps: Deque[datetime] = field(default_factory=lambda: deque(maxlen=10000))
+    measurements: deque[float] = field(default_factory=lambda: deque(maxlen=10000))
+    timestamps: deque[datetime] = field(default_factory=lambda: deque(maxlen=10000))
     window_size_seconds: float = 300.0  # 5 minutes
 
 
@@ -39,7 +39,7 @@ class SLATarget:
 
     metric_name: str
     target_value: float
-    percentile: Optional[float] = None  # e.g., 95 for P95
+    percentile: float | None = None  # e.g., 95 for P95
     unit: str = "ms"
     description: str = ""
 
@@ -54,7 +54,7 @@ class SLABreach:
     breach_percentage: float
     timestamp: datetime = field(default_factory=datetime.utcnow)
     duration_seconds: float = 0.0
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class SLAMonitor:
@@ -90,7 +90,7 @@ class SLAMonitor:
         self.latency_window = LatencyWindow(window_size_seconds=window_size_seconds)
 
         # SLA targets
-        self.sla_targets: Dict[str, SLATarget] = {
+        self.sla_targets: dict[str, SLATarget] = {
             "p95_latency": SLATarget(
                 metric_name="p95_latency",
                 target_value=target_p95_ms,
@@ -114,15 +114,15 @@ class SLAMonitor:
         }
 
         # Breach tracking
-        self.breaches: List[SLABreach] = []
+        self.breaches: list[SLABreach] = []
         self.consecutive_breaches = 0
-        self.last_breach_check: Optional[datetime] = None
+        self.last_breach_check: datetime | None = None
 
         # Load tracking
         self.current_load_multiplier = 1.0
-        self.load_history: List[Dict[str, Any]] = []
+        self.load_history: list[dict[str, Any]] = []
 
-    def record_latency(self, latency_ms: float, timestamp: Optional[datetime] = None):
+    def record_latency(self, latency_ms: float, timestamp: datetime | None = None):
         """Record a latency measurement.
 
         Args:
@@ -148,7 +148,7 @@ class SLAMonitor:
             self.latency_window.measurements.popleft()
             self.latency_window.timestamps.popleft()
 
-    def _calculate_percentile(self, measurements: List[float], percentile: float) -> float:
+    def _calculate_percentile(self, measurements: list[float], percentile: float) -> float:
         """Calculate percentile from measurements.
 
         Args:
@@ -167,7 +167,7 @@ class SLAMonitor:
 
         return sorted_measurements[index]
 
-    def get_current_metrics(self) -> Dict[str, float]:
+    def get_current_metrics(self) -> dict[str, float]:
         """Get current performance metrics.
 
         Returns:
@@ -196,7 +196,7 @@ class SLAMonitor:
             "sample_count": len(measurements),
         }
 
-    def check_sla_compliance(self) -> Dict[str, Any]:
+    def check_sla_compliance(self) -> dict[str, Any]:
         """Check SLA compliance.
 
         Returns:
@@ -214,7 +214,7 @@ class SLAMonitor:
 
         # Check each target
         for target_name, target in self.sla_targets.items():
-            if target.percentile:
+            if target.percentile:  # noqa: SIM108
                 metric_key = f"p{int(target.percentile)}_latency_ms"
             else:
                 metric_key = "avg_latency_ms"
@@ -269,7 +269,7 @@ class SLAMonitor:
 
         return results
 
-    def get_sla_report(self) -> Dict[str, Any]:
+    def get_sla_report(self) -> dict[str, Any]:
         """Get comprehensive SLA report.
 
         Returns:
@@ -321,7 +321,7 @@ class SLAMonitor:
 
     def validate_under_load(
         self, load_multiplier: float = 2.0, duration_seconds: float = 60.0
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Validate SLA under specific load.
 
         Args:
@@ -345,7 +345,7 @@ class SLAMonitor:
             "message": "Use actual load testing tools for production validation",
         }
 
-    def get_breach_summary(self, hours: int = 24) -> Dict[str, Any]:
+    def get_breach_summary(self, hours: int = 24) -> dict[str, Any]:
         """Get breach summary for time period.
 
         Args:
@@ -394,7 +394,7 @@ class SLAMonitor:
         lines.append("## Performance Targets")
         lines.append("")
 
-        for target_name, target in self.sla_targets.items():
+        for target_name, target in self.sla_targets.items():  # noqa: B007, PERF102
             lines.append(f"### {target.description}")
             lines.append(f"- **Metric**: {target.metric_name}")
             lines.append(f"- **Target**: {target.target_value} {target.unit}")
@@ -422,7 +422,7 @@ class SLAMonitor:
 
         return "\n".join(lines)
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get monitoring statistics.
 
         Returns:

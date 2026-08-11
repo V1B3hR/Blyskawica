@@ -7,7 +7,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from nethical_recon.core.models import JobStatus, ScanJob
 from nethical_recon.core.storage import get_database
-from nethical_recon.core.storage.repository import FindingRepository, ScanJobRepository, ToolRunRepository
+from nethical_recon.core.storage.repository import (
+    FindingRepository,
+    ScanJobRepository,
+    ToolRunRepository,
+)
 from nethical_recon.worker.tasks import run_scan_job
 
 from ..auth import User, require_admin, require_read, require_write
@@ -48,7 +52,7 @@ async def create_job(
             }
             job_repo.update(job.id, updates)
             session.commit()
-            raise HTTPException(
+            raise HTTPException(  # noqa: B904
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to submit job to worker queue: {str(e)}",
             )

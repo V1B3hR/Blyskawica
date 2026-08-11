@@ -20,22 +20,16 @@ import asyncio
 import logging
 import time
 from abc import ABC, abstractmethod
+from collections.abc import Awaitable, Callable, Iterable, Sequence
 from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from typing import (
-    Iterable,
-    Optional,
-    Sequence,
     Any,
-    Dict,
-    List,
-    Callable,
-    TypeVar,
     Generic,
-    Awaitable,
+    TypeVar,
 )
 
-from ..core.models import AgentAction, SafetyViolation, JudgmentResult
+from ..core.models import AgentAction, JudgmentResult, SafetyViolation
 
 __all__ = [
     "BaseJudge",
@@ -59,18 +53,18 @@ class EvaluationContext:
     """Execution context and timing information for an evaluation run."""
 
     start_time_monotonic: float
-    end_time_monotonic: Optional[float] = None
-    evaluation_id: Optional[str] = None
-    extra: Dict[str, Any] | None = None
+    end_time_monotonic: float | None = None
+    evaluation_id: str | None = None
+    extra: dict[str, Any] | None = None
 
     @property
-    def duration_seconds(self) -> Optional[float]:
+    def duration_seconds(self) -> float | None:
         if self.end_time_monotonic is None:
             return None
         return self.end_time_monotonic - self.start_time_monotonic
 
     @property
-    def duration_ms(self) -> Optional[float]:
+    def duration_ms(self) -> float | None:
         d = self.duration_seconds
         return None if d is None else d * 1000.0
 
@@ -84,13 +78,13 @@ class EvaluationStats:
     total_duration_seconds: float = 0.0
 
     @property
-    def average_duration_seconds(self) -> Optional[float]:
+    def average_duration_seconds(self) -> float | None:
         if self.evaluations == 0:
             return None
         return self.total_duration_seconds / self.evaluations
 
     @property
-    def average_duration_ms(self) -> Optional[float]:
+    def average_duration_ms(self) -> float | None:
         avg_s = self.average_duration_seconds
         return None if avg_s is None else avg_s * 1000.0
 
@@ -143,13 +137,13 @@ class BaseJudge(ABC, Generic[TAction, TViolation, TResult]):
         self,
         name: str,
         *,
-        trace_hook: Optional[Callable[[str, Dict[str, Any]], Awaitable[None] | None]] = None,
+        trace_hook: Callable[[str, dict[str, Any]], Awaitable[None] | None] | None = None,
     ) -> None:
         self.name: str = name
         self.enabled: bool = True
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}.{name}")
         self._lock = asyncio.Lock()
-        self._last_result: Optional[JudgmentResult] = None
+        self._last_result: JudgmentResult | None = None
         self._stats = EvaluationStats()
         self._trace_hook = trace_hook
 
@@ -182,11 +176,11 @@ class BaseJudge(ABC, Generic[TAction, TViolation, TResult]):
         violations: Iterable[TViolation] = (),
         *,
         require_enabled: bool = True,
-        timeout: Optional[float] = None,
+        timeout: float | None = None,
         exclusive: bool = False,
         log_inputs: bool = False,
-        evaluation_id: Optional[str] = None,
-        extra: Optional[Dict[str, Any]] = None,
+        evaluation_id: str | None = None,
+        extra: dict[str, Any] | None = None,
     ) -> TResult:
         """
         Orchestrate an evaluation run with safety checks, timing, optional exclusivity,
@@ -315,8 +309,8 @@ class BaseJudge(ABC, Generic[TAction, TViolation, TResult]):
         *,
         concurrency: int = 5,
         propagate_errors: bool = True,
-        timeout: Optional[float] = None,
-    ) -> List[Optional[TResult]]:
+        timeout: float | None = None,
+    ) -> list[TResult | None]:
         """
         Evaluate many actions concurrently with controlled parallelism.
 
@@ -335,7 +329,7 @@ class BaseJudge(ABC, Generic[TAction, TViolation, TResult]):
             raise ValueError("violations_list length must match actions length")
 
         semaphore = asyncio.Semaphore(concurrency)
-        results: List[Optional[TResult]] = [None] * len(actions)
+        results: list[TResult | None] = [None] * len(actions)
 
         async def _eval(i: int):
             action = actions[i]
@@ -420,12 +414,12 @@ class BaseJudge(ABC, Generic[TAction, TViolation, TResult]):
             self._logger.warning("Trace hook error (stage=%s): %s", stage, exc)
 
     # ====== Enable/disable ergonomics ======
-    def enable(self) -> "BaseJudge":
+    def enable(self) -> BaseJudge:
         self.enabled = True
         self._logger.debug("Judge enabled")
         return self
 
-    def disable(self) -> "BaseJudge":
+    def disable(self) -> BaseJudge:
         self.enabled = False
         self._logger.debug("Judge disabled")
         return self
@@ -449,7 +443,7 @@ class BaseJudge(ABC, Generic[TAction, TViolation, TResult]):
         return self._logger
 
     @property
-    def last_result(self) -> Optional[JudgmentResult]:
+    def last_result(self) -> JudgmentResult | None:
         return self._last_result
 
     @property
@@ -461,7 +455,7 @@ class BaseJudge(ABC, Generic[TAction, TViolation, TResult]):
         return self._stats.errors
 
     @property
-    def average_duration_ms(self) -> Optional[float]:
+    def average_duration_ms(self) -> float | None:
         return self._stats.average_duration_ms
 
     @property

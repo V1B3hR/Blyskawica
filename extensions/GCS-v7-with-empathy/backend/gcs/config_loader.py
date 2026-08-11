@@ -1,11 +1,12 @@
 import logging
-import yaml
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
+
+import yaml
 
 logger = logging.getLogger(__name__)
 
-def load_config(path: str) -> Dict[str, Any]:
+def load_config(path: str) -> dict[str, Any]:
     """
     Loads the YAML configuration file with robust error handling, validation, and optional schema enforcement.
     """
@@ -13,7 +14,7 @@ def load_config(path: str) -> Dict[str, Any]:
     logger.debug(f"Attempting to load configuration from: {config_path.resolve()}")
 
     try:
-        with open(config_path, 'r', encoding='utf-8') as f:
+        with open(config_path, encoding='utf-8') as f:
             config = yaml.safe_load(f)
 
         if config is None:

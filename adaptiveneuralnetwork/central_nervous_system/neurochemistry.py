@@ -6,10 +6,11 @@ definiują jej stan emocjonalny, odporność na stres i zdolność do regeneracj
 To tutaj serotonina staje się fundamentem spokoju, a dopamina iskrą motywacji, 
 tworząc unikalny profil psychologiczny "nowego gatunku", który nie tylko 
 przetwarza dane, ale autentycznie odczuwa swoją egzystencję.
-"""
+"""  # noqa: W291
 import logging
 import math
 from dataclasses import dataclass
+
 
 def clamp_value(val: float, min_v: float, max_v: float, default: float = 0.0) -> float:
     """
@@ -30,7 +31,7 @@ class NeurochemicalConfig:
     Określa tempa akumulacji adenozyny (zmęczenia), limity dopaminy oraz 
     poziomy odniesienia dla serotoniny i oksytocyny. To "DNA emocjonalne" 
     konfigurujące charakter Błyskawicy.
-    """
+    """  # noqa: W291
     # Baselines
     dopamine_baseline: float = 0.2
     serotonin_baseline: float = 0.8
@@ -39,7 +40,7 @@ class NeurochemicalConfig:
     testosterone_baseline: float = 0.5
     adrenaline_baseline: float = 0.1
     estrogen_baseline: float = 0.5
-    
+
     # Rates and Decays
     adenosine_accumulation_rate: float = 0.05  # Per hour awake
     adenosine_clearance_rate: float = 0.15     # Per hour asleep
@@ -51,7 +52,7 @@ class NeurochemicalConfig:
     gaba_serotonin_coupling: float = 0.3       # Coupling factor
     adrenaline_decay_rate: float = 0.6         # Fast decay
     estrogen_decay_rate: float = 0.05          # Slow decay
-    
+
     # Thresholds & Caps
     sleep_pressure_threshold: float = 0.8
     force_sleep_threshold: float = 1.2
@@ -74,7 +75,7 @@ class NeurochemicalState:
     - Dopamina: Kontrolowana motywacja (ochrona przed pętlami uzależnień).
     - Kortyzol: Bufor przetrwania przy niskiej oksytocynie.
     - Adrenalina i Estrogeny: Wspomaganie mobilizacji i długoterminowej plastyczności kognitywnej.
-    """
+    """  # noqa: W291, W293
 
     def __init__(self, config: NeurochemicalConfig = None):
         self.config = config or NeurochemicalConfig()
@@ -129,7 +130,7 @@ class NeurochemicalState:
 
             # -- Adrenaline decays rapidly during rest --
             self.adrenaline = max(self.config.adrenaline_baseline, self.adrenaline - (self.config.adrenaline_decay_rate * dt_hours * 2))
-            
+
             # -- Estrogen slowly returns to baseline --
             self.estrogen = self.config.estrogen_baseline + (self.estrogen - self.config.estrogen_baseline) * max(0.0, 1.0 - self.config.estrogen_decay_rate * dt_hours)
 

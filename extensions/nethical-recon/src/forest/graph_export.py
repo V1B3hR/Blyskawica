@@ -3,11 +3,10 @@ Graph Export for Forest
 Exports forest structure to various graph formats (Graphviz, Neo4j, etc.)
 """
 
+import json
 import logging
 from typing import Any
-import json
 
-from .trees import Tree
 from .base import ForestBase
 
 

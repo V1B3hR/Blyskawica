@@ -24,7 +24,7 @@ import sys
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 from urllib.parse import urljoin, urlparse
 
 try:
@@ -49,19 +49,19 @@ class ReplayRequest:
 
     method: str
     url: str
-    headers: Dict[str, str] = field(default_factory=dict)
-    body: Optional[str] = None
-    query_params: Dict[str, str] = field(default_factory=dict)
+    headers: dict[str, str] = field(default_factory=dict)
+    body: str | None = None
+    query_params: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
 class ReplayResponse:
     """Represents the response from a replayed request."""
 
-    status_code: Optional[int] = None
-    headers: Dict[str, str] = field(default_factory=dict)
-    body: Optional[str] = None
-    error: Optional[str] = None
+    status_code: int | None = None
+    headers: dict[str, str] = field(default_factory=dict)
+    body: str | None = None
+    error: str | None = None
     latency_ms: float = 0.0
 
 
@@ -76,12 +76,12 @@ class ReplayReport:
     errors: int = 0
     successful: int = 0
     failed: int = 0
-    skipped_reasons: Dict[str, int] = field(default_factory=dict)
-    response_samples: List[Dict[str, Any]] = field(default_factory=list)
-    error_samples: List[Dict[str, Any]] = field(default_factory=list)
+    skipped_reasons: dict[str, int] = field(default_factory=dict)
+    response_samples: list[dict[str, Any]] = field(default_factory=list)
+    error_samples: list[dict[str, Any]] = field(default_factory=list)
     total_duration_seconds: float = 0.0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert report to dictionary for JSON serialization."""
         return {
             "total_requests": self.total_requests,
@@ -115,10 +115,10 @@ class ShadowReplayTool:
         self,
         staging_base_url: str,
         dry_run: bool = True,
-        skip_methods: Optional[List[str]] = None,
+        skip_methods: list[str] | None = None,
         allow_modifying: bool = False,
-        rps: Optional[float] = None,
-        auth: Optional[str] = None,
+        rps: float | None = None,
+        auth: str | None = None,
         retries: int = 3,
         force: bool = False,
     ):
@@ -152,7 +152,7 @@ class ShadowReplayTool:
             self.skip_methods = [m.upper() for m in skip_methods]
 
         self.report = ReplayReport()
-        self.session: Optional[requests.Session] = None
+        self.session: requests.Session | None = None
 
         # Safety check for production environment
         self._check_production_safety()
@@ -232,7 +232,7 @@ class ShadowReplayTool:
 
         return session
 
-    def parse_har(self, har_path: Path) -> List[ReplayRequest]:
+    def parse_har(self, har_path: Path) -> list[ReplayRequest]:
         """
         Parse HAR (HTTP Archive) file and extract requests.
 
@@ -244,7 +244,7 @@ class ShadowReplayTool:
         """
         logger.info(f"Parsing HAR file: {har_path}")
 
-        with open(har_path, "r") as f:
+        with open(har_path) as f:
             har_data = json.load(f)
 
         requests_list = []
@@ -291,7 +291,7 @@ class ShadowReplayTool:
         logger.info(f"Parsed {len(requests_list)} requests from HAR file")
         return requests_list
 
-    def parse_json(self, json_path: Path) -> List[ReplayRequest]:
+    def parse_json(self, json_path: Path) -> list[ReplayRequest]:
         """
         Parse custom JSON format with list of request dictionaries.
 
@@ -315,7 +315,7 @@ class ShadowReplayTool:
         """
         logger.info(f"Parsing JSON file: {json_path}")
 
-        with open(json_path, "r") as f:
+        with open(json_path) as f:
             data = json.load(f)
 
         if not isinstance(data, list):
@@ -381,7 +381,7 @@ class ShadowReplayTool:
 
     def _should_skip_request(
         self, request: ReplayRequest
-    ) -> Tuple[bool, Optional[str]]:
+    ) -> tuple[bool, str | None]:
         """
         Determine if request should be skipped.
 
@@ -466,7 +466,7 @@ class ShadowReplayTool:
             logger.debug(f"Rate limiting: sleeping {sleep_time:.3f}s")
             time.sleep(sleep_time)
 
-    def replay_traffic(self, requests_list: List[ReplayRequest]) -> ReplayReport:
+    def replay_traffic(self, requests_list: list[ReplayRequest]) -> ReplayReport:
         """
         Replay a list of requests to the staging environment.
 

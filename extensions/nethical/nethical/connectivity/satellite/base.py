@@ -8,10 +8,11 @@ and state tracking.
 
 import logging
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ class ConnectionState(Enum):
 class SatelliteConnectionError(Exception):
     """Base exception for satellite connection errors."""
 
-    def __init__(self, message: str, provider: str, details: Optional[Dict] = None):
+    def __init__(self, message: str, provider: str, details: dict | None = None):
         super().__init__(message)
         self.provider = provider
         self.details = details or {}
@@ -65,7 +66,7 @@ class ConnectionConfig:
     health_check_interval_seconds: float = 30.0
 
     # Provider-specific settings
-    provider_options: Dict[str, Any] = field(default_factory=dict)
+    provider_options: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -81,7 +82,7 @@ class ConnectionMetrics:
     bytes_sent: int = 0
     bytes_received: int = 0
     errors_count: int = 0
-    last_update: Optional[datetime] = None
+    last_update: datetime | None = None
 
 
 class SatelliteProvider(ABC):
@@ -96,9 +97,9 @@ class SatelliteProvider(ABC):
         Subclasses should use the async factory pattern by implementing their own
         `create()` class method or using the base implementation. See
         docs/ASYNC_FACTORY_PATTERN.md for details.
-    """
+    """  # noqa: W293
 
-    def __init__(self, config: Optional[ConnectionConfig] = None):
+    def __init__(self, config: ConnectionConfig | None = None):
         """
         Initialize satellite provider (synchronous constructor).
         
@@ -108,17 +109,17 @@ class SatelliteProvider(ABC):
 
         Args:
             config: Connection configuration
-        """
+        """  # noqa: W293
         self.config = config or ConnectionConfig()
         self._state = ConnectionState.DISCONNECTED
         self._metrics = ConnectionMetrics()
-        self._callbacks: Dict[str, List[Callable]] = {
+        self._callbacks: dict[str, list[Callable]] = {
             "on_connect": [],
             "on_disconnect": [],
             "on_error": [],
             "on_state_change": [],
         }
-        self._connection_start: Optional[datetime] = None
+        self._connection_start: datetime | None = None
 
     async def async_setup(self) -> None:
         """
@@ -129,11 +130,11 @@ class SatelliteProvider(ABC):
         
         Raises:
             SatelliteConnectionError: If connection fails
-        """
+        """  # noqa: W293
         await self.connect()
 
     @classmethod
-    async def create(cls, config: Optional[ConnectionConfig] = None) -> "SatelliteProvider":
+    async def create(cls, config: ConnectionConfig | None = None) -> "SatelliteProvider":
         """
         Async factory method for creating a connected satellite provider.
         
@@ -154,7 +155,7 @@ class SatelliteProvider(ABC):
         Example:
             >>> from nethical.connectivity.satellite.starlink import StarlinkProvider
             >>> provider = await StarlinkProvider.create(config)
-        """
+        """  # noqa: W293
         obj = cls(config)
         await obj.async_setup()
         return obj
@@ -239,7 +240,7 @@ class SatelliteProvider(ABC):
         pass
 
     @abstractmethod
-    async def receive(self, timeout: Optional[float] = None) -> Optional[bytes]:
+    async def receive(self, timeout: float | None = None) -> bytes | None:
         """
         Receive data from satellite connection.
 
@@ -265,7 +266,7 @@ class SatelliteProvider(ABC):
         pass
 
     @abstractmethod
-    async def get_signal_info(self) -> Dict[str, Any]:
+    async def get_signal_info(self) -> dict[str, Any]:
         """
         Get current signal information.
 
@@ -311,16 +312,16 @@ class SatelliteProvider(ABC):
             for callback in self._callbacks[event]:
                 try:
                     callback(*args, **kwargs)
-                except Exception as e:
+                except Exception as e:  # noqa: PERF203
                     logger.error(f"Error in {event} callback: {e}")
 
     def _update_metrics(
         self,
-        latency_ms: Optional[float] = None,
-        jitter_ms: Optional[float] = None,
-        packet_loss: Optional[float] = None,
-        bandwidth_kbps: Optional[float] = None,
-        signal_dbm: Optional[float] = None,
+        latency_ms: float | None = None,
+        jitter_ms: float | None = None,
+        packet_loss: float | None = None,
+        bandwidth_kbps: float | None = None,
+        signal_dbm: float | None = None,
     ):
         """
         Update connection metrics.
@@ -344,7 +345,7 @@ class SatelliteProvider(ABC):
             self._metrics.signal_strength_dbm = signal_dbm
         self._metrics.last_update = datetime.utcnow()
 
-    def get_metrics_summary(self) -> Dict[str, Any]:
+    def get_metrics_summary(self) -> dict[str, Any]:
         """
         Get a summary of connection metrics.
 

@@ -5,16 +5,16 @@ Provides standardized endpoints for integrating with other Nethical tools.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 
-class ToolType(str, Enum):
+class ToolType(str, Enum):  # noqa: UP042
     """Types of Nethical tools"""
 
     RECON = "recon"
@@ -25,7 +25,7 @@ class ToolType(str, Enum):
     FORENSICS = "forensics"
 
 
-class IntegrationStatus(str, Enum):
+class IntegrationStatus(str, Enum):  # noqa: UP042
     """Status of tool integration"""
 
     ACTIVE = "active"
@@ -42,19 +42,19 @@ class ToolIntegration:
     tool_name: str
     tool_type: ToolType
     api_url: str
-    api_key: Optional[str] = None
+    api_key: str | None = None
     status: IntegrationStatus = IntegrationStatus.PENDING
     version: str = "1.0"
-    capabilities: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    capabilities: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class AssetRequest(BaseModel):
     """Request for asset information"""
 
-    asset_id: Optional[str] = None
-    asset_value: Optional[str] = None
-    asset_type: Optional[str] = None
+    asset_id: str | None = None
+    asset_value: str | None = None
+    asset_type: str | None = None
 
 
 class AssetResponse(BaseModel):
@@ -65,8 +65,8 @@ class AssetResponse(BaseModel):
     asset_type: str
     risk_score: float = Field(..., ge=0, le=100)
     findings_count: int = 0
-    last_scan: Optional[datetime] = None
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    last_scan: datetime | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class ScanRequest(BaseModel):
@@ -75,8 +75,8 @@ class ScanRequest(BaseModel):
     target: str
     scan_type: str = "comprehensive"
     priority: str = "normal"
-    callback_url: Optional[str] = None
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    callback_url: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class ScanResponse(BaseModel):
@@ -85,7 +85,7 @@ class ScanResponse(BaseModel):
     scan_id: str
     status: str
     message: str
-    estimated_completion: Optional[datetime] = None
+    estimated_completion: datetime | None = None
 
 
 class IntegrationAPI:
@@ -97,7 +97,7 @@ class IntegrationAPI:
 
     def __init__(self):
         self.router = APIRouter(prefix="/api/integration", tags=["integration"])
-        self.integrations: Dict[str, ToolIntegration] = {}
+        self.integrations: dict[str, ToolIntegration] = {}
         self._register_routes()
 
     def register_tool(self, integration: ToolIntegration):
@@ -108,14 +108,14 @@ class IntegrationAPI:
         """Unregister tool integration"""
         self.integrations.pop(tool_id, None)
 
-    def get_integration(self, tool_id: str) -> Optional[ToolIntegration]:
+    def get_integration(self, tool_id: str) -> ToolIntegration | None:
         """Get tool integration by ID"""
         return self.integrations.get(tool_id)
 
     def _register_routes(self):
         """Register API routes"""
 
-        @self.router.get("/tools", response_model=List[Dict[str, Any]])
+        @self.router.get("/tools", response_model=list[dict[str, Any]])
         async def list_integrated_tools():
             """List all integrated Nethical tools"""
             return [
@@ -136,8 +136,8 @@ class IntegrationAPI:
             tool_name: str,
             tool_type: ToolType,
             api_url: str,
-            api_key: Optional[str] = None,
-            capabilities: List[str] = [],
+            api_key: str | None = None,
+            capabilities: list[str] = [],  # noqa: B006
         ):
             """Register new Nethical tool"""
             integration = ToolIntegration(
@@ -162,7 +162,7 @@ class IntegrationAPI:
                 asset_type="domain",
                 risk_score=65.0,
                 findings_count=5,
-                last_scan=datetime.now(timezone.utc),
+                last_scan=datetime.now(UTC),
                 metadata={"source": "nethical-recon"},
             )
 
@@ -175,7 +175,7 @@ class IntegrationAPI:
                 scan_id=scan_id,
                 status="queued",
                 message="Scan request received",
-                estimated_completion=datetime.now(timezone.utc),
+                estimated_completion=datetime.now(UTC),
             )
 
         @self.router.get("/health")
@@ -183,7 +183,7 @@ class IntegrationAPI:
             """Health check for integration API"""
             return {
                 "status": "healthy",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "integrations_count": len(self.integrations),
             }
 

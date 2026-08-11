@@ -11,13 +11,13 @@ Features:
 - Metrics for monitoring quota enforcement
 """
 
-from typing import Dict, Optional, Any
-from dataclasses import dataclass, field
-from datetime import datetime
-from collections import deque
+import logging
 import threading
 import time
-import logging
+from collections import deque
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -62,8 +62,8 @@ class QuotaUsage:
     bytes_processed: int = 0
 
     # Time tracking
-    first_request_time: Optional[float] = None
-    last_request_time: Optional[float] = None
+    first_request_time: float | None = None
+    last_request_time: float | None = None
 
     # Request history for windowing
     request_times: deque = field(default_factory=lambda: deque(maxlen=1000))
@@ -72,16 +72,16 @@ class QuotaUsage:
     # Violations
     throttle_count: int = 0
     block_count: int = 0
-    last_violation_time: Optional[float] = None
+    last_violation_time: float | None = None
 
 
 class QuotaEnforcer:
     """Enforces quotas and rate limits with backpressure."""
 
-    def __init__(self, config: Optional[QuotaConfig] = None):
+    def __init__(self, config: QuotaConfig | None = None):
         """Initialize quota enforcer."""
         self.config = config or QuotaConfig()
-        self.usage: Dict[str, QuotaUsage] = {}
+        self.usage: dict[str, QuotaUsage] = {}
 
         # Metrics
         self.total_requests = 0
@@ -94,11 +94,11 @@ class QuotaEnforcer:
     def check_quota(
         self,
         agent_id: str,
-        cohort: Optional[str] = None,
-        tenant: Optional[str] = None,
+        cohort: str | None = None,
+        tenant: str | None = None,
         payload_size: int = 0,
         action_type: str = "query",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Check if request is within quota limits.
 
@@ -175,7 +175,7 @@ class QuotaEnforcer:
 
     def _check_entity_quota(
         self, entity_id: str, entity_type: str, current_time: float, payload_size: int
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Check quota for a specific entity (agent/cohort/tenant)."""
 
         # Get or create usage tracking
@@ -253,7 +253,7 @@ class QuotaEnforcer:
         if usage.first_request_time is None:
             usage.first_request_time = current_time
 
-    def get_usage_summary(self, entity_id: str) -> Dict[str, Any]:
+    def get_usage_summary(self, entity_id: str) -> dict[str, Any]:
         """Get usage summary for an entity."""
         if entity_id not in self.usage:
             return {"error": "Entity not found"}
@@ -291,7 +291,7 @@ class QuotaEnforcer:
             ),
         }
 
-    def get_global_metrics(self) -> Dict[str, Any]:
+    def get_global_metrics(self) -> dict[str, Any]:
         """Get global metrics across all entities."""
         return {
             "total_requests": self.total_requests,
@@ -310,7 +310,7 @@ class QuotaEnforcer:
             },
         }
 
-    def reset_usage(self, entity_id: Optional[str] = None):
+    def reset_usage(self, entity_id: str | None = None):
         """Reset usage for an entity or all entities."""
         if entity_id:
             if entity_id in self.usage:
@@ -324,15 +324,15 @@ class QuotaEnforcer:
 
 
 # Global singleton instance
-_global_enforcer: Optional[QuotaEnforcer] = None
+_global_enforcer: QuotaEnforcer | None = None
 _global_enforcer_lock = threading.Lock()
 
 
-def get_quota_enforcer(config: Optional[QuotaConfig] = None) -> QuotaEnforcer:
+def get_quota_enforcer(config: QuotaConfig | None = None) -> QuotaEnforcer:
     """Get or create the global quota enforcer instance.
     
     Thread-safe singleton access with double-checked locking pattern.
-    """
+    """  # noqa: W293
     global _global_enforcer
     if _global_enforcer is None:
         with _global_enforcer_lock:
@@ -353,7 +353,7 @@ def configure_quotas(config: QuotaConfig) -> QuotaEnforcer:
         
     Returns:
         The newly configured global QuotaEnforcer instance
-    """
+    """  # noqa: W293
     global _global_enforcer
     with _global_enforcer_lock:
         _global_enforcer = QuotaEnforcer(config)

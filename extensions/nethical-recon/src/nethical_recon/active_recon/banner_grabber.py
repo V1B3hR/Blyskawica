@@ -5,7 +5,6 @@ from __future__ import annotations
 import socket
 import ssl
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
@@ -14,9 +13,9 @@ class BannerResult:
 
     host: str
     port: int
-    banner: Optional[str] = None
-    service: Optional[str] = None
-    error: Optional[str] = None
+    banner: str | None = None
+    service: str | None = None
+    error: str | None = None
     ssl_enabled: bool = False
 
 
@@ -65,7 +64,7 @@ class BannerGrabber:
                 if banner:
                     result.banner = banner
                     result.service = self._identify_service(banner, port)
-            except socket.timeout:
+            except TimeoutError:
                 # Some services don't send banner immediately, try sending a probe
                 probe = self._get_probe(port)
                 if probe:
@@ -75,12 +74,12 @@ class BannerGrabber:
                         if banner:
                             result.banner = banner
                             result.service = self._identify_service(banner, port)
-                    except:
+                    except:  # noqa: E722
                         pass
 
             sock.close()
 
-        except socket.timeout:
+        except TimeoutError:
             result.error = "Connection timeout"
         except ConnectionRefusedError:
             result.error = "Connection refused"
@@ -110,7 +109,7 @@ class BannerGrabber:
 
         return results
 
-    def _get_probe(self, port: int) -> Optional[str]:
+    def _get_probe(self, port: int) -> str | None:
         """Get service-specific probe string.
 
         Args:
@@ -130,7 +129,7 @@ class BannerGrabber:
         }
         return probes.get(port)
 
-    def _identify_service(self, banner: str, port: int) -> Optional[str]:
+    def _identify_service(self, banner: str, port: int) -> str | None:
         """Identify service from banner.
 
         Args:

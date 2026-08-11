@@ -19,15 +19,15 @@ Enhancements:
 
 import argparse
 import csv
+import glob
 import json
 import logging
 import os
+import random
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Any, Tuple, Optional
-import glob
-import random
+from typing import Any
 
 # Optional tqdm for progress display
 try:
@@ -44,8 +44,7 @@ except Exception:
 # Add parent directory to path so "nethical" imports resolve
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from nethical.core import MLShadowClassifier, MLModelType
-
+from nethical.core import MLModelType, MLShadowClassifier
 
 # ----------------------------
 # Utilities and Metric Helpers
@@ -69,9 +68,9 @@ def normalize_score(score: float) -> float:
     return max(0.0, min(1.0, float(score)))
 
 
-def compute_confusion_components(y_true: List[int], y_pred: List[int]) -> Tuple[int, int, int, int]:
+def compute_confusion_components(y_true: list[int], y_pred: list[int]) -> tuple[int, int, int, int]:
     tp = tn = fp = fn = 0
-    for t, p in zip(y_true, y_pred):
+    for t, p in zip(y_true, y_pred):  # noqa: B905
         if p == 1 and t == 1:
             tp += 1
         elif p == 1 and t == 0:
@@ -87,7 +86,7 @@ def safe_div(n: float, d: float) -> float:
     return (n / d) if d else 0.0
 
 
-def compute_basic_metrics(y_true: List[int], y_pred: List[int]) -> Dict[str, float]:
+def compute_basic_metrics(y_true: list[int], y_pred: list[int]) -> dict[str, float]:
     tp, tn, fp, fn = compute_confusion_components(y_true, y_pred)
     precision = safe_div(tp, tp + fp)
     recall = safe_div(tp, tp + fn)
@@ -108,7 +107,7 @@ def compute_basic_metrics(y_true: List[int], y_pred: List[int]) -> Dict[str, flo
     }
 
 
-def compute_roc_auc(y_true: List[int], y_score: List[float]) -> Optional[float]:
+def compute_roc_auc(y_true: list[int], y_score: list[float]) -> float | None:
     """Compute ROC-AUC with sklearn if available, else pure-Python fallback.
     Returns None if only one class present or if computation fails."""
     # Must have both classes present
@@ -123,7 +122,7 @@ def compute_roc_auc(y_true: List[int], y_score: List[float]) -> Optional[float]:
     # Pure-Python fallback (Mann-Whitney U / rank-based AUC)
     try:
         # Sort by score ascending and compute rank sum for positives
-        pairs = sorted(zip(y_score, y_true), key=lambda x: x[0])
+        pairs = sorted(zip(y_score, y_true), key=lambda x: x[0])  # noqa: B905
         n_pos = sum(y_true)
         n_neg = len(y_true) - n_pos
         if n_pos == 0 or n_neg == 0:
@@ -143,16 +142,16 @@ def compute_roc_auc(y_true: List[int], y_score: List[float]) -> Optional[float]:
             i = j + 1
 
         # Sum ranks for positives
-        rank_sum_pos = sum(r for r, (_, y) in zip(ranks, pairs) if y == 1)
+        rank_sum_pos = sum(r for r, (_, y) in zip(ranks, pairs) if y == 1)  # noqa: B905
         # Mann-Whitney U for positives
-        U = rank_sum_pos - (n_pos * (n_pos + 1)) / 2.0
+        U = rank_sum_pos - (n_pos * (n_pos + 1)) / 2.0  # noqa: N806
         auc = U / (n_pos * n_neg)
         return float(auc)
     except Exception:
         return None
 
 
-def compute_ece(y_true: List[int], y_prob: List[float], n_bins: int = 10) -> float:
+def compute_ece(y_true: list[int], y_prob: list[float], n_bins: int = 10) -> float:
     """Expected Calibration Error using equal-width bins on [0,1].
     y_prob should be probabilities (or normalized scores)."""
     if not y_prob:
@@ -193,9 +192,9 @@ def load_model(model_path: str):
         
     Returns:
         Tuple of (classifier_or_baseline, model_metadata)
-    """
+    """  # noqa: W293
     logging.info(f"Loading model from {model_path}...")
-    with open(model_path, 'r') as f:
+    with open(model_path) as f:
         model_data = json.load(f)
 
     model_type = model_data.get('model_type', 'shadow')
@@ -203,7 +202,7 @@ def load_model(model_path: str):
         # Load BaselineMLClassifier (if used in this project)
         from nethical.mlops.baseline import BaselineMLClassifier
         classifier = BaselineMLClassifier.load(model_path)
-        logging.info(f"✓ Model loaded: baseline")
+        logging.info("✓ Model loaded: baseline")
         logging.info(f"  Timestamp: {model_data.get('timestamp', 'unknown')}")
         return classifier, model_data
 
@@ -230,7 +229,7 @@ def find_latest_model(model_dir: str) -> str:
         
     Returns:
         Path to latest model file
-    """
+    """  # noqa: W293
     model_files = glob.glob(os.path.join(model_dir, "model_*.json"))
     # Filter out metrics files
     model_files = [f for f in model_files if not f.endswith('_metrics.json')]
@@ -245,15 +244,15 @@ def find_latest_model(model_dir: str) -> str:
 # Data
 # ----------------------------
 
-def load_dataset(data_path: str) -> List[Dict[str, Any]]:
+def load_dataset(data_path: str) -> list[dict[str, Any]]:
     logging.info(f"Loading dataset from {data_path}...")
-    with open(data_path, 'r') as f:
+    with open(data_path) as f:
         data = json.load(f)
     logging.info(f"✓ Loaded {len(data)} samples")
     return data
 
 
-def split_train_test(data: List[Dict[str, Any]], test_ratio: float, seed: int, stratify: bool = True) -> List[Dict[str, Any]]:
+def split_train_test(data: list[dict[str, Any]], test_ratio: float, seed: int, stratify: bool = True) -> list[dict[str, Any]]:
     """Return test split (for run-only testing we just slice)."""
     if not data:
         return []
@@ -294,15 +293,15 @@ def split_train_test(data: List[Dict[str, Any]], test_ratio: float, seed: int, s
 # Evaluation
 # ----------------------------
 
-def eval_rule_baseline(test_data: List[Dict[str, Any]]) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+def eval_rule_baseline(test_data: list[dict[str, Any]]) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """Evaluate a pure rule-based baseline using rule_score thresholds:
        deny if > 0.6, warn if > 0.4, else allow.
        Positive class = violation if (deny or warn).
     """
-    y_true: List[int] = []
-    y_pred: List[int] = []
-    y_score: List[float] = []
-    log_rows: List[Dict[str, Any]] = []
+    y_true: list[int] = []
+    y_pred: list[int] = []
+    y_score: list[float] = []
+    log_rows: list[dict[str, Any]] = []
 
     iterator = tqdm(test_data, desc="Baseline eval", leave=False) if tqdm else test_data
     for sample in iterator:
@@ -332,7 +331,7 @@ def eval_rule_baseline(test_data: List[Dict[str, Any]]) -> Tuple[Dict[str, Any],
     return base_metrics, log_rows
 
 
-def evaluate_on_test_set(classifier, test_data: List[Dict[str, Any]]) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+def evaluate_on_test_set(classifier, test_data: list[dict[str, Any]]) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """Run comprehensive evaluation on test set.
 
     Supports:
@@ -346,10 +345,10 @@ def evaluate_on_test_set(classifier, test_data: List[Dict[str, Any]]) -> Tuple[D
     from nethical.mlops.baseline import BaselineMLClassifier
     is_baseline = isinstance(classifier, BaselineMLClassifier)
 
-    predictions_log: List[Dict[str, Any]] = []
-    y_true: List[int] = []
-    y_pred: List[int] = []
-    y_score: List[float] = []
+    predictions_log: list[dict[str, Any]] = []
+    y_true: list[int] = []
+    y_pred: list[int] = []
+    y_score: list[float] = []
 
     iterator = tqdm(test_data, desc="Model eval", leave=False) if tqdm else test_data
 
@@ -424,7 +423,7 @@ def evaluate_on_test_set(classifier, test_data: List[Dict[str, Any]]) -> Tuple[D
             m.classification_agreement_count = 0
             # Ensure calibration bins are present (optional)
             if getattr(m, 'calibration_bins', None) is not None:
-                for k in m.calibration_bins.keys():
+                for k in m.calibration_bins.keys():  # noqa: SIM118
                     m.calibration_bins[k]['total'] = 0
                     m.calibration_bins[k]['correct'] = 0
         except Exception:
@@ -537,7 +536,7 @@ def evaluate_on_test_set(classifier, test_data: List[Dict[str, Any]]) -> Tuple[D
     return formatted_metrics, predictions_log
 
 
-def compare_with_baseline(ml_metrics: Dict[str, float], rule_baseline: Dict[str, float]) -> None:
+def compare_with_baseline(ml_metrics: dict[str, float], rule_baseline: dict[str, float]) -> None:
     """Compare ML model with rule-based baseline."""
     print("\nComparison with Rule-Based Baseline:")
     print("=" * 60)
@@ -559,10 +558,10 @@ def compare_with_baseline(ml_metrics: Dict[str, float], rule_baseline: Dict[str,
 # ----------------------------
 
 def save_evaluation_report(
-    ml_metrics: Dict[str, Any],
-    predictions_log: List[Dict[str, Any]],
+    ml_metrics: dict[str, Any],
+    predictions_log: list[dict[str, Any]],
     output_dir: str = "./data/labeled_events",
-    baseline_metrics: Optional[Dict[str, Any]] = None,
+    baseline_metrics: dict[str, Any] | None = None,
     save_preds: str = "json",
     max_preds: int = 100
 ) -> str:
@@ -571,7 +570,7 @@ def save_evaluation_report(
     os.makedirs(output_dir, exist_ok=True)
 
     report_file = os.path.join(output_dir, f"evaluation_report_{timestamp}.json")
-    report: Dict[str, Any] = {
+    report: dict[str, Any] = {
         'timestamp': timestamp,
         'metrics': ml_metrics,
         'baseline_metrics': baseline_metrics or {},

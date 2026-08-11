@@ -4,11 +4,10 @@ Part of the modular Purity Refactor.
 """
 
 import logging
-import time
 from collections import defaultdict
+
 import numpy as np
-import torch
-import torch.nn as nn
+
 from .config import NeuromorphicConfig
 
 logger = logging.getLogger(__name__)
@@ -141,7 +140,7 @@ class BrainWaveOscillator:
     def apply_circadian_oscillation_modulation(self) -> dict[str, float]:
         """Apply circadian modulation to all oscillation bands"""
         modulated_oscillations = {}
-        current_state = self.get_sleep_wake_state()
+        current_state = self.get_sleep_wake_state()  # noqa: F841
 
         for band in self.oscillators.keys():
             base_oscillation = self.generate_oscillation(band)
@@ -156,7 +155,7 @@ class NeuromodulationSystem:
     Simulates the influence of multiple neurotransmitters on the substrate.
     Supports Dopamine (Reward/Plasticity), Serotonin (Stability/Mood), 
     and GABA (Inhibition).
-    """
+    """  # noqa: W291
 
     def __init__(self, config: NeuromorphicConfig):
         self.config = config
@@ -208,7 +207,7 @@ class NeuromodulationSystem:
 
     def update_concentrations(self):
         """Update concentrations with exponential decay towards baseline."""
-        for nt_type, params in self.neurotransmitters.items():
+        for nt_type, params in self.neurotransmitters.items():  # noqa: B007
             decay_factor = np.exp(-params['decay_rate'] * self.config.dt)
             params['concentration'] = params['baseline'] + (params['concentration'] - params['baseline']) * decay_factor
 
@@ -216,7 +215,7 @@ class NeuromodulationSystem:
         """Expose modulatory scales for learning and activation."""
         da = self.neurotransmitters['dopamine']['concentration'] * self.receptor_sensitivity['dopamine']
         ach = self.neurotransmitters['acetylcholine']['concentration'] * self.receptor_sensitivity['acetylcholine']
-        
+
         return {
             'learning_rate_scale': float(da * 2.0 + 0.5),
             'attention_gain': float(ach * 1.5 + 0.8),

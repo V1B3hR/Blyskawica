@@ -37,7 +37,7 @@ class POSTagger(nn.Module):
     Supports two architectures:
     - BiLSTM (default): Embedding -> BiLSTM -> Linear
     - Transformer: Embedding -> Transformer Encoder -> Linear
-    """
+    """  # noqa: W293
 
     def __init__(self, config: POSTaggerConfig):
         super().__init__()
@@ -122,7 +122,7 @@ class POSTagger(nn.Module):
             Dict with:
                 - logits: [batch_size, seq_len, num_tags] token predictions
                 - hidden_states: [batch_size, seq_len, hidden_dim] encoder outputs
-        """
+        """  # noqa: W293
         batch_size, seq_len = input_ids.shape
 
         # Create attention mask if not provided
@@ -176,7 +176,7 @@ class POSTagger(nn.Module):
         
         Returns:
             predictions: [batch_size, seq_len] predicted tag ids
-        """
+        """  # noqa: W293
         with torch.no_grad():
             outputs = self.forward(input_ids, attention_mask, lengths)
             predictions = torch.argmax(outputs["logits"], dim=-1)
@@ -193,7 +193,7 @@ def compute_sequence_lengths(input_ids: torch.Tensor, pad_token_id: int = 0) -> 
         
     Returns:
         lengths: [batch_size] actual lengths
-    """
+    """  # noqa: W291, W293
     mask = (input_ids != pad_token_id)
     lengths = mask.sum(dim=1)
     return lengths
@@ -216,7 +216,7 @@ def create_pos_tagger(
         
     Returns:
         POSTagger model
-    """
+    """  # noqa: W293
     config = POSTaggerConfig(
         vocab_size=vocab_size,
         num_tags=num_tags,
@@ -238,7 +238,7 @@ def compute_token_accuracy(predictions: torch.Tensor, labels: torch.Tensor, mask
         
     Returns:
         Token accuracy as float
-    """
+    """  # noqa: W291, W293
     correct = (predictions == labels) & mask.bool()
     total = mask.sum()
     if total == 0:
@@ -257,7 +257,7 @@ def masked_cross_entropy_loss(logits: torch.Tensor, labels: torch.Tensor, mask: 
         
     Returns:
         Masked cross-entropy loss
-    """
+    """  # noqa: W291, W293
     # Flatten for loss computation
     logits_flat = logits.view(-1, logits.size(-1))  # [batch_size*seq_len, num_tags]
     labels_flat = labels.view(-1)  # [batch_size*seq_len]

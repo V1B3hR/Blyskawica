@@ -23,7 +23,7 @@ Examples:
     python train.py --config config/training/kaggle_default.yaml
     python train.py --dataset annomi --data-path data/annomi --epochs 10
     python train.py --config config/training/quick_test.yaml --device cpu
-"""
+"""  # noqa: W293
 
 import argparse
 import json
@@ -121,13 +121,13 @@ class EmotionalAdaptiveLR:
     def get_lr(self) -> float:
         # Dopamine (0.0 - 2.0) -> Multiplier 1.0 to 2.0
         dopamine_boost = 1.0 + (max(0, self.neuro.dopamine - 0.2) * 0.5)
-        
+
         # Cortisol (0.0 - 2.0) -> Penalty 1.0 to 0.2
         cortisol_penalty = max(0.2, 1.0 - (self.neuro.cortisol * 0.4))
-        
+
         # Serotonin (0.0 - 1.0) -> Damping factor
         serotonin_stability = 0.9 + (self.neuro.serotonin * 0.1)
-        
+
         return self.base_lr * dopamine_boost * cortisol_penalty * serotonin_stability
 
 
@@ -386,6 +386,7 @@ def train_with_config(config: WorkflowConfig):
     try:
         import torch
         from torch.utils.data import DataLoader, TensorDataset
+
         from adaptiveneuralnetwork.training.trainer import Trainer
 
         # 1. Resolve seed
@@ -437,9 +438,9 @@ def train_with_config(config: WorkflowConfig):
             train_loader = DataLoader(train_dataset, **_loader_kwargs)
 
         # 3. Instantiate Model
-        from adaptiveneuralnetwork.api.model import AdaptiveModel
         from adaptiveneuralnetwork.api.config import AdaptiveConfig
-        
+        from adaptiveneuralnetwork.api.model import AdaptiveModel
+
         adaptive_config = AdaptiveConfig(
             input_dim=config.model.input_dim,
             hidden_dim=config.model.hidden_dim,
@@ -451,12 +452,12 @@ def train_with_config(config: WorkflowConfig):
 
         # 4. Optimizer and Trainer Setup
         optimizer = torch.optim.Adam(
-            model.parameters(), 
-            lr=config.optimizer.learning_rate, 
+            model.parameters(),
+            lr=config.optimizer.learning_rate,
             weight_decay=config.optimizer.weight_decay
         )
         criterion = torch.nn.CrossEntropyLoss()
-        
+
         trainer = Trainer(
             model=model,
             optimizer=optimizer,
@@ -470,12 +471,12 @@ def train_with_config(config: WorkflowConfig):
 
         # 5. Fit Model
         metrics_history = trainer.fit(train_loader, num_epochs=config.training.epochs)
-        
+
         # 6. Save model checkpoint
         checkpoint_dir = Path(config.training.checkpoint_dir)
         checkpoint_dir.mkdir(parents=True, exist_ok=True)
         checkpoint_path = checkpoint_dir / f"model_{config.dataset.name}.pt"
-        
+
         torch.save({
             'model_state_dict': model.state_dict(),
             'config': adaptive_config

@@ -5,7 +5,7 @@ Implements biologically-inspired controlled forgetting and synaptic pruning.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -29,8 +29,8 @@ class ForgettingManager:
         self.pruning_ratio = pruning_ratio
         self.downscale_factor = downscale_factor
         self.importance_metric = importance_metric
-        
-        self.forgetting_stats: Dict[str, Any] = {
+
+        self.forgetting_stats: dict[str, Any] = {
             'total_pruned': 0,
             'total_downscaled': 0,
             'last_forgetting_event': 0
@@ -40,13 +40,13 @@ class ForgettingManager:
         """Apply forgetting logic during DEEP_SLEEP."""
         # Deep sleep is phase index 5
         deep_sleep_mask = (micro_phases == 5)
-        
+
         if deep_sleep_mask.any():
             deep_sleep_ratio = deep_sleep_mask.float().mean().item()
-            
+
             if deep_sleep_ratio > 0.1:
                 self.downscale_synapses(intensity=deep_sleep_ratio)
-                
+
                 if deep_sleep_ratio > 0.5:
                     self.prune_low_importance(ratio=self.pruning_ratio * (deep_sleep_ratio * 2))
 
@@ -58,13 +58,13 @@ class ForgettingManager:
                     param.data.mul_(factor)
         self.forgetting_stats['total_downscaled'] += 1
 
-    def prune_low_importance(self, ratio: Optional[float] = None):
+    def prune_low_importance(self, ratio: float | None = None):
         ratio = ratio or self.pruning_ratio
         if ratio <= 0:
             return
 
         with torch.no_grad():
-            for name, module in self.model.named_modules():
+            for name, module in self.model.named_modules():  # noqa: B007
                 if isinstance(module, (nn.Linear, nn.Conv2d)):
                     self._prune_module(module, ratio)
         self.forgetting_stats['total_pruned'] += 1
@@ -81,5 +81,5 @@ class ForgettingManager:
             mask = importance > threshold
             module.weight.data.mul_(mask.float())
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         return self.forgetting_stats

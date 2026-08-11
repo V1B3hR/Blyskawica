@@ -6,10 +6,17 @@ implemented for industrial predictive maintenance deployment.
 
 import os
 import unittest
-import shutil
-import yaml
 from pathlib import Path
-from scripts.enterprise_rocm_orchestration import run_rocm_hipfft_emulation, generate_openshift_manifests, DATA_DIR, OUTPUT_DIR
+
+import yaml
+
+from scripts.enterprise_rocm_orchestration import (
+    DATA_DIR,
+    OUTPUT_DIR,
+    generate_openshift_manifests,
+    run_rocm_hipfft_emulation,
+)
+
 
 class TestEnterpriseROCmOrchestration(unittest.TestCase):
 
@@ -23,11 +30,11 @@ class TestEnterpriseROCmOrchestration(unittest.TestCase):
         self.deployment_backup = None
 
         if self.dockerfile_path.exists():
-            with open(self.dockerfile_path, "r", encoding="utf-8") as f:
+            with open(self.dockerfile_path, encoding="utf-8") as f:
                 self.dockerfile_backup = f.read()
 
         if self.deployment_path.exists():
-            with open(self.deployment_path, "r", encoding="utf-8") as f:
+            with open(self.deployment_path, encoding="utf-8") as f:
                 self.deployment_backup = f.read()
 
     def tearDown(self):
@@ -64,14 +71,14 @@ class TestEnterpriseROCmOrchestration(unittest.TestCase):
 
         # Validate Dockerfile exists and contains ROCm base image
         self.assertTrue(self.dockerfile_path.exists(), "Dockerfile was not generated.")
-        with open(self.dockerfile_path, "r", encoding="utf-8") as f:
+        with open(self.dockerfile_path, encoding="utf-8") as f:
             docker_content = f.read()
         self.assertIn("rocm/pytorch", docker_content, "Dockerfile must use ROCm PyTorch base image.")
         self.assertIn("scripts/train_cognitive_industry.py", docker_content, "Dockerfile must configure correct start command.")
 
         # Validate Kubernetes Deployment YAML
         self.assertTrue(self.deployment_path.exists(), "OpenShift Deployment YAML was not generated.")
-        with open(self.deployment_path, "r", encoding="utf-8") as f:
+        with open(self.deployment_path, encoding="utf-8") as f:
             deployment_data = yaml.safe_load(f)
 
         # Assert correct structures in YAML manifest

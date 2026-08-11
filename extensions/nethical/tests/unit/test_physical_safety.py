@@ -9,32 +9,29 @@ Tests:
 - Physical safety detector
 """
 
-import pytest
 import time
-from datetime import datetime, timezone, timedelta
-from unittest.mock import MagicMock
+from datetime import datetime, timedelta, timezone
 
-from nethical.security.input_validation import (
-    BehavioralAnalyzer,
-    AgentType,
-    DEFAULT_MEMORY_WINDOWS,
-)
+import pytest
+
+from nethical.core.models import ActionType
 from nethical.detectors.physical_safety_detector import (
-    PhysicalSafetyDetector,
     AnalysisMode,
-    SixDOFContext,
+    PhysicalSafetyDetector,
     RobotType,
     SafetyEnvelope,
-    DEFAULT_SAFETY_ENVELOPES,
+    SixDOFContext,
 )
 from nethical.detectors.system_limits_detector import SystemLimitsDetector
 from nethical.edge.predictive_engine import (
     PredictiveEngine,
     SixDOFContextPattern,
-    PredictionProfile,
 )
-from nethical.core.models import ActionType
-
+from nethical.security.input_validation import (
+    DEFAULT_MEMORY_WINDOWS,
+    AgentType,
+    BehavioralAnalyzer,
+)
 
 # =============================================================================
 # Test Fixtures
@@ -304,7 +301,7 @@ class TestDangerPatternDetection:
         agent_id = "spike-test"
 
         # Build baseline with low values
-        for i in range(15):
+        for i in range(15):  # noqa: B007
             await chatbot_analyzer.analyze_agent_behavior(
                 agent_id,
                 {

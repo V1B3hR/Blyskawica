@@ -4,9 +4,7 @@ Implements DNA-to-RNA genetic translation and cellular metabolism (Krebs Cycle /
 Oxidative Phosphorylation) to provide bio-energetically constrained cognitive cell dynamics.
 """
 
-import math
 import logging
-import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -36,9 +34,9 @@ class GeneticTranslator:
     }
 
     # Bio-chemical property classifications of amino acid residues
-    HYDROPHOBIC = set(['A', 'V', 'L', 'I', 'P', 'F', 'W', 'M'])
-    CHARGED = set(['R', 'K', 'D', 'E', 'H'])
-    POLAR_UNCHARGED = set(['S', 'T', 'C', 'Y', 'N', 'Q'])
+    HYDROPHOBIC = set(['A', 'V', 'L', 'I', 'P', 'F', 'W', 'M'])  # noqa: C405
+    CHARGED = set(['R', 'K', 'D', 'E', 'H'])  # noqa: C405
+    POLAR_UNCHARGED = set(['S', 'T', 'C', 'Y', 'N', 'Q'])  # noqa: C405
 
     @staticmethod
     def dna_to_rna(dna: str) -> str:
@@ -53,7 +51,7 @@ class GeneticTranslator:
         if start_idx == -1:
             # Fallback if no start codon: translate from start of string
             start_idx = 0
-            
+
         protein = []
         for i in range(start_idx, len(rna) - 2, 3):
             codon = rna[i:i+3]
@@ -111,7 +109,7 @@ class MetabolicSimulator:
         self.oxygen = oxygen
         self.pyruvate = 1.0
         self.acetyl_coa = 0.5
-        
+
         # ATP / ADP pool
         self.atp_adp_pool = 10.0
         self.atp = 8.0  # high initial charge
@@ -142,7 +140,7 @@ class MetabolicSimulator:
         # 1. Glycolysis: Glucose + 2 ADP + 2 NAD+ -> 2 Pyruvate + 2 ATP + 2 NADH
         r_gly = self.k_gly * self.glucose * self.adp * self.nad
         flux_gly = r_gly * dt
-        
+
         self.glucose = max(0.0, self.glucose - flux_gly)
         self.pyruvate += 2.0 * flux_gly
         self.atp = min(self.atp_adp_pool, self.atp + 2.0 * flux_gly)
@@ -158,14 +156,14 @@ class MetabolicSimulator:
         self.pyruvate = max(0.0, self.pyruvate - flux_pdh)
         self.acetyl_coa += flux_pdh
         self.nadh = min(self.nad_nadh_pool, self.nadh + flux_pdh)
-        
+
         # Sync pool
         self.nad = self.nad_nadh_pool - self.nadh
 
         # 3. Krebs Cycle (TCA): Acetyl-CoA + ADP + 3 NAD+ -> 1 ATP + 3 NADH
         r_tca = self.k_tca * self.acetyl_coa * self.adp * self.nad
         flux_tca = r_tca * dt
-        
+
         self.acetyl_coa = max(0.0, self.acetyl_coa - flux_tca)
         self.atp = min(self.atp_adp_pool, self.atp + flux_tca)
         self.nadh = min(self.nad_nadh_pool, self.nadh + 3.0 * flux_tca)
@@ -190,7 +188,7 @@ class MetabolicSimulator:
         atp_cons_rate = self.k_basal * self.atp + self.k_spike * spike_frequency * self.atp
         flux_cons = atp_cons_rate * dt
         self.atp = max(0.0, self.atp - flux_cons)
-        
+
         # Sync pools
         self.adp = self.atp_adp_pool - self.atp
 
@@ -224,7 +222,7 @@ class MetabolicCell:
         self.energy_capacity = self.base_energy_capacity
         self.anxiety_sensitivity = self.base_anxiety_sensitivity
         self.calm = self.base_calm
-        
+
         self.energy = self.energy_capacity
         self.anxiety = 0.0
         self.trust = self.trust_baseline
@@ -233,11 +231,11 @@ class MetabolicCell:
         self.metabolism = MetabolicSimulator()
 
     def process_stimulus(
-        self, 
-        external_stimulus: float, 
+        self,
+        external_stimulus: float,
         spike_frequency: float,
-        input_glucose: float = 0.1, 
-        input_oxygen: float = 0.2, 
+        input_glucose: float = 0.1,
+        input_oxygen: float = 0.2,
         dt: float = 0.001
     ) -> tuple[float, float]:
         """

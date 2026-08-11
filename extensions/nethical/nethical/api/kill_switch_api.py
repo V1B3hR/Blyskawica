@@ -10,9 +10,9 @@ Version: 1.0.0
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
@@ -27,8 +27,8 @@ class ShutdownRequest(BaseModel):
     """Request model for emergency shutdown."""
 
     mode: str = Field(default="graceful", description="Shutdown mode: immediate, graceful, or staged")
-    cohort: Optional[str] = Field(default=None, description="Target cohort (optional)")
-    agent_id: Optional[str] = Field(default=None, description="Target agent ID (optional)")
+    cohort: str | None = Field(default=None, description="Target cohort (optional)")
+    agent_id: str | None = Field(default=None, description="Target agent ID (optional)")
     sever_actuators: bool = Field(default=True, description="Whether to sever actuator connections")
     isolate_hardware: bool = Field(default=False, description="Whether to activate hardware isolation")
 
@@ -41,8 +41,8 @@ class ShutdownResponse(BaseModel):
     activation_time_ms: float
     agents_affected: int = 0
     actuators_severed: int = 0
-    errors: List[str] = []
-    metadata: Dict[str, Any] = {}
+    errors: list[str] = []
+    metadata: dict[str, Any] = {}
 
 
 class AgentRegistrationRequest(BaseModel):
@@ -51,7 +51,7 @@ class AgentRegistrationRequest(BaseModel):
     agent_id: str = Field(..., description="Unique agent identifier")
     cohort: str = Field(..., description="Cohort the agent belongs to")
     priority: int = Field(default=0, description="Shutdown priority (higher = more critical)")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 
 
 class ActuatorRegistrationRequest(BaseModel):
@@ -60,8 +60,8 @@ class ActuatorRegistrationRequest(BaseModel):
     actuator_id: str = Field(..., description="Unique actuator identifier")
     connection_type: str = Field(..., description="Connection type (network_tcp, serial, etc.)")
     agent_id: str = Field(..., description="ID of the controlling agent")
-    safe_state_config: Dict[str, Any] = Field(default_factory=dict, description="Safe state configuration")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+    safe_state_config: dict[str, Any] = Field(default_factory=dict, description="Safe state configuration")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 
 
 class HardwareIsolationRequest(BaseModel):
@@ -82,19 +82,19 @@ class SignedCommandRequest(BaseModel):
     """Request model for creating and executing signed commands."""
 
     command_type: str = Field(..., description="Command type: kill_all, kill_cohort, kill_agent, sever_actuators, hardware_isolate")
-    target: Optional[str] = Field(default=None, description="Target cohort or agent ID")
+    target: str | None = Field(default=None, description="Target cohort or agent ID")
     ttl_seconds: int = Field(default=300, description="Time-to-live in seconds")
-    signatures: List[Dict[str, str]] = Field(default_factory=list, description="List of {signer_id, signature} pairs")
+    signatures: list[dict[str, str]] = Field(default_factory=list, description="List of {signer_id, signature} pairs")
 
 
 class StatusResponse(BaseModel):
     """Response model for status queries."""
 
     enabled: bool
-    kill_switch: Dict[str, Any]
-    actuator_severing: Dict[str, Any]
-    crypto_commands: Dict[str, Any]
-    hardware_isolation: Dict[str, Any]
+    kill_switch: dict[str, Any]
+    actuator_severing: dict[str, Any]
+    crypto_commands: dict[str, Any]
+    hardware_isolation: dict[str, Any]
 
 
 # ========================== Dependency Injection ==========================
@@ -139,7 +139,7 @@ async def emergency_shutdown(
     try:
         mode = ShutdownMode(request.mode)
     except ValueError:
-        raise HTTPException(
+        raise HTTPException(  # noqa: B904
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid shutdown mode: {request.mode}. Must be one of: immediate, graceful, staged",
         )
@@ -171,7 +171,7 @@ async def emergency_shutdown(
 
 
 @router.post("/reset")
-async def reset_kill_switch(protocol=Depends(get_kill_switch_protocol)) -> Dict[str, Any]:
+async def reset_kill_switch(protocol=Depends(get_kill_switch_protocol)) -> dict[str, Any]:
     """Reset the kill switch system after activation."""
     success = protocol.reset()
     return {
@@ -187,7 +187,7 @@ async def reset_kill_switch(protocol=Depends(get_kill_switch_protocol)) -> Dict[
 async def register_agent(
     request: AgentRegistrationRequest,
     protocol=Depends(get_kill_switch_protocol),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Register an agent with the kill switch system."""
     record = protocol.global_kill_switch.register_agent(
         agent_id=request.agent_id,
@@ -209,7 +209,7 @@ async def register_agent(
 async def unregister_agent(
     agent_id: str,
     protocol=Depends(get_kill_switch_protocol),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Unregister an agent from the kill switch system."""
     success = protocol.global_kill_switch.unregister_agent(agent_id)
     if not success:
@@ -237,7 +237,7 @@ async def kill_agent(
     try:
         shutdown_mode = ShutdownMode(mode)
     except ValueError:
-        raise HTTPException(
+        raise HTTPException(  # noqa: B904
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid shutdown mode: {mode}",
         )
@@ -261,14 +261,14 @@ async def kill_agent(
 async def register_actuator(
     request: ActuatorRegistrationRequest,
     protocol=Depends(get_kill_switch_protocol),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Register an actuator with the kill switch system."""
     from ..core.kill_switch import ConnectionType
 
     try:
         connection_type = ConnectionType(request.connection_type)
     except ValueError:
-        raise HTTPException(
+        raise HTTPException(  # noqa: B904
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid connection type: {request.connection_type}",
         )
@@ -295,7 +295,7 @@ async def register_actuator(
 async def unregister_actuator(
     actuator_id: str,
     protocol=Depends(get_kill_switch_protocol),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Unregister an actuator from the kill switch system."""
     success = protocol.actuator_severing.unregister_actuator(actuator_id)
     if not success:
@@ -316,7 +316,7 @@ async def sever_actuator(
     actuator_id: str,
     actor: str = "api",
     protocol=Depends(get_kill_switch_protocol),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Sever connection to a specific actuator."""
     success, error = protocol.actuator_severing.sever_actuator(actuator_id, actor)
 
@@ -356,7 +356,7 @@ async def authorize_reconnection(
     actuator_id: str,
     actor: str = "api",
     protocol=Depends(get_kill_switch_protocol),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Authorize reconnection for a previously severed actuator."""
     success = protocol.actuator_severing.authorize_reconnection(actuator_id, actor)
 
@@ -387,7 +387,7 @@ async def hardware_isolate(
     try:
         level = IsolationLevel(request.level)
     except ValueError:
-        raise HTTPException(
+        raise HTTPException(  # noqa: B904
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid isolation level: {request.level}",
         )
@@ -420,7 +420,7 @@ async def hardware_restore(
 
 
 @router.get("/hardware/status")
-async def hardware_status(protocol=Depends(get_kill_switch_protocol)) -> Dict[str, Any]:
+async def hardware_status(protocol=Depends(get_kill_switch_protocol)) -> dict[str, Any]:
     """Get hardware isolation status."""
     return protocol.hardware_isolation.get_statistics()
 
@@ -432,14 +432,14 @@ async def hardware_status(protocol=Depends(get_kill_switch_protocol)) -> Dict[st
 async def register_signer(
     request: SignerRegistrationRequest,
     protocol=Depends(get_kill_switch_protocol),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Register an authorized signer for multi-signature commands."""
     import base64
 
     try:
         public_key = base64.b64decode(request.public_key)
     except Exception:
-        raise HTTPException(
+        raise HTTPException(  # noqa: B904
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid base64-encoded public key",
         )
@@ -463,7 +463,7 @@ async def register_signer(
 async def unregister_signer(
     signer_id: str,
     protocol=Depends(get_kill_switch_protocol),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Unregister a signer."""
     success = protocol.crypto_commands.unregister_signer(signer_id)
 
@@ -486,13 +486,14 @@ async def execute_signed_command(
     protocol=Depends(get_kill_switch_protocol),
 ) -> ShutdownResponse:
     """Execute a signed command with multi-signature verification."""
-    from ..core.kill_switch import CommandType
     import base64
+
+    from ..core.kill_switch import CommandType
 
     try:
         command_type = CommandType(request.command_type)
     except ValueError:
-        raise HTTPException(
+        raise HTTPException(  # noqa: B904
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid command type: {request.command_type}",
         )
@@ -545,7 +546,7 @@ async def execute_signed_command(
 async def get_audit_log(
     limit: int = 100,
     protocol=Depends(get_kill_switch_protocol),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get the audit log for actuator severing events."""
     log = protocol.actuator_severing.get_audit_log()
 

@@ -7,7 +7,7 @@ This script showcases the neuromorphic-inspired AutoML features including:
 - Phase-based feature engineering  
 - Adaptive feature selection
 - Energy-guided hyperparameter optimization
-"""
+"""  # noqa: W291
 
 import logging
 from pathlib import Path

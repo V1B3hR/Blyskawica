@@ -18,7 +18,16 @@ import sys
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from forest import Branch, BranchType, Crown, ForestManager, HealthChecker, ThreatSeverity, Tree, Trunk
+from forest import (
+    Branch,
+    BranchType,
+    Crown,
+    ForestManager,
+    HealthChecker,
+    ThreatSeverity,
+    Tree,
+    Trunk,
+)
 
 
 def print_section(title):
@@ -312,7 +321,7 @@ def example_4_forest_mapping(manager):
     threat_map = forest_map.get_threat_map()
     if threat_map:
         print("\n⚠️  Threat Map:")
-        for tree_id, threat_info in threat_map.items():
+        for tree_id, threat_info in threat_map.items():  # noqa: B007
             print(f"   {threat_info['hostname']} ({threat_info['ip_address']})")
             print(f"     - Direct threats: {threat_info['direct_threats']}")
             print(f"     - Threatened branches: {threat_info['threatened_branches']}")

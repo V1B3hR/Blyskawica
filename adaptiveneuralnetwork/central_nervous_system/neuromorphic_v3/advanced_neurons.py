@@ -549,7 +549,7 @@ class StochasticNeuron(nn.Module):
     - Channel noise in conductances  
     - Stochastic threshold
     Supports organ-inspired preprocessing.
-    """
+    """  # noqa: W291
 
     def __init__(self, config: NeuronV3Config):
         super().__init__()
@@ -666,10 +666,10 @@ class OrganismNeuron(nn.Module):
     A 'single cell' organism that integrates lung (data intake), liver (filtering), and neuron (processing) functions.
     Simplified LIF neuron with organ-inspired preprocessing.
     """
-    def __init__(self, 
-                 neuron_type='lif', 
-                 lung_params=None, 
-                 liver_params=None, 
+    def __init__(self,
+                 neuron_type='lif',
+                 lung_params=None,
+                 liver_params=None,
                  neuron_params=None):
         super().__init__()
         # Organs

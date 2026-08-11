@@ -5,14 +5,15 @@ Provides live updates through WebSocket connections for dashboard real-time moni
 """
 
 import asyncio
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any
 from uuid import UUID
 
 
-class MonitorEventType(str, Enum):
+class MonitorEventType(str, Enum):  # noqa: UP042
     """Types of monitor events"""
 
     ASSET_DISCOVERED = "asset_discovered"
@@ -31,10 +32,10 @@ class MonitorEvent:
     """Event for live monitoring"""
 
     event_type: MonitorEventType
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    data: Dict[str, Any] = field(default_factory=dict)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
+    data: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for WebSocket transmission"""
         return {
             "type": self.event_type.value,
@@ -53,9 +54,9 @@ class LiveMetrics:
     open_alerts: int = 0
     critical_findings: int = 0
     high_findings: int = 0
-    last_updated: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    last_updated: datetime = field(default_factory=lambda: datetime.now(UTC))
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
         return {
             "total_assets": self.total_assets,
@@ -77,7 +78,7 @@ class LiveMonitor:
     """
 
     def __init__(self):
-        self.subscribers: Set[Callable] = set()
+        self.subscribers: set[Callable] = set()
         self.metrics = LiveMetrics()
         self._event_queue: asyncio.Queue = asyncio.Queue()
         self._running = False
@@ -173,7 +174,7 @@ class LiveMonitor:
             if hasattr(self.metrics, key):
                 setattr(self.metrics, key, value)
 
-        self.metrics.last_updated = datetime.now(timezone.utc)
+        self.metrics.last_updated = datetime.now(UTC)
 
         event = MonitorEvent(
             event_type=MonitorEventType.METRIC_UPDATED,
@@ -202,7 +203,7 @@ class LiveMonitor:
                         # Log error but don't stop processing
                         print(f"Error in subscriber callback: {e}")
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 continue
             except Exception as e:
                 print(f"Error processing event: {e}")
@@ -230,7 +231,7 @@ class LiveMonitor:
 
 
 # Global live monitor instance
-_live_monitor: Optional[LiveMonitor] = None
+_live_monitor: LiveMonitor | None = None
 
 
 def get_live_monitor() -> LiveMonitor:

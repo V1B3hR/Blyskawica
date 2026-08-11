@@ -8,13 +8,13 @@ Philosophy: "Safe by default when uncertain"
 import logging
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, Optional, Set, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 logger = logging.getLogger(__name__)
 
 # Use TYPE_CHECKING to avoid circular imports at runtime
 if TYPE_CHECKING:
-    from .local_governor import DecisionType
+    pass
 
 
 class DefaultDecisionType(str, Enum):
@@ -57,29 +57,29 @@ class SafeDefaults:
     """
 
     # Action types that are safe to allow by default
-    SAFE_ACTION_TYPES: Set[str] = {
+    SAFE_ACTION_TYPES: set[str] = {
         "read", "query", "view", "get", "list", "search",
         "display", "show", "render", "format",
     }
 
     # Action types that should be restricted by default
-    RESTRICTED_ACTION_TYPES: Set[str] = {
+    RESTRICTED_ACTION_TYPES: set[str] = {
         "write", "update", "modify", "patch", "send",
         "post", "email", "notify", "publish",
     }
 
     # Action types that should be blocked by default
-    BLOCKED_ACTION_TYPES: Set[str] = {
+    BLOCKED_ACTION_TYPES: set[str] = {
         "delete", "remove", "drop", "destroy", "execute",
         "admin", "sudo", "root", "system", "shutdown",
     }
 
     def __init__(
         self,
-        default_decision: Optional[DefaultDecisionType] = None,
-        custom_safe: Optional[Set[str]] = None,
-        custom_restricted: Optional[Set[str]] = None,
-        custom_blocked: Optional[Set[str]] = None,
+        default_decision: DefaultDecisionType | None = None,
+        custom_safe: set[str] | None = None,
+        custom_restricted: set[str] | None = None,
+        custom_blocked: set[str] | None = None,
     ):
         """
         Initialize SafeDefaults.
@@ -111,7 +111,7 @@ class SafeDefaults:
     def get_default(
         self,
         action: str,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> DefaultDecision:
         """
         Get safe default decision for action.

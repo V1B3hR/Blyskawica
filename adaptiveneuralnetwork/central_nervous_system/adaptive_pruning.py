@@ -373,7 +373,7 @@ class NodeLifecycleManager:
             
         Returns:
             Dictionary with step results and any actions taken
-        """
+        """  # noqa: W293
         results = {
             "step": self.step_count,
             "actions": [],
@@ -483,6 +483,6 @@ def create_adaptive_pruning_manager(
         
     Returns:
         Configured NodeLifecycleManager
-    """
+    """  # noqa: W293
     config = PruningConfig(**config_kwargs)
     return NodeLifecycleManager(node_state, phase_scheduler, config)

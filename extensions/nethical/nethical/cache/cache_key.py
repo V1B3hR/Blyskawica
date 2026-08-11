@@ -7,7 +7,7 @@ Provides consistent cache key generation across all cache levels.
 import hashlib
 import json
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 @dataclass
@@ -25,7 +25,7 @@ class CacheKey:
     key: str
     namespace: str
     version: str = "v1"
-    components: Dict[str, Any] = None
+    components: dict[str, Any] = None
 
     def __post_init__(self):
         if self.components is None:
@@ -81,7 +81,7 @@ def generate_decision_key(
     agent_id: str,
     action: str,
     action_type: str,
-    context: Optional[Dict[str, Any]] = None,
+    context: dict[str, Any] | None = None,
 ) -> str:
     """
     Generate a decision cache key.
@@ -114,7 +114,7 @@ def generate_decision_key(
     return cache_key.full_key()
 
 
-def generate_policy_key(policy_id: str, version: Optional[str] = None) -> str:
+def generate_policy_key(policy_id: str, version: str | None = None) -> str:
     """
     Generate a policy cache key.
 

@@ -28,21 +28,21 @@ Public Methods:
     list_keys_masked() -> list[str]
 """
 
-import os
-import hmac
 import hashlib
-import secrets
+import hmac
 import logging
-from typing import Optional, Set, Iterable
+import os
+import secrets
+from collections.abc import Iterable
 
 logger = logging.getLogger(__name__)
 
 
 class AuthManager:
     def __init__(self) -> None:
-        self._api_keys: Optional[Set[str]] = None
+        self._api_keys: set[str] | None = None
         self._permissive_mode: bool = True
-        self._last_reload_ts: Optional[float] = None
+        self._last_reload_ts: float | None = None
 
         # Pseudonym derivation config
         self._iterations = self._load_iterations()
@@ -88,7 +88,7 @@ class AuthManager:
                 if decoded:
                     logger.info("Loaded API key hash salt from environment.")
                     return decoded
-            except Exception:
+            except Exception:  # noqa: PERF203
                 continue
         # Fallback: raw utf-8
         logger.info("Using raw UTF-8 environment value as salt.")
@@ -129,7 +129,7 @@ class AuthManager:
             return True
         if not api_key or not self._api_keys:
             return False
-        for stored in self._api_keys:
+        for stored in self._api_keys:  # noqa: SIM110
             if hmac.compare_digest(stored, api_key):
                 return True
         return False
@@ -149,7 +149,7 @@ class AuthManager:
         # Represent as hex; truncate to first 32 chars for log readability
         return dk.hex()[:32]
 
-    def extract_identity(self, api_key: Optional[str], client_ip: str) -> str:
+    def extract_identity(self, api_key: str | None, client_ip: str) -> str:
         if api_key and (self._permissive_mode or self.validate_key(api_key)):
             pseudonym = self._derive_pseudonym(api_key)
             return f"key:{pseudonym}"
@@ -158,7 +158,7 @@ class AuthManager:
     # ------------------------------------------------------------------ #
     # Runtime management
     # ------------------------------------------------------------------ #
-    def reload_keys(self, new_keys: Optional[Iterable[str]] = None) -> None:
+    def reload_keys(self, new_keys: Iterable[str] | None = None) -> None:
         """
         Reload keys from provided iterable or environment.
         Salt & iteration count remain unchanged unless env vars changed and

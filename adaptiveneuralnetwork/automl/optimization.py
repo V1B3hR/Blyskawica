@@ -14,13 +14,13 @@ import numpy as np
 import pandas as pd
 
 try:
-    from sklearn.metrics import accuracy_score, mean_squared_error, r2_score
+    from sklearn.metrics import accuracy_score, mean_squared_error, r2_score  # noqa: F401
     from sklearn.model_selection import (
         GridSearchCV,
         KFold,
         RandomizedSearchCV,
         StratifiedKFold,
-        cross_val_score,
+        cross_val_score,  # noqa: F401
     )
     HAS_SKLEARN = True
 except ImportError:
@@ -270,7 +270,7 @@ class EnergyAwareHyperparameterOptimizer:
             
         Returns:
             Tuple of (best_params, optimization_info)
-        """
+        """  # noqa: W293
         logger.info("Starting energy-aware hyperparameter optimization")
 
         if param_space is None:
@@ -470,7 +470,7 @@ class EnergyAwareHyperparameterOptimizer:
         best_params = None
         best_score = -np.inf
 
-        for iteration in range(min(self.config.max_evaluations, 20)):  # Limit for manual optimization
+        for iteration in range(min(self.config.max_evaluations, 20)):  # Limit for manual optimization  # noqa: B007
             # Sample parameters randomly
             params = self._sample_params_randomly(param_space)
 

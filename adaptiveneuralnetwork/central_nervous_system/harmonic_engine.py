@@ -3,9 +3,10 @@ Harmonic Engine: Musical Cognition Module.
 Maps Frequencies, Intervals, and Rhythms to Neural Oscillations.
 """
 
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
+
 
 class HarmonicEngine(nn.Module):
     """
@@ -21,11 +22,11 @@ class HarmonicEngine(nn.Module):
         Analyzes the harmonic series and its contribution to neural 'Texture'.
         Rich spectra (more harmonics) correlate with higher cognitive engagement.
         """
-        harmonics = [fundamental * (i + 1) for i in range(harmonics_count)]
+        harmonics = [fundamental * (i + 1) for i in range(harmonics_count)]  # noqa: F841
         energy_distribution = [1.0 / (i + 1) for i in range(harmonics_count)]
         return sum(energy_distribution)
 
-    def generate_polyrhythmic_pattern(self, base_bpm, ratios=[3, 4]):
+    def generate_polyrhythmic_pattern(self, base_bpm, ratios=[3, 4]):  # noqa: B006
         """
         Creates a multidimensional temporal lattice.
         Simulates the ability to track multiple time-scales simultaneously.
@@ -35,7 +36,7 @@ class HarmonicEngine(nn.Module):
         for r in ratios:
             freq = (base_bpm / 60.0) * r
             signals.append(np.sin(2 * np.pi * freq * t))
-        
+
         return torch.tensor(np.column_stack(signals), dtype=torch.float32)
 
     def apply_relativistic_tempo(self, duration_ms, cognitive_velocity=0.0):
@@ -61,22 +62,22 @@ class HarmonicEngine(nn.Module):
         Dissonant intervals (Minor 2nd) = Higher tension.
         """
         ratio = max(freq1, freq2) / min(freq1, freq2)
-        
+
         # Theoretical consonance peaks (integers/simple fractions)
         consonance_peaks = [1.0, 1.5, 2.0, 1.33, 1.2, 1.25]
         closest_peak_dist = min([abs(ratio - p) for p in consonance_peaks])
-        
+
         aesthetic_stability = 1.0 / (1.0 + 10 * closest_peak_dist)
         return aesthetic_stability
 
 if __name__ == "__main__":
     harmony = HarmonicEngine()
-    
+
     # Octave (440Hz and 880Hz)
     octave_stability = harmony.calculate_consonance(440, 880)
     # Tritone (440Hz and 622.25Hz)
     tritone_stability = harmony.calculate_consonance(440, 622.25)
-    
+
     print(f"[MUSIC] Consonance Stability (Octave): {octave_stability:.4f}")
     print(f"[MUSIC] Consonance Stability (Tritone): {tritone_stability:.4f}")
-    print(f"[MUSIC] Harmonic Resonance Engine online. 🎶⚡️")
+    print("[MUSIC] Harmonic Resonance Engine online. 🎶⚡️")

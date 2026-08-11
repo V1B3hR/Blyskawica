@@ -876,12 +876,12 @@ class SelfDebuggingSystem:
                          context: dict[str, Any] = None) -> bool:
         """Check for NaN values in metrics"""
         # Check performance metrics
-        for metric_name, value in architecture.performance_metrics.items():
+        for metric_name, value in architecture.performance_metrics.items():  # noqa: B007
             if np.isnan(value) or np.isinf(value):
                 return True
 
         # Check training metrics
-        for metric_name, value in training_metrics.items():
+        for metric_name, value in training_metrics.items():  # noqa: B007
             if isinstance(value, (int, float)) and (np.isnan(value) or np.isinf(value)):
                 return True
 
@@ -1106,7 +1106,7 @@ class NeuralArchitectureSearchSystem:
         logger.info(f"Starting architecture search with {max_evaluations} evaluations")
 
         # Generate initial population
-        for i in range(population_size):
+        for i in range(population_size):  # noqa: B007
             arch = self.architecture_generator.generate_architecture(
                 self.search_space, current_population
             )
@@ -1252,7 +1252,7 @@ class NeuralArchitectureSearchSystem:
                 "total_architectures_evaluated": len(self.search_history),
                 "pareto_front_size": len(self.multi_objective_optimizer.pareto_front),
                 "dominated_solutions": len(self.multi_objective_optimizer.dominated_solutions),
-                "unique_architectures": len(set(arch.architecture_id for arch in self.search_history)),
+                "unique_architectures": len(set(arch.architecture_id for arch in self.search_history)),  # noqa: C401
             },
             "performance_trends": performance_trend,
             "diversity_metrics": diversity_metrics,
@@ -1403,7 +1403,7 @@ class NeuralArchitectureSearchSystem:
             "unique_activation_functions": unique_activations,
             "optimizer_diversity": optimizer_diversity,
             "architecture_count": len(self.search_history),
-            "unique_architecture_patterns": len(set(
+            "unique_architecture_patterns": len(set(  # noqa: C401
                 tuple((layer["type"], layer["size"]) for layer in arch.layers)
                 for arch in self.search_history
             ))

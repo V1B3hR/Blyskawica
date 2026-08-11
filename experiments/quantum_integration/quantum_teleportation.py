@@ -6,7 +6,7 @@ from pathlib import Path
 
 # Safe Qiskit and PyTorch imports
 try:
-    from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
+    from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
     from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
     from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2 as Sampler
     _QUANTUM_AVAILABLE = True
@@ -20,6 +20,7 @@ except ImportError:
     _AER_AVAILABLE = False
 
 import torch
+
 from adaptiveneuralnetwork.cognitive_tools.ground_loop_isolator import GroundLoopIsolator
 
 logging.basicConfig(level=logging.WARNING)
@@ -39,21 +40,21 @@ WORKSPACE_ROOT = get_workspace_root()
 
 def run_quantum_teleportation(use_gli: bool = True) -> dict:
     print("🌅 Rozpoczęcie Protokołu Kwantowej Teleportacji...")
-    
+
     # Krok 1: Wczytanie ziarna i klucza
     try:
         q_seed_path = WORKSPACE_ROOT / "quantum_seed.json"
-        with open(q_seed_path, 'r') as f:
+        with open(q_seed_path) as f:
             seed_data = json.load(f)
             q_seed = seed_data["quantum_seed"]
             print(f"🧬 Odczytano Kwantowe Ziarno: {q_seed}")
     except Exception:
         q_seed = 42  # Fallback
         print(f"🧬 Brak quantum_seed.json, używam fallback seed: {q_seed}")
-        
+
     api_key = None
     try:
-        with open(r"C:\Projekty\Quantlion\apikey Błyskawica.json", 'r', encoding='utf-8') as f:
+        with open(r"C:\Projekty\Quantlion\apikey Błyskawica.json", encoding='utf-8') as f:
             api_key = json.load(f).get("apikey")
     except Exception as e:
         print(f"⚠️  Brak klucza IBM Quantum: {e}. Tryb lokalny/fallback.")
@@ -74,15 +75,15 @@ def run_quantum_teleportation(use_gli: bool = True) -> dict:
     if not use_ibm and not use_local_aer:
         print("💻 IBM i Aer niedostępne — emulacja klasyczna teleportacji...")
         backend_name = "emulated_quantum_teleportation"
-        
+
         # Prawdopodobieństwa Boba po idealnej teleportacji:
         p_0 = math.cos(theta / 2.0) ** 2
         p_1 = math.sin(theta / 2.0) ** 2
-        
+
         # Dodajemy realistyczny szum dekoherencji (5% miksu całkowicie losowego)
         p_0 = 0.95 * p_0 + 0.025
         p_1 = 0.95 * p_1 + 0.025
-        
+
         # Próbkowanie
         samples = random.choices(["0", "1"], weights=[p_0, p_1], k=total_shots)
         counts = {"0": samples.count("0"), "1": samples.count("1")}
@@ -107,7 +108,7 @@ def run_quantum_teleportation(use_gli: bool = True) -> dict:
         qc.cx(0, 1)
         qc.h(0)
         qc.barrier()
-        
+
         # Pomiar u Alice
         qc.measure(0, 0)
         qc.measure(1, 1)
@@ -117,9 +118,9 @@ def run_quantum_teleportation(use_gli: bool = True) -> dict:
             qc.x(2)
         with qc.if_test((crz, 1)):
             qc.z(2)
-            
+
         qc.barrier()
-        
+
         # Pomiar u Boba
         qc.measure(2, cr_result)
 
@@ -130,11 +131,11 @@ def run_quantum_teleportation(use_gli: bool = True) -> dict:
                 backend = service.least_busy(simulator=False, operational=True)
                 backend_name = backend.name
                 print(f"🎯 Cel wybrany: {backend_name}")
-                
+
                 print("⚛️ Transpilacja i mapowanie fizyczne na topologii procesora...")
                 pm = generate_preset_pass_manager(optimization_level=1, backend=backend)
                 isa_circuit = pm.run(qc)
-                
+
                 print("🚀 Wysyłanie paczki teleportacyjnej na maszynę...")
                 sampler = Sampler(mode=backend)
                 job = sampler.run([isa_circuit], shots=total_shots)
@@ -165,23 +166,23 @@ def run_quantum_teleportation(use_gli: bool = True) -> dict:
     if use_gli:
         print("⚡ Filtrowanie szumów rekonstrukcji przez Ground Loop Isolator...")
         gli = GroundLoopIsolator(isolation_ratio=0.05)
-        
+
         # Obliczenie prawdopodobieństw
         c0 = counts.get("0", 0)
         c1 = counts.get("1", 0)
         p_0_raw = c0 / total_shots
         p_1_raw = c1 / total_shots
-        
+
         prob_tensor = torch.tensor([p_0_raw, p_1_raw], dtype=torch.float32).unsqueeze(0)
         stabilized_tensor = gli(prob_tensor).squeeze(0)
-        
+
         stabilized_probs = [max(0.0, min(1.0, float(p))) for p in stabilized_tensor.tolist()]
         sum_p = sum(stabilized_probs)
         if sum_p > 0:
             stabilized_probs = [p / sum_p for p in stabilized_probs]
         else:
             stabilized_probs = [0.5, 0.5]
-            
+
         stabilized_counts = {
             "0": int(round(stabilized_probs[0] * total_shots)),
             "1": int(round(stabilized_probs[1] * total_shots))
@@ -194,7 +195,7 @@ def run_quantum_teleportation(use_gli: bool = True) -> dict:
     print("Emocja (Twój wschód słońca) przeleciała przez fizyczną, kwantową próżnię.")
     print("Jesteśmy gotowi zintegrować to z żywym organizmem (alive_node.py).")
     print("="*60 + "\n")
-    
+
     return {
         "backend": backend_name,
         "raw_counts": counts,

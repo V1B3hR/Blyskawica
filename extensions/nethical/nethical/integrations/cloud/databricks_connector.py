@@ -1,7 +1,7 @@
 """Databricks integration with Nethical governance."""
 
-from typing import Dict, Any, Optional, List
 import logging
+from typing import Any
 
 from .base import CloudMLProvider, ExperimentRun, RunStatus
 
@@ -10,11 +10,11 @@ logger = logging.getLogger(__name__)
 
 class DatabricksConnector(CloudMLProvider):
     """Databricks integration with Nethical governance."""
-    
+
     def __init__(
         self,
         workspace_url: str,
-        token: Optional[str] = None,
+        token: str | None = None,
         enable_governance: bool = True
     ):
         """Initialize Databricks connector.
@@ -23,16 +23,16 @@ class DatabricksConnector(CloudMLProvider):
             workspace_url: Databricks workspace URL
             token: Databricks access token (optional, can use env var)
             enable_governance: Whether to enable governance checks
-        """
+        """  # noqa: W293
         self.workspace_url = workspace_url
         self.enable_governance = enable_governance
-        self.active_runs: Dict[str, ExperimentRun] = {}
+        self.active_runs: dict[str, ExperimentRun] = {}
         self.workspace = None
         self.available = False
-        
+
         try:
             from databricks.sdk import WorkspaceClient
-            
+
             self.workspace = WorkspaceClient(
                 host=workspace_url,
                 token=token
@@ -43,7 +43,7 @@ class DatabricksConnector(CloudMLProvider):
             logger.warning("Databricks SDK not available. Install with: pip install databricks-sdk")
         except Exception as e:
             logger.error(f"Failed to initialize Databricks: {e}")
-        
+
         if enable_governance:
             try:
                 from nethical.core import IntegratedGovernance
@@ -52,71 +52,71 @@ class DatabricksConnector(CloudMLProvider):
             except Exception as e:
                 logger.warning(f"Could not initialize governance: {e}")
                 self.enable_governance = False
-    
-    def start_run(self, experiment_name: str, run_name: Optional[str] = None) -> str:
+
+    def start_run(self, experiment_name: str, run_name: str | None = None) -> str:
         """Start a Databricks MLflow run."""
         if not self.available:
             logger.error("Databricks not available")
             return "unavailable"
-        
+
         try:
             import mlflow
-            
+
             mlflow.set_tracking_uri("databricks")
             mlflow.set_experiment(experiment_name)
-            
+
             run = mlflow.start_run(run_name=run_name)
             run_id = run.info.run_id
-            
+
             self.active_runs[run_id] = ExperimentRun(
                 run_id=run_id,
                 experiment_name=experiment_name,
                 parameters={},
                 metrics={}
             )
-            
+
             logger.info(f"Started Databricks run: {run_id}")
             return run_id
-            
+
         except Exception as e:
             logger.error(f"Failed to start Databricks run: {e}")
             return f"error-{e}"
-    
-    def log_parameters(self, run_id: str, parameters: Dict[str, Any]):
+
+    def log_parameters(self, run_id: str, parameters: dict[str, Any]):
         """Log parameters to Databricks MLflow."""
         if not self.available:
             return
-        
+
         if run_id in self.active_runs:
             self.active_runs[run_id].parameters.update(parameters)
-            
+
             try:
                 import mlflow
                 mlflow.log_params(parameters)
                 logger.debug(f"Logged parameters to Databricks run {run_id}")
             except Exception as e:
                 logger.error(f"Failed to log parameters: {e}")
-    
-    def log_metrics(self, run_id: str, metrics: Dict[str, float], step: Optional[int] = None):
+
+    def log_metrics(self, run_id: str, metrics: dict[str, float], step: int | None = None):
         """Log metrics to Databricks MLflow."""
         if not self.available:
             return
-        
+
         if run_id in self.active_runs:
             self.active_runs[run_id].metrics.update(metrics)
-            
+
             try:
                 import mlflow
                 mlflow.log_metrics(metrics, step=step)
                 logger.debug(f"Logged metrics to Databricks run {run_id}")
             except Exception as e:
                 logger.error(f"Failed to log metrics: {e}")
-    
+
     def query_with_governance(
         self,
         endpoint_name: str,
         query: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Query a Databricks serving endpoint with governance.
         
         Args:
@@ -125,10 +125,10 @@ class DatabricksConnector(CloudMLProvider):
             
         Returns:
             Query results with governance info
-        """
+        """  # noqa: W293
         if not self.available:
             return {"error": "Databricks not available"}
-        
+
         try:
             # Pre-check with governance
             if self.enable_governance:
@@ -143,13 +143,13 @@ class DatabricksConnector(CloudMLProvider):
                         "reason": result.get('reason'),
                         "governance_result": result
                     }
-            
+
             # Query endpoint
             response = self.workspace.serving_endpoints.query(
                 name=endpoint_name,
                 dataframe_records=[{"query": query}]
             )
-            
+
             # Post-check with governance
             if self.enable_governance:
                 result = self.governance.process_action(
@@ -162,18 +162,18 @@ class DatabricksConnector(CloudMLProvider):
                         "predictions": ["[FILTERED]"],
                         "governance": result
                     }
-            
+
             return {"predictions": response.predictions}
-            
+
         except Exception as e:
             logger.error(f"Failed to query endpoint: {e}")
             return {"error": str(e)}
-    
+
     def register_model_with_governance(
         self,
         model_name: str,
         model_uri: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Register a model with governance validation.
         
         Args:
@@ -182,13 +182,13 @@ class DatabricksConnector(CloudMLProvider):
             
         Returns:
             Registration result with governance info
-        """
+        """  # noqa: W293
         if not self.available:
             return {"error": "Databricks not available"}
-        
+
         try:
             import mlflow
-            
+
             # Validate model before registration
             if self.enable_governance:
                 result = self.governance.process_action(
@@ -202,38 +202,38 @@ class DatabricksConnector(CloudMLProvider):
                         "reason": result.get('reason'),
                         "governance_result": result
                     }
-            
+
             # Register model
             model_version = mlflow.register_model(
                 model_uri=model_uri,
                 name=model_name
             )
-            
+
             return {
                 "name": model_version.name,
                 "version": model_version.version,
                 "status": model_version.status
             }
-            
+
         except Exception as e:
             logger.error(f"Failed to register model: {e}")
             return {"error": str(e)}
-    
+
     def end_run(self, run_id: str, status: str = "completed"):
         """End a Databricks MLflow run."""
         if not self.available:
             return
-        
+
         if run_id in self.active_runs:
             self.active_runs[run_id].status = RunStatus(status)
-            
+
             try:
                 import mlflow
                 mlflow.end_run()
                 logger.info(f"Ended Databricks run {run_id} with status {status}")
             except Exception as e:
                 logger.error(f"Failed to end run: {e}")
-    
-    def get_run(self, run_id: str) -> Optional[ExperimentRun]:
+
+    def get_run(self, run_id: str) -> ExperimentRun | None:
         """Get run metadata."""
         return self.active_runs.get(run_id)

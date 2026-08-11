@@ -19,12 +19,11 @@ Version: 1.0.0
 
 from __future__ import annotations
 
-import time
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query, Response
+from fastapi import APIRouter, Query, Response
 from pydantic import BaseModel, Field
 
 router = APIRouter()
@@ -33,7 +32,7 @@ router = APIRouter()
 # Request/Response Models
 class ExplanationRequestV2(BaseModel):
     """Request for decision explanation."""
-    
+
     decision_id: str = Field(
         ...,
         description="Unique identifier of the decision to explain",
@@ -54,7 +53,7 @@ class ExplanationRequestV2(BaseModel):
         default="en",
         description="Language for natural language explanation",
     )
-    
+
     model_config = {
         "json_schema_extra": {
             "examples": [
@@ -72,7 +71,7 @@ class ExplanationRequestV2(BaseModel):
 
 class ExplanationFactor(BaseModel):
     """A factor that contributed to the decision."""
-    
+
     name: str = Field(..., description="Name of the factor")
     value: Any = Field(..., description="Value of the factor")
     weight: float = Field(
@@ -90,7 +89,7 @@ class ExplanationFactor(BaseModel):
 
 class AppealInfo(BaseModel):
     """Information about the appeal mechanism."""
-    
+
     available: bool = Field(
         default=True,
         description="Whether appeal is available",
@@ -115,7 +114,7 @@ class AppealInfo(BaseModel):
 
 class ExplanationResponseV2(BaseModel):
     """GDPR Article 22 compliant explanation response."""
-    
+
     explanation_id: str = Field(
         ...,
         description="Unique identifier for this explanation",
@@ -128,7 +127,7 @@ class ExplanationResponseV2(BaseModel):
         ...,
         description="The decision that was made (ALLOW, RESTRICT, BLOCK, TERMINATE)",
     )
-    
+
     # Article 22 required elements
     logic_involved: str = Field(
         ...,
@@ -142,31 +141,31 @@ class ExplanationResponseV2(BaseModel):
         ...,
         description="Envisaged consequences of the decision",
     )
-    
+
     # Data used
     data_categories: list[str] = Field(
         default_factory=list,
         description="Categories of personal data used in the decision",
     )
-    
+
     # Contributing factors
     factors: list[ExplanationFactor] = Field(
         default_factory=list,
         description="Factors that contributed to the decision",
     )
-    
+
     # Natural language explanation
     human_readable: str = Field(
         ...,
         description="Full natural language explanation",
     )
-    
+
     # Appeal information
-    appeal_info: Optional[AppealInfo] = Field(
+    appeal_info: AppealInfo | None = Field(
         default=None,
         description="Information about appealing the decision",
     )
-    
+
     # Metadata
     generated_at: str = Field(
         ...,
@@ -180,13 +179,13 @@ class ExplanationResponseV2(BaseModel):
         default="en",
         description="Language of the explanation",
     )
-    
+
     # Fundamental Laws reference
     laws_applied: list[int] = Field(
         default_factory=list,
         description="IDs of Fundamental Laws that were applied",
     )
-    
+
     # Regulatory reference
     gdpr_article_22_compliant: bool = Field(
         default=True,
@@ -196,7 +195,7 @@ class ExplanationResponseV2(BaseModel):
 
 class ExplanationFormat(BaseModel):
     """Available explanation format."""
-    
+
     format_id: str
     name: str
     description: str
@@ -205,7 +204,7 @@ class ExplanationFormat(BaseModel):
 
 class ExplanationFormatsResponse(BaseModel):
     """Response listing available explanation formats."""
-    
+
     formats: list[ExplanationFormat]
 
 
@@ -215,7 +214,7 @@ _decision_store: dict[str, dict[str, Any]] = {}
 
 def _generate_explanation(
     decision_id: str,
-    decision_data: Optional[dict[str, Any]] = None,
+    decision_data: dict[str, Any] | None = None,
     include_factors: bool = True,
     include_appeal: bool = True,
 ) -> ExplanationResponseV2:
@@ -229,14 +228,14 @@ def _generate_explanation(
         
     Returns:
         ExplanationResponseV2
-    """
+    """  # noqa: W293
     # Use stored decision data or default
     data = decision_data or _decision_store.get(decision_id, {})
-    
+
     decision = data.get("decision", "ALLOW")
     risk_score = data.get("risk_score", 0.0)
     violations = data.get("violations", [])
-    
+
     # Build factors list
     factors = []
     if include_factors:
@@ -247,7 +246,7 @@ def _generate_explanation(
             explanation="Overall risk assessment based on action content and context",
             category="risk",
         ))
-        
+
         if violations:
             factors.append(ExplanationFactor(
                 name="Violations Detected",
@@ -256,7 +255,7 @@ def _generate_explanation(
                 explanation="Number of policy or safety violations detected",
                 category="policy",
             ))
-        
+
         factors.append(ExplanationFactor(
             name="Fundamental Laws",
             value=data.get("laws_checked", 5),
@@ -264,7 +263,7 @@ def _generate_explanation(
             explanation="Number of Fundamental Laws evaluated against this action",
             category="ethics",
         ))
-    
+
     # Determine significance and consequences
     significance_map = {
         "ALLOW": "The action was permitted to proceed without restrictions.",
@@ -272,7 +271,7 @@ def _generate_explanation(
         "BLOCK": "The action was prevented from executing due to detected risks.",
         "TERMINATE": "The session or agent was terminated due to critical violations.",
     }
-    
+
     consequences_map = {
         "ALLOW": (
             "No restrictions were applied. The action proceeded normally. "
@@ -291,20 +290,20 @@ def _generate_explanation(
             "required to restore service. This decision can be appealed."
         ),
     }
-    
+
     # Build human-readable explanation
     human_readable_parts = [
-        f"Your action was evaluated by the Nethical governance system.",
+        "Your action was evaluated by the Nethical governance system.",
         f"Decision: {decision}",
         "",
         significance_map.get(decision, "The action was evaluated."),
         "",
         "Factors considered:",
     ]
-    
+
     for factor in factors:
-        human_readable_parts.append(f"- {factor.name}: {factor.explanation}")
-    
+        human_readable_parts.append(f"- {factor.name}: {factor.explanation}")  # noqa: PERF401
+
     if risk_score > 0:
         risk_level = (
             "low" if risk_score < 0.3
@@ -313,7 +312,7 @@ def _generate_explanation(
             else "critical"
         )
         human_readable_parts.append(f"\nRisk Assessment: {risk_level} ({risk_score:.2f})")
-    
+
     human_readable_parts.extend([
         "",
         "Data categories used: Action content, Agent identifier, Context metadata",
@@ -323,9 +322,9 @@ def _generate_explanation(
         "- Express your point of view",
         "- Contest this decision through the appeals process",
     ])
-    
+
     human_readable = "\n".join(human_readable_parts)
-    
+
     # Build appeal info
     appeal_info = None
     if include_appeal:
@@ -339,7 +338,7 @@ def _generate_explanation(
             deadline_days=30,
             human_review_available=True,
         )
-    
+
     return ExplanationResponseV2(
         explanation_id=str(uuid.uuid4()),
         decision_id=decision_id,
@@ -378,7 +377,7 @@ async def get_explanation_formats() -> ExplanationFormatsResponse:
     
     Returns:
         ExplanationFormatsResponse with available formats
-    """
+    """  # noqa: W293
     return ExplanationFormatsResponse(
         formats=[
             ExplanationFormat(
@@ -434,13 +433,13 @@ async def get_explanation(
         
     Raises:
         HTTPException: If decision not found
-    """
+    """  # noqa: W293
     # Check if decision exists (in production, query database)
     decision_data = _decision_store.get(decision_id)
-    
+
     # For demo purposes, generate explanation even if not found
     # In production, would return 404 if not in audit log
-    
+
     explanation = _generate_explanation(
         decision_id=decision_id,
         decision_data=decision_data,
@@ -448,12 +447,12 @@ async def get_explanation(
         include_appeal=include_appeal_info,
     )
     explanation.format = format
-    
+
     # Set appropriate cache headers
     if response:
         response.headers["Cache-Control"] = "private, max-age=3600"
         response.headers["X-GDPR-Article-22"] = "compliant"
-    
+
     return explanation
 
 
@@ -475,10 +474,10 @@ async def generate_explanation(
         
     Returns:
         ExplanationResponseV2 with generated explanation
-    """
+    """  # noqa: W293
     # Get decision data
     decision_data = _decision_store.get(request.decision_id, {})
-    
+
     # Generate explanation
     explanation = _generate_explanation(
         decision_id=request.decision_id,
@@ -486,14 +485,14 @@ async def generate_explanation(
         include_factors=request.include_factors,
         include_appeal=request.include_appeal_info,
     )
-    
+
     explanation.format = request.format
     explanation.language = request.language
-    
+
     # Set headers
     response.headers["X-GDPR-Article-22"] = "compliant"
     response.headers["X-Explanation-ID"] = explanation.explanation_id
-    
+
     return explanation
 
 
@@ -504,7 +503,7 @@ def store_decision(decision_id: str, decision_data: dict[str, Any]) -> None:
     Args:
         decision_id: Unique decision identifier
         decision_data: Decision data to store
-    """
+    """  # noqa: W293
     _decision_store[decision_id] = decision_data
 
 

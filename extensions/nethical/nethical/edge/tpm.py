@@ -25,6 +25,7 @@ Fundamental Laws Alignment:
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import hmac
 import logging
@@ -33,8 +34,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Union
-import base64
+from typing import Any
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
@@ -116,7 +116,7 @@ class PCRValue:
     bank: PCRBank = PCRBank.SHA256
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
         return {
             "index": self.index,
@@ -134,9 +134,9 @@ class PlatformMeasurement:
     hash_value: bytes
     measurement_type: str
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
         return {
             "measurement_id": self.measurement_id,
@@ -152,13 +152,13 @@ class PlatformMeasurement:
 class AttestationQuote:
     """TPM attestation quote"""
     quote_id: str
-    pcr_values: List[PCRValue]
+    pcr_values: list[PCRValue]
     nonce: bytes
     signature: bytes
     signing_key_id: str
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
         return {
             "quote_id": self.quote_id,
@@ -174,19 +174,19 @@ class AttestationQuote:
 class AttestationResult:
     """Result of attestation verification"""
     status: AttestationStatus
-    quote: Optional[AttestationQuote]
-    verified_pcrs: List[int] = field(default_factory=list)
-    failed_pcrs: List[int] = field(default_factory=list)
-    error_message: Optional[str] = None
+    quote: AttestationQuote | None
+    verified_pcrs: list[int] = field(default_factory=list)
+    failed_pcrs: list[int] = field(default_factory=list)
+    error_message: str | None = None
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    recommendations: List[str] = field(default_factory=list)
+    recommendations: list[str] = field(default_factory=list)
 
     @property
     def is_trusted(self) -> bool:
         """Check if device is trusted"""
         return self.status == AttestationStatus.VERIFIED
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
         return {
             "status": self.status.value,
@@ -205,10 +205,10 @@ class TPMConfig:
     """TPM configuration"""
     device_path: str = "/dev/tpm0"
     version: TPMVersion = TPMVersion.TPM_2_0
-    owner_password: Optional[str] = None
-    endorsement_password: Optional[str] = None
-    lockout_password: Optional[str] = None
-    pcr_selection: List[int] = field(default_factory=lambda: [0, 1, 2, 3, 4, 7])
+    owner_password: str | None = None
+    endorsement_password: str | None = None
+    lockout_password: str | None = None
+    pcr_selection: list[int] = field(default_factory=lambda: [0, 1, 2, 3, 4, 7])
     hash_algorithm: PCRBank = PCRBank.SHA256
     simulation_mode: bool = False
     timeout_seconds: int = 30
@@ -235,7 +235,7 @@ class TPMInterface(ABC):
     
     Provides a consistent API for both hardware TPM and
     software simulation.
-    """
+    """  # noqa: W293
 
     def __init__(self, config: TPMConfig):
         self.config = config
@@ -256,7 +256,7 @@ class TPMInterface(ABC):
         pass
 
     @abstractmethod
-    async def read_pcr(self, index: int) -> Optional[PCRValue]:
+    async def read_pcr(self, index: int) -> PCRValue | None:
         """Read PCR value"""
         pass
 
@@ -273,7 +273,7 @@ class TPMInterface(ABC):
     @abstractmethod
     async def generate_quote(
         self,
-        pcr_selection: List[int],
+        pcr_selection: list[int],
         nonce: bytes,
     ) -> AttestationQuote:
         """Generate attestation quote"""
@@ -283,7 +283,7 @@ class TPMInterface(ABC):
     async def seal_data(
         self,
         data: bytes,
-        pcr_selection: List[int],
+        pcr_selection: list[int],
     ) -> bytes:
         """Seal data to PCR state"""
         pass
@@ -292,7 +292,7 @@ class TPMInterface(ABC):
     async def unseal_data(
         self,
         sealed_data: bytes,
-    ) -> Optional[bytes]:
+    ) -> bytes | None:
         """Unseal data (only if PCRs match)"""
         pass
 
@@ -316,13 +316,13 @@ class SoftwareTPM(TPMInterface):
     
     Fundamental Law 23 (Fail-Safe Design): Software fallback when
     hardware TPM is unavailable.
-    """
+    """  # noqa: W293
 
     def __init__(self, config: TPMConfig):
         super().__init__(config)
-        self._pcrs: Dict[int, bytes] = {}
-        self._attestation_key: Optional[bytes] = None
-        self._sealed_data: Dict[bytes, Tuple[bytes, List[int]]] = {}
+        self._pcrs: dict[int, bytes] = {}
+        self._attestation_key: bytes | None = None
+        self._sealed_data: dict[bytes, tuple[bytes, list[int]]] = {}
         log.warning(
             "Using SoftwareTPM - NOT suitable for production security requirements"
         )
@@ -341,7 +341,7 @@ class SoftwareTPM(TPMInterface):
         """Get TPM status"""
         return TPMStatus.SIMULATED if self._initialized else TPMStatus.UNAVAILABLE
 
-    async def read_pcr(self, index: int) -> Optional[PCRValue]:
+    async def read_pcr(self, index: int) -> PCRValue | None:
         """Read PCR value"""
         if not self._initialized or index not in self._pcrs:
             return None
@@ -381,7 +381,7 @@ class SoftwareTPM(TPMInterface):
 
     async def generate_quote(
         self,
-        pcr_selection: List[int],
+        pcr_selection: list[int],
         nonce: bytes,
     ) -> AttestationQuote:
         """Generate attestation quote"""
@@ -412,13 +412,13 @@ class SoftwareTPM(TPMInterface):
             pcr_values=pcr_values,
             nonce=nonce,
             signature=signature,
-            signing_key_id=f"ak-simulated",
+            signing_key_id="ak-simulated",
         )
 
     async def seal_data(
         self,
         data: bytes,
-        pcr_selection: List[int],
+        pcr_selection: list[int],
     ) -> bytes:
         """Seal data to PCR state"""
         # Create seal key from current PCR values
@@ -445,7 +445,7 @@ class SoftwareTPM(TPMInterface):
     async def unseal_data(
         self,
         sealed_data: bytes,
-    ) -> Optional[bytes]:
+    ) -> bytes | None:
         """Unseal data (only if PCRs match)"""
         if sealed_data not in self._sealed_data:
             log.warning("Sealed data not found")
@@ -496,11 +496,11 @@ class HardwareTPM(TPMInterface):
     
     Provides interface to physical TPM 2.0 chip.
     Requires tpm2-tools and appropriate permissions.
-    """
+    """  # noqa: W293
 
     def __init__(self, config: TPMConfig):
         super().__init__(config)
-        self._attestation_key_id: Optional[str] = None
+        self._attestation_key_id: str | None = None
 
     async def initialize(self) -> bool:
         """Initialize hardware TPM"""
@@ -523,7 +523,7 @@ class HardwareTPM(TPMInterface):
             return TPMStatus.UNAVAILABLE
         return TPMStatus.AVAILABLE
 
-    async def read_pcr(self, index: int) -> Optional[PCRValue]:
+    async def read_pcr(self, index: int) -> PCRValue | None:
         """Read PCR value from hardware TPM"""
         if not self._initialized:
             return None
@@ -566,7 +566,7 @@ class HardwareTPM(TPMInterface):
 
     async def generate_quote(
         self,
-        pcr_selection: List[int],
+        pcr_selection: list[int],
         nonce: bytes,
     ) -> AttestationQuote:
         """Generate attestation quote from hardware TPM"""
@@ -595,7 +595,7 @@ class HardwareTPM(TPMInterface):
     async def seal_data(
         self,
         data: bytes,
-        pcr_selection: List[int],
+        pcr_selection: list[int],
     ) -> bytes:
         """Seal data to PCR state using hardware TPM"""
         try:
@@ -609,7 +609,7 @@ class HardwareTPM(TPMInterface):
     async def unseal_data(
         self,
         sealed_data: bytes,
-    ) -> Optional[bytes]:
+    ) -> bytes | None:
         """Unseal data from hardware TPM"""
         try:
             # In production: tpm2_unseal
@@ -643,7 +643,7 @@ def create_tpm_interface(config: TPMConfig) -> TPMInterface:
         
     Returns:
         TPM interface (hardware or software)
-    """
+    """  # noqa: W293
     if config.simulation_mode:
         return SoftwareTPM(config)
     return HardwareTPM(config)
@@ -661,20 +661,20 @@ class RemoteAttestation:
     
     Fundamental Law 2 (Right to Integrity): Attestation verifies
     device integrity before policy release.
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
-        expected_pcr_values: Optional[Dict[int, bytes]] = None,
+        expected_pcr_values: dict[int, bytes] | None = None,
     ):
         """
         Initialize remote attestation.
         
         Args:
             expected_pcr_values: Expected PCR values for verification
-        """
+        """  # noqa: W293
         self.expected_pcr_values = expected_pcr_values or {}
-        self._attestation_history: List[AttestationResult] = []
+        self._attestation_history: list[AttestationResult] = []
         log.info("RemoteAttestation initialized")
 
     def generate_challenge(self) -> bytes:
@@ -695,7 +695,7 @@ class RemoteAttestation:
             
         Returns:
             Attestation result
-        """
+        """  # noqa: W293
         verified_pcrs = []
         failed_pcrs = []
         recommendations = []
@@ -749,13 +749,13 @@ class RemoteAttestation:
 
     def update_expected_values(
         self,
-        pcr_values: Dict[int, bytes],
+        pcr_values: dict[int, bytes],
     ) -> None:
         """Update expected PCR values"""
         self.expected_pcr_values.update(pcr_values)
         log.info(f"Expected PCR values updated: {list(pcr_values.keys())}")
 
-    def get_attestation_history(self) -> List[AttestationResult]:
+    def get_attestation_history(self) -> list[AttestationResult]:
         """Get attestation history"""
         return self._attestation_history.copy()
 
@@ -772,17 +772,17 @@ class SecureBootVerifier:
     
     Fundamental Law 23 (Fail-Safe Design): Boot failures trigger
     safe mode operation.
-    """
+    """  # noqa: W293
 
     def __init__(self, config: SecureBootConfig):
         self.config = config
-        self._boot_measurements: List[PlatformMeasurement] = []
+        self._boot_measurements: list[PlatformMeasurement] = []
         log.info("SecureBootVerifier initialized")
 
     async def verify_boot_chain(
         self,
         tpm: TPMInterface,
-    ) -> Tuple[BootState, List[str]]:
+    ) -> tuple[BootState, list[str]]:
         """
         Verify boot chain integrity using TPM measurements.
         
@@ -791,7 +791,7 @@ class SecureBootVerifier:
             
         Returns:
             Tuple of (boot state, list of issues)
-        """
+        """  # noqa: W293
         issues = []
 
         if not self.config.enabled:
@@ -835,7 +835,7 @@ class SecureBootVerifier:
             issues.append(str(e))
             return BootState.FAILED, issues
 
-    def get_boot_measurements(self) -> List[PlatformMeasurement]:
+    def get_boot_measurements(self) -> list[PlatformMeasurement]:
         """Get recorded boot measurements"""
         return self._boot_measurements.copy()
 
@@ -856,12 +856,12 @@ class EdgeSecurityManager:
     - Autonomous vehicle security validation
     - Industrial robot attestation
     - Medical device integrity verification
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
         tpm_config: TPMConfig,
-        secure_boot_config: Optional[SecureBootConfig] = None,
+        secure_boot_config: SecureBootConfig | None = None,
     ):
         """
         Initialize edge security manager.
@@ -869,13 +869,13 @@ class EdgeSecurityManager:
         Args:
             tpm_config: TPM configuration
             secure_boot_config: Optional secure boot configuration
-        """
+        """  # noqa: W293
         self.tpm_config = tpm_config
         self.secure_boot_config = secure_boot_config or SecureBootConfig()
 
-        self._tpm: Optional[TPMInterface] = None
-        self._attestation: Optional[RemoteAttestation] = None
-        self._secure_boot: Optional[SecureBootVerifier] = None
+        self._tpm: TPMInterface | None = None
+        self._attestation: RemoteAttestation | None = None
+        self._secure_boot: SecureBootVerifier | None = None
         self._safe_mode = False
 
         log.info("EdgeSecurityManager initialized")
@@ -886,7 +886,7 @@ class EdgeSecurityManager:
         
         Returns:
             True if initialized successfully
-        """
+        """  # noqa: W293
         try:
             # Initialize TPM
             self._tpm = create_tpm_interface(self.tpm_config)
@@ -928,7 +928,7 @@ class EdgeSecurityManager:
         
         Returns:
             Attestation result
-        """
+        """  # noqa: W293
         if not self._tpm or not self._attestation:
             return AttestationResult(
                 status=AttestationStatus.FAILED,
@@ -962,7 +962,7 @@ class EdgeSecurityManager:
     async def seal_policy(
         self,
         policy_data: bytes,
-    ) -> Optional[bytes]:
+    ) -> bytes | None:
         """
         Seal policy data to current platform state.
         
@@ -973,7 +973,7 @@ class EdgeSecurityManager:
             
         Returns:
             Sealed data or None on failure
-        """
+        """  # noqa: W293
         if not self._tpm:
             return None
 
@@ -989,7 +989,7 @@ class EdgeSecurityManager:
     async def unseal_policy(
         self,
         sealed_data: bytes,
-    ) -> Optional[bytes]:
+    ) -> bytes | None:
         """
         Unseal policy data.
         
@@ -1000,7 +1000,7 @@ class EdgeSecurityManager:
             
         Returns:
             Unsealed data or None if state mismatch
-        """
+        """  # noqa: W293
         if not self._tpm:
             return None
 
@@ -1026,7 +1026,7 @@ class EdgeSecurityManager:
             
         Returns:
             True if measurement recorded
-        """
+        """  # noqa: W293
         if not self._tpm:
             return False
 
@@ -1041,7 +1041,7 @@ class EdgeSecurityManager:
             log.error(f"Measurement recording failed: {e}")
             return False
 
-    def get_security_status(self) -> Dict[str, Any]:
+    def get_security_status(self) -> dict[str, Any]:
         """Get comprehensive security status"""
         return {
             "tpm_initialized": self._tpm.is_initialized if self._tpm else False,
@@ -1097,16 +1097,16 @@ class ContinuousAttestation:
         self.attestation_interval_seconds = attestation_interval_seconds
         self.drift_threshold = drift_threshold
 
-        self._baseline_measurements: Dict[int, bytes] = {}
-        self._last_attestation: Optional[datetime] = None
+        self._baseline_measurements: dict[int, bytes] = {}
+        self._last_attestation: datetime | None = None
         self._attestation_count = 0
-        self._drift_events: List[Dict[str, Any]] = []
+        self._drift_events: list[dict[str, Any]] = []
         self._running = False
-        self._task: Optional[Any] = None
+        self._task: Any | None = None
 
         log.info("ContinuousAttestation initialized")
 
-    async def establish_baseline(self) -> Dict[int, bytes]:
+    async def establish_baseline(self) -> dict[int, bytes]:
         """
         Establish baseline PCR measurements.
 
@@ -1125,7 +1125,7 @@ class ContinuousAttestation:
         log.info(f"Baseline established with {len(self._baseline_measurements)} PCRs")
         return self._baseline_measurements
 
-    async def verify_integrity(self) -> Tuple[bool, List[Dict[str, Any]]]:
+    async def verify_integrity(self) -> tuple[bool, list[dict[str, Any]]]:
         """
         Verify current state against baseline.
 
@@ -1211,7 +1211,7 @@ class ContinuousAttestation:
 
         log.info("Continuous attestation stopped")
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """Get continuous attestation status."""
         return {
             "running": self._running,
@@ -1222,7 +1222,7 @@ class ContinuousAttestation:
             "interval_seconds": self.attestation_interval_seconds,
         }
 
-    def get_drift_events(self, limit: int = 50) -> List[Dict[str, Any]]:
+    def get_drift_events(self, limit: int = 50) -> list[dict[str, Any]]:
         """Get recent drift events."""
         return self._drift_events[-limit:]
 
@@ -1253,7 +1253,7 @@ class TEESupport:
             tee_type: Type of TEE ('sgx', 'trustzone', 'sev', 'simulation')
         """
         self.tee_type = tee_type
-        self._enclaves: Dict[str, Dict[str, Any]] = {}
+        self._enclaves: dict[str, dict[str, Any]] = {}
         self._initialized = False
 
         log.info(f"TEESupport initialized (type={tee_type})")
@@ -1283,7 +1283,7 @@ class TEESupport:
         self,
         enclave_id: str,
         code_hash: bytes,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Create a secure enclave.
 
@@ -1341,7 +1341,7 @@ class TEESupport:
         self,
         enclave_id: str,
         key: str,
-    ) -> Optional[bytes]:
+    ) -> bytes | None:
         """
         Unseal data from enclave.
 
@@ -1379,7 +1379,7 @@ class TEESupport:
         log.info(f"Enclave destroyed: {enclave_id}")
         return True
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """Get TEE status."""
         return {
             "tee_type": self.tee_type,

@@ -13,7 +13,10 @@ import torch
 import torch.nn as nn
 import yaml
 
-from adaptiveneuralnetwork.central_nervous_system.layer_registry import LayerRegistry, layer_registry
+from adaptiveneuralnetwork.central_nervous_system.layer_registry import (
+    LayerRegistry,
+    layer_registry,
+)
 from adaptiveneuralnetwork.central_nervous_system.model_builder import ModelBuilder
 
 
@@ -393,7 +396,7 @@ class TestSeedLocalization:
         """Test that model builder seed doesn't affect global random state."""
         # Set a global seed
         torch.manual_seed(100)
-        initial_random = torch.randn(1).item()
+        initial_random = torch.randn(1).item()  # noqa: F841
 
         # Reset and use model builder with different seed
         torch.manual_seed(100)

@@ -13,7 +13,7 @@ Endpoints:
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
@@ -27,17 +27,17 @@ router = APIRouter(prefix="/agents", tags=["Agent Management"])
 
 class AgentCreate(BaseModel):
     """Request to create a new agent."""
-    
+
     agent_id: str = Field(..., min_length=1, max_length=255, description="Unique agent identifier")
     name: str = Field(..., min_length=1, max_length=255, description="Agent name")
     agent_type: str = Field(default="general", description="Agent type (general, specialized, etc.)")
-    description: Optional[str] = Field(None, description="Agent description")
+    description: str | None = Field(None, description="Agent description")
     trust_level: float = Field(default=0.5, ge=0.0, le=1.0, description="Trust level (0.0-1.0)")
     status: str = Field(default="active", description="Agent status")
     configuration: dict[str, Any] = Field(default_factory=dict, description="Agent configuration")
     metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
-    region_id: Optional[str] = Field(None, description="Region identifier")
-    
+    region_id: str | None = Field(None, description="Region identifier")
+
     model_config = {
         "json_schema_extra": {
             "examples": [
@@ -65,38 +65,38 @@ class AgentCreate(BaseModel):
 
 class AgentUpdate(BaseModel):
     """Request to update an agent."""
-    
-    name: Optional[str] = Field(None, min_length=1, max_length=255, description="Agent name")
-    agent_type: Optional[str] = Field(None, description="Agent type")
-    description: Optional[str] = Field(None, description="Agent description")
-    trust_level: Optional[float] = Field(None, ge=0.0, le=1.0, description="Trust level (0.0-1.0)")
-    status: Optional[str] = Field(None, description="Agent status")
-    configuration: Optional[dict[str, Any]] = Field(None, description="Agent configuration")
-    metadata: Optional[dict[str, Any]] = Field(None, description="Additional metadata")
-    region_id: Optional[str] = Field(None, description="Region identifier")
+
+    name: str | None = Field(None, min_length=1, max_length=255, description="Agent name")
+    agent_type: str | None = Field(None, description="Agent type")
+    description: str | None = Field(None, description="Agent description")
+    trust_level: float | None = Field(None, ge=0.0, le=1.0, description="Trust level (0.0-1.0)")
+    status: str | None = Field(None, description="Agent status")
+    configuration: dict[str, Any] | None = Field(None, description="Agent configuration")
+    metadata: dict[str, Any] | None = Field(None, description="Additional metadata")
+    region_id: str | None = Field(None, description="Region identifier")
 
 
 class AgentResponse(BaseModel):
     """Agent response model."""
-    
+
     id: int
     agent_id: str
     name: str
     agent_type: str
-    description: Optional[str]
+    description: str | None
     trust_level: float
     status: str
     configuration: dict[str, Any]
     metadata: dict[str, Any]
-    region_id: Optional[str]
+    region_id: str | None
     created_at: str
     updated_at: str
-    created_by: Optional[str]
+    created_by: str | None
 
 
 class AgentListResponse(BaseModel):
     """Paginated list of agents."""
-    
+
     agents: list[AgentResponse]
     total: int
     page: int
@@ -124,7 +124,7 @@ async def create_agent(
         
     Raises:
         HTTPException: 409 if agent_id already exists
-    """
+    """  # noqa: W293
     # Check if agent_id already exists
     existing = db.query(Agent).filter(Agent.agent_id == agent.agent_id).first()
     if existing:
@@ -132,7 +132,7 @@ async def create_agent(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Agent with agent_id '{agent.agent_id}' already exists"
         )
-    
+
     # Create new agent
     db_agent = Agent(
         agent_id=agent.agent_id,
@@ -146,11 +146,11 @@ async def create_agent(
         region_id=agent.region_id,
         created_by=current_user.username,
     )
-    
+
     db.add(db_agent)
     db.commit()
     db.refresh(db_agent)
-    
+
     return AgentResponse(**db_agent.to_dict())
 
 
@@ -160,8 +160,8 @@ async def list_agents(
     current_user: Annotated[User, Depends(get_current_user)],
     page: int = Query(1, ge=1, description="Page number"),
     per_page: int = Query(50, ge=1, le=100, description="Items per page"),
-    status: Optional[str] = Query(None, description="Filter by status"),
-    agent_type: Optional[str] = Query(None, description="Filter by agent type"),
+    status: str | None = Query(None, description="Filter by status"),
+    agent_type: str | None = Query(None, description="Filter by agent type"),
 ) -> AgentListResponse:
     """List all agents with pagination and filtering.
     
@@ -177,21 +177,21 @@ async def list_agents(
         
     Returns:
         Paginated list of agents
-    """
+    """  # noqa: W293
     query = db.query(Agent)
-    
+
     # Apply filters
     if status:
         query = query.filter(Agent.status == status)
     if agent_type:
         query = query.filter(Agent.agent_type == agent_type)
-    
+
     # Get total count
     total = query.count()
-    
+
     # Apply pagination
     agents = query.offset((page - 1) * per_page).limit(per_page).all()
-    
+
     return AgentListResponse(
         agents=[AgentResponse(**agent.to_dict()) for agent in agents],
         total=total,
@@ -221,14 +221,14 @@ async def get_agent(
         
     Raises:
         HTTPException: 404 if agent not found
-    """
+    """  # noqa: W293
     agent = db.query(Agent).filter(Agent.agent_id == agent_id).first()
     if not agent:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Agent '{agent_id}' not found"
         )
-    
+
     return AgentResponse(**agent.to_dict())
 
 
@@ -254,24 +254,24 @@ async def update_agent(
         
     Raises:
         HTTPException: 404 if agent not found
-    """
+    """  # noqa: W293
     agent = db.query(Agent).filter(Agent.agent_id == agent_id).first()
     if not agent:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Agent '{agent_id}' not found"
         )
-    
+
     # Update fields
     update_data = agent_update.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(agent, field, value)
-    
+
     agent.updated_at = datetime.now(timezone.utc)
-    
+
     db.commit()
     db.refresh(agent)
-    
+
     return AgentResponse(**agent.to_dict())
 
 
@@ -292,13 +292,13 @@ async def delete_agent(
         
     Raises:
         HTTPException: 404 if agent not found
-    """
+    """  # noqa: W293
     agent = db.query(Agent).filter(Agent.agent_id == agent_id).first()
     if not agent:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Agent '{agent_id}' not found"
         )
-    
+
     db.delete(agent)
     db.commit()

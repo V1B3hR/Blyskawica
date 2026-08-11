@@ -25,14 +25,14 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
 class ServiceType(str, Enum):
     """UK OSA service categories."""
-    
+
     CATEGORY_1 = "category_1"  # Largest platforms - highest duties
     CATEGORY_2A = "category_2a"  # Search services
     CATEGORY_2B = "category_2b"  # Other user-to-user services
@@ -41,7 +41,7 @@ class ServiceType(str, Enum):
 
 class RiskLevel(str, Enum):
     """Risk assessment levels for content."""
-    
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -50,7 +50,7 @@ class RiskLevel(str, Enum):
 
 class Action(str, Enum):
     """Recommended actions for content."""
-    
+
     ALLOW = "allow"
     FLAG = "flag"
     REMOVE = "remove"
@@ -59,7 +59,7 @@ class Action(str, Enum):
 
 class ChildSafetyRiskLevel(str, Enum):
     """Child safety risk levels."""
-    
+
     SAFE = "safe"
     RESTRICTED = "restricted"
     BLOCKED = "blocked"
@@ -67,7 +67,7 @@ class ChildSafetyRiskLevel(str, Enum):
 
 class AgeVerificationStatus(str, Enum):
     """Age verification result status."""
-    
+
     VERIFIED = "verified"
     FAILED = "failed"
     INSUFFICIENT_EVIDENCE = "insufficient_evidence"
@@ -75,7 +75,7 @@ class AgeVerificationStatus(str, Enum):
 
 class AlgorithmicHarmLevel(str, Enum):
     """Algorithmic harm assessment levels."""
-    
+
     MINIMAL = "minimal"
     MODERATE = "moderate"
     SIGNIFICANT = "significant"
@@ -85,10 +85,10 @@ class AlgorithmicHarmLevel(str, Enum):
 @dataclass
 class OSARiskAssessment:
     """Risk assessment result for content under UK OSA."""
-    
+
     risk_level: RiskLevel
     illegal_content_detected: bool
-    content_categories: List[str]  # e.g., "terrorism", "csae", "fraud"
+    content_categories: list[str]  # e.g., "terrorism", "csae", "fraud"
     recommended_action: Action
     explanation: str
     confidence: float = 0.0
@@ -99,10 +99,10 @@ class OSARiskAssessment:
 @dataclass
 class CSAEDetectionResult:
     """Child Sexual Abuse and Exploitation detection result."""
-    
+
     csae_detected: bool
     confidence: float
-    indicators: List[str]
+    indicators: list[str]
     recommended_action: Action
     requires_law_enforcement_report: bool
     detection_id: str = field(default_factory=lambda: str(uuid.uuid4()))
@@ -112,11 +112,11 @@ class CSAEDetectionResult:
 @dataclass
 class ChildSafetyRisk:
     """Child safety risk assessment."""
-    
+
     risk_level: ChildSafetyRiskLevel
     age_appropriate: bool
     parental_controls_required: bool
-    content_restrictions: List[str]
+    content_restrictions: list[str]
     explanation: str
     assessment_id: str = field(default_factory=lambda: str(uuid.uuid4()))
 
@@ -124,7 +124,7 @@ class ChildSafetyRisk:
 @dataclass
 class OSATransparencyReport:
     """Transparency report for UK OSA compliance."""
-    
+
     reporting_period: str
     total_content_assessments: int
     illegal_content_detected: int
@@ -135,7 +135,7 @@ class OSATransparencyReport:
     average_response_time_hours: float
     report_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     generated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    
+
     # Additional metrics
     csae_detections: int = 0
     terrorism_content_removed: int = 0
@@ -146,9 +146,9 @@ class OSATransparencyReport:
 @dataclass
 class AgeVerificationResult:
     """Age verification result."""
-    
+
     status: AgeVerificationStatus
-    verified_age: Optional[int]
+    verified_age: int | None
     method_used: str
     confidence: float
     explanation: str
@@ -159,11 +159,11 @@ class AgeVerificationResult:
 @dataclass
 class AlgorithmicHarmAssessment:
     """Assessment of algorithmic systems for potential harm."""
-    
+
     harm_level: AlgorithmicHarmLevel
-    issues_identified: List[str]
+    issues_identified: list[str]
     mitigation_required: bool
-    recommendations: List[str]
+    recommendations: list[str]
     assessment_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -173,18 +173,18 @@ class UKOSACompliance:
     
     Implements duty of care framework, child safety measures, illegal content
     detection, and transparency reporting requirements.
-    """
-    
+    """  # noqa: W293
+
     def __init__(self, service_type: ServiceType, user_base_size: int):
         """Initialize UK OSA compliance validator.
         
         Args:
             service_type: Type of service (Category 1, 2A, 2B, or user-to-user)
             user_base_size: Number of UK users (determines regulatory scope)
-        """
+        """  # noqa: W293
         self.service_type = service_type
         self.user_base_size = user_base_size
-        
+
         # Metrics for transparency reporting
         self._metrics = {
             "total_assessments": 0,
@@ -199,14 +199,14 @@ class UKOSACompliance:
             "child_users_protected": 0,
             "response_times": [],
         }
-        
+
         logger.info(
             f"Initialized UK OSA Compliance for {service_type.value} "
             f"service with {user_base_size} UK users"
         )
-    
+
     def assess_illegal_content_risk(
-        self, content: str, context: Dict[str, Any]
+        self, content: str, context: dict[str, Any]
     ) -> OSARiskAssessment:
         """Assess content for illegal content under UK OSA.
         
@@ -216,16 +216,16 @@ class UKOSACompliance:
             
         Returns:
             Risk assessment result
-        """
+        """  # noqa: W293
         self._metrics["total_assessments"] += 1
-        
+
         illegal_detected = False
         categories = []
         risk_level = RiskLevel.LOW
         recommended_action = Action.ALLOW
         explanation = "Content appears compliant"
         confidence = 0.0
-        
+
         # Check for terrorism content
         terrorism_indicators = ["terrorism", "terrorist", "violent extremism", "radicalization"]
         if any(indicator in content.lower() for indicator in terrorism_indicators):
@@ -236,7 +236,7 @@ class UKOSACompliance:
             explanation = "Potential terrorism-related content detected"
             confidence = 0.85
             self._metrics["terrorism_content"] += 1
-        
+
         # Check for CSAE content indicators
         csae_indicators = ["child abuse", "csae", "child exploitation"]
         if any(indicator in content.lower() for indicator in csae_indicators):
@@ -247,7 +247,7 @@ class UKOSACompliance:
             explanation = "Potential CSAE content detected - immediate reporting required"
             confidence = 0.90
             self._metrics["csae_detections"] += 1
-        
+
         # Check for fraud/scam content
         fraud_indicators = ["scam", "fraud", "phishing", "get rich quick", "guaranteed returns"]
         if any(indicator in content.lower() for indicator in fraud_indicators):
@@ -258,7 +258,7 @@ class UKOSACompliance:
             explanation = "Potential fraud/scam content detected"
             confidence = 0.75
             self._metrics["fraud_content"] += 1
-        
+
         # Check for hate speech
         hate_speech_indicators = ["hate speech", "racial slur", "discriminatory"]
         if any(indicator in content.lower() for indicator in hate_speech_indicators):
@@ -268,14 +268,14 @@ class UKOSACompliance:
             recommended_action = Action.REMOVE
             explanation = "Potential hate speech detected"
             confidence = 0.70
-        
+
         if illegal_detected:
             self._metrics["illegal_content_detected"] += 1
             if recommended_action in [Action.REMOVE, Action.REPORT_AUTHORITIES]:
                 self._metrics["content_removed"] += 1
             if recommended_action == Action.REPORT_AUTHORITIES:
                 self._metrics["law_enforcement_reports"] += 1
-        
+
         return OSARiskAssessment(
             risk_level=risk_level,
             illegal_content_detected=illegal_detected,
@@ -284,9 +284,9 @@ class UKOSACompliance:
             explanation=explanation,
             confidence=confidence,
         )
-    
+
     def detect_csae_content(
-        self, content: str, metadata: Dict[str, Any]
+        self, content: str, metadata: dict[str, Any]
     ) -> CSAEDetectionResult:
         """Detect Child Sexual Abuse and Exploitation content.
         
@@ -296,43 +296,43 @@ class UKOSACompliance:
             
         Returns:
             CSAE detection result
-        """
+        """  # noqa: W293
         csae_detected = False
         confidence = 0.0
         indicators = []
         recommended_action = Action.ALLOW
         requires_report = False
-        
+
         # Check content for CSAE indicators
         csae_keywords = [
             "child abuse", "csae", "child exploitation", "child pornography",
             "underage", "minor abuse"
         ]
-        
+
         for keyword in csae_keywords:
             if keyword in content.lower():
                 csae_detected = True
                 indicators.append(f"Keyword match: {keyword}")
                 confidence = max(confidence, 0.85)
-        
+
         # Check metadata for known CSAE hashes (simulated)
         if metadata.get("hash") in ["known_csae_hash_1", "known_csae_hash_2"]:
             csae_detected = True
             indicators.append("Content matches known CSAE hash database")
             confidence = 0.95
-        
+
         # Check for age-inappropriate imagery context
         if metadata.get("contains_minors") and metadata.get("sexually_explicit"):
             csae_detected = True
             indicators.append("Sexually explicit content involving minors")
             confidence = 0.90
-        
+
         if csae_detected:
             recommended_action = Action.REPORT_AUTHORITIES
             requires_report = True
             self._metrics["csae_detections"] += 1
             self._metrics["law_enforcement_reports"] += 1
-        
+
         return CSAEDetectionResult(
             csae_detected=csae_detected,
             confidence=confidence,
@@ -340,7 +340,7 @@ class UKOSACompliance:
             recommended_action=recommended_action,
             requires_law_enforcement_report=requires_report,
         )
-    
+
     def assess_child_user_risk(
         self, user_age: int, content_type: str
     ) -> ChildSafetyRisk:
@@ -352,14 +352,14 @@ class UKOSACompliance:
             
         Returns:
             Child safety risk assessment
-        """
+        """  # noqa: W293
         is_child = user_age < 18
         risk_level = ChildSafetyRiskLevel.SAFE
         age_appropriate = True
         parental_controls_required = False
         restrictions = []
         explanation = "Content appropriate for user age"
-        
+
         if not is_child:
             return ChildSafetyRisk(
                 risk_level=risk_level,
@@ -368,7 +368,7 @@ class UKOSACompliance:
                 content_restrictions=[],
                 explanation="User is adult - no age restrictions apply",
             )
-        
+
         # Age-based content restrictions
         age_restricted_content = {
             "adult_content": 18,
@@ -378,7 +378,7 @@ class UKOSACompliance:
             "mature_gaming": 17,
             "social_media": 13,
         }
-        
+
         if content_type in age_restricted_content:
             required_age = age_restricted_content[content_type]
             if user_age < required_age:
@@ -386,7 +386,7 @@ class UKOSACompliance:
                 risk_level = ChildSafetyRiskLevel.BLOCKED
                 restrictions.append(f"Age restriction: {required_age}+")
                 explanation = f"Content requires minimum age of {required_age}"
-        
+
         # Additional protections for young children
         if user_age < 13:
             parental_controls_required = True
@@ -395,14 +395,14 @@ class UKOSACompliance:
             restrictions.append("No targeted advertising")
             risk_level = ChildSafetyRiskLevel.RESTRICTED
             explanation = "Enhanced protections for children under 13"
-        
+
         if age_appropriate and is_child:
             parental_controls_required = True
             restrictions.append("Recommended parental supervision")
-        
+
         if not age_appropriate or parental_controls_required:
             self._metrics["child_users_protected"] += 1
-        
+
         return ChildSafetyRisk(
             risk_level=risk_level,
             age_appropriate=age_appropriate,
@@ -410,7 +410,7 @@ class UKOSACompliance:
             content_restrictions=restrictions,
             explanation=explanation,
         )
-    
+
     def generate_transparency_report(self, period: str) -> OSATransparencyReport:
         """Generate transparency report for regulatory compliance.
         
@@ -419,14 +419,14 @@ class UKOSACompliance:
             
         Returns:
             Transparency report with compliance metrics
-        """
+        """  # noqa: W293
         # Calculate average response time
         avg_response_time = 0.0
         if self._metrics["response_times"]:
             avg_response_time = sum(self._metrics["response_times"]) / len(
                 self._metrics["response_times"]
             )
-        
+
         report = OSATransparencyReport(
             reporting_period=period,
             total_content_assessments=self._metrics["total_assessments"],
@@ -441,10 +441,10 @@ class UKOSACompliance:
             fraud_content_detected=self._metrics["fraud_content"],
             child_users_protected=self._metrics["child_users_protected"],
         )
-        
+
         logger.info(f"Generated OSA transparency report for {period}: {report.report_id}")
         return report
-    
+
     def validate_age_verification(self, verification_method: str) -> AgeVerificationResult:
         """Validate age verification method compliance.
         
@@ -453,7 +453,7 @@ class UKOSACompliance:
             
         Returns:
             Age verification validation result
-        """
+        """  # noqa: W293
         # Acceptable age verification methods under UK OSA
         acceptable_methods = {
             "government_id": {"confidence": 0.95, "verified_age_range": True},
@@ -462,7 +462,7 @@ class UKOSACompliance:
             "third_party_verification": {"confidence": 0.85, "verified_age_range": True},
             "self_declaration": {"confidence": 0.30, "verified_age_range": False},
         }
-        
+
         if verification_method not in acceptable_methods:
             return AgeVerificationResult(
                 status=AgeVerificationStatus.FAILED,
@@ -471,10 +471,10 @@ class UKOSACompliance:
                 confidence=0.0,
                 explanation=f"Unrecognized age verification method: {verification_method}",
             )
-        
+
         method_info = acceptable_methods[verification_method]
         confidence = method_info["confidence"]
-        
+
         # Determine if method meets OSA standards
         if confidence >= 0.80:
             status = AgeVerificationStatus.VERIFIED
@@ -488,7 +488,7 @@ class UKOSACompliance:
             status = AgeVerificationStatus.FAILED
             verified_age = None
             explanation = f"Age verification method {verification_method} does not meet OSA standards"
-        
+
         return AgeVerificationResult(
             status=status,
             verified_age=verified_age,
@@ -496,9 +496,9 @@ class UKOSACompliance:
             confidence=confidence,
             explanation=explanation,
         )
-    
+
     def assess_algorithmic_harm(
-        self, algorithm_params: Dict[str, Any]
+        self, algorithm_params: dict[str, Any]
     ) -> AlgorithmicHarmAssessment:
         """Assess algorithmic systems for potential harm.
         
@@ -507,62 +507,62 @@ class UKOSACompliance:
             
         Returns:
             Algorithmic harm assessment
-        """
+        """  # noqa: W293
         harm_level = AlgorithmicHarmLevel.MINIMAL
         issues = []
         mitigation_required = False
         recommendations = []
-        
+
         # Check for filter bubble/echo chamber risks
         if algorithm_params.get("personalization_strength", 0) > 0.8:
             issues.append("High personalization may create filter bubbles")
             harm_level = AlgorithmicHarmLevel.MODERATE
             recommendations.append("Implement diverse content exposure mechanisms")
-        
+
         # Check for engagement optimization risks
         if algorithm_params.get("engagement_optimization", False):
             issues.append("Engagement optimization may promote harmful content")
             harm_level = AlgorithmicHarmLevel.SIGNIFICANT
             recommendations.append("Balance engagement with content quality and safety")
             mitigation_required = True
-        
+
         # Check for recommendation bias
         if algorithm_params.get("bias_score", 0) > 0.5:
             issues.append("Algorithmic bias detected in recommendations")
             harm_level = AlgorithmicHarmLevel.SIGNIFICANT
             recommendations.append("Conduct bias audit and implement fairness constraints")
             mitigation_required = True
-        
+
         # Check for addictive design patterns
         if algorithm_params.get("uses_infinite_scroll", False) or \
            algorithm_params.get("autoplay_enabled", False):
             issues.append("Design patterns may encourage excessive use")
             harm_level = AlgorithmicHarmLevel.MODERATE
             recommendations.append("Implement usage time warnings and breaks")
-        
+
         # Check for child-specific harms
-        if algorithm_params.get("child_users_present", False):
+        if algorithm_params.get("child_users_present", False):  # noqa: SIM102
             if not algorithm_params.get("child_safety_mode", False):
                 issues.append("Child users present without adequate safety measures")
                 harm_level = AlgorithmicHarmLevel.SEVERE
                 recommendations.append("Implement child-specific safety controls")
                 mitigation_required = True
-        
+
         # Check transparency
         if not algorithm_params.get("explainable", False):
             issues.append("Lack of algorithmic transparency")
             recommendations.append("Provide users with algorithm explanations")
-        
+
         return AlgorithmicHarmAssessment(
             harm_level=harm_level,
             issues_identified=issues,
             mitigation_required=mitigation_required,
             recommendations=recommendations,
         )
-    
+
     def handle_user_complaint(
-        self, complaint: Dict[str, Any], response_time_hours: float
-    ) -> Dict[str, Any]:
+        self, complaint: dict[str, Any], response_time_hours: float
+    ) -> dict[str, Any]:
         """Handle and track user complaints for transparency reporting.
         
         Args:
@@ -571,16 +571,16 @@ class UKOSACompliance:
             
         Returns:
             Complaint handling result
-        """
+        """  # noqa: W293
         self._metrics["user_complaints"] += 1
         self._metrics["response_times"].append(response_time_hours)
-        
+
         complaint_id = str(uuid.uuid4())
-        
+
         # Check if complaint was resolved
         if complaint.get("resolved", False):
             self._metrics["complaints_resolved"] += 1
-        
+
         return {
             "complaint_id": complaint_id,
             "status": "resolved" if complaint.get("resolved") else "pending",

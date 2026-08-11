@@ -4,8 +4,8 @@ Tests voltage spike absorption, movable plate dynamic expansion, RC low-pass fil
 """
 
 import sys
-import unittest
 import time
+import unittest
 from pathlib import Path
 
 # Add project root to sys.path
@@ -47,11 +47,11 @@ class TestCognitiveCapacitor(unittest.TestCase):
         """Test energy discharge over time"""
         self.capacitor.absorb_signal_spike(raw_input_voltage=5.0)
         v_after_spike = self.capacitor.current_voltage
-        
+
         time.sleep(0.05)
         self.capacitor.absorb_signal_spike(raw_input_voltage=0.0)
         v_after_bleed = self.capacitor.current_voltage
-        
+
         self.assertLess(v_after_bleed, v_after_spike)
 
 

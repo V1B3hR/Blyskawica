@@ -37,8 +37,8 @@ try:
     import flax.linen as nn
     import jax
     import jax.numpy as jnp
-    import optax
-    from flax import struct
+    import optax  # noqa: F401
+    from flax import struct  # noqa: F401
     JAX_AVAILABLE = True
 except ImportError:
     JAX_AVAILABLE = False
@@ -521,7 +521,7 @@ class PyTorchTrainer:
         self.model.train()
         total_loss = 0.0
 
-        for batch_idx, (data, target) in enumerate(dataloader):
+        for batch_idx, (data, target) in enumerate(dataloader):  # noqa: B007
             self.optimizer.zero_grad()
             output = self.model(data)
             loss = self.criterion(output, target)

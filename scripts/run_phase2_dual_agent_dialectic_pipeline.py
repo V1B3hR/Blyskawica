@@ -18,8 +18,12 @@ logger = logging.getLogger("dual_agent_dialectic")
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import NeuromodulationState
-from adaptiveneuralnetwork.immune_system.epistemic_defense import EpistemicQuarantineNode
+from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import (  # noqa: E402
+    NeuromodulationState,  # noqa: E402
+)
+from adaptiveneuralnetwork.immune_system.epistemic_defense import (  # noqa: E402
+    EpistemicQuarantineNode,  # noqa: E402
+)
 
 
 def run_phase2_dialectic_pipeline():
@@ -49,7 +53,7 @@ def run_phase2_dialectic_pipeline():
 
     for turn in dialogue_rounds:
         logger.info(f"Ingesting dialogue round {turn['round']} from {turn['guest_model']}...")
-        
+
         # 1. Process Trust Signal on Oxytocin Axis
         neuro_state.process_operator_trust_signal(trust_score=turn["trust_signal"])
 

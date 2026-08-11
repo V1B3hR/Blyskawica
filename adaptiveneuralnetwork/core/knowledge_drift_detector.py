@@ -1,7 +1,8 @@
-import torch
-from enum import Enum
 from dataclasses import dataclass
-from typing import List, Optional
+from enum import Enum
+
+import torch
+
 
 class DriftAlertLevel(Enum):
     STABLE = "stable"
@@ -15,16 +16,16 @@ class DriftReport:
 
 class KnowledgeDriftDetector:
     def __init__(self, evaluation_interval: int = 10):
-        self.baseline_accuracy: Optional[float] = None
+        self.baseline_accuracy: float | None = None
         self.cycle_count: int = 0
-        self.drift_history: List[DriftReport] = []
+        self.drift_history: list[DriftReport] = []
         self.evaluation_interval: int = evaluation_interval
-        
-        self._sentinel_inputs: Optional[torch.Tensor] = None
-        self._sentinel_targets: Optional[torch.Tensor] = None
-        self._sentinel_domains: Optional[List[str]] = None
 
-    def register_sentinel_dataset(self, inputs: torch.Tensor, targets: torch.Tensor, domains: Optional[List[str]] = None):
+        self._sentinel_inputs: torch.Tensor | None = None
+        self._sentinel_targets: torch.Tensor | None = None
+        self._sentinel_domains: list[str] | None = None
+
+    def register_sentinel_dataset(self, inputs: torch.Tensor, targets: torch.Tensor, domains: list[str] | None = None):
         self._sentinel_inputs = inputs
         self._sentinel_targets = targets
         self._sentinel_domains = domains if domains is not None else ["default"] * len(inputs)
@@ -47,10 +48,10 @@ class KnowledgeDriftDetector:
     def evaluate_drift(self, model) -> DriftReport:
         if self.baseline_accuracy is None:
             self.establish_baseline(model)
-            
+
         current_accuracy = self._evaluate_model(model)
         drift_magnitude = float(abs(self.baseline_accuracy - current_accuracy))
-        
+
         # We can cap drift_magnitude to be positive or keep raw difference.
         # If model gets worse, drift_magnitude > 0.
         if drift_magnitude > 0.15:
@@ -59,12 +60,12 @@ class KnowledgeDriftDetector:
             alert_level = DriftAlertLevel.DRIFTING
         else:
             alert_level = DriftAlertLevel.STABLE
-            
+
         report = DriftReport(alert_level=alert_level, drift_magnitude=drift_magnitude)
         self.drift_history.append(report)
         return report
 
-    def step(self, model) -> Optional[DriftReport]:
+    def step(self, model) -> DriftReport | None:
         self.cycle_count += 1
         if self.cycle_count == 1 or self.cycle_count % self.evaluation_interval == 0:
             return self.evaluate_drift(model)

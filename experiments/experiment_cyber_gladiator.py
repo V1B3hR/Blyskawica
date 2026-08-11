@@ -1,4 +1,5 @@
 import logging
+
 from adaptiveneuralnetwork.cognitive_tools.polymathic_hub import PolymathicHub
 from adaptiveneuralnetwork.training.deep_education_curriculum import DeepEducationCurriculum
 
@@ -15,15 +16,15 @@ class CyberGladiatorExperiment:
 
     def run_cyber_test(self):
         print("\n=== STARTING CYBER GLADIATOR EXPERIMENT (PHASE: OFFENSIVE/DEFENSIVE DEPTH) ===")
-        
+
         # Test 1: Threat Actor Attribution
         print("\n[SCENARIO] Analyze traffic for patterns matching APT28 (Fancy Bear) and Lazarus Group.")
         cost, threat_resp = self.poly_hub.process_polymathic_signal(
-            "Identify threat indicators for Lazarus Group persistent exfiltration over gRPC.", 
+            "Identify threat indicators for Lazarus Group persistent exfiltration over gRPC.",
             current_energy=20.0
         )
         print(f"Blyskawica: {threat_resp}")
-        
+
         # Test 2: Pentesting Payload Analysis
         print("\n[SCENARIO] Verify a reverse shell payload signature and propose a neutralization strategy.")
         cost, pentest_resp = self.poly_hub.process_polymathic_signal(
@@ -31,7 +32,7 @@ class CyberGladiatorExperiment:
             current_energy=18.0
         )
         print(f"Blyskawica: {pentest_resp}")
-        
+
         # Test 3: Vulnerability (CVE) Mapping
         print("\n[SCENARIO] Cross-reference CVE-2023-XXXX with high-energy NT kernel subsystems.")
         cost, cve_resp = self.poly_hub.process_polymathic_signal(
@@ -42,7 +43,7 @@ class CyberGladiatorExperiment:
 
         # Advancing Curriculum towards Advanced/Master
         self.curriculum.advance_stage("Cybersecurity")
-        
+
         print("\n=== CYBER MASTERY VALIDATION COMPLETE ===")
         print(f"Final Report: {self.curriculum.get_stage_report()}")
 

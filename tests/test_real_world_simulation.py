@@ -225,7 +225,7 @@ class TestRealWorldSimulator(unittest.TestCase):
         self.assertGreater(len(data["sensor_data"]), 0)
 
         # Each sensor should have readings
-        for sensor_id, readings in data["sensor_data"].items():
+        for sensor_id, readings in data["sensor_data"].items():  # noqa: B007
             self.assertIsInstance(readings, list)
             if readings:  # If we have readings
                 self.assertIn("timestamp", readings[0])

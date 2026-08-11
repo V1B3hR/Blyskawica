@@ -266,7 +266,7 @@ class SensorManager:
         while not self._stop_monitoring:
             try:
                 # Perform health check
-                health = self.health_check()
+                health = self.health_check()  # noqa: F841
 
                 # Log any sensors in error state
                 for name, sensor in self.sensors.items():

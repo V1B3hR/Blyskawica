@@ -1,7 +1,7 @@
 """OSINT integrations with public data sources."""
 
+
 import requests
-from typing import Optional
 
 
 class CrtShClient:
@@ -70,7 +70,7 @@ class ShodanClient:
         self.api_key = api_key
         self.timeout = timeout
 
-    def search_host(self, ip_address: str) -> Optional[dict]:
+    def search_host(self, ip_address: str) -> dict | None:
         """Get host information from Shodan.
 
         Args:

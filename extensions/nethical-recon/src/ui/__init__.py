@@ -1,7 +1,7 @@
 """UI/Dashboard Module"""
 
-from .websocket_live import DashboardWebSocketManager
 from .themes import ThemeManager, ThemeType
+from .websocket_live import DashboardWebSocketManager
 
 __all__ = [
     "DashboardWebSocketManager",

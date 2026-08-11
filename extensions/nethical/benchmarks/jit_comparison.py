@@ -6,7 +6,8 @@ Target: 10-100x speedup for numerical operations.
 """
 
 import time
-from typing import Dict, Any, List, Callable
+from collections.abc import Callable
+from typing import Any
 
 import numpy as np
 
@@ -16,7 +17,7 @@ def benchmark_function(
     args: tuple,
     iterations: int = 1000,
     warmup: int = 10,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Benchmark a function.
 
@@ -60,7 +61,7 @@ def compare_implementations(
     args: tuple,
     name: str,
     iterations: int = 1000,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Compare JIT and Python implementations.
 
@@ -99,7 +100,7 @@ def python_risk_score(
         return 0.0
 
     weighted_sum = 0.0
-    for sev, conf in zip(severities, confidences):
+    for sev, conf in zip(severities, confidences):  # noqa: B905
         normalized = sev / 5.0
         weighted_sum += normalized * conf
 
@@ -108,7 +109,7 @@ def python_risk_score(
 
 def python_cosine_similarity(vec1: np.ndarray, vec2: np.ndarray) -> float:
     """Pure Python cosine similarity."""
-    dot_product = sum(a * b for a, b in zip(vec1, vec2))
+    dot_product = sum(a * b for a, b in zip(vec1, vec2))  # noqa: B905
     norm1 = sum(a * a for a in vec1) ** 0.5
     norm2 = sum(b * b for b in vec2) ** 0.5
 
@@ -131,7 +132,7 @@ def python_batch_similarity(
         if ref_norm == 0 or vec_norm == 0:
             similarities.append(0.0)
         else:
-            dot = sum(a * b for a, b in zip(vec, reference))
+            dot = sum(a * b for a, b in zip(vec, reference))  # noqa: B905
             similarities.append(dot / (vec_norm * ref_norm))
 
     return np.array(similarities)
@@ -155,7 +156,7 @@ def python_outlier_detection(
     return np.array([abs((v - mean) / std) > threshold for v in values])
 
 
-def run_all_benchmarks() -> List[Dict[str, Any]]:
+def run_all_benchmarks() -> list[dict[str, Any]]:
     """
     Run all JIT comparison benchmarks.
 
@@ -166,11 +167,11 @@ def run_all_benchmarks() -> List[Dict[str, Any]]:
 
     try:
         from nethical.core.jit_optimizations import (
+            NUMBA_AVAILABLE,
+            batch_cosine_similarity_jit,
             calculate_risk_score_jit,
             cosine_similarity_jit,
-            batch_cosine_similarity_jit,
             detect_outliers_zscore_jit,
-            NUMBA_AVAILABLE,
         )
 
         if not NUMBA_AVAILABLE:
@@ -234,7 +235,7 @@ def run_all_benchmarks() -> List[Dict[str, Any]]:
     return results
 
 
-def print_benchmark_report(results: List[Dict[str, Any]]):
+def print_benchmark_report(results: list[dict[str, Any]]):
     """Print formatted benchmark report."""
     print("\n" + "=" * 60)
     print("JIT COMPARISON BENCHMARK REPORT")

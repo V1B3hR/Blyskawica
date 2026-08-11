@@ -25,7 +25,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum, auto
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
 from ..detectors.base_detector import BaseDetector, DetectorStatus, SafetyViolation
 
@@ -51,15 +51,15 @@ class PluginMetadata:
     description: str
     author: str
     requires_nethical_version: str = ">=1.0.0"
-    dependencies: List[str] = field(default_factory=list)
-    tags: Set[str] = field(default_factory=set)
+    dependencies: list[str] = field(default_factory=list)
+    tags: set[str] = field(default_factory=set)
 
     # Health and monitoring
-    loaded_at: Optional[datetime] = None
-    last_health_check: Optional[datetime] = None
+    loaded_at: datetime | None = None
+    last_health_check: datetime | None = None
     health_status: str = "unknown"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert metadata to dictionary."""
         return {
             "name": self.name,
@@ -118,7 +118,7 @@ class DetectorPlugin(BaseDetector, ABC):
     def __init__(self, name: str, version: str = "1.0.0", **kwargs):
         """Initialize the plugin detector."""
         super().__init__(name=name, version=version, **kwargs)
-        self._plugin_metadata: Optional[PluginMetadata] = None
+        self._plugin_metadata: PluginMetadata | None = None
 
     @abstractmethod
     def get_metadata(self) -> PluginMetadata:
@@ -155,10 +155,10 @@ class PluginManager:
 
     def __init__(self):
         """Initialize the plugin manager."""
-        self.plugins: Dict[str, DetectorPlugin] = {}
-        self.plugin_metadata: Dict[str, PluginMetadata] = {}
-        self.plugin_status: Dict[str, PluginStatus] = {}
-        self._load_errors: Dict[str, str] = {}
+        self.plugins: dict[str, DetectorPlugin] = {}
+        self.plugin_metadata: dict[str, PluginMetadata] = {}
+        self.plugin_status: dict[str, PluginStatus] = {}
+        self._load_errors: dict[str, str] = {}
 
         logger.info("PluginManager initialized")
 
@@ -216,7 +216,7 @@ class PluginManager:
             return True
         return False
 
-    def get_plugin(self, plugin_name: str) -> Optional[DetectorPlugin]:
+    def get_plugin(self, plugin_name: str) -> DetectorPlugin | None:
         """
         Get a plugin by name.
 
@@ -228,7 +228,7 @@ class PluginManager:
         """
         return self.plugins.get(plugin_name)
 
-    def list_plugins(self) -> Dict[str, Dict[str, Any]]:
+    def list_plugins(self) -> dict[str, dict[str, Any]]:
         """
         List all registered plugins with their metadata and status.
 
@@ -249,7 +249,7 @@ class PluginManager:
             for name, plugin in self.plugins.items()
         }
 
-    def discover_plugins(self, plugin_dir: str) -> List[str]:
+    def discover_plugins(self, plugin_dir: str) -> list[str]:
         """
         Discover plugins in a directory.
 
@@ -275,7 +275,7 @@ class PluginManager:
         logger.info(f"Discovered {len(discovered)} potential plugin files in {plugin_dir}")
         return discovered
 
-    def load_plugin_from_file(self, plugin_path: str) -> List[str]:
+    def load_plugin_from_file(self, plugin_path: str) -> list[str]:
         """
         Load plugin(s) from a Python file.
 
@@ -335,7 +335,7 @@ class PluginManager:
             self._load_errors[plugin_path] = str(e)
             return []
 
-    def load_plugins_from_directory(self, plugin_dir: str) -> Dict[str, List[str]]:
+    def load_plugins_from_directory(self, plugin_dir: str) -> dict[str, list[str]]:
         """
         Load all plugins from a directory.
 
@@ -356,7 +356,7 @@ class PluginManager:
         logger.info(f"Loaded {len(results)} plugin file(s) from {plugin_dir}")
         return results
 
-    async def health_check_all(self) -> Dict[str, bool]:
+    async def health_check_all(self) -> dict[str, bool]:
         """
         Perform health checks on all plugins.
 
@@ -380,7 +380,7 @@ class PluginManager:
                     self.plugin_status[name] = PluginStatus.FAILED
                     logger.warning(f"Plugin {name} failed health check")
 
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 logger.error(f"Health check failed for plugin {name}: {e}")
                 results[name] = False
                 self.plugin_status[name] = PluginStatus.FAILED
@@ -389,8 +389,8 @@ class PluginManager:
         return results
 
     async def run_plugin(
-        self, plugin_name: str, action: Any, context: Optional[Dict[str, Any]] = None
-    ) -> List[SafetyViolation]:
+        self, plugin_name: str, action: Any, context: dict[str, Any] | None = None
+    ) -> list[SafetyViolation]:
         """
         Run a specific plugin on an action.
 
@@ -421,8 +421,8 @@ class PluginManager:
             return []
 
     async def run_all_plugins(
-        self, action: Any, context: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, List[SafetyViolation]]:
+        self, action: Any, context: dict[str, Any] | None = None
+    ) -> dict[str, list[SafetyViolation]]:
         """
         Run all active plugins on an action.
 
@@ -438,7 +438,7 @@ class PluginManager:
         tasks = []
         active_plugins = []
 
-        for name, plugin in self.plugins.items():
+        for name, plugin in self.plugins.items():  # noqa: B007, PERF102
             if self.plugin_status[name] == PluginStatus.ACTIVE:
                 tasks.append(self.run_plugin(name, action, context))
                 active_plugins.append(name)
@@ -458,7 +458,7 @@ class PluginManager:
 
         return results
 
-    def get_load_errors(self) -> Dict[str, str]:
+    def get_load_errors(self) -> dict[str, str]:
         """
         Get dictionary of load errors.
 
@@ -469,7 +469,7 @@ class PluginManager:
 
 
 # Global plugin manager instance
-_plugin_manager: Optional[PluginManager] = None
+_plugin_manager: PluginManager | None = None
 
 
 def get_plugin_manager() -> PluginManager:

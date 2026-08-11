@@ -14,19 +14,20 @@ Enhancements:
 - Generate comprehensive report including summarized findings
 """
 
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set, Any, Callable, Tuple
-from enum import Enum
-from datetime import datetime
-import time
-import hashlib
-import re
-import json
 import ast
+import hashlib
+import json
 import logging
-import tracemalloc
+import re
 import sys
+import time
+import tracemalloc
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
 from pathlib import Path
+from typing import Any
 
 # Configure a basic logger for governance operations
 logger = logging.getLogger(__name__)
@@ -56,7 +57,7 @@ class CertificationStatus(Enum):
     REVOKED = "revoked"
 
 
-SEVERITY_WEIGHTS: Dict[SecurityLevel, int] = {
+SEVERITY_WEIGHTS: dict[SecurityLevel, int] = {
     SecurityLevel.LOW: 1,
     SecurityLevel.MEDIUM: 3,
     SecurityLevel.HIGH: 7,
@@ -72,11 +73,11 @@ class Finding:
     rule_id: str
     description: str
     severity: SecurityLevel
-    file_path: Optional[str] = None
-    line: Optional[int] = None
-    code: Optional[str] = None
+    file_path: str | None = None
+    line: int | None = None
+    code: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "rule_id": self.rule_id,
             "description": self.description,
@@ -94,13 +95,13 @@ class SecurityScanResult:
     plugin_id: str
     scan_date: datetime
     security_level: SecurityLevel
-    vulnerabilities: List[str] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
+    vulnerabilities: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
     passed: bool = True
     scan_duration: float = 0.0
-    findings: List[Finding] = field(default_factory=list)
+    findings: list[Finding] = field(default_factory=list)
     risk_score: int = 0
-    fingerprint: Optional[str] = None
+    fingerprint: str | None = None
 
     def add_vulnerability(self, description: str, level: SecurityLevel = SecurityLevel.MEDIUM):
         """Add a security vulnerability (legacy string-based)."""
@@ -136,7 +137,7 @@ class SecurityScanResult:
         if order.index(level) > order.index(self.security_level):
             self.security_level = level
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "plugin_id": self.plugin_id,
             "scan_date": self.scan_date.isoformat(),
@@ -164,7 +165,7 @@ class BenchmarkResult:
     memory_usage_mb: float
     cpu_usage_percent: float
     passed: bool = True
-    notes: List[str] = field(default_factory=list)
+    notes: list[str] = field(default_factory=list)
     jitter_ms: float = 0.0
     iterations: int = 0
 
@@ -183,7 +184,7 @@ class BenchmarkResult:
         self.passed = meets
         return meets
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "plugin_id": self.plugin_id,
             "benchmark_date": self.benchmark_date.isoformat(),
@@ -209,11 +210,11 @@ class CompatibilityReport:
     nethical_version: str
     python_version: str
     compatible: bool
-    issues: List[str] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
-    test_results: Dict[str, bool] = field(default_factory=dict)
+    issues: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
+    test_results: dict[str, bool] = field(default_factory=dict)
 
-    def add_test_result(self, test_name: str, passed: bool, details: Optional[str] = None):
+    def add_test_result(self, test_name: str, passed: bool, details: str | None = None):
         """Add a test result."""
         self.test_results[test_name] = passed
         if not passed:
@@ -221,7 +222,7 @@ class CompatibilityReport:
             if details:
                 self.issues.append(f"{test_name}: {details}")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "plugin_id": self.plugin_id,
             "test_date": self.test_date.isoformat(),
@@ -252,8 +253,8 @@ class PluginGovernance:
         self,
         storage_dir: str = "./nethical_governance",
         strict_mode: bool = False,
-        allowlist_rules: Optional[Set[str]] = None,
-        denylist_rules: Optional[Set[str]] = None,
+        allowlist_rules: set[str] | None = None,
+        denylist_rules: set[str] | None = None,
     ):
         """Initialize plugin governance.
 
@@ -288,7 +289,7 @@ class PluginGovernance:
         }
 
         # Certification records
-        self._certifications: Dict[str, CertificationStatus] = {}
+        self._certifications: dict[str, CertificationStatus] = {}
 
         # Create storage directory if not exists
         Path(self.storage_dir).mkdir(parents=True, exist_ok=True)
@@ -298,7 +299,7 @@ class PluginGovernance:
     # --------------------------
 
     def security_scan(
-        self, plugin_id: str, plugin_code: Optional[str] = None, plugin_path: Optional[str] = None
+        self, plugin_id: str, plugin_code: str | None = None, plugin_path: str | None = None
     ) -> SecurityScanResult:
         """Perform security scanning on a plugin.
 
@@ -316,14 +317,14 @@ class PluginGovernance:
             plugin_id=plugin_id, scan_date=datetime.now(), security_level=SecurityLevel.SAFE
         )
 
-        sources: List[Tuple[str, str]] = []  # list of (file_path, code)
+        sources: list[tuple[str, str]] = []  # list of (file_path, code)
 
         if plugin_path:
             for file in self._iter_python_files(plugin_path):
                 try:
                     code = Path(file).read_text(encoding="utf-8", errors="ignore")
                     sources.append((str(file), code))
-                except Exception as e:
+                except Exception as e:  # noqa: PERF203
                     result.add_warning(f"Failed to read {file}: {e}")
 
         if plugin_code:
@@ -355,11 +356,11 @@ class PluginGovernance:
         self._save_json(plugin_id, "security_scan", result.to_dict())
         return result
 
-    def _iter_python_files(self, base_path: str) -> List[Path]:
+    def _iter_python_files(self, base_path: str) -> list[Path]:
         base = Path(base_path)
         if base.is_file() and base.suffix == ".py":
             return [base]
-        files: List[Path] = []
+        files: list[Path] = []
         for p in base.rglob("*.py"):
             # Skip common non-production dirs
             parts = set(p.parts)
@@ -377,7 +378,7 @@ class PluginGovernance:
             return
 
         # Helper: record finding
-        def add(rule_id: str, msg: str, severity: SecurityLevel, node: Optional[ast.AST] = None):
+        def add(rule_id: str, msg: str, severity: SecurityLevel, node: ast.AST | None = None):
             if rule_id in self.allowlist_rules:
                 return
             # Escalate if denylisted or strict mode
@@ -406,7 +407,7 @@ class PluginGovernance:
         # Walk AST
         for node in ast.walk(tree):
             # from x import *
-            if isinstance(node, ast.ImportFrom):
+            if isinstance(node, ast.ImportFrom):  # noqa: SIM102
                 if any(getattr(n, "name", "") == "*" for n in node.names):
                     add(
                         "import_star",
@@ -565,7 +566,7 @@ class PluginGovernance:
         # Placeholder - would verify digital signatures or compare fingerprints to a registry
         return
 
-    def _extract_line(self, code: str, line_number: Optional[int]) -> Optional[str]:
+    def _extract_line(self, code: str, line_number: int | None) -> str | None:
         if not line_number or line_number <= 0:
             return None
         try:
@@ -573,7 +574,7 @@ class PluginGovernance:
         except Exception:
             return None
 
-    def _resolve_call_name(self, node: ast.AST) -> Optional[str]:
+    def _resolve_call_name(self, node: ast.AST) -> str | None:
         if isinstance(node, ast.Name):
             return node.id
         if isinstance(node, ast.Attribute):
@@ -587,7 +588,7 @@ class PluginGovernance:
             return ".".join(parts)
         return None
 
-    def _extract_open_mode(self, call: ast.Call) -> Optional[str]:
+    def _extract_open_mode(self, call: ast.Call) -> str | None:
         # mode can be a positional arg (index 1) or keyword 'mode'
         mode_val = None
         if len(call.args) >= 2 and isinstance(call.args[1], ast.Str):
@@ -597,7 +598,7 @@ class PluginGovernance:
                 mode_val = kw.value.s
         return mode_val
 
-    def _compute_fingerprint(self, sources: List[Tuple[str, str]]) -> str:
+    def _compute_fingerprint(self, sources: list[tuple[str, str]]) -> str:
         h = hashlib.sha256()
         for path, code in sorted(sources, key=lambda x: x[0]):
             h.update(path.encode("utf-8", errors="ignore"))
@@ -613,11 +614,11 @@ class PluginGovernance:
     def benchmark(
         self,
         plugin_id: str,
-        test_data: Optional[Any] = None,
+        test_data: Any | None = None,
         iterations: int = 1000,
-        operation: Optional[Callable[[Any], Any]] = None,
+        operation: Callable[[Any], Any] | None = None,
         warmup: int = 10,
-        sleep_ms: Optional[float] = 1.0,
+        sleep_ms: float | None = 1.0,
     ) -> BenchmarkResult:
         """Benchmark plugin performance.
 
@@ -652,7 +653,7 @@ class PluginGovernance:
                 if sleep_ms is not None:
                     time.sleep(max(0.0, sleep_ms) / 1000.0)
 
-        latencies: List[float] = []
+        latencies: list[float] = []
         start_time = time.perf_counter()
         tracemalloc.start()
 
@@ -696,7 +697,7 @@ class PluginGovernance:
         self._save_json(plugin_id, "benchmark", result.to_dict())
         return result
 
-    def _percentile(self, data: List[float], p: float) -> float:
+    def _percentile(self, data: list[float], p: float) -> float:
         """Compute percentile using nearest-rank method."""
         if not data:
             return 0.0
@@ -712,7 +713,7 @@ class PluginGovernance:
         self,
         plugin_id: str,
         nethical_version: str = "0.1.0",
-        python_version: Optional[str] = None,
+        python_version: str | None = None,
         attempt_import: bool = True,
     ) -> CompatibilityReport:
         """Test plugin compatibility.
@@ -764,9 +765,9 @@ class PluginGovernance:
     def certify(
         self,
         plugin_id: str,
-        security_result: Optional[SecurityScanResult] = None,
-        benchmark_result: Optional[BenchmarkResult] = None,
-        compatibility_result: Optional[CompatibilityReport] = None,
+        security_result: SecurityScanResult | None = None,
+        benchmark_result: BenchmarkResult | None = None,
+        compatibility_result: CompatibilityReport | None = None,
     ) -> CertificationStatus:
         """Certify a plugin for marketplace distribution.
 
@@ -862,7 +863,7 @@ class PluginGovernance:
         security_result: SecurityScanResult,
         benchmark_result: BenchmarkResult,
         compatibility_result: CompatibilityReport,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Generate comprehensive governance report.
 
         Args:
@@ -930,7 +931,7 @@ class PluginGovernance:
         except Exception as e:
             logger.warning(f"Failed to persist certifications: {e}")
 
-    def _save_json(self, plugin_id: str, kind: str, content: Dict[str, Any]):
+    def _save_json(self, plugin_id: str, kind: str, content: dict[str, Any]):
         try:
             ts = datetime.now().strftime("%Y%m%dT%H%M%S")
             base_dir = Path(self.storage_dir) / plugin_id

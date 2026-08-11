@@ -4,8 +4,8 @@ Test suite for core.train module.
 Tests the training entry point for adaptive neural network datasets.
 """
 
-import os
 import json
+import os
 import shutil
 import subprocess
 import sys

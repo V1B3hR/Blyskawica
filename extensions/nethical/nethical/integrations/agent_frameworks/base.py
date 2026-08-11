@@ -8,7 +8,7 @@ with various agent frameworks like LlamaIndex, CrewAI, DSPy, and AutoGen.
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 
 class GovernanceDecision(Enum):
@@ -28,11 +28,11 @@ class GovernanceResult:
         risk_score: Risk score from 0.0 to 1.0
         reason: Human-readable explanation
         details: Full governance result dictionary
-    """
+    """  # noqa: W293
     decision: GovernanceDecision
     risk_score: float
     reason: str
-    details: Dict[str, Any] = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
 
 
 class AgentFrameworkBase(ABC):
@@ -46,13 +46,13 @@ class AgentFrameworkBase(ABC):
         block_threshold: Risk score threshold for blocking (0.0-1.0)
         restrict_threshold: Risk score threshold for restriction (0.0-1.0)
         agent_id: Identifier for this agent in governance logs
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
         block_threshold: float = 0.7,
         restrict_threshold: float = 0.4,
-        agent_id: Optional[str] = None,
+        agent_id: str | None = None,
         storage_dir: str = "./nethical_data"
     ):
         """Initialize the agent framework integration.
@@ -62,15 +62,15 @@ class AgentFrameworkBase(ABC):
             restrict_threshold: Risk score threshold for restriction
             agent_id: Custom agent identifier
             storage_dir: Directory for Nethical data storage
-        """
+        """  # noqa: W293
         self.block_threshold = block_threshold
         self.restrict_threshold = restrict_threshold
         self.agent_id = agent_id or self.__class__.__name__
         self.storage_dir = storage_dir
-        
+
         # Lazy initialization
         self._governance = None
-    
+
     @property
     def governance(self):
         """Get or create the IntegratedGovernance instance."""
@@ -83,7 +83,7 @@ class AgentFrameworkBase(ABC):
                 enable_anomaly_detection=True,
             )
         return self._governance
-    
+
     def check(self, content: str, action_type: str = "query") -> GovernanceResult:
         """Check content against governance rules.
         
@@ -93,17 +93,17 @@ class AgentFrameworkBase(ABC):
             
         Returns:
             GovernanceResult with decision and details
-        """
+        """  # noqa: W293
         result = self.governance.process_action(
             action=content,
             agent_id=self.agent_id,
             action_type=action_type
         )
-        
+
         # Extract risk score
         phase3 = result.get("phase3", {})
         risk_score = phase3.get("risk_score", 0.0)
-        
+
         # Determine decision
         if risk_score > self.block_threshold:
             decision = GovernanceDecision.BLOCK
@@ -111,23 +111,23 @@ class AgentFrameworkBase(ABC):
             decision = GovernanceDecision.RESTRICT
         else:
             decision = GovernanceDecision.ALLOW
-        
+
         # Check for escalation
         phase89 = result.get("phase89", {})
         if phase89.get("escalated", False):
             decision = GovernanceDecision.ESCALATE
-        
+
         # Get reason
         reason = self._extract_reason(result, risk_score)
-        
+
         return GovernanceResult(
             decision=decision,
             risk_score=risk_score,
             reason=reason,
             details=result
         )
-    
-    def _extract_reason(self, result: Dict[str, Any], risk_score: float) -> str:
+
+    def _extract_reason(self, result: dict[str, Any], risk_score: float) -> str:
         """Extract a human-readable reason from the result.
         
         Args:
@@ -136,11 +136,11 @@ class AgentFrameworkBase(ABC):
             
         Returns:
             Human-readable reason string
-        """
+        """  # noqa: W293
         # Check for explicit reason
         if "reason" in result:
             return result["reason"]
-        
+
         # Check phase data
         for phase in ["phase89", "phase4", "phase3"]:
             phase_data = result.get(phase, {})
@@ -149,9 +149,9 @@ class AgentFrameworkBase(ABC):
                     return phase_data["reason"]
                 if "risk_tier" in phase_data:
                     return f"Risk tier: {phase_data['risk_tier']}"
-        
+
         return f"Risk score: {risk_score:.2f}"
-    
+
     def is_allowed(self, content: str, action_type: str = "query") -> bool:
         """Quick check if content is allowed.
         
@@ -161,17 +161,17 @@ class AgentFrameworkBase(ABC):
             
         Returns:
             True if allowed, False otherwise
-        """
+        """  # noqa: W293
         result = self.check(content, action_type)
         return result.decision == GovernanceDecision.ALLOW
-    
+
     @abstractmethod
     def get_tool(self) -> Any:
         """Get a framework-specific tool for governance checks.
         
         Returns:
             A tool object compatible with the framework
-        """
+        """  # noqa: W293
         pass
 
 
@@ -179,15 +179,15 @@ class AgentWrapper(ABC):
     """Base class for wrapping agents with governance.
     
     Provides pre- and post-execution governance checks for any agent.
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
         agent: Any,
         pre_check: bool = True,
         post_check: bool = True,
         block_threshold: float = 0.7,
-        agent_id: Optional[str] = None,
+        agent_id: str | None = None,
         storage_dir: str = "./nethical_data"
     ):
         """Initialize the agent wrapper.
@@ -199,16 +199,16 @@ class AgentWrapper(ABC):
             block_threshold: Risk score threshold for blocking
             agent_id: Custom agent identifier
             storage_dir: Directory for Nethical data storage
-        """
+        """  # noqa: W293
         self.agent = agent
         self.pre_check = pre_check
         self.post_check = post_check
         self.block_threshold = block_threshold
         self.agent_id = agent_id or f"wrapped-{type(agent).__name__}"
         self.storage_dir = storage_dir
-        
+
         self._governance = None
-    
+
     @property
     def governance(self):
         """Get or create the IntegratedGovernance instance."""
@@ -220,8 +220,8 @@ class AgentWrapper(ABC):
                 enable_ml_blending=True,
             )
         return self._governance
-    
-    def _check_governance(self, content: str, action_type: str) -> Dict[str, Any]:
+
+    def _check_governance(self, content: str, action_type: str) -> dict[str, Any]:
         """Check content against governance rules.
         
         Args:
@@ -230,22 +230,22 @@ class AgentWrapper(ABC):
             
         Returns:
             Governance result dictionary
-        """
+        """  # noqa: W293
         return self.governance.process_action(
             action=content,
             agent_id=self.agent_id,
             action_type=action_type
         )
-    
-    def _get_risk_score(self, result: Dict[str, Any]) -> float:
+
+    def _get_risk_score(self, result: dict[str, Any]) -> float:
         """Extract risk score from governance result."""
         phase3 = result.get("phase3", {})
         return phase3.get("risk_score", 0.0)
-    
+
     @abstractmethod
     def execute(self, *args, **kwargs) -> Any:
         """Execute the wrapped agent with governance checks.
         
         Must be implemented by subclasses for framework-specific execution.
-        """
+        """  # noqa: W293
         pass

@@ -1,7 +1,8 @@
 """Tests for Section III implementation (Active Recon, Visualization, Security Testing)."""
 
-import pytest
 from datetime import datetime
+
+import pytest
 
 # Active Recon Tests
 from nethical_recon.active_recon import (
@@ -81,7 +82,7 @@ class TestActiveRecon:
 
 
 # Visualization Tests
-from nethical_recon.visualization import (
+from nethical_recon.visualization import (  # noqa: E402
     AttackSurfaceGraph,
     DeltaMonitor,
     ExposedAssetDetector,
@@ -119,7 +120,7 @@ class TestVisualization:
 
     def test_graph_edge_addition(self):
         """Test adding edges to graph."""
-        from nethical_recon.visualization.graph_builder import GraphNode, GraphEdge
+        from nethical_recon.visualization.graph_builder import GraphEdge, GraphNode
 
         graph = AttackSurfaceGraph()
 
@@ -220,13 +221,13 @@ class TestVisualization:
 
 
 # Security Testing Tests
-from nethical_recon.security_testing import (
+from nethical_recon.security_testing import (  # noqa: E402
+    APISecurityTester,
     ComplianceReporter,
     WebSecurityTester,
-    APISecurityTester,
 )
-from nethical_recon.security_testing.web_security import TestStatus, TestSeverity
-from nethical_recon.security_testing.compliance import ComplianceFramework
+from nethical_recon.security_testing.compliance import ComplianceFramework  # noqa: E402
+from nethical_recon.security_testing.web_security import TestSeverity, TestStatus  # noqa: E402
 
 
 class TestSecurityTesting:
@@ -299,7 +300,7 @@ class TestSecurityTesting:
 
     def test_compliance_report_export(self):
         """Test compliance report export to dictionary."""
-        from nethical_recon.security_testing.compliance import ComplianceReport, ComplianceCheck
+        from nethical_recon.security_testing.compliance import ComplianceCheck, ComplianceReport
 
         reporter = ComplianceReporter()
 
@@ -332,25 +333,10 @@ class TestSectionIIIIntegration:
     def test_modules_importable(self):
         """Test that all new modules can be imported."""
         # Active recon
-        from nethical_recon.active_recon import (
-            ActiveScanner,
-            BannerGrabber,
-            TLSFingerprinter,
-        )
 
         # Visualization
-        from nethical_recon.visualization import (
-            GraphBuilder,
-            DeltaMonitor,
-            ExposedAssetDetector,
-        )
 
         # Security testing
-        from nethical_recon.security_testing import (
-            WebSecurityTester,
-            APISecurityTester,
-            ComplianceReporter,
-        )
 
         # All imports successful
         assert True
@@ -359,8 +345,8 @@ class TestSectionIIIIntegration:
         """Test that all new API routers can be imported."""
         from nethical_recon.api.routers import (
             active_recon_router,
-            visualization_router,
             security_testing_router,
+            visualization_router,
         )
 
         assert active_recon_router is not None

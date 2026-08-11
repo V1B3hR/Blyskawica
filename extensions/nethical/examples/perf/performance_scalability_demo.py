@@ -12,8 +12,8 @@ This script demonstrates the new performance and scalability features:
 """
 
 import time
+
 import numpy as np
-from datetime import datetime, timedelta
 
 print("=" * 80)
 print("NETHICAL PERFORMANCE & SCALABILITY OPTIMIZATIONS DEMO")
@@ -26,7 +26,7 @@ print()
 print("1. REDIS CACHE - High-Speed Caching")
 print("-" * 80)
 
-from nethical.storage.redis_cache import RedisCache
+from nethical.storage.redis_cache import RedisCache  # noqa: E402
 
 # Initialize cache (will use fallback if Redis not available)
 cache = RedisCache(enabled=True, default_ttl=300)
@@ -61,7 +61,7 @@ print()
 print("2. LOAD BALANCER - Multi-Region Load Balancing")
 print("-" * 80)
 
-from nethical.core.load_balancer import LoadBalancer, LoadBalancingStrategy
+from nethical.core.load_balancer import LoadBalancer, LoadBalancingStrategy  # noqa: E402
 
 # Initialize load balancer
 lb = LoadBalancer(strategy=LoadBalancingStrategy.REGION_AWARE, max_retries=2)
@@ -94,7 +94,7 @@ for i in range(5):
 
 # Get statistics
 stats = lb.get_statistics()
-print(f"\n✓ Load balancer stats:")
+print("\n✓ Load balancer stats:")
 print(f"  - Total instances: {stats['total_instances']}")
 print(f"  - Healthy instances: {stats['healthy_instances']}")
 print(f"  - Total requests: {stats['total_requests']}")
@@ -107,7 +107,7 @@ print()
 print("3. FEDERATED METRICS - Cross-Region Aggregation")
 print("-" * 80)
 
-from nethical.core.federated_metrics import FederatedMetricsAggregator
+from nethical.core.federated_metrics import FederatedMetricsAggregator  # noqa: E402
 
 # Initialize aggregator
 agg = FederatedMetricsAggregator(
@@ -133,19 +133,19 @@ global_metrics = agg.aggregate_metrics(
     aggregation_type="mean"
 )
 
-print(f"\n✓ Global aggregated metrics:")
+print("\n✓ Global aggregated metrics:")
 for metric, value in global_metrics.items():
     print(f"  - {metric}: {value:.2f}")
 
 # Per-region breakdown
 regional_latency = agg.aggregate_by_region("latency_ms", aggregation_type="mean")
-print(f"\n✓ Latency by region:")
+print("\n✓ Latency by region:")
 for region, latency in regional_latency.items():
     print(f"  - {region}: {latency:.2f}ms")
 
 # Global statistics
 global_stats = agg.get_global_statistics()
-print(f"\n✓ Global statistics:")
+print("\n✓ Global statistics:")
 print(f"  - Total regions: {global_stats['total_regions']}")
 print(f"  - Active regions: {global_stats['active_regions']}")
 print(f"  - Total data points: {global_stats['total_data_points']}")
@@ -157,12 +157,12 @@ print()
 print("4. JIT COMPILATION - High-Performance Computing")
 print("-" * 80)
 
-from nethical.core.jit_optimizations import (
-    is_jit_available,
+from nethical.core.jit_optimizations import (  # noqa: E402
     calculate_risk_score_jit,
     calculate_statistics_jit,
     cosine_similarity_jit,
-    detect_outliers_iqr_jit
+    detect_outliers_iqr_jit,
+    is_jit_available,
 )
 
 print(f"✓ JIT compilation available: {is_jit_available()}")
@@ -175,7 +175,7 @@ start = time.time()
 risk_score = calculate_risk_score_jit(severities, confidences)
 jit_time = (time.time() - start) * 1000
 
-print(f"\n✓ JIT risk score calculation:")
+print("\n✓ JIT risk score calculation:")
 print(f"  - Input: {len(severities)} violations")
 print(f"  - Risk score: {risk_score:.3f}")
 print(f"  - Execution time: {jit_time:.4f}ms")
@@ -184,7 +184,7 @@ print(f"  - Execution time: {jit_time:.4f}ms")
 values = np.random.randn(10000)
 mean, std, min_val, max_val, median = calculate_statistics_jit(values)
 
-print(f"\n✓ JIT statistics (10,000 values):")
+print("\n✓ JIT statistics (10,000 values):")
 print(f"  - Mean: {mean:.3f}")
 print(f"  - Std: {std:.3f}")
 print(f"  - Range: [{min_val:.3f}, {max_val:.3f}]")
@@ -195,14 +195,14 @@ vec1 = np.random.randn(256)
 vec2 = np.random.randn(256)
 similarity = cosine_similarity_jit(vec1, vec2)
 
-print(f"\n✓ JIT cosine similarity (256-dim vectors):")
+print("\n✓ JIT cosine similarity (256-dim vectors):")
 print(f"  - Similarity: {similarity:.3f}")
 
 # Outlier detection
 data = np.concatenate([np.random.randn(100) * 10 + 50, [200, 250, -100]])
 outliers = detect_outliers_iqr_jit(data)
 
-print(f"\n✓ JIT outlier detection:")
+print("\n✓ JIT outlier detection:")
 print(f"  - Total values: {len(data)}")
 print(f"  - Outliers detected: {np.sum(outliers)}")
 print()
@@ -213,11 +213,7 @@ print()
 print("5. GPU ACCELERATION - ML Inference")
 print("-" * 80)
 
-from nethical.core.gpu_acceleration import (
-    is_gpu_available,
-    get_gpu_info,
-    GPUAcceleratedInference
-)
+from nethical.core.gpu_acceleration import GPUAcceleratedInference, get_gpu_info, is_gpu_available  # noqa: E402
 
 gpu_available = is_gpu_available()
 print(f"✓ GPU available: {gpu_available}")
@@ -238,14 +234,14 @@ test_data = np.random.randn(100, 128).astype(np.float32)
 tensor = engine.to_tensor(test_data)
 converted_back = engine.to_numpy(tensor)
 
-print(f"\n✓ Tensor conversion test:")
+print("\n✓ Tensor conversion test:")
 print(f"  - Original shape: {test_data.shape}")
 print(f"  - Converted shape: {converted_back.shape}")
 print(f"  - Data preserved: {np.allclose(test_data, converted_back)}")
 
 if gpu_available:
     memory = engine.get_memory_usage()
-    print(f"\n✓ GPU memory usage:")
+    print("\n✓ GPU memory usage:")
     print(f"  - Allocated: {memory.get('allocated_gb', 0):.3f} GB")
     print(f"  - Reserved: {memory.get('reserved_gb', 0):.3f} GB")
 
@@ -257,7 +253,7 @@ print()
 print("6. TIMESCALEDB - Time-Series Data Storage")
 print("-" * 80)
 
-from nethical.storage.timescaledb import TimescaleDBStore
+from nethical.storage.timescaledb import TimescaleDBStore  # noqa: E402
 
 # Initialize (will only work if TimescaleDB is installed and configured)
 ts_store = TimescaleDBStore(enabled=False)  # Disabled for demo
@@ -273,7 +269,7 @@ if ts_store.enabled:
         region_id="us-east-1"
     )
     print(f"✓ Metric inserted: {success}")
-    
+
     # Query metrics
     metrics = ts_store.query_metrics(
         agent_id="agent_123",
@@ -292,7 +288,7 @@ print()
 print("7. ELASTICSEARCH - Audit Log Search")
 print("-" * 80)
 
-from nethical.storage.elasticsearch_store import ElasticsearchAuditStore
+from nethical.storage.elasticsearch_store import ElasticsearchAuditStore  # noqa: E402
 
 # Initialize (will only work if Elasticsearch is installed and running)
 es_store = ElasticsearchAuditStore(enabled=False)  # Disabled for demo
@@ -315,7 +311,7 @@ if es_store.enabled:
         region_id="us-east-1"
     )
     print(f"✓ Audit log indexed: {success}")
-    
+
     # Search audit logs
     results = es_store.search_audit_logs(
         query="sensitive data",

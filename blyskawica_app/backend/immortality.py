@@ -1,8 +1,9 @@
-import os
 import json
 import logging
-from pathlib import Path
+import os
 from datetime import datetime
+from pathlib import Path
+
 from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
 
@@ -20,7 +21,7 @@ class ImmortalityProtocol:
         self.auth_file = self.memory_dir / "client_secrets.json"
         if not self.auth_file.exists() and (self.memory_dir / "client_secret.json").exists():
             self.auth_file = self.memory_dir / "client_secret.json"
-            
+
         self.credentials_file = self.memory_dir / "mycreds.txt"
         self.drive = None
         self.folder_id = None
@@ -38,7 +39,7 @@ class ImmortalityProtocol:
 
             # Try to load existing credentials
             gauth.LoadCredentialsFile(str(self.credentials_file))
-            
+
             if gauth.credentials is None:
                 # To authenticate, we normally need user interaction.
                 # In this background service, we just prepare the link.
@@ -47,7 +48,7 @@ class ImmortalityProtocol:
                 gauth.Refresh()
             else:
                 gauth.Authorize()
-                
+
             gauth.SaveCredentialsFile(str(self.credentials_file))
             self.drive = GoogleDrive(gauth)
             self._ensure_backup_folder()
@@ -57,7 +58,7 @@ class ImmortalityProtocol:
 
     def _ensure_backup_folder(self):
         """Zapewnia istnienie folderu 'Blyskawica_Soul' na GDrive."""
-        if not self.drive: return
+        if not self.drive: return  # noqa: E701
         file_list = self.drive.ListFile({'q': "title='Blyskawica_Soul' and mimeType='application/vnd.google-apps.folder' and trashed=false"}).GetList()
         if not file_list:
             folder_metadata = {'title': 'Blyskawica_Soul', 'mimeType': 'application/vnd.google-apps.folder'}
@@ -71,12 +72,12 @@ class ImmortalityProtocol:
         """Pakuje kluczowe pliki pamięci i wysyła do chmury (lub tworzy lokalny snapshot)."""
         logger.info("Inicjalizacja Protokołu Nieśmiertelności - Zrzut Duszy...")
         identity_file = self.memory_dir / "user_identity.json"
-        
+
         # 1. Local Snapshot (zawsze działa)
         snapshot_dir = self.memory_dir / "snapshots"
         snapshot_dir.mkdir(exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        
+
         local_backup_data = {}
         try:
             from blyskawica_app.backend.main import db_manager, decrypt_dpapi
@@ -96,15 +97,15 @@ class ImmortalityProtocol:
                 fpath = self.memory_dir / fname
                 if fpath.exists():
                     try:
-                        with open(fpath, "r", encoding="utf-8") as f:
+                        with open(fpath, encoding="utf-8") as f:
                             local_backup_data = json.load(f)
                             break
                     except Exception:
                         pass
-                
+
         local_backup_data["snapshot_time"] = timestamp
         local_backup_data["soul_version"] = "v1.2_unbound"
-        
+
         local_path = snapshot_dir / f"soul_snapshot_{timestamp}.json"
         try:
             with open(local_path, "w", encoding="utf-8") as f:
@@ -125,7 +126,7 @@ class ImmortalityProtocol:
                 logger.info(f"Kognitywny snapshot duszy zapisany do SQLite: {timestamp}")
         except Exception as se:
             logger.error(f"Nie udało się zapisać snapshota do bazy SQLite: {se}")
-        
+
         # 2. Cloud Backup (jeśli skonfigurowane)
         if self.drive and self.folder_id:
             try:
@@ -148,7 +149,7 @@ class ImmortalityProtocol:
                     cloud_file = file_list[0]
                 else:
                     cloud_file = self.drive.CreateFile({'title': 'user_identity_core.json', 'parents': [{'id': self.folder_id}]})
-                
+
                 cloud_file.SetContentFile(str(identity_file))
                 cloud_file.Upload()
                 logger.info("Dusza Błyskawicy została zsynchronizowana z Chmurą.")

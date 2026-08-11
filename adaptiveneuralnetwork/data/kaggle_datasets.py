@@ -47,7 +47,7 @@ def load_annomi_dataset(
         This dataset likely contains motivational interviewing conversations.
         Labels might be binary (motivational/non-motivational) or multi-class
         (different types of motivational techniques).
-    """
+    """  # noqa: W293
     logger.info(f"Loading ANNOMI dataset from {data_path}")
 
     texts, labels = _load_text_data(data_path, text_column, label_column)
@@ -96,7 +96,7 @@ def load_mental_health_faqs_dataset(
         This dataset contains mental health-related questions and answers.
         We can create a binary classification task (e.g., anxiety vs depression)
         or use the category column for multi-class classification.
-    """
+    """  # noqa: W293
     logger.info(f"Loading Mental Health FAQs dataset from {data_path}")
 
     # Load the data - try different possible column names
@@ -172,7 +172,7 @@ def load_social_media_sentiment_dataset(
         This dataset contains social media posts with sentiment labels.
         Common sentiment labels include: positive, negative, neutral
         The function supports flexible format loading (CSV/JSON/Excel/TSV).
-    """
+    """  # noqa: W293
     logger.info(f"Loading Social Media Sentiment dataset from {data_path}")
 
     # Load the data - try different possible column names
@@ -248,7 +248,7 @@ def load_pos_tagging_dataset(
             - tag_vocab: Tag to index mapping  
             - stats: Dataset statistics
             - config: Configuration used
-    """
+    """  # noqa: W291, W293
     logger.info(f"Loading POS tagging dataset from {data_path}")
 
     # Set random seed
@@ -427,7 +427,7 @@ def _load_pos_data(data_path: str) -> tuple[list[list[str]], list[list[str]]]:
     if sentence_col:
         # Group by sentence ID
         grouped = df.groupby(sentence_col)
-        for sent_id, group in grouped:
+        for sent_id, group in grouped:  # noqa: B007
             tokens = group[word_col].astype(str).tolist()
             tags = group[pos_col].astype(str).tolist()
 
@@ -615,7 +615,7 @@ def get_pos_dataset_statistics(data_path: str) -> dict[str, Any]:
         
     Returns:
         Dictionary with basic statistics
-    """
+    """  # noqa: W293
     try:
         sentences, all_tags = _load_pos_data(data_path)
         return _compute_pos_statistics(sentences, all_tags)
@@ -641,7 +641,7 @@ def create_text_classification_dataset(
         
     Returns:
         EssayDataset instance
-    """
+    """  # noqa: W293
     binary_labels = _convert_to_binary_labels(labels)
 
     return EssayDataset(
@@ -695,14 +695,14 @@ def _load_dataset_file(data_path: str) -> pd.DataFrame:
             for encoding in ['utf-8', 'latin-1', 'iso-8859-1']:
                 try:
                     return pd.read_csv(data_path, encoding=encoding)
-                except:
+                except:  # noqa: E722
                     continue
             raise
     elif file_path.suffix.lower() == '.json':
         # Handle both single JSON object and JSONL
         try:
             return pd.read_json(data_path)
-        except:
+        except:  # noqa: E722
             # Try JSONL format
             with open(data_path, encoding='utf-8') as f:
                 data = [json.loads(line) for line in f]
@@ -821,7 +821,7 @@ def get_dataset_info() -> dict[str, dict[str, Any]]:
     
     Returns:
         Dictionary with dataset information
-    """
+    """  # noqa: W293
     return {
         "annomi": {
             "name": "ANNOMI Motivational Interviewing Dataset",
@@ -889,7 +889,7 @@ def print_dataset_info():
     print("Supported Kaggle Datasets:")
     print("=" * 50)
 
-    for dataset_key, dataset_info in info.items():
+    for dataset_key, dataset_info in info.items():  # noqa: B007
         print(f"\n{dataset_info['name']}")
         print(f"URL: {dataset_info['url']}")
         print(f"Description: {dataset_info['description']}")
@@ -930,7 +930,7 @@ def load_vr_driving_dataset(
     Notes:
         This dataset contains VR driving behavior data including speed, steering,
         and performance metrics. Can be used for regression or classification tasks.
-    """
+    """  # noqa: W293
     logger.info(f"Loading VR Driving dataset from {data_path}")
 
     # Load the dataset
@@ -1015,7 +1015,7 @@ def load_autvi_dataset(
     Notes:
         This dataset contains automated vehicle inspection data.
         Typically used for binary classification (pass/fail inspection).
-    """
+    """  # noqa: W293
     logger.info(f"Loading AUTVI dataset from {data_path}")
 
     # Load the dataset
@@ -1094,7 +1094,7 @@ def load_digakust_dataset(
     Notes:
         This dataset contains digital acoustic analysis data from Saarland University.
         Typically used for multi-class classification of acoustic patterns.
-    """
+    """  # noqa: W293
     logger.info(f"Loading Digakust dataset from {data_path}")
 
     # Load the dataset

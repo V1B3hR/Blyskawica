@@ -4,8 +4,8 @@ Handles inter-bird communication
 """
 
 import logging
-from typing import Any
 from datetime import datetime
+from typing import Any
 
 
 class BirdCommunicationProtocol:

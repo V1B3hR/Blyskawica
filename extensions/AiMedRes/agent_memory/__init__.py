@@ -15,4 +15,4 @@ warnings.warn(
 )
 
 # Re-export everything from the new location
-from aimedres.agent_memory import *  # noqa: F401, F403
+from aimedres.agent_memory import *  # noqa: E402, F401, F403

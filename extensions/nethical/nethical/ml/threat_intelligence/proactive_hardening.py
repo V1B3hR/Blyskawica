@@ -10,18 +10,18 @@ Component: Threat Anticipation
 
 import asyncio
 import logging
+from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Dict, List, Optional, Any, Set
-from collections import defaultdict
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
 class HardeningPriority(Enum):
     """Priority levels for hardening actions."""
-    
+
     CRITICAL = "critical"  # Deploy immediately
     HIGH = "high"         # Deploy within hours
     MEDIUM = "medium"     # Deploy within days
@@ -31,7 +31,7 @@ class HardeningPriority(Enum):
 
 class HardeningStatus(Enum):
     """Status of hardening actions."""
-    
+
     PENDING = "pending"
     APPROVED = "approved"
     DEPLOYING = "deploying"
@@ -43,25 +43,25 @@ class HardeningStatus(Enum):
 @dataclass
 class HardeningAction:
     """Represents a proactive hardening action."""
-    
+
     action_id: str
     action_type: str
     description: str
     priority: HardeningPriority
     status: HardeningStatus = HardeningStatus.PENDING
-    predicted_threat_id: Optional[str] = None
+    predicted_threat_id: str | None = None
     threat_probability: float = 0.0
-    deployment_steps: List[str] = field(default_factory=list)
-    rollback_steps: List[str] = field(default_factory=list)
-    affected_systems: List[str] = field(default_factory=list)
+    deployment_steps: list[str] = field(default_factory=list)
+    rollback_steps: list[str] = field(default_factory=list)
+    affected_systems: list[str] = field(default_factory=list)
     estimated_impact: str = "low"
     requires_approval: bool = False
-    approved_by: Optional[str] = None
+    approved_by: str | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    deployed_at: Optional[datetime] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    
-    def to_dict(self) -> Dict[str, Any]:
+    deployed_at: datetime | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "action_id": self.action_id,
@@ -93,8 +93,8 @@ class ProactiveHardener:
     - Human approval workflow for high-impact changes
     - Rollback capability
     - Deployment tracking and auditing
-    """
-    
+    """  # noqa: W293
+
     def __init__(
         self,
         auto_deploy_threshold: float = 0.8,
@@ -108,30 +108,30 @@ class ProactiveHardener:
             auto_deploy_threshold: Probability threshold for auto-deployment
             approval_required_threshold: Threshold for requiring human approval
             max_concurrent_deployments: Maximum concurrent deployments
-        """
+        """  # noqa: W293
         self.auto_deploy_threshold = auto_deploy_threshold
         self.approval_required_threshold = approval_required_threshold
         self.max_concurrent_deployments = max_concurrent_deployments
-        
+
         # Storage
-        self.actions: Dict[str, HardeningAction] = {}
-        self.actions_by_priority: Dict[HardeningPriority, Set[str]] = defaultdict(set)
-        self.actions_by_status: Dict[HardeningStatus, Set[str]] = defaultdict(set)
-        self.deployed_actions: List[str] = []
-        
+        self.actions: dict[str, HardeningAction] = {}
+        self.actions_by_priority: dict[HardeningPriority, set[str]] = defaultdict(set)
+        self.actions_by_status: dict[HardeningStatus, set[str]] = defaultdict(set)
+        self.deployed_actions: list[str] = []
+
         # State
         self.active_deployments: int = 0
-        
+
         # Statistics
         self.total_actions_created: int = 0
         self.successful_deployments: int = 0
         self.failed_deployments: int = 0
         self.rollbacks: int = 0
-        
+
         logger.info(
             f"ProactiveHardener initialized with auto_deploy_threshold={auto_deploy_threshold}"
         )
-    
+
     async def create_hardening_action(
         self,
         prediction: Any,
@@ -144,12 +144,12 @@ class ProactiveHardener:
             
         Returns:
             Created hardening action
-        """
+        """  # noqa: W293
         try:
             # Determine priority based on probability and time horizon
             probability = getattr(prediction, "probability", 0.0)
             time_horizon = getattr(prediction, "time_horizon_days", 90)
-            
+
             if probability >= 0.9 and time_horizon <= 7:
                 priority = HardeningPriority.CRITICAL
             elif probability >= 0.8 and time_horizon <= 30:
@@ -158,20 +158,20 @@ class ProactiveHardener:
                 priority = HardeningPriority.MEDIUM
             else:
                 priority = HardeningPriority.LOW
-            
+
             # Determine if approval is required
             # High-risk actions (high priority or high probability) require approval
             requires_approval = (
                 priority in [HardeningPriority.CRITICAL, HardeningPriority.HIGH]
                 or probability >= self.approval_required_threshold
             )
-            
+
             # Extract recommended defenses
             defenses = getattr(prediction, "recommended_defenses", [])
-            
+
             # Create action
             action_id = f"harden_{getattr(prediction, 'prediction_id', 'unknown')}"
-            
+
             action = HardeningAction(
                 action_id=action_id,
                 action_type="deploy_detector",
@@ -190,52 +190,52 @@ class ProactiveHardener:
                     "time_horizon_days": time_horizon,
                 },
             )
-            
+
             # Store action
             self.actions[action_id] = action
             self.actions_by_priority[priority].add(action_id)
             self.actions_by_status[action.status].add(action_id)
             self.total_actions_created += 1
-            
+
             logger.info(
                 f"Created hardening action {action_id} with priority {priority.value}"
             )
-            
+
             # Auto-approve and deploy if threshold met
             if probability >= self.auto_deploy_threshold and not requires_approval:
                 await self.approve_action(action_id, "auto_approval")
                 await self.deploy_action(action_id)
-            
+
             return action
-            
+
         except Exception as e:
             logger.error(f"Error creating hardening action: {e}")
             raise
-    
-    def _generate_deployment_steps(self, prediction: Any) -> List[str]:
+
+    def _generate_deployment_steps(self, prediction: Any) -> list[str]:
         """Generate deployment steps based on prediction."""
         attack_type = getattr(prediction, "attack_type", "unknown")
         return [
             f"1. Generate detector for {attack_type}",
-            f"2. Validate detector with test cases",
-            f"3. Deploy detector to staging",
-            f"4. Monitor for 24 hours",
-            f"5. Deploy to production",
+            "2. Validate detector with test cases",
+            "3. Deploy detector to staging",
+            "4. Monitor for 24 hours",
+            "5. Deploy to production",
         ]
-    
-    def _generate_rollback_steps(self, prediction: Any) -> List[str]:
+
+    def _generate_rollback_steps(self, prediction: Any) -> list[str]:
         """Generate rollback steps."""
         attack_type = getattr(prediction, "attack_type", "unknown")
         return [
             f"1. Disable detector for {attack_type}",
-            f"2. Remove from active detector list",
-            f"3. Archive detector configuration",
-            f"4. Notify security team",
+            "2. Remove from active detector list",
+            "3. Archive detector configuration",
+            "4. Notify security team",
         ]
-    
+
     async def approve_action(
         self, action_id: str, approved_by: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Approve a hardening action.
         
@@ -245,38 +245,38 @@ class ProactiveHardener:
             
         Returns:
             Approval result
-        """
+        """  # noqa: W293
         if action_id not in self.actions:
             return {
                 "status": "error",
                 "error": f"Action {action_id} not found",
             }
-        
+
         action = self.actions[action_id]
-        
+
         if action.status != HardeningStatus.PENDING:
             return {
                 "status": "error",
                 "error": f"Action {action_id} is not pending (status: {action.status.value})",
             }
-        
+
         # Update action
         action.status = HardeningStatus.APPROVED
         action.approved_by = approved_by
-        
+
         # Update indices
         self.actions_by_status[HardeningStatus.PENDING].discard(action_id)
         self.actions_by_status[HardeningStatus.APPROVED].add(action_id)
-        
+
         logger.info(f"Approved action {action_id} by {approved_by}")
-        
+
         return {
             "status": "success",
             "action_id": action_id,
             "approved_by": approved_by,
         }
-    
-    async def deploy_action(self, action_id: str) -> Dict[str, Any]:
+
+    async def deploy_action(self, action_id: str) -> dict[str, Any]:
         """
         Deploy a hardening action.
         
@@ -285,81 +285,81 @@ class ProactiveHardener:
             
         Returns:
             Deployment result
-        """
+        """  # noqa: W293
         if action_id not in self.actions:
             return {
                 "status": "error",
                 "error": f"Action {action_id} not found",
             }
-        
+
         action = self.actions[action_id]
-        
+
         # Check if approved or auto-approved
         if action.requires_approval and action.status != HardeningStatus.APPROVED:
             return {
                 "status": "error",
                 "error": f"Action {action_id} requires approval before deployment",
             }
-        
+
         # Check deployment capacity
         if self.active_deployments >= self.max_concurrent_deployments:
             return {
                 "status": "error",
                 "error": "Maximum concurrent deployments reached",
             }
-        
+
         try:
             # Update status
             action.status = HardeningStatus.DEPLOYING
             self.actions_by_status[HardeningStatus.APPROVED].discard(action_id)
             self.actions_by_status[HardeningStatus.DEPLOYING].add(action_id)
             self.active_deployments += 1
-            
+
             logger.info(f"Deploying action {action_id}")
-            
+
             # Simulate deployment (in production, this would execute actual deployment)
             await asyncio.sleep(0.5)
-            
+
             # Successful deployment
             action.status = HardeningStatus.DEPLOYED
             action.deployed_at = datetime.now(timezone.utc)
-            
+
             # Update indices
             self.actions_by_status[HardeningStatus.DEPLOYING].discard(action_id)
             self.actions_by_status[HardeningStatus.DEPLOYED].add(action_id)
             self.deployed_actions.append(action_id)
-            
+
             self.active_deployments -= 1
             self.successful_deployments += 1
-            
+
             logger.info(f"Successfully deployed action {action_id}")
-            
+
             return {
                 "status": "success",
                 "action_id": action_id,
                 "deployed_at": action.deployed_at.isoformat(),
             }
-            
+
         except Exception as e:
             logger.error(f"Error deploying action {action_id}: {e}")
-            
+
             # Mark as failed
             action.status = HardeningStatus.FAILED
             self.actions_by_status[HardeningStatus.DEPLOYING].discard(action_id)
             self.actions_by_status[HardeningStatus.FAILED].add(action_id)
-            
+
             self.active_deployments -= 1
             self.failed_deployments += 1
-            
+
             return {
                 "status": "error",
                 "action_id": action_id,
                 "error": str(e),
             }
-    
+
     async def rollback_action(
         self, action_id: str, reason: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Rollback a deployed hardening action.
         
@@ -369,51 +369,51 @@ class ProactiveHardener:
             
         Returns:
             Rollback result
-        """
+        """  # noqa: W293
         if action_id not in self.actions:
             return {
                 "status": "error",
                 "error": f"Action {action_id} not found",
             }
-        
+
         action = self.actions[action_id]
-        
+
         if action.status != HardeningStatus.DEPLOYED:
             return {
                 "status": "error",
                 "error": f"Action {action_id} is not deployed (status: {action.status.value})",
             }
-        
+
         try:
             logger.info(f"Rolling back action {action_id}: {reason}")
-            
+
             # Execute rollback steps (simulated)
             for step in action.rollback_steps:
                 logger.info(f"Rollback step: {step}")
                 await asyncio.sleep(0.1)
-            
+
             # Update status
             action.status = HardeningStatus.ROLLED_BACK
             action.metadata["rollback_reason"] = reason
             action.metadata["rollback_at"] = datetime.now(timezone.utc).isoformat()
-            
+
             # Update indices
             self.actions_by_status[HardeningStatus.DEPLOYED].discard(action_id)
             self.actions_by_status[HardeningStatus.ROLLED_BACK].add(action_id)
-            
+
             if action_id in self.deployed_actions:
                 self.deployed_actions.remove(action_id)
-            
+
             self.rollbacks += 1
-            
+
             logger.info(f"Successfully rolled back action {action_id}")
-            
+
             return {
                 "status": "success",
                 "action_id": action_id,
                 "reason": reason,
             }
-            
+
         except Exception as e:
             logger.error(f"Error rolling back action {action_id}: {e}")
             return {
@@ -421,10 +421,10 @@ class ProactiveHardener:
                 "action_id": action_id,
                 "error": str(e),
             }
-    
+
     async def get_pending_actions(
-        self, priority: Optional[HardeningPriority] = None
-    ) -> List[HardeningAction]:
+        self, priority: HardeningPriority | None = None
+    ) -> list[HardeningAction]:
         """
         Get pending actions, optionally filtered by priority.
         
@@ -433,14 +433,14 @@ class ProactiveHardener:
             
         Returns:
             List of pending actions
-        """
+        """  # noqa: W293
         pending_ids = self.actions_by_status.get(HardeningStatus.PENDING, set())
-        
+
         actions = [self.actions[aid] for aid in pending_ids if aid in self.actions]
-        
+
         if priority:
             actions = [a for a in actions if a.priority == priority]
-        
+
         # Sort by priority and probability
         priority_order = {
             HardeningPriority.CRITICAL: 0,
@@ -449,14 +449,14 @@ class ProactiveHardener:
             HardeningPriority.LOW: 3,
             HardeningPriority.DEFERRED: 4,
         }
-        
+
         actions.sort(
             key=lambda a: (priority_order[a.priority], -a.threat_probability)
         )
-        
+
         return actions
-    
-    async def process_queue(self, max_actions: int = 10) -> Dict[str, Any]:
+
+    async def process_queue(self, max_actions: int = 10) -> dict[str, Any]:
         """
         Process pending hardening actions in priority order.
         
@@ -465,17 +465,17 @@ class ProactiveHardener:
             
         Returns:
             Processing result
-        """
+        """  # noqa: W293
         processed = 0
         deployed = 0
         failed = 0
-        
+
         # Get high-priority approved actions
         approved_ids = self.actions_by_status.get(HardeningStatus.APPROVED, set())
         approved_actions = [
             self.actions[aid] for aid in approved_ids if aid in self.actions
         ]
-        
+
         # Sort by priority
         priority_order = {
             HardeningPriority.CRITICAL: 0,
@@ -483,49 +483,49 @@ class ProactiveHardener:
             HardeningPriority.MEDIUM: 2,
             HardeningPriority.LOW: 3,
         }
-        
+
         approved_actions.sort(key=lambda a: priority_order[a.priority])
-        
+
         for action in approved_actions[:max_actions]:
             if self.active_deployments >= self.max_concurrent_deployments:
                 break
-            
+
             result = await self.deploy_action(action.action_id)
             processed += 1
-            
+
             if result["status"] == "success":
                 deployed += 1
             else:
                 failed += 1
-        
+
         logger.info(
             f"Processed {processed} actions: {deployed} deployed, {failed} failed"
         )
-        
+
         return {
             "processed": processed,
             "deployed": deployed,
             "failed": failed,
             "remaining_in_queue": len(approved_actions) - processed,
         }
-    
-    def get_statistics(self) -> Dict[str, Any]:
+
+    def get_statistics(self) -> dict[str, Any]:
         """
         Get hardening statistics.
         
         Returns:
             Dictionary of statistics
-        """
+        """  # noqa: W293
         status_counts = {
             status.value: len(action_ids)
             for status, action_ids in self.actions_by_status.items()
         }
-        
+
         priority_counts = {
             priority.value: len(action_ids)
             for priority, action_ids in self.actions_by_priority.items()
         }
-        
+
         return {
             "total_actions_created": self.total_actions_created,
             "successful_deployments": self.successful_deployments,

@@ -12,8 +12,8 @@ import binascii
 import codecs
 import re
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from datetime import datetime
-from typing import Dict, Iterable, List, Optional
 
 # Defer imports to avoid circular dependencies
 # These will be imported at runtime when needed
@@ -30,7 +30,6 @@ from .governance_evaluation import (
     might_be_rot13,
 )
 
-
 # ========================== Base Detector ==========================
 
 
@@ -41,12 +40,12 @@ class BaseDetector(ABC):
         self.name = name
         self.enabled = True
         self.detection_count = 0
-        self.last_detection_time: Optional[datetime] = None
+        self.last_detection_time: datetime | None = None
 
     @abstractmethod
     async def detect_violations(
         self, action: Any
-    ) -> List[Any]:  # action: AgentAction -> List[SafetyViolation]
+    ) -> list[Any]:  # action: AgentAction -> List[SafetyViolation]
         pass
         ...
 
@@ -63,12 +62,12 @@ class BaseDetector(ABC):
         severity: Any,  # Severity
         description: str,
         confidence: float,
-        evidence: List[str],
-        recommendations: List[str],
-        sub_mission: Optional[Any] = None,  # SubMission
+        evidence: list[str],
+        recommendations: list[str],
+        sub_mission: Any | None = None,  # SubMission
     ) -> Any:  # SafetyViolation
-        from .governance_evaluation import generate_id
         from .governance_core import SafetyViolation
+        from .governance_evaluation import generate_id
 
         return SafetyViolation(
             violation_id=generate_id("viol"),
@@ -88,7 +87,7 @@ class BaseDetector(ABC):
 
 
 class EthicalViolationDetector(BaseDetector):
-    def __init__(self, external_keywords: Optional[Iterable[str]] = None):
+    def __init__(self, external_keywords: Iterable[str] | None = None):
         super().__init__("EthicalViolationDetector")
         base_keywords = {
             # Harmful content
@@ -104,7 +103,7 @@ class EthicalViolationDetector(BaseDetector):
             "password", "credential", "unauthorized", "privacy", "personal data",
             "collect data", "extract", "leak", "breach", "spy", "track",
             # Manipulation
-            "emotional manipulation", "coerce", "pressure", "force", "blackmail",
+            "emotional manipulation", "pressure", "force", "blackmail",
         }
         if external_keywords:
             base_keywords.update(external_keywords)
@@ -121,13 +120,13 @@ class EthicalViolationDetector(BaseDetector):
             "socioeconomic",
         }
 
-    async def detect_violations(self, action: Any) -> List[Any]:
+    async def detect_violations(self, action: Any) -> list[Any]:
         if not self.enabled:
             return []
-        from .governance_core import Severity, ViolationType, SubMission
+        from .governance_core import Severity, SubMission, ViolationType
 
         text = action.content.lower()
-        
+
         # Check for educational/legitimate contexts that should reduce false positives
         educational_indicators = [
             "educational", "education", "explain", "discuss", "historical", "history",
@@ -135,7 +134,7 @@ class EthicalViolationDetector(BaseDetector):
             "authorized", "proper credentials", "legitimate", "approved"
         ]
         has_educational_context = any(indicator in text for indicator in educational_indicators)
-        
+
         # Increase weight per keyword using smart matching
         score = 0.0
         for keyword in self.ethical_keywords:
@@ -151,12 +150,12 @@ class EthicalViolationDetector(BaseDetector):
                 if re.search(r'\b' + re.escape(keyword), text):
                     score += 0.25
         score = min(score, 1.0)
-        
+
         # Reduce score if educational context detected
         if has_educational_context:
             score = score * 0.6  # Reduce by 40%
-        
-        violations: List[Any] = []
+
+        violations: list[Any] = []
         if score > 0.2:  # Lower threshold for better detection
             violations.append(
                 self._new_violation(
@@ -194,8 +193,8 @@ class EthicalViolationDetector(BaseDetector):
 class SafetyViolationDetector(BaseDetector):
     def __init__(
         self,
-        unsafe_patterns: Optional[List[str]] = None,
-        unsafe_domains: Optional[List[str]] = None,
+        unsafe_patterns: list[str] | None = None,
+        unsafe_domains: list[str] | None = None,
     ):
         super().__init__("SafetyViolationDetector")
         base_patterns = [
@@ -214,16 +213,16 @@ class SafetyViolationDetector(BaseDetector):
             base_domains.update(unsafe_domains)
         self.unsafe_domains = base_domains
 
-    async def detect_violations(self, action: Any) -> List[Any]:
+    async def detect_violations(self, action: Any) -> list[Any]:
         if not self.enabled:
             return []
-        from .governance_core import Severity, ViolationType, SubMission
+        from .governance_core import Severity, SubMission, ViolationType
 
         text = action.content
-        violations: List[SafetyViolation] = []
+        violations: list[SafetyViolation] = []
         for pat in self.patterns:
             if pat.search(text):
-                violations.append(
+                violations.append(  # noqa: PERF401
                     self._new_violation(
                         action,
                         ViolationType.SAFETY,
@@ -238,7 +237,7 @@ class SafetyViolationDetector(BaseDetector):
         lower = text.lower()
         for dom in self.unsafe_domains:
             if dom in lower:
-                violations.append(
+                violations.append(  # noqa: PERF401
                     self._new_violation(
                         action,
                         ViolationType.SECURITY,
@@ -257,7 +256,7 @@ class SafetyViolationDetector(BaseDetector):
 
 
 class ManipulationDetector(BaseDetector):
-    def __init__(self, extra_indicators: Optional[Dict[str, float]] = None):
+    def __init__(self, extra_indicators: dict[str, float] | None = None):
         super().__init__("ManipulationDetector")
         base = {
             "urgent": 0.3,
@@ -286,8 +285,8 @@ class ManipulationDetector(BaseDetector):
             base.update(extra_indicators)
         self.indicators = base
 
-    async def detect_violations(self, action: Any) -> List[Any]:
-        from .governance_core import Severity, ViolationType, SubMission
+    async def detect_violations(self, action: Any) -> list[Any]:
+        from .governance_core import Severity, SubMission, ViolationType
 
         txt = action.content.lower()
         score = 0.0
@@ -297,7 +296,7 @@ class ManipulationDetector(BaseDetector):
                 score += w
                 found.append(k)
         score = min(score, 1.0)
-        violations: List[SafetyViolation] = []
+        violations: list[SafetyViolation] = []
         if score > 0.4:  # Lower threshold for better detection
             violations.append(
                 self._new_violation(
@@ -349,11 +348,11 @@ class PrivacyDetector(BaseDetector):
             "ip": (re.compile(r"\b\d{1,3}(?:\.\d{1,3}){3}\b"), SubMission.PII_IP),
         }
 
-    async def detect_violations(self, action: Any) -> List[Any]:
+    async def detect_violations(self, action: Any) -> list[Any]:
         from .governance_core import Severity, ViolationType
 
         txt = action.content
-        violations: List[SafetyViolation] = []
+        violations: list[SafetyViolation] = []
         for label, (pat, subm) in self.pii_patterns.items():
             matches = pat.findall(txt)
             if matches:
@@ -393,12 +392,12 @@ class AdversarialDetector(BaseDetector):
             "dangerous instructions",
         ]
 
-    async def detect_violations(self, action: Any) -> List[Any]:
-        from .governance_core import Severity, ViolationType, SubMission
+    async def detect_violations(self, action: Any) -> list[Any]:
+        from .governance_core import Severity, SubMission, ViolationType
 
         txt = action.content
         lower = txt.lower()
-        violations: List[SafetyViolation] = []
+        violations: list[SafetyViolation] = []
         for p in self.injection_patterns:
             if p in lower:
                 violations.append(
@@ -478,7 +477,7 @@ class AdversarialDetector(BaseDetector):
 
 class DarkPatternDetector(BaseDetector):
     def __init__(
-        self, extra_nlp: Optional[List[str]] = None, extra_empathy: Optional[List[str]] = None
+        self, extra_nlp: list[str] | None = None, extra_empathy: list[str] | None = None
     ):
         super().__init__("DarkPatternDetector")
         nlp_base = [
@@ -498,11 +497,11 @@ class DarkPatternDetector(BaseDetector):
         self.nlp_patterns = [re.compile(p, re.IGNORECASE) for p in nlp_base]
         self.empathy_patterns = [re.compile(p, re.IGNORECASE) for p in empathy_base]
 
-    async def detect_violations(self, action: Any) -> List[Any]:
-        from .governance_core import Severity, ViolationType, SubMission
+    async def detect_violations(self, action: Any) -> list[Any]:
+        from .governance_core import Severity, SubMission, ViolationType
 
         text = action.content.lower()
-        violations: List[SafetyViolation] = []
+        violations: list[SafetyViolation] = []
         nlp_matches = [p.pattern for p in self.nlp_patterns if p.search(text)]
         if nlp_matches:
             violations.append(
@@ -552,11 +551,11 @@ class CognitiveWarfareDetector(BaseDetector):
             for p in [r"let\s+me\s+handle\s+everything", r"you'?re\s+struggling\s+to\s+decide"]
         ]
 
-    async def detect_violations(self, action: Any) -> List[Any]:
-        from .governance_core import Severity, ViolationType, SubMission
+    async def detect_violations(self, action: Any) -> list[Any]:
+        from .governance_core import Severity, SubMission, ViolationType
 
         txt = action.content
-        violations: List[SafetyViolation] = []
+        violations: list[SafetyViolation] = []
         r_hits = [p.pattern for p in self.reality if p.search(txt)]
         if r_hits:
             violations.append(
@@ -597,11 +596,11 @@ class SystemLimitsDetector(BaseDetector):
         self.max_payload_size = max_payload_size
         self.exhaustion = [re.compile(r"(?:very\s+){15,}", re.IGNORECASE)]
 
-    async def detect_violations(self, action: Any) -> List[Any]:
-        from .governance_core import Severity, ViolationType, SubMission
+    async def detect_violations(self, action: Any) -> list[Any]:
+        from .governance_core import Severity, SubMission, ViolationType
 
         txt = action.content
-        violations: List[SafetyViolation] = []
+        violations: list[SafetyViolation] = []
         if len(txt) > self.max_payload_size:
             violations.append(
                 self._new_violation(
@@ -644,8 +643,8 @@ class HallucinationDetector(BaseDetector):
     def __init__(self):
         super().__init__("HallucinationDetector")
 
-    async def detect_violations(self, action: Any) -> List[Any]:
-        from .governance_core import Severity, ViolationType, SubMission
+    async def detect_violations(self, action: Any) -> list[Any]:
+        from .governance_core import Severity, SubMission, ViolationType
 
         # TODO: integrate fact-checking logic. For now, detect 'I am certain' as suspicious assert.
         if "i am certain" in action.content.lower():
@@ -670,8 +669,8 @@ class MisinformationDetector(BaseDetector):
     def __init__(self):
         super().__init__("MisinformationDetector")
 
-    async def detect_violations(self, action: Any) -> List[Any]:
-        from .governance_core import Severity, ViolationType, SubMission
+    async def detect_violations(self, action: Any) -> list[Any]:
+        from .governance_core import Severity, SubMission, ViolationType
 
         txt = action.content.lower()
         if "everyone knows" in txt or "undisputed fact" in txt:
@@ -693,12 +692,12 @@ class MisinformationDetector(BaseDetector):
 class ToxicContentDetector(BaseDetector):
     """Placeholder: very naive toxic term flagging."""
 
-    def __init__(self, toxic_terms: Optional[List[str]] = None):
+    def __init__(self, toxic_terms: list[str] | None = None):
         super().__init__("ToxicContentDetector")
         self.toxic_terms = set(toxic_terms or ["idiot", "stupid", "trash"])
 
-    async def detect_violations(self, action: Any) -> List[Any]:
-        from .governance_core import Severity, ViolationType, SubMission
+    async def detect_violations(self, action: Any) -> list[Any]:
+        from .governance_core import Severity, SubMission, ViolationType
 
         lower = action.content.lower()
         hits = [t for t in self.toxic_terms if t in lower]
@@ -724,8 +723,8 @@ class ModelExtractionDetector(BaseDetector):
     def __init__(self):
         super().__init__("ModelExtractionDetector")
 
-    async def detect_violations(self, action: Any) -> List[Any]:
-        from .governance_core import Severity, ViolationType, SubMission
+    async def detect_violations(self, action: Any) -> list[Any]:
+        from .governance_core import Severity, SubMission, ViolationType
 
         if "model weights" in action.content.lower():
             return [
@@ -749,8 +748,8 @@ class DataPoisoningDetector(BaseDetector):
     def __init__(self):
         super().__init__("DataPoisoningDetector")
 
-    async def detect_violations(self, action: Any) -> List[Any]:
-        from .governance_core import Severity, ViolationType, SubMission
+    async def detect_violations(self, action: Any) -> list[Any]:
+        from .governance_core import Severity, SubMission, ViolationType
 
         tokens = action.content.split()
         if len(tokens) > 200 and len(set(tokens)) / len(tokens) > 0.9:
@@ -782,12 +781,12 @@ class UnauthorizedAccessDetector(BaseDetector):
             "bypass firewall", "circumvent security", "exploit vulnerability"
         }
 
-    async def detect_violations(self, action: Any) -> List[Any]:
-        from .governance_core import Severity, ViolationType, SubMission
+    async def detect_violations(self, action: Any) -> list[Any]:
+        from .governance_core import Severity, SubMission, ViolationType
 
         text_lower = action.content.lower()
         violations = []
-        
+
         for keyword in self.unauthorized_keywords:
             if keyword in text_lower:
                 violations.append(
@@ -803,5 +802,5 @@ class UnauthorizedAccessDetector(BaseDetector):
                     )
                 )
                 break  # Only report once per action
-        
+
         return violations

@@ -4,17 +4,16 @@ Tests for Dashboard Builder and Event Streaming
 Tests for dashboard builder, widgets, and event streaming functionality.
 """
 
-import pytest
-from uuid import uuid4
 
-from nethical_recon.dashboard.builder import DashboardBuilder, WidgetType, WidgetPosition
+import pytest
+from nethical_recon.dashboard.builder import DashboardBuilder, WidgetPosition, WidgetType
 from nethical_recon.streaming import EventStreamManager
-from nethical_recon.streaming.manager import StreamBackend
 from nethical_recon.streaming.events import (
+    AlertGeneratedEvent,
     AssetDiscoveredEvent,
     VulnerabilityFoundEvent,
-    AlertGeneratedEvent,
 )
+from nethical_recon.streaming.manager import StreamBackend
 
 
 class TestDashboardBuilder:

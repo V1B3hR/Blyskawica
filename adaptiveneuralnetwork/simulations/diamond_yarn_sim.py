@@ -3,10 +3,8 @@
 Środowisko testowe dla fotonicznej logiki i zarządzania termicznego Błyskawicy.
 Symuluje wysokie obciążenia kognitywne (generowanie ciepła) oraz zjawisko 
 dekoherencji kwantowej (szum N0-N6 z QDataSet).
-"""
+"""  # noqa: W291
 
-import time
-import random
 import logging
 
 logger = logging.getLogger("DiamondYarnSim")
@@ -17,7 +15,7 @@ class DiamondYarnPoligon:
         self.core_temperature = 0.0 # Względna jednostka ciepła (0.0 = idealne chłodzenie)
         self.logic_stability = 100.0 # % stabilności logiki fotonicznej
         self.noise_level = "N0" # Brak szumu kwantowego na start
-        
+
         logger.info("[INIT] Poligon Diamond Yarn aktywowany. Czekam na obciążenie.")
 
     def apply_cognitive_load(self, intensity: int):
@@ -39,7 +37,7 @@ class DiamondYarnPoligon:
         heat_removed = min(self.core_temperature, cooling_power)
         self.core_temperature -= heat_removed
         logger.info(f"[COOLING] Aktywacja MesoPhone. Odprowadzono ciepło: -{heat_removed:.2f}. Aktualna temp: {self.core_temperature:.2f}")
-        
+
         # Chłodzenie przywraca stabilność
         if self.core_temperature < 10.0:
             self.logic_stability = min(100.0, self.logic_stability + 5.0)
@@ -51,16 +49,16 @@ class DiamondYarnPoligon:
         """
         self.noise_level = profile
         damage = 0.0
-        
+
         if profile == "N1":
             damage = 2.0
         elif profile == "N6":
             damage = 15.0
-            
+
         # Jeśli rdzeń jest gorący, szum kwantowy powoduje większe spustoszenie (dekoherencja termiczna)
         thermal_penalty = self.core_temperature * 0.1
         total_degradation = damage + thermal_penalty
-        
+
         self.logic_stability -= total_degradation
         logger.error(f"[NOISE] Wprowadzono szum {profile}. Degradacja stabilności: -{total_degradation:.2f}%. Aktualna stabilność: {self.logic_stability:.2f}%")
         self._evaluate_stability()
@@ -78,10 +76,10 @@ if __name__ == "__main__":
     # 1. Zwykła praca
     poligon.apply_cognitive_load(10)
     poligon.simulate_mesophone_cooling()
-    
+
     # 2. Atak szumem
     poligon.inject_quantum_noise("N1")
-    
+
     # 3. Krytyczny stres
     poligon.apply_cognitive_load(40)
     poligon.inject_quantum_noise("N6")

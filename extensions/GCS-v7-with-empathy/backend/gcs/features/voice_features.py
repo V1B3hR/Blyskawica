@@ -21,11 +21,11 @@ Notes:
   transformers, webrtcvad. All are used only when available.
 """
 
-from typing import Dict, List, Optional, Tuple
+import logging
+
 import numpy as np
 from scipy import signal as sp_signal
 from scipy.fftpack import dct
-import logging
 
 # Configure logger for module consumers
 logger = logging.getLogger(__name__)
@@ -59,8 +59,8 @@ def _safe_import_torch_audio_embedding_tools():
     except Exception:
         logger.debug("torchaudio not available, trying transformers.")
     try:
-        from transformers import Wav2Vec2Processor, Wav2Vec2Model
         import torch
+        from transformers import Wav2Vec2Model, Wav2Vec2Processor
         backend["name"] = "transformers"
         backend["torch"] = torch
         backend["processor"] = Wav2Vec2Processor
@@ -81,7 +81,7 @@ def _mel_to_hz(mel: float) -> float:
     return 700.0 * (10 ** (mel / 2595.0) - 1.0)
 
 
-def _triangular_filterbank(n_fft_bins: int, sr: int, n_mels: int, fmin: float = 0.0, fmax: Optional[float] = None) -> np.ndarray:
+def _triangular_filterbank(n_fft_bins: int, sr: int, n_mels: int, fmin: float = 0.0, fmax: float | None = None) -> np.ndarray:
     """
     Create a mel filterbank with triangular filters (better than naive rectangular).
     Returns filterbank matrix of shape (n_mels, n_fft_bins)
@@ -144,7 +144,7 @@ class VoiceFeatureExtractor:
                  extract_spectral: bool = True,
                  use_librosa: bool = True,
                  use_vad: bool = False,
-                 embeddings_backend: Optional[str] = "auto",
+                 embeddings_backend: str | None = "auto",
                  output_dim: int = 128):
         self.sr = int(sampling_rate)
         self.n_mfcc = int(n_mfcc)
@@ -517,7 +517,7 @@ class VoiceFeatureExtractor:
             logger.warning(f"Spectral fallback failed: {e}")
             return np.zeros(11, dtype=np.float32)
 
-    def extract_embeddings(self, audio_signal: np.ndarray) -> Optional[np.ndarray]:
+    def extract_embeddings(self, audio_signal: np.ndarray) -> np.ndarray | None:
         """
         Attempt to compute a compact embedding using wav2vec2 if available.
         Returns a low-dimensional vector (e.g., 16 dims) or None if embeddings are not available.

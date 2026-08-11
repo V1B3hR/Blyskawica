@@ -3,8 +3,8 @@ API Versioning (/api/v1, /api/v2)
 """
 
 import logging
-from typing import Any
 from enum import Enum
+from typing import Any
 
 
 class APIVersion(Enum):

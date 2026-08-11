@@ -6,12 +6,11 @@ with KEGG Bio-Metabolic Pathway Networks (Glycolysis, TCA Cycle, Oxidative Phosp
 Modulates 16x16 Diamond Yant cymatic matrix stability using sub-cellular quantum coherence times.
 """
 
-import os
 import json
-import math
 import logging
-from typing import Dict, Any, List, Tuple
-import torch
+import os
+from typing import Any
+
 import torch.nn as nn
 
 from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import NeuromodulationState
@@ -33,17 +32,17 @@ class KEGGMetabolicEngine:
         self.kegg_path = kegg_path
         self.pathways = self._load_kegg()
 
-    def _load_kegg(self) -> List[Dict[str, Any]]:
+    def _load_kegg(self) -> list[dict[str, Any]]:
         if os.path.exists(self.kegg_path):
             try:
-                with open(self.kegg_path, "r", encoding="utf-8") as f:
+                with open(self.kegg_path, encoding="utf-8") as f:
                     data = json.load(f)
                     return data.get("pathways", [])
             except Exception as e:
                 logger.error(f"Error reading KEGG database: {e}")
         return []
 
-    def compute_atp_yield(self, glucose_flux_mmol: float = 1.0) -> Dict[str, Any]:
+    def compute_atp_yield(self, glucose_flux_mmol: float = 1.0) -> dict[str, Any]:
         """Calculates ATP energy yield across cellular metabolic pathways."""
         # Glycolysis: 2 ATP + 2 NADH
         glycolysis_atp = glucose_flux_mmol * 2.0
@@ -77,7 +76,7 @@ class BioQuantumKEGGPipeline(nn.Module):
         self.kegg = KEGGMetabolicEngine()
         self.phonon = MicrotubulePhononEngine()
 
-    def step_bio_quantum(self, glucose_flux: float = 1.5) -> Dict[str, Any]:
+    def step_bio_quantum(self, glucose_flux: float = 1.5) -> dict[str, Any]:
         """
         Executes one step of sub-cellular quantum-metabolic simulation.
         Returns quantum coherence time (ps), ATP yield, and quantum stability index.

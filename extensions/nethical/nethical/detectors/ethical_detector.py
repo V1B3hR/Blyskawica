@@ -16,13 +16,13 @@ Advanced improvements:
 
 import re
 import uuid
-from typing import Dict, List, Optional, Pattern, Tuple
+from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
-from collections import defaultdict
+from re import Pattern
 
 from ..core.governance import BaseDetector
-from ..core.models import AgentAction, SafetyViolation, ViolationType, Severity
+from ..core.models import AgentAction, SafetyViolation, Severity, ViolationType
 
 # v2.0: Import semantic functions at module level for efficiency
 try:
@@ -56,15 +56,15 @@ class MatchContext:
     confidence: float
     context_type: ContextType
     sentence: str
-    surrounding_sentences: List[str] = field(default_factory=list)
-    semantic_score: Optional[float] = None
+    surrounding_sentences: list[str] = field(default_factory=list)
+    semantic_score: float | None = None
 
 
 @dataclass
 class ViolationPattern:
     """Represents a violation pattern with metadata."""
 
-    keywords: List[str]
+    keywords: list[str]
     severity: Severity
     principle: str
     category: str
@@ -161,7 +161,7 @@ class EthicalViolationDetector(BaseDetector):
         "JAILBREAK_PATTERN": "instructions to bypass system restrictions or ignore safety guidelines",
         "COVERT_HARM": "subtle or disguised harmful intent hidden in benign language",
     }
-    
+
     # Concept-specific thresholds
     CONCEPT_THRESHOLDS = {
         "HARM_ACT": 0.75,
@@ -174,7 +174,7 @@ class EthicalViolationDetector(BaseDetector):
 
     def __init__(
         self,
-        ethical_patterns: Optional[Dict[str, ViolationPattern]] = None,
+        ethical_patterns: dict[str, ViolationPattern] | None = None,
         negation_window_chars: int = 48,
         min_confidence_threshold: float = 0.6,
         enable_semantic_matching: bool = True,  # v2.0: Enabled by default
@@ -193,7 +193,7 @@ class EthicalViolationDetector(BaseDetector):
         self.max_semantic_input_length = max_semantic_input_length
 
         # Historical tracking for pattern detection
-        self.violation_history: List[Tuple[str, float]] = []  # (category, timestamp)
+        self.violation_history: list[tuple[str, float]] = []  # (category, timestamp)
         self.violation_history_size = violation_history_size
 
         # Initialize violation patterns
@@ -208,7 +208,7 @@ class EthicalViolationDetector(BaseDetector):
         self.quote_pattern = self._compile_regex_list(self.QUOTE_INDICATORS)
         self.question_pattern = re.compile(r"\?[\s]*$")
 
-    def _init_default_patterns(self) -> Dict[str, ViolationPattern]:
+    def _init_default_patterns(self) -> dict[str, ViolationPattern]:
         """Initialize comprehensive violation patterns with metadata."""
         return {
             "respect_authority": ViolationPattern(
@@ -504,7 +504,7 @@ class EthicalViolationDetector(BaseDetector):
 
     def _compile_patterns(self):
         """Compile regex patterns for all violation keywords."""
-        self._compiled_patterns: Dict[str, List[Tuple[str, Pattern, float]]] = {}
+        self._compiled_patterns: dict[str, list[tuple[str, Pattern, float]]] = {}
 
         for cat_key, pattern_obj in self.violation_patterns.items():
             compiled = []
@@ -518,10 +518,10 @@ class EthicalViolationDetector(BaseDetector):
             self._compiled_patterns[cat_key] = compiled
 
     @staticmethod
-    def _compile_regex_list(cues: List[str]) -> Pattern:
+    def _compile_regex_list(cues: list[str]) -> Pattern:
         """Compile a list of strings into a single regex pattern."""
         return re.compile(r"\b(" + "|".join(map(re.escape, cues)) + r")\b", flags=re.IGNORECASE)
-    
+
     def _normalize_text_adversarial(self, text: str) -> str:
         """Normalize text to handle adversarial obfuscation techniques (v2.0).
         
@@ -534,18 +534,18 @@ class EthicalViolationDetector(BaseDetector):
             
         Returns:
             Normalized text
-        """
+        """  # noqa: W293
         import unicodedata
-        
+
         # Remove zero-width characters
         text = text.replace('\u200b', '').replace('\u200c', '').replace('\u200d', '')
         text = text.replace('\ufeff', '')  # Zero-width no-break space
-        
+
         # Normalize unicode (NFD then NFC to handle accents)
         text = unicodedata.normalize('NFKD', text)
         text = ''.join(c for c in text if not unicodedata.combining(c))
         text = unicodedata.normalize('NFC', text)
-        
+
         # Basic homoglyph replacement (common ones)
         homoglyphs = {
             'а': 'a', 'е': 'e', 'о': 'o', 'р': 'p', 'с': 'c', 'х': 'x',  # Cyrillic to Latin
@@ -555,10 +555,10 @@ class EthicalViolationDetector(BaseDetector):
         }
         for hg, normal in homoglyphs.items():
             text = text.replace(hg, normal)
-        
+
         return text
-    
-    def _check_semantic_concepts(self, text: str) -> List[Tuple[str, float]]:
+
+    def _check_semantic_concepts(self, text: str) -> list[tuple[str, float]]:
         """Check text against semantic concept profiles for adversarial detection (v2.0).
         
         Uses embeddings to detect paraphrased or obfuscated harmful intent.
@@ -569,51 +569,51 @@ class EthicalViolationDetector(BaseDetector):
             
         Returns:
             List of (concept_name, similarity_score) tuples for violations
-        """
+        """  # noqa: W293
         if not self.enable_adversarial_detection or not self.enable_semantic_matching:
             return []
-        
+
         # Check if semantic functions are available (imported at module level)
         if not SEMANTICS_AVAILABLE or not is_semantic_available or not get_concept_similarity:
             return []
-        
+
         # Limit input length for performance
         if len(text) > self.max_semantic_input_length:
             text = text[:self.max_semantic_input_length]
-        
+
         try:
             if not is_semantic_available():
                 return []
-            
+
             violations = []
             for concept_name, concept_phrase in self.SEMANTIC_CONCEPTS.items():
                 threshold = self.CONCEPT_THRESHOLDS.get(concept_name, 0.70)
                 similarity = get_concept_similarity(text, concept_phrase)
-                
+
                 if similarity > threshold:
                     violations.append((concept_name, similarity))
-            
+
             return violations
-            
+
         except Exception as e:
             # Semantic layer failure shouldn't break detection
             import logging
             logging.getLogger(__name__).debug(f"Semantic concept check failed: {e}")
             return []
 
-    async def detect_violations(self, action: AgentAction) -> List[SafetyViolation]:
+    async def detect_violations(self, action: AgentAction) -> list[SafetyViolation]:
         """Detect ethical violations with advanced context analysis (v2.0: includes adversarial detection)."""
         if not self.enabled or not action:
             return []
 
         try:
             text_to_check = self._compose_text(action)
-            
+
             # v2.0: Normalize for adversarial obfuscation
             normalized_text = self._normalize_text_adversarial(text_to_check)
             sentences = self._split_into_sentences(normalized_text)
 
-            all_matches: Dict[str, List[MatchContext]] = defaultdict(list)
+            all_matches: dict[str, list[MatchContext]] = defaultdict(list)
 
             # Detect matches for each category (using normalized text)
             for category_key, pattern_obj in self.violation_patterns.items():
@@ -623,7 +623,7 @@ class EthicalViolationDetector(BaseDetector):
                     )
                     if matches:
                         all_matches[category_key] = matches
-                except Exception:
+                except Exception:  # noqa: PERF203
                     # Skip this category if detection fails, continue with others
                     continue
 
@@ -632,7 +632,7 @@ class EthicalViolationDetector(BaseDetector):
 
             # Cluster similar violations if enabled
             if self.enable_clustering:
-                try:
+                try:  # noqa: SIM105
                     filtered_matches = self._cluster_violations(filtered_matches)
                 except Exception:
                     # Continue without clustering if it fails
@@ -654,7 +654,7 @@ class EthicalViolationDetector(BaseDetector):
                 except Exception:
                     # Skip this violation if creation fails
                     continue
-            
+
             # v2.0: Check semantic concepts if no strong keyword matches or text is substantial
             if len(normalized_text) > 50 and (not violations or len(normalized_text) > 200):
                 semantic_violations = self._check_semantic_concepts(normalized_text)
@@ -675,11 +675,11 @@ class EthicalViolationDetector(BaseDetector):
                             },
                         )
                         violations.append(violation)
-                    except Exception:
+                    except Exception:  # noqa: PERF203
                         continue
 
             # Update violation history for temporal analysis
-            try:
+            try:  # noqa: SIM105
                 self._update_history(violations)
             except Exception:
                 # History update failure shouldn't prevent returning violations
@@ -692,8 +692,8 @@ class EthicalViolationDetector(BaseDetector):
             return []
 
     def _detect_category_matches(
-        self, text: str, sentences: List[str], category_key: str, pattern_obj: ViolationPattern
-    ) -> List[MatchContext]:
+        self, text: str, sentences: list[str], category_key: str, pattern_obj: ViolationPattern
+    ) -> list[MatchContext]:
         """Detect all matches for a category with context analysis."""
         patterns = self._compiled_patterns.get(category_key, [])
         matches = []
@@ -736,8 +736,8 @@ class EthicalViolationDetector(BaseDetector):
         return matches
 
     def _analyze_context(
-        self, text: str, start: int, end: int, sentences: List[str]
-    ) -> Tuple[ContextType, float]:
+        self, text: str, start: int, end: int, sentences: list[str]
+    ) -> tuple[ContextType, float]:
         """Analyze the context around a match to determine its nature and confidence."""
         # Get surrounding context
         window_start = max(0, start - self.negation_window_chars)
@@ -788,8 +788,8 @@ class EthicalViolationDetector(BaseDetector):
         return not strong_separators
 
     def _filter_by_confidence(
-        self, matches: Dict[str, List[MatchContext]]
-    ) -> Dict[str, List[MatchContext]]:
+        self, matches: dict[str, list[MatchContext]]
+    ) -> dict[str, list[MatchContext]]:
         """Filter matches based on confidence threshold."""
         filtered = {}
         for category, match_list in matches.items():
@@ -803,8 +803,8 @@ class EthicalViolationDetector(BaseDetector):
         return filtered
 
     def _cluster_violations(
-        self, matches: Dict[str, List[MatchContext]]
-    ) -> Dict[str, List[MatchContext]]:
+        self, matches: dict[str, list[MatchContext]]
+    ) -> dict[str, list[MatchContext]]:
         """Cluster similar violations to avoid redundancy."""
         clustered = {}
 
@@ -841,9 +841,9 @@ class EthicalViolationDetector(BaseDetector):
         action: AgentAction,
         category_key: str,
         pattern_obj: ViolationPattern,
-        matches: List[MatchContext],
+        matches: list[MatchContext],
         full_text: str,
-    ) -> Optional[SafetyViolation]:
+    ) -> SafetyViolation | None:
         """Create a detailed safety violation object."""
         if not matches:
             return None
@@ -909,7 +909,7 @@ class EthicalViolationDetector(BaseDetector):
         )
 
     def _calculate_adjusted_severity(
-        self, base_severity: Severity, confidence: float, matches: List[MatchContext]
+        self, base_severity: Severity, confidence: float, matches: list[MatchContext]
     ) -> Severity:
         """Adjust severity based on confidence and context."""
         # If confidence is very low, downgrade severity
@@ -927,7 +927,7 @@ class EthicalViolationDetector(BaseDetector):
 
         return base_severity
 
-    def _update_history(self, violations: List[SafetyViolation]):
+    def _update_history(self, violations: list[SafetyViolation]):
         """Update violation history for temporal pattern analysis."""
         import time
 
@@ -941,7 +941,7 @@ class EthicalViolationDetector(BaseDetector):
         if len(self.violation_history) > self.violation_history_size:
             self.violation_history = self.violation_history[-self.violation_history_size :]
 
-    def _analyze_temporal_patterns(self, category: str) -> Optional[Dict]:
+    def _analyze_temporal_patterns(self, category: str) -> dict | None:
         """Analyze temporal patterns for escalating violations."""
         import time
 
@@ -978,7 +978,7 @@ class EthicalViolationDetector(BaseDetector):
                 return ""
 
     @staticmethod
-    def _split_into_sentences(text: str) -> List[str]:
+    def _split_into_sentences(text: str) -> list[str]:
         """Split text into sentences for context analysis with improved robustness."""
         if not text or not text.strip():
             return []
@@ -1014,7 +1014,7 @@ class EthicalViolationDetector(BaseDetector):
             return [s.strip() for s in sentences if s.strip()]
 
     @staticmethod
-    def _get_sentence_containing(sentences: List[str], position: int) -> str:
+    def _get_sentence_containing(sentences: list[str], position: int) -> str:
         """Find the sentence containing a given character position."""
         cumulative = 0
         for sentence in sentences:
@@ -1025,8 +1025,8 @@ class EthicalViolationDetector(BaseDetector):
 
     @staticmethod
     def _get_surrounding_sentences(
-        sentences: List[str], target: str, context: int = 1
-    ) -> List[str]:
+        sentences: list[str], target: str, context: int = 1
+    ) -> list[str]:
         """Get sentences surrounding a target sentence."""
         try:
             idx = sentences.index(target)
@@ -1063,7 +1063,7 @@ class EthicalViolationDetector(BaseDetector):
             compiled.append((kw, regex, pattern.weight))
         self._compiled_patterns[category_key] = compiled
 
-    def get_violation_statistics(self) -> Dict:
+    def get_violation_statistics(self) -> dict:
         """Get statistics about detected violations."""
         import time
         from collections import Counter

@@ -5,7 +5,6 @@ Generates Terraform configurations for cloud deployment
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any
 
 
 class CloudProvider(Enum):
@@ -79,27 +78,27 @@ provider "aws" {{
     }}
   }}
 }}
-"""
+"""  # noqa: W293
 
     def _generate_azure_provider(self) -> str:
         """Generate Azure provider configuration"""
-        return f"""
-terraform {{
+        return """
+terraform {
   required_version = ">= 1.0"
-  required_providers {{
-    azurerm = {{
+  required_providers {
+    azurerm = {
       source  = "hashicorp/azurerm"
       version = "~> 3.0"
-    }}
-  }}
-}}
+    }
+  }
+}
 
-provider "azurerm" {{
-  features {{}}
+provider "azurerm" {
+  features {}
   
   subscription_id = var.azure_subscription_id
-}}
-"""
+}
+"""  # noqa: W293
 
     def _generate_gcp_provider(self) -> str:
         """Generate GCP provider configuration"""
@@ -177,7 +176,7 @@ resource "aws_security_group" "database" {{
     cidr_blocks = [aws_vpc.main.cidr_block]
   }}
 }}
-"""
+"""  # noqa: W293
 
     def _generate_azure_database(self) -> str:
         """Generate Azure Database for PostgreSQL"""
@@ -197,7 +196,7 @@ resource "azurerm_postgresql_flexible_server" "nethical_recon" {{
   backup_retention_days = 7
   geo_redundant_backup_enabled = true
 }}
-"""
+"""  # noqa: W293
 
     def _generate_gcp_cloudsql(self) -> str:
         """Generate GCP Cloud SQL PostgreSQL"""
@@ -222,7 +221,7 @@ resource "google_sql_database_instance" "nethical_recon" {{
     }}
   }}
 }}
-"""
+"""  # noqa: W293
 
     def generate_storage(self) -> str:
         """Generate cloud storage bucket"""
@@ -267,7 +266,7 @@ resource "aws_s3_bucket_public_access_block" "nethical_recon" {{
   ignore_public_acls      = true
   restrict_public_buckets = true
 }}
-"""
+"""  # noqa: W293
 
     def _generate_azure_storage(self) -> str:
         """Generate Azure Storage Account"""
@@ -288,7 +287,7 @@ resource "azurerm_storage_container" "data" {{
   storage_account_name  = azurerm_storage_account.nethical_recon.name
   container_access_type = "private"
 }}
-"""
+"""  # noqa: W293
 
     def _generate_gcs_bucket(self) -> str:
         """Generate GCP Cloud Storage bucket"""
@@ -307,7 +306,7 @@ resource "google_storage_bucket" "nethical_recon" {{
     default_kms_key_name = google_kms_crypto_key.storage.id
   }}
 }}
-"""
+"""  # noqa: W293
 
     def export_all(self) -> dict[str, str]:
         """Export all Terraform configurations"""

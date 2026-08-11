@@ -126,7 +126,7 @@ def example_2_all_tracers():
         "BROWN": BrownTracer(),
     }
 
-    for color, tracer in tracers.items():
+    for color, tracer in tracers.items():  # noqa: B007
         gun.load_ammo(tracer)
 
     print("✅ Loaded all 8 tracer types\n")

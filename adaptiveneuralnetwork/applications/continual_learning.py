@@ -25,9 +25,15 @@ from adaptiveneuralnetwork.central_nervous_system.neuromorphic_v3 import (
     HierarchicalNetwork,
     SparseDistributedRepresentation,
 )
-from adaptiveneuralnetwork.central_nervous_system.neuromorphic_v3.advanced_neurons import NeuronV3Config
-from adaptiveneuralnetwork.central_nervous_system.neuromorphic_v3.network_topology import TopologyConfig
-from adaptiveneuralnetwork.central_nervous_system.neuromorphic_v3.temporal_coding import TemporalConfig
+from adaptiveneuralnetwork.central_nervous_system.neuromorphic_v3.advanced_neurons import (
+    NeuronV3Config,
+)
+from adaptiveneuralnetwork.central_nervous_system.neuromorphic_v3.network_topology import (
+    TopologyConfig,
+)
+from adaptiveneuralnetwork.central_nervous_system.neuromorphic_v3.temporal_coding import (
+    TemporalConfig,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -234,7 +240,7 @@ class EpisodicMemory(nn.Module):
     
     Uses sparse distributed representations to efficiently store and
     retrieve task-relevant memories.
-    """
+    """  # noqa: W293
 
     def __init__(
         self,
@@ -286,8 +292,8 @@ class EpisodicMemory(nn.Module):
             self.write_pointer += 1
 
     def sample(
-        self, 
-        num_samples: int, 
+        self,
+        num_samples: int,
         task_bias: int | None = None,
         exclude_task: int | None = None
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -350,7 +356,7 @@ class ProgressiveNeuralNetwork(nn.Module):
     
     Creates lateral connections between tasks while freezing previous task columns,
     enabling knowledge transfer while preserving old knowledge.
-    """
+    """  # noqa: W293
 
     def __init__(self, input_size: int, hidden_sizes: list[int], output_size: int):
         super().__init__()
@@ -390,7 +396,7 @@ class ProgressiveNeuralNetwork(nn.Module):
             for layer_idx in range(len(self.hidden_sizes)):
                 # Create lateral connections from all previous columns at this layer
                 conn_layers = nn.ModuleList()
-                for prev_task in range(self.num_tasks):
+                for prev_task in range(self.num_tasks):  # noqa: B007
                     # Lateral connections map from same hidden size to same hidden size
                     input_size = self.hidden_sizes[layer_idx]
                     output_size = self.hidden_sizes[layer_idx]
@@ -480,7 +486,7 @@ class AdvancedImageProcessor(nn.Module):
     
     Combines spatial attention, temporal pooling, and multi-scale features
     for robust visual representation learning.
-    """
+    """  # noqa: W293
 
     def __init__(self, input_channels: int, feature_dim: int, config: ContinualLearningConfig):
         super().__init__()
@@ -544,7 +550,7 @@ class AdvancedImageProcessor(nn.Module):
             x: Input tensor of shape (B, C, H, W) or (B, T, C, H, W) for temporal
             task_id: Optional task ID for task-specific adaptation
             temporal_sequence: Whether input is a temporal sequence
-        """
+        """  # noqa: W293
         if temporal_sequence and len(x.shape) == 5:
             # Handle temporal sequences: (B, T, C, H, W)
             batch_size, seq_len = x.shape[:2]
@@ -599,7 +605,7 @@ class MemoryAugmentedArchitecture(nn.Module):
     
     Combines multiple memory systems: episodic, semantic, and working memory
     for comprehensive knowledge retention and transfer.
-    """
+    """  # noqa: W293
 
     def __init__(self, feature_dim: int, memory_dim: int, config: ContinualLearningConfig):
         super().__init__()
@@ -682,8 +688,8 @@ class MemoryAugmentedArchitecture(nn.Module):
         Returns:
             enhanced_features: Features enhanced with memory
             memory_state: Current memory state for consolidation
-        """
-        batch_size = features.size(0)
+        """  # noqa: W293
+        batch_size = features.size(0)  # noqa: F841
 
         # Process through working memory
         features_seq = features.unsqueeze(1)  # Add sequence dimension
@@ -733,7 +739,7 @@ class SynapticConsolidation:
     
     This is a wrapper around the unified consolidation system that maintains
     backward compatibility while using the new consolidated approach.
-    """
+    """  # noqa: W293
 
     def __init__(self, model: nn.Module):
         self.model = model
@@ -776,7 +782,7 @@ class ContinualLearningSystem(nn.Module):
     
     Combines hierarchical networks, metaplasticity, homeostatic scaling,
     and episodic memory for catastrophic forgetting prevention.
-    """
+    """  # noqa: W293
 
     def __init__(self, config: ContinualLearningConfig):
         super().__init__()
@@ -904,10 +910,10 @@ class ContinualLearningSystem(nn.Module):
         """Forward pass through the continual learning system."""
         # Reset network state for static input processing
         self.network.reset_state()
-        
+
         # Update global time
         self.global_time += 1.0
-        
+
         # Process through hierarchical network
         network_output, network_states = self.network(x, current_time=self.global_time.item())
 
@@ -953,7 +959,7 @@ class ContinualLearningSystem(nn.Module):
         Returns:
             Dictionary containing training statistics including initial and
             final performance on validation set (if provided) or training set.
-        """
+        """  # noqa: W293
         logger.info(f"Learning task {task_id}")
 
         self.current_task = task_id
@@ -993,7 +999,7 @@ class ContinualLearningSystem(nn.Module):
             distribution_shifts = 0
             adaptation_events = 0
 
-            for batch_idx, (data, target) in enumerate(train_loader):
+            for batch_idx, (data, target) in enumerate(train_loader):  # noqa: B007
                 batch_size = data.size(0)
 
                 # Update data statistics for shift detection
@@ -1114,7 +1120,7 @@ class ContinualLearningSystem(nn.Module):
                     _, states = self.network(data)
                     activities = states.get('stats', {}).get('layer_mean_activities', [])
                     act_str = ", ".join([f"{a:.3f}" for a in activities])
-                
+
                 logger.info(f"Epoch {epoch+1}/{num_epochs}: Loss={avg_loss:.4f}, "
                            f"Activities=[{act_str}], "
                            f"LR={self.current_learning_rate:.5f}")
@@ -1241,7 +1247,7 @@ class LifelongLearningBenchmark:
     
     Tracks multiple metrics including catastrophic forgetting, transfer learning,
     adaptation speed, and memory efficiency.
-    """
+    """  # noqa: W293
 
     def __init__(self, config: ContinualLearningConfig):
         self.config = config
@@ -1321,7 +1327,7 @@ class LifelongLearningBenchmark:
 
         # 3. Adaptation Speed (time to adapt to new tasks)
         adaptation_speeds = []
-        for task_id, events in self.adaptation_events.items():
+        for task_id, events in self.adaptation_events.items():  # noqa: B007
             if events:
                 adaptation_events = [e for e in events if e['type'] == 'adaptation']
                 if adaptation_events:

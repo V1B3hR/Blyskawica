@@ -1,15 +1,16 @@
 """LangSmith integration for Nethical governance observability."""
 
-from .base import ObservabilityProvider, TraceSpan, GovernanceMetrics
-from typing import Dict, Any, Optional
 import logging
+from typing import Any
+
+from .base import GovernanceMetrics, ObservabilityProvider, TraceSpan
 
 logger = logging.getLogger(__name__)
 
 
 class LangSmithConnector(ObservabilityProvider):
     """LangSmith integration for Nethical governance observability."""
-    
+
     def __init__(
         self,
         api_key: str,
@@ -22,7 +23,7 @@ class LangSmithConnector(ObservabilityProvider):
             api_key: LangSmith API key
             project_name: Project name in LangSmith
             endpoint: LangSmith API endpoint
-        """
+        """  # noqa: W293
         try:
             from langsmith import Client
             self.client = Client(api_key=api_key, api_url=endpoint)
@@ -37,12 +38,12 @@ class LangSmithConnector(ObservabilityProvider):
             logger.error(f"Failed to initialize LangSmith: {e}")
             self.client = None
             self.available = False
-    
+
     def log_trace(self, span: TraceSpan) -> None:
         """Log a trace span with governance data."""
         if not self.available:
             return
-            
+
         try:
             self.client.create_run(
                 name=span.name,
@@ -61,21 +62,21 @@ class LangSmithConnector(ObservabilityProvider):
             )
         except Exception as e:
             logger.error(f"Failed to log trace to LangSmith: {e}")
-    
+
     def log_governance_event(
         self,
         action: str,
         decision: str,
         risk_score: float,
-        metadata: Dict[str, Any]
+        metadata: dict[str, Any]
     ) -> None:
         """Log a governance evaluation event."""
         if not self.available:
             return
-            
+
         try:
             from datetime import datetime
-            
+
             self.client.create_run(
                 name="governance_evaluation",
                 run_type="tool",
@@ -92,15 +93,14 @@ class LangSmithConnector(ObservabilityProvider):
             )
         except Exception as e:
             logger.error(f"Failed to log governance event to LangSmith: {e}")
-    
+
     def log_metrics(self, metrics: GovernanceMetrics) -> None:
         """Log aggregated governance metrics."""
         if not self.available:
             return
-            
+
         try:
-            from datetime import datetime
-            
+
             self.client.create_run(
                 name="governance_metrics",
                 run_type="chain",
@@ -122,11 +122,11 @@ class LangSmithConnector(ObservabilityProvider):
             )
         except Exception as e:
             logger.error(f"Failed to log metrics to LangSmith: {e}")
-    
+
     def create_dashboard(self, name: str) -> str:
         """Create a governance dashboard."""
         if not self.available:
             return "LangSmith not available"
-            
+
         # LangSmith dashboards are created in UI
         return f"https://smith.langchain.com/o/projects/{self.project_name}"

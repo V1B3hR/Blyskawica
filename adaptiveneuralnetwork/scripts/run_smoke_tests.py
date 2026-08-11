@@ -14,16 +14,17 @@ Usage:
 import argparse
 import subprocess
 import sys
+
 sys.stdout.reconfigure(encoding='utf-8')
-from pathlib import Path
+from pathlib import Path  # noqa: E402
 
 
 def check_dependencies():
     """Check if required dependencies are installed."""
     print("Checking dependencies...")
     try:
-        import pandas
-        import sklearn
+        import pandas  # noqa: F401
+        import sklearn  # noqa: F401
         print("✓ All required dependencies are installed")
         return True
     except ImportError as e:

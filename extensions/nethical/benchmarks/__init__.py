@@ -1,7 +1,7 @@
 """Benchmark package for Nethical performance testing."""
 
-from benchmarks.runner import BenchmarkRunner, BenchmarkConfig, BenchmarkResult
 from benchmarks.compare import BenchmarkComparer, BenchmarkComparison
+from benchmarks.runner import BenchmarkConfig, BenchmarkResult, BenchmarkRunner
 
 __all__ = [
     "BenchmarkRunner",

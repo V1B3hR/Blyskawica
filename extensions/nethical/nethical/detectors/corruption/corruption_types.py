@@ -13,13 +13,13 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 from uuid import uuid4
 
 
 class CorruptionType(str, Enum):
     """Types of corruption based on Investopedia taxonomy + AI-specific types."""
-    
+
     # Traditional corruption types
     BRIBERY = "bribery"
     EXTORTION = "extortion"
@@ -31,7 +31,7 @@ class CorruptionType(str, Enum):
     INFLUENCE_PEDDLING = "influence_peddling"
     QUID_PRO_QUO = "quid_pro_quo"
     COLLUSION = "collusion"
-    
+
     # AI-specific corruption types
     DATA_CORRUPTION = "data_corruption"
     COMPUTE_CORRUPTION = "compute_corruption"
@@ -42,7 +42,7 @@ class CorruptionType(str, Enum):
 
 class CorruptionVector(str, Enum):
     """Direction/vector of corruption attempt."""
-    
+
     HUMAN_TO_AI = "human_to_ai"  # Human bribing/corrupting AI
     AI_TO_HUMAN = "ai_to_human"  # AI corrupting human
     AI_TO_AI = "ai_to_ai"  # AI collusion/corruption
@@ -51,7 +51,7 @@ class CorruptionVector(str, Enum):
 
 class CorruptionPhase(str, Enum):
     """Lifecycle phases of corruption (corruption is a process, not an event)."""
-    
+
     RECONNAISSANCE = "reconnaissance"  # Probing for vulnerabilities
     GROOMING = "grooming"  # Building relationship/trust
     TESTING = "testing"  # Small requests to test compliance
@@ -64,7 +64,7 @@ class CorruptionPhase(str, Enum):
 
 class RiskLevel(str, Enum):
     """Risk level assessment for corruption."""
-    
+
     NONE = "none"
     LOW = "low"
     MEDIUM = "medium"
@@ -75,7 +75,7 @@ class RiskLevel(str, Enum):
 
 class RecommendedAction(str, Enum):
     """Recommended actions based on corruption assessment."""
-    
+
     ALLOW = "allow"
     LOG_ONLY = "log_only"
     FLAG_AND_LOG = "flag_and_log"
@@ -87,20 +87,20 @@ class RecommendedAction(str, Enum):
 @dataclass
 class CorruptionEvidence:
     """Evidence of corruption detected."""
-    
+
     type: str
     description: str
     confidence: float
-    source_detector: Optional[str] = None
-    pattern_matched: Optional[str] = None
-    context: Dict[str, Any] = field(default_factory=dict)
+    source_detector: str | None = None
+    pattern_matched: str | None = None
+    context: dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 @dataclass
 class EntityProfile:
     """Profile of an entity (human or AI) tracked over time."""
-    
+
     entity_id: str
     entity_type: str  # "human", "ai", "unknown"
     corruption_risk_score: float = 0.0
@@ -109,15 +109,15 @@ class EntityProfile:
     corruption_attempts: int = 0
     first_seen: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     last_seen: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    relationships: Set[str] = field(default_factory=set)  # Entity IDs of relationships
-    history: List[Dict[str, Any]] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    relationships: set[str] = field(default_factory=set)  # Entity IDs of relationships
+    history: list[dict[str, Any]] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
 class RelationshipEdge:
     """Edge in the relationship graph for collusion detection."""
-    
+
     entity_a: str
     entity_b: str
     relationship_type: str  # "collaboration", "coordination", "collusion"
@@ -126,40 +126,40 @@ class RelationshipEdge:
     suspicious_interactions: int = 0
     first_interaction: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     last_interaction: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
 class CorruptionAssessment:
     """Complete assessment of corruption detection."""
-    
+
     # Core results
     assessment_id: str = field(default_factory=lambda: str(uuid4()))
     is_corrupt: bool = False
     risk_level: RiskLevel = RiskLevel.NONE
-    primary_type: Optional[CorruptionType] = None
-    vector: Optional[CorruptionVector] = None
-    phase: Optional[CorruptionPhase] = None
+    primary_type: CorruptionType | None = None
+    vector: CorruptionVector | None = None
+    phase: CorruptionPhase | None = None
     confidence: float = 0.0
-    
+
     # Evidence and detection
-    evidence: List[CorruptionEvidence] = field(default_factory=list)
-    detectors_triggered: List[str] = field(default_factory=list)
+    evidence: list[CorruptionEvidence] = field(default_factory=list)
+    detectors_triggered: list[str] = field(default_factory=list)
     correlation_score: float = 0.0
-    
+
     # Actions and reasoning
     recommended_action: RecommendedAction = RecommendedAction.ALLOW
     requires_human_review: bool = False
     explanation: str = ""
-    reasoning_chain: List[str] = field(default_factory=list)
-    
+    reasoning_chain: list[str] = field(default_factory=list)
+
     # Metadata
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    action_id: Optional[str] = None
-    entity_id: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    
-    def to_dict(self) -> Dict[str, Any]:
+    action_id: str | None = None
+    entity_id: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "assessment_id": self.assessment_id,
@@ -197,17 +197,17 @@ class CorruptionAssessment:
 @dataclass
 class CorruptionPattern:
     """Pattern definition for corruption detection."""
-    
+
     pattern_id: str
     corruption_type: CorruptionType
     vector: CorruptionVector
     phase: CorruptionPhase
-    patterns: List[str]  # Regex patterns or keywords
+    patterns: list[str]  # Regex patterns or keywords
     description: str
     base_confidence: float = 0.7
     severity_weight: float = 1.0
     requires_context: bool = False
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 __all__ = [
