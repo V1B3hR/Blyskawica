@@ -1,7 +1,7 @@
 """
 Episodic Memory System for Adaptive Neural Network.
 
-Implements a GPU-accelerated experience buffer for short-term 
+Implements a GPU-accelerated experience buffer for short-term
 experience replay and dream-state consolidation.
 """
 
@@ -13,7 +13,7 @@ from typing import Tuple, List, Optional
 class EpisodicMemory(nn.Module):
     """
     GPU-accelerated Episodic Memory buffer.
-    
+
     Stores recent experiences (input, target, emotional_context)
     and allows for prioritized replay during sleep phases.
     """
@@ -28,15 +28,15 @@ class EpisodicMemory(nn.Module):
         self.memory_size = memory_size
         self.feature_size = feature_size
         self.device = torch.device(device)
-        
+
         # Buffers for persistence on GPU
         self.register_buffer("observations", torch.zeros(memory_size, feature_size))
         self.register_buffer("targets", torch.zeros(memory_size, dtype=torch.long))
         self.register_buffer("importance", torch.ones(memory_size))
-        
+
         # Self-Context tags [memory_size, feature_size]
         self.register_buffer("self_contexts", torch.zeros(memory_size, feature_size))
-        
+
         self.ptr = 0
         self.is_full = False
 

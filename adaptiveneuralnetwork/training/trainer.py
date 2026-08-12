@@ -24,7 +24,8 @@ from torch.utils.data import DataLoader
 try:
     from tqdm import tqdm
 except ImportError:
-    tqdm = lambda x, *args, **kwargs: x  # fallback to no progress bar
+    def tqdm(iterable, *args, **kwargs):
+        return iterable
 
 import logging
 logger = logging.getLogger(__name__)
@@ -727,7 +728,7 @@ class Trainer:
             
             # Update adapted params (Self-optimization)
             new_params = {}
-            for (name, param), grad in zip(adapted_params.items(), grads):
+            for (name, param), grad in zip(adapted_params.items(), grads, strict=False):
                 if grad is not None:
                     new_params[name] = param - 0.01 * grad # Inner LR
                 else:

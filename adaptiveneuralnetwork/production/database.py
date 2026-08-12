@@ -10,7 +10,6 @@ from typing import Any
 
 # Optional database dependencies
 try:
-    import sqlalchemy as sa
     from sqlalchemy import Column, DateTime, Float, Index, Integer, JSON, String, Text, create_engine
     from sqlalchemy.orm import declarative_base, sessionmaker
     SQLALCHEMY_AVAILABLE = True
@@ -25,7 +24,6 @@ except ImportError:
     Integer = String = Float = DateTime = Text = JSON = Index = None
 
 try:
-    import pymongo
     from pymongo import MongoClient
     PYMONGO_AVAILABLE = True
 except ImportError:

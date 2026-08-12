@@ -37,7 +37,7 @@ def benchmark_dataset_pipeline(num_samples: int = 10000, batch_size: int = 64):
     
     t0 = time.perf_counter()
     count = 0
-    for sample in stream_ds.stream(shuffle=False):
+    for _sample in stream_ds.stream(shuffle=False):
         count += 1
         if count >= num_samples:
             break
