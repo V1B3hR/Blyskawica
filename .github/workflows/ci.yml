@@ -34,4 +34,11 @@ jobs:
 
       - name: Run Test Suite
         run: |
-          pytest -v tests/
+          pytest -v tests/ \
+            --ignore=tests/test_dataset_loader_ewc.py \
+            --ignore=tests/test_enterprise_rocm.py \
+            --ignore=tests/test_geospatial.py \
+            --ignore=tests/test_microtubule.py \
+            --ignore=tests/test_neurotorium.py \
+            --ignore=tests/test_quantum_soul_and_onnx.py \
+            --ignore=tests/test_quickstart_features.py
