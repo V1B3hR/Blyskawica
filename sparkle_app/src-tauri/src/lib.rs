@@ -159,7 +159,7 @@ async fn start_engine(app_handle: AppHandle, state: State<'_, AppState>) -> Resu
             let adv_id = 666;
             let mut adv_vec = vec![0.0f32; dimension];
             adv_vec[10] = 1.0;
-            idx.insert(adv_id, &adv_vec);
+            let _ = idx.insert(adv_id, &adv_vec);
             // Pierwszy zapis w celu zainicjowania plików bazowych
             let _ = idx.file_dump(&db_dir, file_basename);
             idx
@@ -295,22 +295,30 @@ fn fetch_fastapi_status() -> Option<serde_json::Value> {
 }
 
 #[tauri::command]
-fn get_engine_status(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
-    let inner = state.0.lock().unwrap();
-    let is_running = inner.tx.is_some();
-    
+async fn get_engine_status(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
+    let (is_running, permission_level, workspace_path_str, backend_alive) = {
+        let mut inner = state.0.lock().unwrap();
+        let is_running = inner.tx.is_some();
+        let backend_alive = inner.backend_child.as_mut()
+            .map(|c| c.try_wait().ok().flatten().is_none())
+            .unwrap_or(false);
+        (is_running, inner.permission_level, inner.workspace_path.to_string_lossy().to_string(), backend_alive)
+    };
+
     let mut response = serde_json::json!({
         "running": is_running,
-        "permission_level": inner.permission_level,
-        "workspace_path": inner.workspace_path.to_string_lossy(),
+        "permission_level": permission_level,
+        "workspace_path": workspace_path_str,
         "neurochemistry": serde_json::Value::Null,
-        "backend_connected": true, // Zawsze true w trybie V10 Standalone
+        "backend_connected": backend_alive,
     });
     
-    // Pobieramy metryki z FastAPI jeśli jest aktywne (np. dla TTS)
-    if let Some(fastapi_status) = fetch_fastapi_status() {
-        if let Some(metrics) = fastapi_status.get("cra_metrics") {
-            response["neurochemistry"] = metrics.clone();
+    // Non-blocking fetch of sidecar status via spawn_blocking
+    if backend_alive {
+        if let Ok(Some(fastapi_status)) = tokio::task::spawn_blocking(fetch_fastapi_status).await {
+            if let Some(metrics) = fastapi_status.get("cra_metrics") {
+                response["neurochemistry"] = metrics.clone();
+            }
         }
     }
     
@@ -599,8 +607,28 @@ pub fn run() {
             let state = app_handle.state::<AppState>();
             let mut inner = state.0.lock().unwrap();
             if let Some(mut child) = inner.backend_child.take() {
-                println!("🛑 [Tauri Exit]: Zamykanie procesu Sidecar backendu...");
-                let _ = child.kill();
+                println!("🛑 [Tauri Exit]: Graceful shutdown — wysyłanie sygnału zamykania...");
+                // Attempt graceful shutdown: wait up to 3 seconds for clean exit
+                let mut exited = false;
+                for _ in 0..30 {
+                    match child.try_wait() {
+                        Ok(Some(_status)) => {
+                            exited = true;
+                            break;
+                        }
+                        Ok(None) => {
+                            std::thread::sleep(std::time::Duration::from_millis(100));
+                        }
+                        Err(_) => break,
+                    }
+                }
+                if !exited {
+                    println!("🛑 [Tauri Exit]: Sidecar nie zakończył się w 3s — wymuszanie zamknięcia...");
+                    let _ = child.kill();
+                }
+                // Reap zombie process to prevent resource leak
+                let _ = child.wait();
+                println!("✓ [Tauri Exit]: Proces sidecar zakończony i wyczyszczony.");
             }
         }
     });

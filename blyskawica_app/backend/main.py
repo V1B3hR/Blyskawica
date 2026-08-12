@@ -70,6 +70,9 @@ class BlyskawicaDatabase:
         try:
             conn = sqlite3.connect(str(self.db_path))
             cursor = conn.cursor()
+            # Crash-safe SQLite configuration
+            cursor.execute("PRAGMA journal_mode=WAL")
+            cursor.execute("PRAGMA synchronous=FULL")
             # 1. Search cache
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS search_cache (
@@ -190,11 +193,24 @@ class InMemoryLogHandler(logging.Handler):
         except Exception:
             self.handleError(record)
 
-# Register the handler
+from logging.handlers import RotatingFileHandler
+
+# Register in-memory & file rotating handlers
 root_logger = logging.getLogger()
 handler = InMemoryLogHandler()
 handler.setFormatter(logging.Formatter('[%(asctime)s] [%(levelname)s] %(message)s', '%H:%M:%S'))
 root_logger.addHandler(handler)
+
+# 10MB max per log file, 5 backup files kept
+file_handler = RotatingFileHandler(
+    MEMORY_DIR / "backend.log",
+    maxBytes=10 * 1024 * 1024,
+    backupCount=5,
+    encoding="utf-8"
+)
+file_handler.setFormatter(logging.Formatter('[%(asctime)s] [%(levelname)s] %(message)s', '%Y-%m-%d %H:%M:%S'))
+root_logger.addHandler(file_handler)
+
 root_logger.setLevel(logging.INFO)
 
 def log_system(msg: str, level: str = "info"):

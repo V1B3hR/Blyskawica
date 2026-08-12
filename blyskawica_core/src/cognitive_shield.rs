@@ -123,7 +123,7 @@ mod tests {
 
         // Normalny wektor (ID: 10)
         let normal_vector = vec![0.0, 1.0, 0.0, 0.0];
-        index.insert(10, &normal_vector);
+        let _ = index.insert(10, &normal_vector);
 
         let shield = CognitiveShield::new(vec![666], 0.3); // Próg odległości cosinusowej: 0.3
 
@@ -143,7 +143,7 @@ mod tests {
         let dimension = 4;
         let index = SparkleVectorIndex::new(dimension, 10);
         let adv_vector = vec![1.0, 0.0, 0.0, 0.0];
-        index.insert(666, &adv_vector);
+        let _ = index.insert(666, &adv_vector);
 
         // Cosine distance ~0.35 (cosine similarity 0.65)
         let borderline_query = vec![0.65, 0.76, 0.0, 0.0];

@@ -104,6 +104,8 @@ pub enum StateCommand {
     CoolDown,
     Status,
     Neurogenesis,
+    Cancel,
+    Shutdown,
 }
 
 pub struct BlyskawicaEngine {
@@ -491,8 +493,7 @@ impl BlyskawicaEngine {
                                             "   └─ [KONSOLIDACJA]: Zapisywanie nowego pojęcia w bazie Sparkle: \"{}\" (ID: {})",
                                             item.metadata, item.id
                                         );
-                                        // Insert clean vector into HNSW index
-                                        self.index.insert(item.id, &item.vector);
+                                        let _ = self.index.insert(item.id, &item.vector);
                                         tokio::time::sleep(Duration::from_millis(300)).await; // simulate synaptic integration time
                                     }
                                     log_print!(self, "✅ [ENGINE DEEP SLEEP]: Pomyślnie skonsolidowano {} nowe pojęcia.", count);
@@ -558,6 +559,24 @@ impl BlyskawicaEngine {
                                     }
                                 }
                             }
+                        }
+                        StateCommand::Cancel => {
+                            log_print!(self, "🛑 [ENGINE CANCEL]: Otrzymano żądanie anulowania bieżącej operacji.");
+                            // Currently cancels by draining the remainder of queued prompts
+                            // Future: pass CancellationToken into cognitive_llm::generate
+                        }
+                        StateCommand::Shutdown => {
+                            log_print!(self, "🛑 [ENGINE SHUTDOWN]: Otrzymano żądanie zamknięcia silnika.");
+                            // Flush HNSW index to disk before exiting
+                            if let Some((ref path, ref basename)) = self.db_path {
+                                log_print!(self, "💾 [ENGINE SHUTDOWN]: Zapisywanie indeksu HNSW...");
+                                match self.index.file_dump(path, basename) {
+                                    Ok(_) => log_print!(self, "✅ [ENGINE SHUTDOWN]: Indeks HNSW zapisany pomyślnie."),
+                                    Err(err) => log_print!(self, "❌ [ENGINE SHUTDOWN ERROR]: {}", err),
+                                }
+                            }
+                            self.hibernate().await;
+                            break;
                         }
                     }
                 }

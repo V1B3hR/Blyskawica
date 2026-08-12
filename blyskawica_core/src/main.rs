@@ -67,13 +67,12 @@ async fn main() {
             for i in 0..5 {
                 let mut vec = vec![0.0f32; dimension];
                 vec[i] = 1.0;
-                idx.insert(i, &vec);
+                let _ = idx.insert(i, &vec);
             }
             // Rejestrujemy wektor adwersarialny o ID 666 dla tarczy Wolf Teeth
-            let adv_id = 666;
-            let mut adv_vec = vec![0.0f32; dimension];
-            adv_vec[10] = 1.0;
-            idx.insert(adv_id, &adv_vec);
+            let adv_id = 999;
+            let adv_vec = vec![0.9, 0.1, 0.0, 0.0];
+            let _ = idx.insert(adv_id, &adv_vec);
             idx
         }
     };

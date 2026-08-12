@@ -227,3 +227,12 @@ quantum_key.json
 
 # Compiled sidecar binaries
 sparkle_app/src-tauri/bin/
+
+# Private keys and certificates (SEC: never commit cryptographic material)
+*.pem
+*.key
+blyskawica_app/frontend/models/keys/
+
+# SQLite WAL files
+*.db-wal
+*.db-shm

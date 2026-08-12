@@ -4,8 +4,14 @@ import os
 from datetime import datetime
 from pathlib import Path
 
-from pydrive2.auth import GoogleAuth
-from pydrive2.drive import GoogleDrive
+try:
+    from pydrive2.auth import GoogleAuth
+    from pydrive2.drive import GoogleDrive
+    _PYDRIVE2_AVAILABLE = True
+except ImportError:
+    GoogleAuth = None  # noqa: N816
+    GoogleDrive = None  # noqa: N816
+    _PYDRIVE2_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 

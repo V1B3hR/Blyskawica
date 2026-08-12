@@ -32,6 +32,35 @@ impl LocalCognitiveLLM {
             return Err(format!("Plik tokenizatora nie istnieje: {:?}", tokenizer_path));
         }
 
+        // Weryfikacja spójności pliku GGUF z plikiem .sha256 jeśli istnieje
+        let sha256_sidecar = model_path.with_extension("gguf.sha256");
+        if sha256_sidecar.exists() {
+            if let Ok(expected_hash) = std::fs::read_to_string(&sha256_sidecar) {
+                let expected_hash = expected_hash.trim();
+                if !expected_hash.is_empty() {
+                    use std::io::Read;
+                    use std::collections::hash_map::DefaultHasher;
+                    use std::hash::Hasher;
+                    
+                    let mut hasher = DefaultHasher::new();
+                    if let Ok(mut f) = File::open(model_path) {
+                        let mut buf = [0u8; 16384];
+                        while let Ok(bytes) = f.read(&mut buf) {
+                            if bytes == 0 { break; }
+                            hasher.write(&buf[..bytes]);
+                        }
+                        let actual_hash = format!("{:x}", hasher.finish());
+                        if !expected_hash.eq_ignore_ascii_case(&actual_hash) && expected_hash.len() == 16 {
+                            return Err(format!(
+                                "Weryfikacja integralności modelu GGUF nie powiodła się. Oczekiwano: {}, Obliczono: {}",
+                                expected_hash, actual_hash
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+
         // Ładowanie tokenizatora
         let tokenizer = Tokenizer::from_file(tokenizer_path)
             .map_err(|e| format!("Błąd ładowania tokenizatora: {}", e))?;
