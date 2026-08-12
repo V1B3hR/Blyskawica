@@ -336,11 +336,7 @@ impl BlyskawicaEngine {
                                 
                                 let response_res = llm.generate(&prompt_input, &params, |token| {
                                     if let Some(ref tx) = event_tx_clone {
-                                       let tx = tx.clone();
-                                       let token_str = token.to_string();
-                                       tokio::spawn(async move {
-                                           let _ = tx.send(EngineEvent::Token(token_str)).await;
-                                       });
+                                        let _ = tx.try_send(EngineEvent::Token(token.to_string()));
                                     }
                                 });
                                 

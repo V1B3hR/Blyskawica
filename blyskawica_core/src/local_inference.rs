@@ -1,5 +1,6 @@
 use candle_core::{Device, Tensor, Result as CandleResult};
 
+#[derive(Debug)]
 pub struct LocalInferenceEngine {
     device: Device,
     w1: Tensor,

@@ -392,9 +392,13 @@ fn execute_system_action(action: String, args: serde_json::Value, state: State<'
 }
 
 #[tauri::command]
-fn read_workspace_file(path: String, state: State<'_, AppState>) -> Result<String, String> {
-    let inner = state.0.lock().unwrap();
-    if inner.permission_level < 2 {
+async fn read_workspace_file(path: String, state: State<'_, AppState>) -> Result<String, String> {
+    let (permission_level, workspace_path) = {
+        let inner = state.0.lock().unwrap();
+        (inner.permission_level, inner.workspace_path.clone())
+    };
+
+    if permission_level < 2 {
         return Err("Zablokowano. Odczyt plików wyłączony w trybie Sandbox (Poziom 1).".to_string());
     }
 
@@ -403,18 +407,23 @@ fn read_workspace_file(path: String, state: State<'_, AppState>) -> Result<Strin
         return Err("Zablokowano. Odczyt z katalogu systemowego jest zabroniony.".to_string());
     }
 
-    if inner.permission_level == 2 && !is_inside_workspace(&absolute_path, &inner.workspace_path) {
+    if permission_level == 2 && !is_inside_workspace(&absolute_path, &workspace_path) {
         return Err("Zablokowano. W Poziomie 2 dozwolony jest dostęp wyłącznie do katalogu roboczego.".to_string());
     }
 
-    std::fs::read_to_string(&absolute_path)
+    tokio::fs::read_to_string(&absolute_path)
+        .await
         .map_err(|e| format!("Błąd odczytu pliku: {}", e))
 }
 
 #[tauri::command]
-fn write_workspace_file(path: String, content: String, state: State<'_, AppState>) -> Result<String, String> {
-    let inner = state.0.lock().unwrap();
-    if inner.permission_level < 2 {
+async fn write_workspace_file(path: String, content: String, state: State<'_, AppState>) -> Result<String, String> {
+    let (permission_level, workspace_path) = {
+        let inner = state.0.lock().unwrap();
+        (inner.permission_level, inner.workspace_path.clone())
+    };
+
+    if permission_level < 2 {
         return Err("Zablokowano. Zapis plików wyłączony w trybie Sandbox (Poziom 1).".to_string());
     }
 
@@ -423,38 +432,39 @@ fn write_workspace_file(path: String, content: String, state: State<'_, AppState
         return Err("Zablokowano. Zapis w katalogu systemowym jest zabroniony.".to_string());
     }
 
-    if inner.permission_level == 2 && !is_inside_workspace(&absolute_path, &inner.workspace_path) {
+    if permission_level == 2 && !is_inside_workspace(&absolute_path, &workspace_path) {
         return Err("Zablokowano. W Poziomie 2 zapis plików dozwolony jest wyłącznie w katalogu roboczym.".to_string());
     }
 
-    // Tworzenie katalogu nadrzędnego jeśli nie istnieje
     if let Some(parent) = absolute_path.parent() {
-        let _ = std::fs::create_dir_all(parent);
+        let _ = tokio::fs::create_dir_all(parent).await;
     }
 
-    std::fs::write(&absolute_path, content)
+    tokio::fs::write(&absolute_path, content)
+        .await
         .map_err(|e| format!("Błąd zapisu pliku: {}", e))?;
     Ok("Plik zapisany pomyślnie.".to_string())
 }
 
 #[tauri::command]
-fn list_workspace_files(state: State<'_, AppState>) -> Result<Vec<serde_json::Value>, String> {
-    let inner = state.0.lock().unwrap();
-    if inner.permission_level < 2 {
+async fn list_workspace_files(state: State<'_, AppState>) -> Result<Vec<serde_json::Value>, String> {
+    let (permission_level, workspace_path) = {
+        let inner = state.0.lock().unwrap();
+        (inner.permission_level, inner.workspace_path.clone())
+    };
+
+    if permission_level < 2 {
         return Err("Zablokowano. Przeglądanie katalogów wyłączone w trybie Sandbox (Poziom 1).".to_string());
     }
 
-    let workspace = &inner.workspace_path;
     let mut files = Vec::new();
-    
-    // List directory content (one level for simplicity and safety)
-    if let Ok(entries) = std::fs::read_dir(workspace) {
-        for entry in entries.flatten() {
+    if let Ok(mut entries) = tokio::fs::read_dir(&workspace_path).await {
+        while let Ok(Some(entry)) = entries.next_entry().await {
             let path = entry.path();
             let is_dir = path.is_dir();
             let name = path.file_name().unwrap_or_default().to_string_lossy().into_owned();
             let abs_path = path.to_string_lossy().into_owned();
-            
+
             files.push(serde_json::json!({
                 "name": name,
                 "path": abs_path,
@@ -467,28 +477,33 @@ fn list_workspace_files(state: State<'_, AppState>) -> Result<Vec<serde_json::Va
 }
 
 #[tauri::command]
-fn export_logs(logs: String, state: State<'_, AppState>) -> Result<String, String> {
-    let inner = state.0.lock().unwrap();
-    if inner.permission_level < 2 {
+async fn export_logs(logs: String, state: State<'_, AppState>) -> Result<String, String> {
+    let (permission_level, workspace_path) = {
+        let inner = state.0.lock().unwrap();
+        (inner.permission_level, inner.workspace_path.clone())
+    };
+
+    if permission_level < 2 {
         return Err("Zablokowano. Eksport logów wyłączony w trybie Sandbox (Poziom 1).".to_string());
     }
-    
-    let log_path = inner.workspace_path.join("sparkle_app_activity.log");
-    
+
+    let log_path = workspace_path.join("sparkle_app_activity.log");
+
     let time_secs = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_secs())
         .unwrap_or(0);
-        
+
     let formatted_logs = format!(
         "=== SPARKLE APP ACTIVITY LOGS ===\nExport Epoch: {}\n=================================\n{}\n",
         time_secs,
         logs
     );
-    
-    std::fs::write(&log_path, formatted_logs)
+
+    tokio::fs::write(&log_path, formatted_logs)
+        .await
         .map_err(|e| format!("Błąd zapisu pliku logu: {}", e))?;
-        
+
     Ok(format!("Logi zostały pomyślnie wyeksportowane do: {:?}", log_path))
 }
 

@@ -5,6 +5,7 @@ use std::path::Path;
 pub struct SparkleVectorIndex {
     hnsw: Hnsw<'static, f32, DistCosine>,
     dimension: usize,
+    _reloader: Option<Box<HnswIo>>,
 }
 
 impl SparkleVectorIndex {
@@ -21,26 +22,23 @@ impl SparkleVectorIndex {
             DistCosine,
         );
 
-        Self { hnsw, dimension }
+        Self { hnsw, dimension, _reloader: None }
     }
 
     pub fn from_hnsw(hnsw: Hnsw<'static, f32, DistCosine>, dimension: usize) -> Self {
-        Self { hnsw, dimension }
+        Self { hnsw, dimension, _reloader: None }
     }
 
     pub fn insert(&self, id: usize, vector: &Vec<f32>) {
         assert_eq!(vector.len(), self.dimension, "Wektor musi mieć wymiar równy wymiarowi indeksu.");
         // parallel_insert takes a slice of ( &Vec<f32>, usize )
         self.hnsw.parallel_insert(&[(vector, id)]);
-        println!("📊 [HNSW INDEX]: Wstawiono wektor o ID: {} do indeksu.", id);
     }
 
     pub fn search(&self, query: &Vec<f32>, k: usize) -> Vec<Neighbour> {
         assert_eq!(query.len(), self.dimension, "Wektor zapytania musi mieć wymiar równy wymiarowi indeksu.");
         let ef_search = 50;
-        let results = self.hnsw.search(query, k, ef_search);
-        println!("📊 [HNSW INDEX]: Wyszukano najbliższych sąsiadów. Znaleziono: {}.", results.len());
-        results
+        self.hnsw.search(query, k, ef_search)
     }
 
     pub fn get_dimension(&self) -> usize {
@@ -55,11 +53,18 @@ impl SparkleVectorIndex {
         self.hnsw.file_dump(path, file_basename).map_err(|e| e.to_string())
     }
 
-    /// Wczytuje indeks wektorowy z dysku.
+    /// Wczytuje indeks wektorowy z dysku bez wycieków pamięci.
     pub fn load_hnsw(path: &Path, file_basename: &str, dimension: usize) -> Result<Self, String> {
-        let reloader: &'static mut HnswIo = Box::leak(Box::new(HnswIo::new(path, file_basename)));
-        let hnsw: Hnsw<'static, f32, DistCosine> = reloader.load_hnsw::<f32, DistCosine>().map_err(|e| e.to_string())?;
-        Ok(Self::from_hnsw(hnsw, dimension))
+        let mut reloader = Box::new(HnswIo::new(path, file_basename));
+        let reloader_ptr: *mut HnswIo = &mut *reloader;
+        let hnsw: Hnsw<'static, f32, DistCosine> = unsafe {
+            (*reloader_ptr).load_hnsw::<f32, DistCosine>().map_err(|e| e.to_string())?
+        };
+        Ok(Self {
+            hnsw,
+            dimension,
+            _reloader: Some(reloader),
+        })
     }
 }
 

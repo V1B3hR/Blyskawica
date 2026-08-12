@@ -13,12 +13,18 @@ from pathlib import Path
 
 import httpx
 
+import os
+
 logger = logging.getLogger("AppLearningAgent")
-MEMORY_DIR = Path("c:/Projekty/Blyskawica_V8/blyskawica_app/memory")
+workspace_env = os.environ.get("SPARKLE_WORKSPACE")
+if workspace_env:
+    MEMORY_DIR = Path(workspace_env) / "blyskawica_app" / "memory"
+else:
+    MEMORY_DIR = Path(__file__).resolve().parent.parent / "memory"
 
 class AppLearningAgent:
-    def __init__(self, db_path: Path = MEMORY_DIR / "app_manuals.json"):
-        self.db_path = db_path
+    def __init__(self, db_path: Path | None = None):
+        self.db_path = db_path or (MEMORY_DIR / "app_manuals.json")
         self.manuals = {}
         self._load_db()
 
