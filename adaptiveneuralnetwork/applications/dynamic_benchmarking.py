@@ -13,11 +13,15 @@ from collections import deque
 from dataclasses import dataclass
 from typing import Any
 
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+try:
+    import matplotlib.pyplot as plt
+except ImportError:  # pragma: no cover - optional dependency
+    plt = None
 
 logger = logging.getLogger(__name__)
 
@@ -286,8 +290,11 @@ class LearningCurveAnalyzer:
         return (recent_performance >= self.config.max_score_threshold and
                 (self.detect_plateau() or trend_analysis['trend'] <= 0.1))
 
-    def visualize_learning_curve(self, save_path: str | None = None) -> plt.Figure:
+    def visualize_learning_curve(self, save_path: str | None = None) -> Any:
         """Create learning curve visualization."""
+        if plt is None:
+            raise RuntimeError("matplotlib is required to visualize the learning curve.")
+
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8))
 
         if len(self.performance_history) == 0:

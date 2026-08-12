@@ -8,9 +8,13 @@ aplikacji Microsoft 365/Office bez nadmiernego obciążania procesora.
 import logging
 import os
 import sys
-import winreg
 
 import psutil
+
+if sys.platform == "win32":
+    import winreg
+else:
+    winreg = None
 
 logger = logging.getLogger("Win11Controller")
 

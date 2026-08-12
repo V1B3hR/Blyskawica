@@ -253,7 +253,8 @@ def is_protected_core_file(filepath: Path) -> bool:
 def is_restricted_system_path(filepath: Path) -> bool:
     """Check if the path targets a sensitive Windows system directory."""
     try:
-        path_str = str(Path(filepath).resolve()).lower().replace("\\", "/")
+        raw_path = str(filepath).lower().replace("\\", "/")
+        resolved_path = str(Path(filepath).resolve()).lower().replace("\\", "/")
         restricted_directories = [
             "c:/windows",
             "c:/program files",
@@ -261,7 +262,11 @@ def is_restricted_system_path(filepath: Path) -> bool:
             "c:/users/default",
             "c:/users/all users"
         ]
-        return any(path_str.startswith(rdir) for rdir in restricted_directories)
+        return any(
+            candidate.startswith(rdir)
+            for candidate in (raw_path, resolved_path)
+            for rdir in restricted_directories
+        )
     except Exception:
         return True
 
@@ -1444,7 +1449,7 @@ async def vibe_code(
         target_path = project_root / target_path
     target_path = target_path.resolve()
     
-    if is_restricted_system_path(target_path):
+    if is_restricted_system_path(target_path_str) or is_restricted_system_path(target_path):
         return JSONResponse(status_code=403, content={"status": "error", "message": "Zapis zablokowany. Próba zapisu w katalogu systemowym."})
         
     if permission_level == 2:
@@ -1725,5 +1730,3 @@ if __name__ == "__main__":
     import uvicorn
     # SEC-02: Binding wyłącznie na localhost — serwer NIE jest widoczny w sieci LAN
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=False)
-
-
