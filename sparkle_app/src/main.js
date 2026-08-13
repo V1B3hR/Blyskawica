@@ -99,15 +99,24 @@ async function initEventListeners() {
         if (activeStreamingBubble) {
           if (activeStreamingBubble.classList.contains("generating")) {
             activeStreamingBubble.classList.remove("generating");
-            activeStreamingBubble.innerHTML = `<strong>Błyskawica V10:</strong> `;
+            activeStreamingBubble.replaceChildren();
+            const senderStrong = document.createElement("strong");
+            senderStrong.textContent = "Błyskawica V10: ";
+            activeStreamingBubble.appendChild(senderStrong);
           }
-          activeStreamingBubble.innerHTML += payload.Token;
+          activeStreamingBubble.appendChild(document.createTextNode(payload.Token));
           chatMessages.scrollTop = chatMessages.scrollHeight;
         }
       } else if (payload.ResponseFinished !== undefined) {
         if (activeStreamingBubble) {
           activeStreamingBubble.classList.remove("generating");
-          activeStreamingBubble.innerHTML = `<strong>Błyskawica V10:</strong> ${payload.ResponseFinished}`;
+          activeStreamingBubble.replaceChildren();
+          const senderStrong = document.createElement("strong");
+          senderStrong.textContent = "Błyskawica V10: ";
+          const textSpan = document.createElement("span");
+          textSpan.textContent = payload.ResponseFinished;
+          activeStreamingBubble.appendChild(senderStrong);
+          activeStreamingBubble.appendChild(textSpan);
           chatMessages.scrollTop = chatMessages.scrollHeight;
           synthesizeTTS(payload.ResponseFinished);
           activeStreamingBubble = null;
@@ -118,6 +127,23 @@ async function initEventListeners() {
     addLog("[Tauri]: Nasłuch zdarzeń aktywny.");
   } catch (error) {
     addLog(`[Tauri Błąd]: Nie udało się podłączyć nasłuchu zdarzeń: ${error}`);
+  }
+}
+
+// Bezpieczna synteza mowy z natywnym fallbackiem Web Speech API (offline)
+function synthesizeTTS(text) {
+  if (!text) return;
+  const cleanText = text.replace(/<[^>]*>?/gm, '');
+  if ('speechSynthesis' in window) {
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(cleanText.substring(0, 300));
+      utterance.lang = 'pl-PL';
+      utterance.rate = 1.0;
+      window.speechSynthesis.speak(utterance);
+    } catch (e) {
+      addLog(`[TTS Error]: ${e}`);
+    }
   }
 }
 
@@ -168,18 +194,36 @@ function setWolfTeethVisuals(active) {
   }
 }
 
-// Funkcja renderowania wiadomości w czacie
+// Helper dla bezpiecznego uciekania znaków HTML
+function safeEscapeHTML(str) {
+  if (typeof str !== 'string') return '';
+  return str.replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+}
+
+// Bezpieczne renderowanie wiadomości w czacie (odporne na XSS)
 function appendChatMessage(sender, text, customClass = "") {
   const msgEl = document.createElement("div");
   msgEl.className = `message ${customClass || (sender === "Użytkownik" ? "user-msg" : "blysk-msg")}`;
-  msgEl.innerHTML = `<strong>${sender}:</strong> ${text}`;
+  
+  const senderStrong = document.createElement("strong");
+  senderStrong.textContent = `${sender}: `;
+  
+  const textSpan = document.createElement("span");
+  textSpan.textContent = text;
+  
+  msgEl.appendChild(senderStrong);
+  msgEl.appendChild(textSpan);
+  
   chatMessages.appendChild(msgEl);
   chatMessages.scrollTop = chatMessages.scrollHeight;
 
   // Kopiowanie do mini-czatu w zakładce gości
-  if (sender === "Użytkownik" || sender === "Błyskawica V9") {
+  if (sender === "Użytkownik" || sender === "Błyskawica V9" || sender === "Błyskawica V10") {
     const miniMsg = msgEl.cloneNode(true);
-    miniMsg.className = `message ${sender === "Użytkownik" ? "user-msg" : "blysk-msg"}`;
     primaryChatStream.appendChild(miniMsg);
     primaryChatStream.scrollTop = primaryChatStream.scrollHeight;
   }
@@ -592,20 +636,10 @@ async function detectNethicalUrl() {
 
 async function getNethicalToken() {
   if (nethicalToken) return nethicalToken;
-  const url = await detectNethicalUrl();
-  try {
-    const res = await fetch(`${url}/api/v1/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: "admin", password: "admin123" })
-    });
-    if (res.ok) {
-      const data = await res.json();
-      nethicalToken = data.access_token;
-      return nethicalToken;
-    }
-  } catch (e) {
-    addLog(`[Nethical]: Błąd autoryzacji: ${e}`);
+  const storedToken = localStorage.getItem("sparkle_nethical_token");
+  if (storedToken) {
+    nethicalToken = storedToken;
+    return nethicalToken;
   }
   return null;
 }
@@ -1178,9 +1212,9 @@ async function runStartupSequence() {
     addLog(`[Startup Błąd]: Nie można pobrać statusu z Tauri Core: ${err}`);
   }
 
-  if (!status || !status.backend_connected) {
+  if (!status) {
     stepBackend.className = "step failed";
-    addLog("[Startup Błąd]: Serwer FastAPI na porcie 8000 jest offline.");
+    addLog("[Startup Błąd]: Nie można pobrać statusu z Tauri Core.");
     warningDiv.classList.remove("hidden");
     
     btnRetry.onclick = () => {
@@ -1193,9 +1227,15 @@ async function runStartupSequence() {
     return;
   }
 
-  stepBackend.className = "step success";
-  stepBackend.textContent = "✓ Połączenie z serwerem kognitywnym: Aktywne";
-  addLog("[Startup]: Połączono z FastAPI backendem.");
+  if (status.backend_connected) {
+    stepBackend.className = "step success";
+    stepBackend.textContent = "✓ Opcjonalny backend rozszerzeń: Aktywny";
+    addLog("[Startup]: Połączono z opcjonalnym backendem FastAPI.");
+  } else {
+    stepBackend.className = "step warning";
+    stepBackend.textContent = "⚠ Backend rozszerzeń niedostępny — tryb natywny offline";
+    addLog("[Startup]: Sidecar FastAPI niedostępny; kontynuowanie w natywnym trybie offline.");
+  }
 
   // Krok 2: Weryfikacja Ollama
   stepOllama.className = "step running";

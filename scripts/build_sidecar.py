@@ -1,12 +1,32 @@
 import os
+import platform
 import shutil
 import subprocess
 import sys
 from pathlib import Path
 
 
+def get_target_triple():
+    machine = platform.machine().lower()
+    system = platform.system().lower()
+    
+    if machine in ["amd64", "x86_64"]:
+        arch = "x86_64"
+    elif machine in ["arm64", "aarch64"]:
+        arch = "aarch64"
+    else:
+        arch = machine
+        
+    if system == "windows":
+        return f"{arch}-pc-windows-msvc"
+    elif system == "darwin":
+        return f"{arch}-apple-darwin"
+    else:
+        return f"{arch}-unknown-linux-gnu"
+
+
 def main():
-    print("🛠️ [Build Sidecar]: Rozpoczęcie procesu kompilacji...")
+    print("🛠️ [Build Sidecar]: Rozpoczęcie odtwarzalnego procesu kompilacji...")
 
     # 1. Definiowanie ścieżek
     current_dir = Path(__file__).resolve().parent.parent
@@ -15,34 +35,39 @@ def main():
     build_dir = current_dir / "build"
     tauri_bin_dir = current_dir / "sparkle_app" / "src-tauri" / "bin"
 
-    # Upewniamy się, że folder bin w src-tauri istnieje
     tauri_bin_dir.mkdir(parents=True, exist_ok=True)
 
-    # Znajdź ścieżkę do pyinstallera w profilu użytkownika
-    pyinstaller_bin = Path(os.environ.get("APPDATA")).parent / "Roaming" / "Python" / "Python314" / "Scripts" / "pyinstaller.exe"
-    if not pyinstaller_bin.exists():
-        # Fallback do zwykłego polecenia w PATH
-        pyinstaller_cmd = "pyinstaller"
-    else:
-        pyinstaller_cmd = str(pyinstaller_bin)
+    # Użycie sys.executable gwarantuje użycie aktywnego środowiska wirtualnego Python
+    python_exe = sys.executable
+    print(f"✓ Środowisko Python: {python_exe}")
 
-    print(f"✓ Używany kompilator PyInstaller: {pyinstaller_cmd}")
-
-    # 2. Uruchomienie PyInstallera
-    # --onefile: kompilacja do pojedynczego pliku
-    # --noconsole: brak wyskakującego okienka konsoli
-    # --name: nazwa pliku wynikowego
-    cmd = [
-        pyinstaller_cmd,
-        "--onefile",
-        "--noconsole",
-        "--name", "blyskawica_backend",
-        "--distpath", str(dist_dir),
-        "--workpath", str(build_dir),
-        str(backend_script)
+    # Hidden imports i zbierane pakiety dla PyInstallera
+    hidden_imports = [
+        "fastapi",
+        "uvicorn",
+        "psutil",
+        "httpx",
+        "requests",
+        "numpy",
+        "dotenv",
     ]
 
-    print(f"🚀 Uruchamianie polecenia: {' '.join(cmd)}")
+    hidden_flags = []
+    for imp in hidden_imports:
+        hidden_flags.extend(["--hidden-import", imp])
+
+    # 2. Uruchomienie PyInstallera via module execution (python -m PyInstaller)
+    exe_name = "blyskawica_backend"
+    cmd = [
+        python_exe, "-m", "PyInstaller",
+        "--onefile",
+        "--noconsole",
+        "--name", exe_name,
+        "--distpath", str(dist_dir),
+        "--workpath", str(build_dir),
+    ] + hidden_flags + [str(backend_script)]
+
+    print(f"🚀 Uruchamianie kompilacji: {' '.join(cmd)}")
     try:
         subprocess.run(cmd, check=True)
         print("✓ PyInstaller zakończył kompilację pomyślnie.")
@@ -50,23 +75,23 @@ def main():
         print(f"❌ Błąd podczas kompilacji PyInstaller: {e}")
         sys.exit(1)
 
-    # 3. Kopiowanie i zmiana nazwy pod wymogi Tauri (sidecar target triple)
-    # Na systemie Windows Tauri oczekuje nazwy pliku w formacie:
-    # <nazwa_programu>-x86_64-pc-windows-msvc.exe
-    target_triple = "x86_64-pc-windows-msvc"
-    src_exe = dist_dir / "blyskawica_backend.exe"
-    dest_exe = tauri_bin_dir / f"blyskawica_backend-{target_triple}.exe"
+    # 3. Kopiowanie z odpowiednim target-triple dla Tauri
+    target_triple = get_target_triple()
+    ext = ".exe" if sys.platform == "win32" else ""
+    src_exe = dist_dir / f"{exe_name}{ext}"
+    dest_exe = tauri_bin_dir / f"{exe_name}-{target_triple}{ext}"
 
     if src_exe.exists():
         print(f"📦 Kopiowanie skompilowanego pliku do katalogu Tauri: {dest_exe}")
         shutil.copy2(src_exe, dest_exe)
 
-        # Tworzymy też kopię o standardowej nazwie jako fallback
-        shutil.copy2(src_exe, tauri_bin_dir / "blyskawica_backend.exe")
-        print("🎉 [Build Sidecar]: Sukces! Backend jest w pełni przygotowany jako Sidecar w Tauri.")
+        # Fallback z czystą nazwą
+        shutil.copy2(src_exe, tauri_bin_dir / f"{exe_name}{ext}")
+        print(f"🎉 [Build Sidecar]: Sukces! Sidecar wariantu {target_triple} gotowy.")
     else:
-        print("❌ Błąd: Nie znaleziono pliku wynikowego blyskawica_backend.exe w folderze dist.")
+        print(f"❌ Błąd: Nie znaleziono pliku wynikowego {src_exe}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

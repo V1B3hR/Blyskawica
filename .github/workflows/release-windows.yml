@@ -1,0 +1,70 @@
+name: Windows Release & NSIS Installer Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-windows-installer:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            blyskawica_core
+            sparkle_app/src-tauri
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python Dependencies & PyInstaller
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller fastapi uvicorn psutil httpx requests numpy python-dotenv
+          pip install -e .
+
+      - name: Run Blyskawica Core Rust Tests
+        run: |
+          cd blyskawica_core
+          cargo test --verbose
+
+      - name: Build PyInstaller Sidecar Binary
+        run: |
+          python scripts/build_sidecar.py
+
+      - name: Verify Sidecar Executable Created
+        run: |
+          Get-ChildItem sparkle_app/src-tauri/bin/
+
+      - name: Build Tauri Desktop Application & NSIS Installer
+        run: |
+          cd sparkle_app
+          npm install
+          npx tauri build
+
+      - name: Upload NSIS Installer Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sparkle-VIBE-IDE-Windows-Installer
+          path: sparkle_app/src-tauri/target/release/bundle/nsis/*.exe

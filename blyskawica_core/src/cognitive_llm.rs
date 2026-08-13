@@ -32,27 +32,26 @@ impl LocalCognitiveLLM {
             return Err(format!("Plik tokenizatora nie istnieje: {:?}", tokenizer_path));
         }
 
-        // Weryfikacja spójności pliku GGUF z plikiem .sha256 jeśli istnieje
+        // Weryfikacja spójności pliku GGUF z plikiem .sha256 jeśli istnieje (kryptograficzne SHA-256)
         let sha256_sidecar = model_path.with_extension("gguf.sha256");
         if sha256_sidecar.exists() {
             if let Ok(expected_hash) = std::fs::read_to_string(&sha256_sidecar) {
                 let expected_hash = expected_hash.trim();
                 if !expected_hash.is_empty() {
                     use std::io::Read;
-                    use std::collections::hash_map::DefaultHasher;
-                    use std::hash::Hasher;
+                    use sha2::{Sha256, Digest};
                     
-                    let mut hasher = DefaultHasher::new();
+                    let mut hasher = Sha256::new();
                     if let Ok(mut f) = File::open(model_path) {
-                        let mut buf = [0u8; 16384];
+                        let mut buf = [0u8; 65536];
                         while let Ok(bytes) = f.read(&mut buf) {
                             if bytes == 0 { break; }
-                            hasher.write(&buf[..bytes]);
+                            hasher.update(&buf[..bytes]);
                         }
-                        let actual_hash = format!("{:x}", hasher.finish());
-                        if !expected_hash.eq_ignore_ascii_case(&actual_hash) && expected_hash.len() == 16 {
+                        let actual_hash = format!("{:x}", hasher.finalize());
+                        if !expected_hash.eq_ignore_ascii_case(&actual_hash) {
                             return Err(format!(
-                                "Weryfikacja integralności modelu GGUF nie powiodła się. Oczekiwano: {}, Obliczono: {}",
+                                "Weryfikacja integralności modelu GGUF (SHA-256) nie powiodła się. Oczekiwano: {}, Obliczono: {}",
                                 expected_hash, actual_hash
                             ));
                         }
@@ -83,7 +82,21 @@ impl LocalCognitiveLLM {
     }
 
     /// Generuje odpowiedź na zadany prompt z uwzględnieniem neurochemicznych modyfikatorów i strumieniowaniem tokenów.
-    pub fn generate<F>(&mut self, prompt: &str, params: &GenerationParams, mut callback: F) -> Result<String, String>
+    pub fn generate<F>(&mut self, prompt: &str, params: &GenerationParams, callback: F) -> Result<String, String>
+    where
+        F: FnMut(&str),
+    {
+        self.generate_with_cancel(prompt, params, None, callback)
+    }
+
+    /// Generuje odpowiedź z możliwością natychmiastowego anulowania (sub-50ms cancellation) przez AtomicBool.
+    pub fn generate_with_cancel<F>(
+        &mut self,
+        prompt: &str,
+        params: &GenerationParams,
+        cancel_flag: Option<&std::sync::atomic::AtomicBool>,
+        mut callback: F,
+    ) -> Result<String, String>
     where
         F: FnMut(&str),
     {
@@ -99,6 +112,14 @@ impl LocalCognitiveLLM {
 
         let mut index_pos = 0;
         for _i in 0..params.max_tokens {
+            // Weryfikacja flagi anulowania generowania
+            if let Some(flag) = cancel_flag {
+                if flag.load(std::sync::atomic::Ordering::Relaxed) {
+                    println!("🛑 [Cognitive LLM]: Generowanie tokenów zostało anulowane przez użytkownika.");
+                    break;
+                }
+            }
+
             let context_size = if index_pos > 0 { 1 } else { tokens.len() };
             let context = &tokens[tokens.len() - context_size..];
             
@@ -137,8 +158,9 @@ impl LocalCognitiveLLM {
                     *logit /= params.temperature as f32;
                 }
                 
-                // Softmax + próbkowanie
-                let mut exp_logits: Vec<f64> = logits.iter().map(|&x| (x as f64).exp()).collect();
+                // Numerycznie stabilny Softmax (odjęcie max_logit zapobiega overflow exp)
+                let max_logit = logits.iter().cloned().fold(f32::NEG_INFINITY, f32::max);
+                let mut exp_logits: Vec<f64> = logits.iter().map(|&x| ((x - max_logit) as f64).exp()).collect();
                 let sum: f64 = exp_logits.iter().sum();
                 for prob in exp_logits.iter_mut() {
                     *prob /= sum;

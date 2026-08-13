@@ -1,8 +1,8 @@
 /* CSS dla Aplikacji Sparkle VIBE IDE - Premium Glassmorphism */
 
 :root {
-  --font-family-sans: 'Outfit', sans-serif;
-  --font-family-mono: 'Fira Code', monospace;
+  --font-family-sans: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-family-mono: 'Fira Code', Consolas, 'Cascadia Code', 'Courier New', monospace;
   
   /* Kolory i Gradienty dla różnych Poziomów Zabezpieczeń */
   --bg-glow-sandbox: radial-gradient(circle at 50% 50%, #0d1f14, #040a06);

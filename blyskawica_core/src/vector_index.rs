@@ -202,11 +202,13 @@ impl SparkleVectorIndex {
             (*reloader_ptr).load_hnsw::<f32, DistCosine>().map_err(|e| e.to_string())?
         };
 
+        let loaded_count = hnsw.get_nb_point();
+
         Ok(Self {
             hnsw,
             dimension,
             max_elements: 100_000,
-            current_count: AtomicUsize::new(0),
+            current_count: AtomicUsize::new(loaded_count),
             _reloader: Some(reloader),
         })
     }
