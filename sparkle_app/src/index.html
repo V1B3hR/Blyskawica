@@ -148,9 +148,10 @@
       <section class="panel right-panel">
         <div class="tabs-header">
           <button id="tab-btn-workspace" class="tab-btn active">WORKSPACE & EXPLORER</button>
-          <button id="tab-btn-guests" class="tab-btn">GUEST MODEL COLLABORATION</button>
-          <button id="tab-btn-spore" class="tab-btn">ONNX SPORE (EMISARIUSZ)</button>
-          <button id="tab-btn-yant" class="tab-btn">16x16 DIAMOND YANT CYMATICS</button>
+          <button id="tab-btn-guests" class="tab-btn">GUEST COLLABORATION</button>
+          <button id="tab-btn-spore" class="tab-btn">ONNX SPORE</button>
+          <button id="tab-btn-yant" class="tab-btn">16x16 CYMATICS</button>
+          <button id="tab-btn-ledger" class="tab-btn">🛡️ KWARANTANNA & LEDGER</button>
         </div>
 
         <!-- Tab 1: Workspace & Code Editor -->
@@ -277,6 +278,27 @@
                   <span class="card-label">Ruchome Koherence 5-HT</span>
                   <span class="card-value" id="yant-serotonin-val">1.30x</span>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 5: Epistemic Defense & Quarantine Memory Ledger -->
+        <div id="tab-ledger" class="tab-content">
+          <div class="ledger-container" style="display: flex; flex-direction: column; gap: 16px; height: 100%;">
+            <div class="spore-info">
+              <h3>🛡️ EPISTEMIC DEFENSE & KWARANTANNA PAMIĘCI</h3>
+              <p class="description">Bufor ochronny Błyskawicy. Wszelkie pojęcia, wektory o wysokim zaskoczeniu (&gt;0.75) oraz niezweryfikowane asercje są izolowane tutaj przed utrwaleniem w grafie HNSW.</p>
+            </div>
+            
+            <div class="ledger-actions-bar" style="display: flex; justify-content: space-between; align-items: center; background: rgba(15, 23, 42, 0.6); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--glass-border);">
+              <span id="quarantine-count-badge" style="font-family: var(--font-family-mono); font-size: 12px; color: var(--text-secondary);">Kolejka kwarantanny: 0 anomalii</span>
+              <button id="btn-force-deep-sleep" class="control-btn small" style="background: rgba(184, 46, 255, 0.2); border-color: #b82eff; color: #f0abfc;">WYMUŚ DEEP SLEEP (KONSOLIDACJA)</button>
+            </div>
+
+            <div id="quarantine-list" class="quarantine-list" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; max-height: 420px; padding: 4px;">
+              <div class="quarantine-empty" style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 13px;">
+                Brak zakolejkowanych anomalii. Wszystkie przetworzone wektory pozostają spójne z kotwicą rzeczywistości.
               </div>
             </div>
           </div>

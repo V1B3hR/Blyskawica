@@ -104,6 +104,38 @@ impl SparkleVectorIndex {
         self.len() == 0
     }
 
+    /// Zapisuje wektor do dziennika Write-Ahead Log (WAL) z wymuszoną synchronizacją dyskową (fsync).
+    pub fn append_wal(&self, path: &Path, file_basename: &str, id: usize, vector: &[f32]) -> Result<(), String> {
+        use std::io::Write;
+        use std::fs::OpenOptions;
+
+        if !path.exists() {
+            std::fs::create_dir_all(path).map_err(|e| e.to_string())?;
+        }
+
+        let wal_path = path.join(format!("{}.hnsw.wal", file_basename));
+        let mut file = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&wal_path)
+            .map_err(|e| format!("Błąd otwierania pliku WAL: {}", e))?;
+
+        // Format rekordu: ID:v1,v2,v3...
+        let vec_str: Vec<String> = vector.iter().map(|v| v.to_string()).collect();
+        let record = format!("{}:{}\n", id, vec_str.join(","));
+
+        file.write_all(record.as_bytes()).map_err(|e| format!("Błąd zapisu do WAL: {}", e))?;
+        file.sync_all().map_err(|e| format!("Błąd fsync dla WAL: {}", e))?;
+
+        Ok(())
+    }
+
+    /// Bezpieczne wstawienie wektora z synchronicznym wpisem do WAL.
+    pub fn insert_with_wal(&self, path: &Path, file_basename: &str, id: usize, vector: &Vec<f32>) -> Result<(), String> {
+        self.append_wal(path, file_basename, id, vector)?;
+        self.insert(id, vector)
+    }
+
     /// Zapisuje indeks atomowo (temp-then-rename), generuje sumę kontrolną oraz rotuje 2 generacje kopii (.prev).
     pub fn file_dump(&self, path: &Path, file_basename: &str) -> Result<String, String> {
         if !path.exists() {
@@ -151,22 +183,56 @@ impl SparkleVectorIndex {
         std::fs::rename(&tmp_data, &target_data).map_err(|e| e.to_string())?;
         std::fs::write(&target_checksum, checksum_content).map_err(|e| e.to_string())?;
 
+        // 5. Wyczyszczenie pliku WAL (wszystkie wektory utrwalone w grafie)
+        let wal_path = path.join(format!("{}.hnsw.wal", file_basename));
+        if wal_path.exists() {
+            let _ = std::fs::write(&wal_path, "");
+        }
+
         Ok(dump_res)
     }
 
-    /// Wczytuje indeks wektorowy z weryfikacją sumy kontrolnej oraz automatycznym plikiem zapasowym (.prev).
+    /// Wczytuje indeks wektorowy z weryfikacją sumy kontrolnej, automatycznym fallbackiem (.prev) oraz odtworzeniem wpisów z WAL.
     pub fn load_hnsw(path: &Path, file_basename: &str, dimension: usize) -> Result<Self, String> {
         // Próba załadowania z głównego zestawu plików
-        match Self::try_load_single(path, file_basename, dimension) {
-            Ok(index) => Ok(index),
+        let index = match Self::try_load_single(path, file_basename, dimension) {
+            Ok(idx) => idx,
             Err(primary_err) => {
                 println!("⚠️ [HNSW LOAD]: Błąd wczytywania głównego indeksu: {}. Próba przywrócenia z generacji .prev...", primary_err);
                 let prev_basename = format!("{}.prev", file_basename);
                 Self::try_load_single(path, &prev_basename, dimension).map_err(|prev_err| {
                     format!("Wszystkie generacje indeksu uszkodzone/niedostępne. Główny: {}; Fallback: {}", primary_err, prev_err)
-                })
+                })?
+            }
+        };
+
+        // Odtworzenie wpisów z dziennika WAL (jeśli istniały wpisy po ostatnim zrzucie)
+        let wal_path = path.join(format!("{}.hnsw.wal", file_basename));
+        if wal_path.exists() {
+            if let Ok(content) = std::fs::read_to_string(&wal_path) {
+                let mut replayed_count = 0;
+                for line in content.lines() {
+                    let trimmed = line.trim();
+                    if trimmed.is_empty() { continue; }
+                    if let Some((id_str, vec_str)) = trimmed.split_once(':') {
+                        if let Ok(id) = id_str.parse::<usize>() {
+                            let floats: Result<Vec<f32>, _> = vec_str.split(',').map(|s| s.parse::<f32>()).collect();
+                            if let Ok(vec) = floats {
+                                if vec.len() == dimension {
+                                    let _ = index.insert(id, &vec);
+                                    replayed_count += 1;
+                                }
+                            }
+                        }
+                    }
+                }
+                if replayed_count > 0 {
+                    println!("🔄 [HNSW WAL]: Pomyślnie odtworzono {} wektorów z dziennika transakcyjnego WAL.", replayed_count);
+                }
             }
         }
+
+        Ok(index)
     }
 
     fn try_load_single(path: &Path, file_basename: &str, dimension: usize) -> Result<Self, String> {
@@ -244,7 +310,6 @@ mod tests {
 
         assert!(index.insert(1, &vec![1.0, 0.0]).is_ok());
         assert!(index.insert(2, &vec![0.0, 1.0]).is_ok());
-        // Trzeci powinien zwrócić błąd z powodu limitu pojemności
         assert!(index.insert(3, &vec![0.5, 0.5]).is_err());
     }
 
@@ -259,24 +324,51 @@ mod tests {
         let temp_dir = std::env::temp_dir();
         let basename = "test_sparkle_index_atomic_unique";
         
-        // Zapis do pliku
         let dump_res = index.file_dump(&temp_dir, basename);
         assert!(dump_res.is_ok());
+
+        let loaded = SparkleVectorIndex::load_hnsw(&temp_dir, basename, dimension);
+        assert!(loaded.is_ok());
         
-        // Odczyt z pliku z weryfikacją sumy kontrolnej
-        let loaded_index_res = SparkleVectorIndex::load_hnsw(&temp_dir, basename, dimension);
-        assert!(loaded_index_res.is_ok());
-        
-        let loaded_index = loaded_index_res.unwrap();
-        let query = vec![0.9, 0.1, 0.0, 0.0];
-        let results = loaded_index.search(&query, 1);
-        
+        let loaded_index = loaded.unwrap();
+        let results = loaded_index.search(&vec1, 1);
         assert!(!results.is_empty());
         assert_eq!(results[0].d_id, 42);
 
-        // Opcjonalne usunięcie plików testowych
+        // Sprzątanie
         let _ = std::fs::remove_file(temp_dir.join(format!("{}.hnsw.graph", basename)));
         let _ = std::fs::remove_file(temp_dir.join(format!("{}.hnsw.data", basename)));
         let _ = std::fs::remove_file(temp_dir.join(format!("{}.checksum", basename)));
+    }
+
+    #[test]
+    fn test_hnsw_wal_crash_recovery() {
+        let dimension = 4;
+        let temp_dir = std::env::temp_dir();
+        let basename = "test_sparkle_wal_recovery";
+
+        // 1. Utworzenie indeksu bazowego i zrzut
+        let index = SparkleVectorIndex::new(dimension, 10);
+        assert!(index.insert(100, &vec![1.0, 0.0, 0.0, 0.0]).is_ok());
+        assert!(index.file_dump(&temp_dir, basename).is_ok());
+
+        // 2. Symulacja niespodziewanego zapisu do WAL bez pełnego zrzutu grafu
+        let uncommitted_vec = vec![0.0, 1.0, 0.0, 0.0];
+        assert!(index.append_wal(&temp_dir, basename, 200, &uncommitted_vec).is_ok());
+
+        // 3. Załadowanie indeksu z dysku — musi odtworzyć wektor 200 z WAL
+        let loaded = SparkleVectorIndex::load_hnsw(&temp_dir, basename, dimension)
+            .expect("Ładowanie z WAL powinno się udać");
+
+        assert_eq!(loaded.len(), 2, "Indeks po odtworzeniu WAL powinien zawierać 2 wektory");
+
+        let search_res = loaded.search(&vec![0.0, 0.9, 0.0, 0.0], 1);
+        assert_eq!(search_res[0].d_id, 200, "Wektor z WAL powinien być poprawnie odnaleziony");
+
+        // Sprzątanie
+        let _ = std::fs::remove_file(temp_dir.join(format!("{}.hnsw.graph", basename)));
+        let _ = std::fs::remove_file(temp_dir.join(format!("{}.hnsw.data", basename)));
+        let _ = std::fs::remove_file(temp_dir.join(format!("{}.checksum", basename)));
+        let _ = std::fs::remove_file(temp_dir.join(format!("{}.hnsw.wal", basename)));
     }
 }

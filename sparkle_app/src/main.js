@@ -75,6 +75,51 @@ function addLog(text) {
   logConsole.scrollTop = logConsole.scrollHeight;
 }
 
+// Pamięć podręczna kwarantanny anomalii (Epistemic Memory Ledger)
+let quarantinedAnomalies = [];
+
+function renderQuarantineList() {
+  const listEl = document.getElementById("quarantine-list");
+  const countBadge = document.getElementById("quarantine-count-badge");
+  if (!listEl) return;
+
+  if (countBadge) {
+    countBadge.textContent = `Kolejka kwarantanny: ${quarantinedAnomalies.length} anomalii`;
+  }
+
+  if (quarantinedAnomalies.length === 0) {
+    listEl.innerHTML = `<div class="quarantine-empty" style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 13px;">Brak zakolejkowanych anomalii. Wszystkie przetworzone wektory pozostają spójne z kotwicą rzeczywistości.</div>`;
+    return;
+  }
+
+  listEl.innerHTML = "";
+  quarantinedAnomalies.forEach((item, index) => {
+    const itemEl = document.createElement("div");
+    itemEl.style = "background: rgba(15, 23, 42, 0.75); border: 1px solid var(--glass-border); border-left: 4px solid #b82eff; border-radius: 6px; padding: 10px; display: flex; justify-content: space-between; align-items: center;";
+    
+    const infoDiv = document.createElement("div");
+    infoDiv.innerHTML = `<strong style="color: #f0abfc;">ID #${item.id}</strong> — Zaskoczenie: <span style="color: #f59e0b; font-weight: 600;">${item.surprise.toFixed(4)}</span><br/><span style="color: var(--text-secondary); font-size: 12px;">"${safeEscapeHTML(item.text)}"</span>`;
+
+    const actionsDiv = document.createElement("div");
+    actionsDiv.style = "display: flex; gap: 6px;";
+
+    const btnDismiss = document.createElement("button");
+    btnDismiss.className = "control-btn small";
+    btnDismiss.textContent = "Odrzuć";
+    btnDismiss.style = "background: rgba(239, 68, 68, 0.2); border-color: #ef4444; color: #fca5a5; font-size: 11px;";
+    btnDismiss.onclick = () => {
+      quarantinedAnomalies.splice(index, 1);
+      renderQuarantineList();
+      addLog(`[Epistemic Ledger]: Odrzucono anomalię ID:${item.id}`);
+    };
+
+    actionsDiv.appendChild(btnDismiss);
+    itemEl.appendChild(infoDiv);
+    itemEl.appendChild(actionsDiv);
+    listEl.appendChild(itemEl);
+  });
+}
+
 // Inicjalizacja nasłuchiwania na zdarzenia silnika Rust
 async function initEventListeners() {
   try {
@@ -95,6 +140,12 @@ async function initEventListeners() {
         updateNeurochemistryUI(payload.Neurochemistry);
       } else if (payload.AnomalyQueued) {
         addLog(`[ANOMALIA ID:${payload.AnomalyQueued.id}]: Surprise = ${payload.AnomalyQueued.surprise.toFixed(4)}. Wartość wektora poza normą!`);
+        quarantinedAnomalies.push({
+          id: payload.AnomalyQueued.id,
+          surprise: payload.AnomalyQueued.surprise,
+          text: payload.AnomalyQueued.text || `Wektor #${payload.AnomalyQueued.id}`
+        });
+        renderQuarantineList();
       } else if (payload.Token !== undefined) {
         if (activeStreamingBubble) {
           if (activeStreamingBubble.classList.contains("generating")) {
@@ -1114,6 +1165,10 @@ window.addEventListener("DOMContentLoaded", () => {
     btnInviteGuest.addEventListener("click", inviteGuestModel);
   }
 
+  const tabBtnLedger = document.getElementById("tab-btn-ledger");
+  const tabLedger = document.getElementById("tab-ledger");
+  const btnForceDeepSleep = document.getElementById("btn-force-deep-sleep");
+
   // Obsługa zakładek i funkcja pomocnicza switchTab
   function switchTab(tabId) {
     localStorage.setItem('sparkle_active_tab', tabId);
@@ -1121,9 +1176,14 @@ window.addEventListener("DOMContentLoaded", () => {
     tabBtnWorkspace.classList.remove("active");
     tabBtnGuests.classList.remove("active");
     tabBtnSpore.classList.remove("active");
+    if (tabBtnYant) tabBtnYant.classList.remove("active");
+    if (tabBtnLedger) tabBtnLedger.classList.remove("active");
+
     tabWorkspace.classList.remove("active");
     tabGuests.classList.remove("active");
     tabSpore.classList.remove("active");
+    if (tabYant) tabYant.classList.remove("active");
+    if (tabLedger) tabLedger.classList.remove("active");
 
     if (tabId === 'workspace') {
       tabBtnWorkspace.classList.add("active");
@@ -1137,6 +1197,9 @@ window.addEventListener("DOMContentLoaded", () => {
     } else if (tabId === 'yant') {
       if (tabBtnYant) tabBtnYant.classList.add("active");
       if (tabYant) tabYant.classList.add("active");
+    } else if (tabId === 'ledger') {
+      if (tabBtnLedger) tabBtnLedger.classList.add("active");
+      if (tabLedger) tabLedger.classList.add("active");
     }
   }
 
@@ -1152,10 +1215,25 @@ window.addEventListener("DOMContentLoaded", () => {
     tabBtnGuests.addEventListener("click", () => switchTab('guests'));
     tabBtnSpore.addEventListener("click", () => switchTab('spore'));
     if (tabBtnYant) tabBtnYant.addEventListener("click", () => switchTab('yant'));
+    if (tabBtnLedger) tabBtnLedger.addEventListener("click", () => switchTab('ledger'));
     
     // Przywróć zapisaną zakładkę z localStorage
     const savedTab = localStorage.getItem('sparkle_active_tab') || 'workspace';
     switchTab(savedTab);
+  }
+
+  if (btnForceDeepSleep) {
+    btnForceDeepSleep.addEventListener("click", async () => {
+      addLog("[Epistemic Ledger]: Wymuszanie konsolidacji pamięci (Deep Sleep)...");
+      try {
+        await invoke("send_user_message", { message: "[COMMAND_DEEP_SLEEP]" });
+        quarantinedAnomalies = [];
+        renderQuarantineList();
+        addLog("[Epistemic Ledger]: Konsolidacja pamięci zakończona.");
+      } catch (err) {
+        addLog(`[Epistemic Ledger Błąd]: ${err}`);
+      }
+    });
   }
 
   // Przywróć zapisany poziom uprawnień z localStorage
