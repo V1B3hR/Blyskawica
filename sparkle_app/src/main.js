@@ -1161,8 +1161,42 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  if (btnInviteGuest) {
-    btnInviteGuest.addEventListener("click", inviteGuestModel);
+  const btnExplainCode = document.getElementById("btn-explain-code");
+  const btnFormatCode = document.getElementById("btn-format-code");
+
+  if (btnExplainCode) {
+    btnExplainCode.addEventListener("click", async () => {
+      const selection = codeEditor.value.substring(codeEditor.selectionStart, codeEditor.selectionEnd) || codeEditor.value;
+      if (!selection.trim()) {
+        alert("Wybierz fragment kodu w edytorze lub załaduj plik do wyjaśnienia.");
+        return;
+      }
+      addLog("[VIBE Workspace]: Przekazywanie fragmentu kodu do Błyskawicy...");
+      const prompt = `Proszę o zwięzłą analizę i wyjaśnienie poniższego fragmentu kodu z pliku ${currentFilenameText.textContent}:\n\n\`\`\`\n${selection}\n\`\`\``;
+      userInput.value = prompt;
+      if (btnSend) {
+        btnSend.click();
+      }
+    });
+  }
+
+  if (btnFormatCode) {
+    btnFormatCode.addEventListener("click", () => {
+      const code = codeEditor.value;
+      if (!code.trim()) return;
+      try {
+        if (currentFilenameText.textContent.endsWith(".json")) {
+          codeEditor.value = JSON.stringify(JSON.parse(code), null, 2);
+          addLog("[VIBE Workspace]: Pomyślnie sformatowano dokument JSON.");
+        } else {
+          const lines = code.split("\n").map(l => l.trimEnd());
+          codeEditor.value = lines.join("\n");
+          addLog("[VIBE Workspace]: Wyczyszczono białe znaki w edytorze.");
+        }
+      } catch (err) {
+        addLog(`[VIBE Format Błąd]: ${err.message}`);
+      }
+    });
   }
 
   const tabBtnLedger = document.getElementById("tab-btn-ledger");
@@ -1410,17 +1444,27 @@ function drawYantOscilloscope(flatGrid, symmetryIndex) {
 
   ctx.clearRect(0, 0, width, height);
 
-  // Draw 16x16 Grid Cells
+  const t = Date.now() * 0.002;
+  const dop = SparkleStore.state.neurochemistry.dopamine || 0.69;
+  const ser = SparkleStore.state.neurochemistry.serotonin || 0.94;
+
+  // Draw 16x16 Grid Cells with Harmonic Cymatic Wave Equation
   for (let r = 0; r < 16; r++) {
     for (let c = 0; c < 16; c++) {
       const idx = r * 16 + c;
-      const val = flatGrid && flatGrid[idx] !== undefined ? flatGrid[idx] : Math.sin((r + c) * 0.5);
+      // Odległość od centrum dla fal kolistych (Chladni cymatics)
+      const dr = r - 7.5;
+      const dc = c - 7.5;
+      const dist = Math.sqrt(dr * dr + dc * dc);
+
+      const wave = Math.cos(dist * (1.2 * ser) - t * 3.0) * Math.sin((r * c) * 0.1 * dop);
+      const val = flatGrid && flatGrid[idx] !== undefined ? flatGrid[idx] : wave;
       const absVal = Math.min(1.0, Math.abs(val));
 
       if (val >= 0) {
-        ctx.fillStyle = `rgba(0, 240, 255, ${0.15 + absVal * 0.75})`;
+        ctx.fillStyle = `rgba(0, 240, 255, ${0.12 + absVal * 0.85})`;
       } else {
-        ctx.fillStyle = `rgba(255, 0, 150, ${0.15 + absVal * 0.75})`;
+        ctx.fillStyle = `rgba(184, 46, 255, ${0.12 + absVal * 0.85})`;
       }
 
       ctx.fillRect(c * cellSize + 1, r * cellSize + 1, cellSize - 2, cellSize - 2);

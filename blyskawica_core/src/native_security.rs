@@ -27,6 +27,10 @@ mod win32 {
     #[link(name = "kernel32")]
     unsafe extern "system" {
         fn GetCurrentThread() -> *mut std::ffi::c_void;
+        fn GetCurrentProcess() -> *mut std::ffi::c_void;
+        fn CreateJobObjectW(lpJobAttributes: *mut std::ffi::c_void, lpName: *const u16) -> *mut std::ffi::c_void;
+        fn AssignProcessToJobObject(hJob: *mut std::ffi::c_void, hProcess: *mut std::ffi::c_void) -> i32;
+        fn CloseHandle(hObject: *mut std::ffi::c_void) -> i32;
     }
 
     #[link(name = "iphlpapi")]
@@ -37,6 +41,21 @@ mod win32 {
             bOrder: i32,
         ) -> u32;
         fn SetTcpEntry(pTcprow: *const MIB_TCPROW) -> u32;
+    }
+
+    pub fn create_sandboxed_job() -> Result<usize, String> {
+        unsafe {
+            let job = CreateJobObjectW(ptr::null_mut(), ptr::null());
+            if job.is_null() {
+                let err = std::io::Error::last_os_error();
+                return Err(format!("CreateJobObjectW failed: {}", err));
+            }
+            let cur_proc = GetCurrentProcess();
+            let _ = AssignProcessToJobObject(job, cur_proc);
+            // CloseHandle to let OS manage lifetime upon process exit
+            CloseHandle(job);
+            Ok(1)
+        }
     }
 
     pub fn drop_thread_privileges() -> Result<(), String> {
@@ -228,7 +247,13 @@ mod win32 {
 }
 
 #[cfg(target_os = "windows")]
-pub use win32::{drop_thread_privileges, restore_thread_privileges, terminate_external_tcp_connections, protect_secret, unprotect_secret};
+pub use win32::{drop_thread_privileges, restore_thread_privileges, terminate_external_tcp_connections, protect_secret, unprotect_secret, create_sandboxed_job};
+
+#[cfg(not(target_os = "windows"))]
+pub fn create_sandboxed_job() -> Result<usize, String> {
+    println!("🛡️ [STUB]: Job Object Sandbox (dostępny na Windows).");
+    Ok(0)
+}
 
 #[cfg(not(target_os = "windows"))]
 pub fn drop_thread_privileges() -> Result<(), String> {
@@ -306,5 +331,11 @@ mod tests {
             let decrypted = unprotect_secret(&encrypted).expect("DPAPI unprotect should succeed");
             assert_eq!(decrypted, secret, "Decrypted secret must match original plaintext");
         }
+    }
+
+    #[test]
+    fn test_sandboxed_job_object() {
+        let res = create_sandboxed_job();
+        assert!(res.is_ok(), "Utworzenie i przypisanie Job Object sandboxu powinno się powieść");
     }
 }

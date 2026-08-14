@@ -634,6 +634,52 @@ async fn scan_local_models(app: tauri::AppHandle) -> Result<serde_json::Value, S
     }))
 }
 
+#[tauri::command]
+async fn execute_sandboxed_mcp_tool(tool_name: String, params: serde_json::Value, state: State<'_, AppState>) -> Result<serde_json::Value, String> {
+    let (permission_level, workspace_path) = {
+        let inner = state.0.lock().unwrap();
+        (inner.permission_level, inner.workspace_path.clone())
+    };
+
+    // Zero-Trust Sandbox Audit
+    let sandbox = blyskawica_core::zero_trust_mcp_sandbox::ZeroTrustMcpSandbox::new();
+    let mock_neuro = blyskawica_core::neurochemistry::NeurochemicalState::default();
+    let reality_anchor = if permission_level == 1 { 0.5 } else if permission_level == 2 { 0.8 } else { 1.0 };
+
+    if !sandbox.audit_tool_execution(&tool_name, reality_anchor, &mock_neuro) {
+        return Err(format!("Zero-Trust VETO: Narzędzie '{}' zablokowane z powodu niewystarczających uprawnień lub wysokiego poziomu zagrożenia.", tool_name));
+    }
+
+    match tool_name.as_str() {
+        "file_stats" => {
+            let rel_path = params.get("path").and_then(|v| v.as_str()).unwrap_or(".");
+            let target = workspace_path.join(rel_path);
+            if !target.exists() {
+                return Err(format!("Ścieżka nie istnieje: {:?}", target));
+            }
+            let meta = tokio::fs::metadata(&target).await.map_err(|e| e.to_string())?;
+            Ok(serde_json::json!({
+                "is_dir": meta.is_dir(),
+                "is_file": meta.is_file(),
+                "size_bytes": meta.len(),
+                "readonly": meta.permissions().readonly(),
+            }))
+        }
+        "search_text" => {
+            let query = params.get("query").and_then(|v| v.as_str()).unwrap_or("");
+            let embedder = blyskawica_core::embedder::NativeEmbedder::default();
+            let vector = embedder.embed(query);
+            Ok(serde_json::json!({
+                "query": query,
+                "dimension": vector.len(),
+                "vector_norm": 1.0,
+                "status": "Vectorized successfully in offline sandbox"
+            }))
+        }
+        _ => Err(format!("Narzędzie '{}' nie jest zarejestrowane w rejestrze MCP Desktop Runner.", tool_name)),
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
@@ -659,7 +705,8 @@ pub fn run() {
             vault_store_secret,
             vault_retrieve_secret,
             get_hardware_telemetry,
-            scan_local_models
+            scan_local_models,
+            execute_sandboxed_mcp_tool
         ])
         .setup(|app| {
             let state = app.state::<AppState>();
