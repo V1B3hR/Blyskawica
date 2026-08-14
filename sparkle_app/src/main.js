@@ -1179,6 +1179,12 @@ window.addEventListener("DOMContentLoaded", () => {
     startVibeTelemetryPolling().catch((err) => addLog(`[Vibe Telemetry Error]: ${err}`));
   }, 2000);
 
+  // Uruchomienie odpytywania telemetrii sprzętowej
+  pollHardwareTelemetry().catch(() => {});
+  setInterval(() => {
+    pollHardwareTelemetry().catch(() => {});
+  }, 3000);
+
   // Uruchomienie nasłuchiwania w tle i pętli odpytywania
   initEventListeners().catch((err) => addLog(`[Events Init Error]: ${err}`));
   pollEngineStatus().catch((err) => addLog(`[Poll Status Error]: ${err}`));
@@ -1189,6 +1195,28 @@ window.addEventListener("DOMContentLoaded", () => {
   // Uruchomienie sekwencji rozruchowej (onboarding)
   runStartupSequence().catch((err) => addLog(`[Startup Error]: ${err}`));
 });
+
+// Telemetria sprzętowa CPU / RAM / Stan termiczny
+async function pollHardwareTelemetry() {
+  const badge = document.getElementById("hw-telemetry-badge");
+  if (!badge) return;
+  try {
+    const data = await invoke("get_hardware_telemetry");
+    if (data) {
+      const cpu = data.cpu_usage_percent.toFixed(0);
+      const usedMem = data.used_memory_mb;
+      const totalMem = data.total_memory_mb;
+      badge.textContent = `CPU: ${cpu}% | RAM: ${usedMem}/${totalMem} MB`;
+      if (data.thermal_alert) {
+        badge.classList.add("thermal-alert");
+        badge.title = "Ostrzeżenie: wysokie obciążenie zasobów / throttling termiczny!";
+      } else {
+        badge.classList.remove("thermal-alert");
+        badge.title = `Platforma: ${data.platform} | Rdzenie: ${data.cpu_cores}`;
+      }
+    }
+  } catch (e) {}
+}
 
 // Sekwencja rozruchowa (Onboarding / Startup State Machine)
 async function runStartupSequence() {
@@ -1237,26 +1265,36 @@ async function runStartupSequence() {
     addLog("[Startup]: Sidecar FastAPI niedostępny; kontynuowanie w natywnym trybie offline.");
   }
 
-  // Krok 2: Weryfikacja Ollama
+  // Krok 2: Weryfikacja lokalnych modeli GGUF i środowiska LLM
   stepOllama.className = "step running";
-  addLog("[Startup]: Sprawdzanie dostępności serwisu Ollama (Port 11434)...");
+  stepOllama.textContent = "Skanowanie lokalnych modeli GGUF / LLM...";
+  addLog("[Startup]: Skanowanie lokalnych katalogów i pamięci podręcznych pod kątem modeli GGUF...");
   
-  let ollamaOk = false;
+  let modelScan = null;
   try {
-    const res = await fetch("http://localhost:11434/api/tags");
-    ollamaOk = res.ok;
-  } catch (e) {
-    ollamaOk = false;
-  }
+    modelScan = await invoke("scan_local_models");
+  } catch (e) {}
 
-  if (ollamaOk) {
+  if (modelScan && modelScan.count > 0) {
     stepOllama.className = "step success";
-    stepOllama.textContent = "✓ Środowisko LLM (Ollama): Gotowe";
-    addLog("[Startup]: Serwis Ollama wykryty i gotowy.");
+    stepOllama.textContent = `✓ Wykryto lokalne modele GGUF (${modelScan.count} dostępnych)`;
+    addLog(`[Startup]: Znaleziono ${modelScan.count} modeli GGUF: ${modelScan.models.map(m => m.name + ' (' + m.size_mb + 'MB)').join(', ')}`);
   } else {
-    stepOllama.className = "step failed";
-    stepOllama.textContent = "⚠ Środowisko LLM (Ollama): Offline (Ostrzeżenie)";
-    addLog("[Startup Ostrzeżenie]: Brak kontaktu z lokalnym Ollama na porcie 11434. Rozmowy z Błyskawicą będą symulowane.");
+    let ollamaOk = false;
+    try {
+      const res = await fetch("http://localhost:11434/api/tags");
+      ollamaOk = res.ok;
+    } catch (e) {}
+
+    if (ollamaOk) {
+      stepOllama.className = "step success";
+      stepOllama.textContent = "✓ Środowisko LLM (Ollama): Gotowe";
+      addLog("[Startup]: Serwis Ollama wykryty i gotowy.");
+    } else {
+      stepOllama.className = "step warning";
+      stepOllama.textContent = "ℹ Brak modelu GGUF (Tryb percepcji symbolicznej)";
+      addLog("[Startup Informacja]: Brak lokalnych modeli .gguf na dysku. Umieść plik modelu w katalogu model/ lub skorzystaj z kreatora.");
+    }
   }
 
   // Krok 3: Wybudzanie rdzenia Rust Core

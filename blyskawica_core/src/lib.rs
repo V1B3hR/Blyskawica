@@ -8,4 +8,5 @@ pub mod zero_trust_mcp_sandbox;
 pub mod native_security;
 pub mod local_inference;
 pub mod cognitive_llm;
+pub mod embedder;
 

@@ -555,6 +555,85 @@ async fn vault_retrieve_secret(app: tauri::AppHandle, key: String) -> Result<Str
     Ok(secret_str)
 }
 
+#[tauri::command]
+async fn get_hardware_telemetry() -> Result<serde_json::Value, String> {
+    use sysinfo::System;
+    let mut sys = System::new_all();
+    sys.refresh_all();
+
+    let cpu_count = sys.cpus().len();
+    let global_cpu_usage = sys.global_cpu_info().cpu_usage();
+    let total_memory_mb = sys.total_memory() / (1024 * 1024);
+    let used_memory_mb = sys.used_memory() / (1024 * 1024);
+    let free_memory_mb = sys.free_memory() / (1024 * 1024);
+
+    let thermal_alert = global_cpu_usage > 90.0 || (used_memory_mb as f32 / total_memory_mb.max(1) as f32) > 0.92;
+
+    Ok(serde_json::json!({
+        "cpu_usage_percent": global_cpu_usage,
+        "cpu_cores": cpu_count,
+        "total_memory_mb": total_memory_mb,
+        "used_memory_mb": used_memory_mb,
+        "free_memory_mb": free_memory_mb,
+        "memory_usage_percent": (used_memory_mb as f64 / total_memory_mb.max(1) as f64) * 100.0,
+        "thermal_alert": thermal_alert,
+        "platform": std::env::consts::OS,
+    }))
+}
+
+#[tauri::command]
+async fn scan_local_models(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
+    let mut found_models = Vec::new();
+    let mut scan_dirs = Vec::new();
+
+    // 1. App local models dir
+    let app_data_dir = app.path().app_data_dir().unwrap_or_else(|_| std::env::temp_dir().join("Blyskawica"));
+    scan_dirs.push(app_data_dir.join("models"));
+
+    // 2. Current workspace model dir
+    scan_dirs.push(PathBuf::from("model"));
+    scan_dirs.push(PathBuf::from("models"));
+
+    // 3. User profile caches (Ollama, LM Studio, HuggingFace)
+    if let Ok(home) = std::env::var("USERPROFILE").or_else(|_| std::env::var("HOME")) {
+        let home_path = PathBuf::from(home);
+        scan_dirs.push(home_path.join(".ollama").join("models").join("blobs"));
+        scan_dirs.push(home_path.join(".cache").join("lm-studio").join("models"));
+        scan_dirs.push(home_path.join(".cache").join("huggingface").join("hub"));
+    }
+
+    for dir in scan_dirs {
+        if !dir.exists() {
+            continue;
+        }
+        if let Ok(entries) = std::fs::read_dir(&dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_file() {
+                    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+                    if ext.eq_ignore_ascii_case("gguf") || ext.eq_ignore_ascii_case("bin") {
+                        let size_bytes = entry.metadata().map(|m| m.len()).unwrap_or(0);
+                        let size_mb = size_bytes / (1024 * 1024);
+                        let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("unknown").to_string();
+
+                        found_models.push(serde_json::json!({
+                            "name": filename,
+                            "path": path.to_string_lossy().to_string(),
+                            "size_mb": size_mb,
+                            "is_gguf": ext.eq_ignore_ascii_case("gguf"),
+                        }));
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(serde_json::json!({
+        "models": found_models,
+        "count": found_models.len()
+    }))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
@@ -578,7 +657,9 @@ pub fn run() {
             trigger_neurogenesis,
             export_logs,
             vault_store_secret,
-            vault_retrieve_secret
+            vault_retrieve_secret,
+            get_hardware_telemetry,
+            scan_local_models
         ])
         .setup(|app| {
             let state = app.state::<AppState>();

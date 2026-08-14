@@ -168,6 +168,25 @@ body.wolf-teeth-active {
   gap: 10px;
 }
 
+.telemetry-badge {
+  font-family: var(--font-family-mono);
+  font-size: 11px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  color: var(--text-secondary);
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.telemetry-badge.thermal-alert {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
+  color: #fca5a5;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+}
+
 .status-indicator {
   width: 8px;
   height: 8px;
