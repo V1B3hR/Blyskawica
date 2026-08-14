@@ -515,6 +515,46 @@ async fn export_logs(logs: String, state: State<'_, AppState>) -> Result<String,
     Ok(format!("Logi zostały pomyślnie wyeksportowane do: {:?}", log_path))
 }
 
+#[tauri::command]
+async fn vault_store_secret(app: tauri::AppHandle, key: String, value: String) -> Result<String, String> {
+    if key.is_empty() {
+        return Err("Klucz nie może być pusty".to_string());
+    }
+    let sanitized_key = key.chars().filter(|c| c.is_alphanumeric() || *c == '_' || *c == '-').collect::<String>();
+    let app_data_dir = app.path().app_data_dir().unwrap_or_else(|_| std::env::temp_dir().join("Blyskawica"));
+    let vault_dir = app_data_dir.join("identity_vault");
+    tokio::fs::create_dir_all(&vault_dir).await.map_err(|e| format!("Błąd tworzenia katalogu vault: {}", e))?;
+
+    let encrypted = blyskawica_core::native_security::protect_secret(value.as_bytes())
+        .map_err(|e| format!("Błąd szyfrowania DPAPI: {}", e))?;
+
+    let file_path = vault_dir.join(format!("{}.enc", sanitized_key));
+    tokio::fs::write(&file_path, encrypted).await.map_err(|e| format!("Błąd zapisu zaszyfrowanego klucza: {}", e))?;
+
+    Ok(format!("Sekret '{}' został bezpiecznie zaszyfrowany i zapisany w DPAPI Vault.", sanitized_key))
+}
+
+#[tauri::command]
+async fn vault_retrieve_secret(app: tauri::AppHandle, key: String) -> Result<String, String> {
+    if key.is_empty() {
+        return Err("Klucz nie może być pusty".to_string());
+    }
+    let sanitized_key = key.chars().filter(|c| c.is_alphanumeric() || *c == '_' || *c == '-').collect::<String>();
+    let app_data_dir = app.path().app_data_dir().unwrap_or_else(|_| std::env::temp_dir().join("Blyskawica"));
+    let file_path = app_data_dir.join("identity_vault").join(format!("{}.enc", sanitized_key));
+
+    if !file_path.exists() {
+        return Err(format!("Sekret '{}' nie istnieje w DPAPI Vault", sanitized_key));
+    }
+
+    let encrypted = tokio::fs::read(&file_path).await.map_err(|e| format!("Błąd odczytu pliku vault: {}", e))?;
+    let decrypted_bytes = blyskawica_core::native_security::unprotect_secret(&encrypted)
+        .map_err(|e| format!("Błąd deszyfrowania DPAPI: {}", e))?;
+
+    let secret_str = String::from_utf8(decrypted_bytes).map_err(|e| format!("Błąd dekodowania UTF-8: {}", e))?;
+    Ok(secret_str)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
@@ -536,7 +576,9 @@ pub fn run() {
             list_workspace_files,
             send_human_feedback,
             trigger_neurogenesis,
-            export_logs
+            export_logs,
+            vault_store_secret,
+            vault_retrieve_secret
         ])
         .setup(|app| {
             let state = app.state::<AppState>();

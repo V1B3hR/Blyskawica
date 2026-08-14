@@ -119,10 +119,116 @@ mod win32 {
             Ok(closed_count)
         }
     }
+    #[repr(C)]
+    #[allow(non_snake_case)]
+    pub struct DATA_BLOB {
+        pub cbData: u32,
+        pub pbData: *mut u8,
+    }
+
+    #[link(name = "crypt32")]
+    unsafe extern "system" {
+        fn CryptProtectData(
+            pDataIn: *const DATA_BLOB,
+            szDataDescr: *const u16,
+            pOptionalEntropy: *const DATA_BLOB,
+            pvReserved: *mut std::ffi::c_void,
+            pPromptStruct: *mut std::ffi::c_void,
+            dwFlags: u32,
+            pDataOut: *mut DATA_BLOB,
+        ) -> i32;
+
+        fn CryptUnprotectData(
+            pDataIn: *const DATA_BLOB,
+            ppszDataDescr: *mut *mut u16,
+            pOptionalEntropy: *const DATA_BLOB,
+            pvReserved: *mut std::ffi::c_void,
+            pPromptStruct: *mut std::ffi::c_void,
+            dwFlags: u32,
+            pDataOut: *mut DATA_BLOB,
+        ) -> i32;
+    }
+
+    #[link(name = "kernel32")]
+    unsafe extern "system" {
+        fn LocalFree(hMem: *mut std::ffi::c_void) -> *mut std::ffi::c_void;
+    }
+
+    pub fn protect_secret(plaintext: &[u8]) -> Result<Vec<u8>, String> {
+        if plaintext.is_empty() {
+            return Ok(Vec::new());
+        }
+        unsafe {
+            let mut in_blob = DATA_BLOB {
+                cbData: plaintext.len() as u32,
+                pbData: plaintext.as_ptr() as *mut u8,
+            };
+            let mut out_blob = DATA_BLOB {
+                cbData: 0,
+                pbData: ptr::null_mut(),
+            };
+
+            let res = CryptProtectData(
+                &mut in_blob,
+                ptr::null(),
+                ptr::null(),
+                ptr::null_mut(),
+                ptr::null_mut(),
+                0,
+                &mut out_blob,
+            );
+
+            if res != 0 && !out_blob.pbData.is_null() {
+                let slice = std::slice::from_raw_parts(out_blob.pbData, out_blob.cbData as usize);
+                let result = slice.to_vec();
+                LocalFree(out_blob.pbData as *mut std::ffi::c_void);
+                Ok(result)
+            } else {
+                let err = std::io::Error::last_os_error();
+                Err(format!("DPAPI CryptProtectData failed: {} (code {})", err, err.raw_os_error().unwrap_or(0)))
+            }
+        }
+    }
+
+    pub fn unprotect_secret(ciphertext: &[u8]) -> Result<Vec<u8>, String> {
+        if ciphertext.is_empty() {
+            return Ok(Vec::new());
+        }
+        unsafe {
+            let mut in_blob = DATA_BLOB {
+                cbData: ciphertext.len() as u32,
+                pbData: ciphertext.as_ptr() as *mut u8,
+            };
+            let mut out_blob = DATA_BLOB {
+                cbData: 0,
+                pbData: ptr::null_mut(),
+            };
+
+            let res = CryptUnprotectData(
+                &mut in_blob,
+                ptr::null_mut(),
+                ptr::null(),
+                ptr::null_mut(),
+                ptr::null_mut(),
+                0,
+                &mut out_blob,
+            );
+
+            if res != 0 && !out_blob.pbData.is_null() {
+                let slice = std::slice::from_raw_parts(out_blob.pbData, out_blob.cbData as usize);
+                let result = slice.to_vec();
+                LocalFree(out_blob.pbData as *mut std::ffi::c_void);
+                Ok(result)
+            } else {
+                let err = std::io::Error::last_os_error();
+                Err(format!("DPAPI CryptUnprotectData failed: {} (code {})", err, err.raw_os_error().unwrap_or(0)))
+            }
+        }
+    }
 }
 
 #[cfg(target_os = "windows")]
-pub use win32::{drop_thread_privileges, restore_thread_privileges, terminate_external_tcp_connections};
+pub use win32::{drop_thread_privileges, restore_thread_privileges, terminate_external_tcp_connections, protect_secret, unprotect_secret};
 
 #[cfg(not(target_os = "windows"))]
 pub fn drop_thread_privileges() -> Result<(), String> {
@@ -140,6 +246,16 @@ pub fn restore_thread_privileges() -> Result<(), String> {
 pub fn terminate_external_tcp_connections() -> Result<usize, String> {
     println!("🛡️ [STUB]: Zrywanie połączeń sieciowych (dostępne tylko na Windows).");
     Ok(0)
+}
+
+#[cfg(not(target_os = "windows"))]
+pub fn protect_secret(_plaintext: &[u8]) -> Result<Vec<u8>, String> {
+    Err("Platform keychain protection is only supported on Windows (DPAPI). Plaintext storage is prohibited.".to_string())
+}
+
+#[cfg(not(target_os = "windows"))]
+pub fn unprotect_secret(_ciphertext: &[u8]) -> Result<Vec<u8>, String> {
+    Err("Platform keychain protection is only supported on Windows (DPAPI). Plaintext storage is prohibited.".to_string())
 }
 
 #[cfg(test)]
@@ -177,5 +293,18 @@ mod tests {
     fn test_tcp_list() {
         let res = terminate_external_tcp_connections();
         assert!(res.is_ok());
+    }
+
+    #[test]
+    fn test_dpapi_protect_unprotect() {
+        #[cfg(target_os = "windows")]
+        {
+            let secret = b"blyskawica_vault_test_secret_12345";
+            let encrypted = protect_secret(secret).expect("DPAPI protect should succeed");
+            assert_ne!(encrypted, secret, "Ciphertext should differ from plaintext");
+            
+            let decrypted = unprotect_secret(&encrypted).expect("DPAPI unprotect should succeed");
+            assert_eq!(decrypted, secret, "Decrypted secret must match original plaintext");
+        }
     }
 }

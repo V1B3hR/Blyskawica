@@ -312,24 +312,33 @@ impl BlyskawicaEngine {
                             }
 
                             if let Some(llm) = &mut self.llm {
-                                // Dynamiczne parametry z Neurochemii
-                                let (temp, rep_pen, max_toks) = if let BlysState::Active { neuro_state, .. } = &self.state {
+                                // Dynamiczne parametry z pełnego 5-hormonalnego profilu Neurochemii
+                                let (temp, rep_pen, top_p_val, max_toks) = if let BlysState::Active { neuro_state, .. } = &self.state {
                                     let ns = neuro_state.read().await;
-                                    (
-                                        (0.7 + (ns.dopamine - 0.5) * 0.5) as f64,
-                                        (1.1 + (ns.serotonin - 0.5) * 0.2) as f32,
-                                        (256.0 + (ns.cortisol - 0.5) * 128.0) as usize
-                                    )
+                                    let mut base_temp = (0.7 + (ns.dopamine - 0.5) * 0.6).clamp(0.1, 1.4) as f64;
+                                    let mut base_rep = (1.1 + (ns.serotonin - 0.5) * 0.3).clamp(1.0, 1.6) as f32;
+                                    let mut base_top_p = (0.9 - (ns.gaba - 0.5) * 0.3).clamp(0.5, 0.98) as f64;
+                                    let mut base_max_tokens = (256.0 - (ns.melatonin - 0.5) * 128.0).clamp(64.0, 1024.0) as usize;
+
+                                    // Stres/Zagrożenie (Wysoki Kortyzol): tryb precyzyjny/obronny
+                                    if ns.cortisol > 0.6 {
+                                        base_temp = 0.2;
+                                        base_rep = 1.35;
+                                        base_top_p = 0.7;
+                                        base_max_tokens = base_max_tokens.min(192);
+                                    }
+
+                                    (base_temp, base_rep, base_top_p, base_max_tokens)
                                 } else {
-                                    (0.7, 1.1, 256)
+                                    (0.7, 1.1, 0.9, 256)
                                 };
                                 
-                                log_print!(self, "🚀 [ENGINE INFERENCE]: Rozpoczęcie natywnego generowania odpowiedzi.");
+                                log_print!(self, "🚀 [ENGINE INFERENCE]: Parametry kognitywne: Temp={:.2}, RepPen={:.2}, TopP={:.2}, MaxToks={}", temp, rep_pen, top_p_val, max_toks);
                                 
                                 let params = crate::cognitive_llm::GenerationParams {
                                     temperature: temp,
                                     repetition_penalty: rep_pen,
-                                    top_p: 0.9,
+                                    top_p: top_p_val,
                                     max_tokens: max_toks,
                                 };
                                 

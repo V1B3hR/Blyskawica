@@ -119,7 +119,7 @@ mod tests {
 
         // Wektor adwersarialny (ID: 666)
         let adv_vector = vec![1.0, 0.0, 0.0, 0.0];
-        index.insert(666, &adv_vector);
+        let _ = index.insert(666, &adv_vector);
 
         // Normalny wektor (ID: 10)
         let normal_vector = vec![0.0, 1.0, 0.0, 0.0];
