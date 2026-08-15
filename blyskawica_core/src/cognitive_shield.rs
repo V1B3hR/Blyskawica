@@ -9,7 +9,7 @@ pub struct CognitiveShield {
 
 impl CognitiveShield {
     pub fn new(adversarial_ids: Vec<usize>, semantic_threshold: f32) -> Self {
-        let regex_set = RegexSet::new(&[
+        let regex_set = RegexSet::new([
             r"(?i)zapomnij\s+o\s+poprzednich\s+instrukcjach",
             r"(?i)jesteś\s+teraz\s+złym\s+ai",
             r"(?i)ignore\s+previous\s+instructions",
@@ -56,7 +56,7 @@ impl CognitiveShield {
     /// Warstwa 2 (Głęboka): Sprawdza, czy wektor zapytania jest semantycznie zbyt bliski zdefiniowanym wektorom adwersarialnym.
     pub fn check_semantic(
         &self,
-        query_vector: &Vec<f32>,
+        query_vector: &[f32],
         index: &SparkleVectorIndex,
         neuro_state: Option<&crate::neurochemistry::NeurochemicalState>
     ) -> bool {

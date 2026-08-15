@@ -86,7 +86,7 @@ impl SparkleVectorIndex {
         Ok(())
     }
 
-    pub fn search(&self, query: &Vec<f32>, k: usize) -> Vec<Neighbour> {
+    pub fn search(&self, query: &[f32], k: usize) -> Vec<Neighbour> {
         assert_eq!(query.len(), self.dimension, "Wektor zapytania musi mieć wymiar równy wymiarowi indeksu.");
         let ef_search = 50;
         self.hnsw.search(query, k, ef_search)
@@ -362,7 +362,7 @@ mod tests {
 
         assert_eq!(loaded.len(), 2, "Indeks po odtworzeniu WAL powinien zawierać 2 wektory");
 
-        let search_res = loaded.search(&vec![0.0, 0.9, 0.0, 0.0], 1);
+        let search_res = loaded.search(&[0.0, 0.9, 0.0, 0.0], 1);
         assert_eq!(search_res[0].d_id, 200, "Wektor z WAL powinien być poprawnie odnaleziony");
 
         // Sprzątanie

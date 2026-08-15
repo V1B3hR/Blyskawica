@@ -178,7 +178,7 @@ mod win32 {
             return Ok(Vec::new());
         }
         unsafe {
-            let mut in_blob = DATA_BLOB {
+            let in_blob = DATA_BLOB {
                 cbData: plaintext.len() as u32,
                 pbData: plaintext.as_ptr() as *mut u8,
             };
@@ -188,7 +188,7 @@ mod win32 {
             };
 
             let res = CryptProtectData(
-                &mut in_blob,
+                &in_blob,
                 ptr::null(),
                 ptr::null(),
                 ptr::null_mut(),
@@ -214,7 +214,7 @@ mod win32 {
             return Ok(Vec::new());
         }
         unsafe {
-            let mut in_blob = DATA_BLOB {
+            let in_blob = DATA_BLOB {
                 cbData: ciphertext.len() as u32,
                 pbData: ciphertext.as_ptr() as *mut u8,
             };
@@ -224,7 +224,7 @@ mod win32 {
             };
 
             let res = CryptUnprotectData(
-                &mut in_blob,
+                &in_blob,
                 ptr::null_mut(),
                 ptr::null(),
                 ptr::null_mut(),

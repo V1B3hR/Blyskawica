@@ -3,6 +3,12 @@ pub struct VirtualGround {
     pub ground_potential: f32,
 }
 
+impl Default for VirtualGround {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl VirtualGround {
     pub fn new() -> Self {
         Self { ground_potential: 0.0 }

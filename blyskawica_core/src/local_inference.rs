@@ -26,10 +26,10 @@ impl LocalInferenceEngine {
 
         // Odczyt f32 z Little Endian
         let mut floats = vec![0.0f32; required_bytes / 4];
-        for i in 0..floats.len() {
+        for (i, float_val) in floats.iter_mut().enumerate() {
             let start = i * 4;
             let bytes = [data[start], data[start + 1], data[start + 2], data[start + 3]];
-            floats[i] = f32::from_le_bytes(bytes);
+            *float_val = f32::from_le_bytes(bytes);
         }
 
         let mut offset = 0;

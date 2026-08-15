@@ -22,7 +22,7 @@ impl ZeroTrustMcpSandbox {
         let cortisol = neuro_state.cortisol;
         let anxiety = (0.5 - neuro_state.gaba).max(0.0);
         let security_index = reality_anchor - anxiety - cortisol;
-        security_index.max(0.0).min(1.0)
+        security_index.clamp(0.0, 1.0)
     }
 
     /// Weryfikuje, czy dane narzędzie/akcja systemu może być uruchomione.

@@ -1,32 +1,42 @@
 use std::fs::File;
 use std::path::Path;
 use candle_core::{Device, Tensor};
-use candle_transformers::models::quantized_qwen2::ModelWeights;
+use candle_transformers::models::quantized_llama::ModelWeights;
 use tokenizers::Tokenizer;
 
-pub struct LocalCognitiveLLM {
+#[derive(Debug, Clone)]
+pub struct GenerationParams {
+    pub temperature: f64,
+    pub top_p: f64,
+    pub max_tokens: usize,
+    pub repetition_penalty: f32,
+}
+
+impl Default for GenerationParams {
+    fn default() -> Self {
+        Self {
+            temperature: 0.7,
+            top_p: 0.9,
+            max_tokens: 512,
+            repetition_penalty: 1.1,
+        }
+    }
+}
+
+pub struct CognitiveLlmEngine {
     model: ModelWeights,
     tokenizer: Tokenizer,
     device: Device,
 }
 
-pub struct GenerationParams {
-    pub temperature: f64,
-    pub repetition_penalty: f32,
-    pub top_p: f64,
-    pub max_tokens: usize,
-}
+pub type LocalCognitiveLLM = CognitiveLlmEngine;
 
-impl LocalCognitiveLLM {
-    /// Ładuje model z pliku GGUF oraz tokenizator z pliku tokenizer.json.
-    pub fn load<P: AsRef<Path>>(model_path: P, tokenizer_path: P) -> Result<Self, String> {
-        let device = Device::Cpu; // Domyślnie CPU dla maksymalnej kompatybilności offline
-        
-        let model_path = model_path.as_ref();
-        let tokenizer_path = tokenizer_path.as_ref();
+impl CognitiveLlmEngine {
+    pub fn new(model_path: &Path, tokenizer_path: &Path) -> Result<Self, String> {
+        let device = Device::Cpu;
 
         if !model_path.exists() {
-            return Err(format!("Plik modelu nie istnieje: {:?}", model_path));
+            return Err(format!("Plik modelu GGUF nie istnieje: {:?}", model_path));
         }
         if !tokenizer_path.exists() {
             return Err(format!("Plik tokenizatora nie istnieje: {:?}", tokenizer_path));
@@ -35,8 +45,8 @@ impl LocalCognitiveLLM {
         // Weryfikacja spójności pliku GGUF z plikiem .sha256 jeśli istnieje (kryptograficzne SHA-256)
         let sha256_sidecar = model_path.with_extension("gguf.sha256");
         if sha256_sidecar.exists() {
-            if let Ok(expected_hash) = std::fs::read_to_string(&sha256_sidecar) {
-                let expected_hash = expected_hash.trim();
+            if let Ok(raw_hash) = std::fs::read_to_string(&sha256_sidecar) {
+                let expected_hash = raw_hash.trim();
                 if !expected_hash.is_empty() {
                     use std::io::Read;
                     use sha2::{Sha256, Digest};
@@ -79,6 +89,10 @@ impl LocalCognitiveLLM {
             tokenizer,
             device,
         })
+    }
+
+    pub fn load(model_path: &Path, tokenizer_path: &Path) -> Result<Self, String> {
+        Self::new(model_path, tokenizer_path)
     }
 
     /// Generuje odpowiedź na zadany prompt z uwzględnieniem neurochemicznych modyfikatorów i strumieniowaniem tokenów.
@@ -151,31 +165,34 @@ impl LocalCognitiveLLM {
                 }
             }
 
-            // Próbkowanie z temperaturą
+            // Próbkowanie z temperaturą i top-p
             let next_token = if params.temperature > 0.0 {
-                // Skalowanie logitów temperaturą
+                // Skalowanie przez temperaturę
                 for logit in logits.iter_mut() {
                     *logit /= params.temperature as f32;
                 }
-                
-                // Numerycznie stabilny Softmax (odjęcie max_logit zapobiega overflow exp)
+
+                // Softmax
                 let max_logit = logits.iter().cloned().fold(f32::NEG_INFINITY, f32::max);
-                let mut exp_logits: Vec<f64> = logits.iter().map(|&x| ((x - max_logit) as f64).exp()).collect();
-                let sum: f64 = exp_logits.iter().sum();
-                for prob in exp_logits.iter_mut() {
-                    *prob /= sum;
+                let mut sum_exp = 0.0f32;
+                for logit in logits.iter_mut() {
+                    *logit = (*logit - max_logit).exp();
+                    sum_exp += *logit;
                 }
-                
-                // Próbkowanie z top_p
-                let mut indexed_probs: Vec<(usize, f64)> = exp_logits.into_iter().enumerate().collect();
+                for logit in logits.iter_mut() {
+                    *logit /= sum_exp;
+                }
+
+                // Top-P Nucleus Filtering
+                let mut indexed_probs: Vec<(usize, f64)> = logits.iter().enumerate().map(|(i, &p)| (i, p as f64)).collect();
                 indexed_probs.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
-                
-                let mut cumulative_prob = 0.0;
+
+                let mut cum_prob = 0.0;
                 let mut cutoff_index = indexed_probs.len();
-                for (idx, &(_, prob)) in indexed_probs.iter().enumerate() {
-                    cumulative_prob += prob;
-                    if cumulative_prob > params.top_p {
-                        cutoff_index = idx + 1;
+                for (i, (_idx, prob)) in indexed_probs.iter().enumerate() {
+                    cum_prob += prob;
+                    if cum_prob >= params.top_p {
+                        cutoff_index = i + 1;
                         break;
                     }
                 }

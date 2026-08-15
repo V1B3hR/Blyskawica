@@ -249,7 +249,7 @@ async fn trigger_neurogenesis(state: State<'_, AppState>) -> Result<String, Stri
 
 #[tauri::command]
 fn set_permission_level(level: u8, state: State<'_, AppState>) -> Result<String, String> {
-    if level < 1 || level > 3 {
+    if !(1..=3).contains(&level) {
         return Err("Nieprawidłowy poziom uprawnień (dozwolone 1, 2, 3)".to_string());
     }
     if level == 3 {
