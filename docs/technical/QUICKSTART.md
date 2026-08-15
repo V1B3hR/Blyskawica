@@ -400,10 +400,11 @@ python -m adaptiveneuralnetwork.training.scripts.run_bitext_training \
 
 ## Support
 
-- **Documentation:** See [docs/training/](docs/training/)
-- **Examples:** See [TRAINING_RUN_SUMMARY.md](TRAINING_RUN_SUMMARY.md)
+- **Documentation:** See [../training/](../training/)
+- **Examples:** See [../summaries/TRAINING_RUN_SUMMARY.md](../summaries/TRAINING_RUN_SUMMARY.md)
 - **Issues:** Report at GitHub Issues
 
 ---
 
 **Happy Training! 🚀**
+

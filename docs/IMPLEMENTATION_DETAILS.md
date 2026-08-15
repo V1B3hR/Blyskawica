@@ -283,8 +283,8 @@ The new system is production-ready, well-tested, and fully documented. Old scrip
 
 ## References
 
-- [Script Consolidation Guide](docs/SCRIPT_CONSOLIDATION.md)
-- [Configuration Usage Guide](config/training/README.md)
-- [Test Suite](tests/test_entry_points.py)
-- [Interactive Demo](demos/demo_unified_training.py)
-- [Main README](README.md)
+- [Script Consolidation Guide](SCRIPT_CONSOLIDATION.md)
+- [Configuration Usage Guide](../adaptiveneuralnetwork/configs/training/README.md)
+- [Test Suite](../tests/test_entry_points.py)
+- [Interactive Demo](../demos/demo_unified_training.py)
+- [Main README](../README.md)

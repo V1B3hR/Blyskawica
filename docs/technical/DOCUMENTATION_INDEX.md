@@ -1,176 +1,96 @@
 # Documentation Index
 
-This document provides a comprehensive index of all documentation available for the Adaptive Neural Network project.
-
-## 📚 Core Documentation
-
-### Getting Started
-- **[README.md](README.md)** - Main project overview, installation, and quick start guide
-- **[CHANGELOG.md](CHANGELOG.md)** - Version history and release notes
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** - How to contribute to the project
-- **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)** - Community guidelines and expectations
-- **[SECURITY.md](SECURITY.md)** - Security policy and vulnerability reporting
-
-### Comprehensive Guides
-- **[Implementation Guide](docs/implementation/IMPLEMENTATION_GUIDE.md)** - Complete implementation documentation across all phases
-- **[Training Guide](docs/training/TRAINING_GUIDE.md)** - Unified training documentation for all datasets and tasks
-- **[Testing Guide](docs/testing/TESTING_GUIDE.md)** - Complete testing, validation, and benchmarking guide
-
-## ⚙️ Configuration System
-
-### Core Configuration
-- **[config/examples/example_genome.json](config/examples/example_genome.json)** - Standard configuration example
-- **[config/examples/benchmark_config.json](config/examples/benchmark_config.json)** - High-performance configuration
-- **[adaptiveneuralnetwork/config.py](adaptiveneuralnetwork/config.py)** - Configuration system implementation
-- **[config/examples/README.md](config/examples/README.md)** - Configuration examples and guidelines
-
-### Configuration Categories
-- **Proactive Interventions**: Anxiety, calm, energy intervention controls
-- **Attack Resilience**: Energy drain resistance, signal redundancy, trust detection  
-- **Trend Analysis**: Window sizes, prediction parameters
-- **Rolling History**: Memory lengths for emotional state tracking
-- **Environment Adaptation**: Stress thresholds, adaptation rates
-
-## 🤖 Training & Datasets
-
-**See the comprehensive [Training Guide](docs/training/TRAINING_GUIDE.md) for complete training documentation**
-
-### Quick Links
-- **[Training Guide](docs/training/TRAINING_GUIDE.md)** - Complete training documentation
-- **[Bitext Training](docs/training/bitext_training.md)** - Lightweight baseline training
-- **[config/examples/README.md](config/examples/README.md)** - Configuration examples
-
-## 🧪 Testing & Validation
-
-**See the comprehensive [Testing Guide](docs/testing/TESTING_GUIDE.md) for complete testing documentation**
-
-### Quick Links
-- **[Testing Guide](docs/testing/TESTING_GUIDE.md)** - Complete testing and validation guide
-- **[adaptiveneuralnetwork/tests/](adaptiveneuralnetwork/tests/)** - Test implementations
-
-## 🚀 Performance & Optimization
-
-### Performance Analysis
-- **[docs/performance.md](docs/performance.md)** - Performance profiling and optimization guide
-- **[scripts/run_profiler.py](scripts/run_profiler.py)** - Profiling utilities
-- **[benchmark_results.json](benchmark_results.json)** - Performance benchmark results
-
-### Environment Setup
-- **[scripts/print_env.py](scripts/print_env.py)** - Environment information capture
-- **[requirements.txt](requirements.txt)** - Core runtime dependencies
-- **[dev-requirements.txt](dev-requirements.txt)** - Development dependencies
-
-## 🔬 Research & Advanced Features
-
-**See the comprehensive [Implementation Guide](docs/implementation/IMPLEMENTATION_GUIDE.md) for complete implementation documentation**
-
-### Intelligence & Cognition
-- **[AI Ethics Framework](AI%20Ethics%20Framework)** - Ethical AI considerations
-- **[ethicsframework.md](ethicsframework.md)** - Detailed ethics framework
-- **[SQL_SECURITY_SUMMARY.md](SQL_SECURITY_SUMMARY.md)** - Security considerations
-
-### Advanced Documentation
-- **[docs/ENHANCED_FEATURES.md](docs/ENHANCED_FEATURES.md)** - Enhanced feature documentation
-- **[docs/VIDEO_FEATURES.md](docs/VIDEO_FEATURES.md)** - Video processing capabilities
-- **[docs/VIDEO_STREAMING_GUIDE.md](docs/VIDEO_STREAMING_GUIDE.md)** - Video streaming implementation
-- **[docs/SPATIAL_DIMENSIONS_GUIDE.md](docs/SPATIAL_DIMENSIONS_GUIDE.md)** - Multi-dimensional spatial reasoning
-- **[docs/TIME_MITIGATION.md](docs/TIME_MITIGATION.md)** - Time management solution
-- **[docs/alive_loop_node_documentation.md](docs/alive_loop_node_documentation.md)** - Core node documentation
-- **[docs/enhanced_trust_network_documentation.md](docs/enhanced_trust_network_documentation.md)** - Trust network systems
-
-### Implementation Details
-- **[roadmap.md](roadmap.md)** - Project roadmap and future plans
-- **[final_validation.json](final_validation.json)** - Comprehensive validation results
-
-## 🛠️ Development & CI/CD
-
-### Development Workflow
-- **[.editorconfig](.editorconfig)** - Editor configuration
-- **[pyproject.toml](pyproject.toml)** - Project configuration and dependencies
-
-### Scripts & Utilities
-- **[scripts/](scripts/)** - Development and utility scripts
-- **[benchmark_cli.py](benchmark_cli.py)** - Command-line benchmarking interface
-
-## 📊 Results & Artifacts
-
-### Benchmark Results
-- **[benchmark_results/](benchmark_results/)** - Historical benchmark data and analysis reports
-- **[benchmark_history/](benchmark_history/)** - Benchmark progression over time
-- **[benchmark_results.json](benchmark_results.json)** - Current performance benchmarks
-
-### Test Results
-- **[final_validation.json](final_validation.json)** - Final validation metrics
-- **Various JSON result files** - Training and benchmark outputs
-
-## 🎯 Quick Navigation
-
-### By Use Case
-
-**Getting Started:**
-→ [README.md](README.md) → [CONTRIBUTING.md](CONTRIBUTING.md) → [Training Guide](docs/training/TRAINING_GUIDE.md)
-
-**Configuration:**
-→ [config/examples/](config/examples/) → [adaptiveneuralnetwork/config.py](adaptiveneuralnetwork/config.py)
-
-**Training:**
-→ [Training Guide](docs/training/TRAINING_GUIDE.md) → [Bitext Training](docs/training/bitext_training.md)
-
-**Testing:**
-→ [Testing Guide](docs/testing/TESTING_GUIDE.md) → [adaptiveneuralnetwork/tests/](adaptiveneuralnetwork/tests/)
-
-**Implementation:**
-→ [Implementation Guide](docs/implementation/IMPLEMENTATION_GUIDE.md) → [docs/performance.md](docs/performance.md)
-
-**Research:**
-→ [Testing Guide](docs/testing/TESTING_GUIDE.md) → [AI Ethics Framework](AI%20Ethics%20Framework)
-
-### By Audience
-
-**Users:**
-- [README.md](README.md) - Overview and installation
-- [Training Guide](docs/training/TRAINING_GUIDE.md) - Complete training documentation
-- [config/examples/](config/examples/) - Configuration examples
-
-**Developers:**
-- [CONTRIBUTING.md](CONTRIBUTING.md) - Development workflow
-- [Implementation Guide](docs/implementation/IMPLEMENTATION_GUIDE.md) - Technical implementation
-- [Testing Guide](docs/testing/TESTING_GUIDE.md) - Testing methodology  
-
-**Researchers:**
-- [Testing Guide](docs/testing/TESTING_GUIDE.md) - Intelligence benchmarking and validation
-- [Implementation Guide](docs/implementation/IMPLEMENTATION_GUIDE.md) - Advanced features and research
-- [docs/performance.md](docs/performance.md) - Performance analysis
-
-**Maintainers:**
-- [SECURITY.md](SECURITY.md) - Security policy
-- [CHANGELOG.md](CHANGELOG.md) - Release management
-- [benchmark_results/](benchmark_results/) - Historical performance data
-
-## 📝 Documentation Standards
-
-### Writing Guidelines
-- Use clear, concise language
-- Include working code examples
-- Provide troubleshooting sections
-- Link to related documentation
-- Keep examples up-to-date with current API
-
-### Maintenance
-- Update CHANGELOG.md for all releases
-- Review documentation with each major feature
-- Validate all code examples in CI
-- Maintain cross-references between documents
-
-### Consolidated Structure
-This documentation index reflects the new consolidated structure:
-- **3 comprehensive guides** replace 17+ scattered documents
-- **Unified organization** by topic rather than individual features
-- **Clear navigation paths** for different user types
-- **Reduced redundancy** while maintaining complete coverage
+This document provides a comprehensive, verified index of all documentation across the **Adaptive Neural Network** and **Błyskawica / SPARKLE V10** repository.
 
 ---
 
-*Last updated: December 2024*  
-*Documentation consolidated to improve maintainability and reduce redundancy*  
-*For documentation updates, see [CONTRIBUTING.md](CONTRIBUTING.md)*
+## 📚 Core System Documentation
+
+### Getting Started & Overview
+- **[README.md](../../README.md)** — Main project overview, quick start, architecture highlights, and SPARKLE setup.
+- **[QUICKSTART.md](../../QUICKSTART.md)** — 5-minute fast start guide for training and smoke testing.
+- **[ARCHITECTURE.md](../../ARCHITECTURE.md)** — Comprehensive system architecture (Rust Tauri v2 shell, Candle in-memory SLM, CNS, Immune Shield).
+- **[CHANGELOG.md](../../CHANGELOG.md)** — Version history, release notes, and milestones.
+- **[CONTRIBUTING.md](../../CONTRIBUTING.md)** — Development workflow, testing standards, and contribution guidelines.
+- **[SECURITY.md](../../SECURITY.md)** — Security policy, permission levels, and vulnerability reporting.
+
+---
+
+## 🌟 Evolution & Development Phases (`docs/phases/`)
+
+**See the [Master Evolution & Phases Matrix](../phases/README.md) for the complete phase roadmap.**
+
+| Phase | Title | Documentation Link |
+|---|---|---|
+| **Phase 0** | Baseline Metrics & Inventory | [Phase 0 Foundation](../phases/phase0_foundation/README.md) |
+| **Phase 1** | Vectorized Data Layer (+949% Throughput) | [Phase 1 Data Layer](../phases/phase1_data_layer/README.md) |
+| **Phase 2** | Core Tensor Path & Op Fusion | [Phase 2 Tensor Path](../phases/phase2_tensor_path/README.md) |
+| **Phase 3** | Modular Architecture & Layer Registry | [Phase 3 Modular Architecture](../phases/phase3_modular_arch/README.md) |
+| **Phase 4** | Unified Trainer & 9-Hook Callbacks | [Phase 4 Training Loop](../phases/phase4_training_loop/README.md) |
+| **Phase 5** | Distributed Parallelization (DDP) | [Phase 5 Parallelization](../phases/phase5_parallelization/README.md) |
+| **Phase 6** | Evaluation & Drift Detection | [Phase 6 Evaluation](../phases/phase6_evaluation/README.md) |
+| **Phase 7** | Deep Cognition (PINN, Cymatics, CRA) | [Phase 7 Deep Cognition](../phases/phase7_deep_cognition/README.md) |
+| **Phase 8** | System Hardening & Wolf Teeth Defense | [Phase 8 Hardening & Security](../phases/phase8_hardening_security/README.md) |
+| **Phase 9** | Hyper-Synthesis v4.0 (GR, EBM, KEGG, Lava) | [Phase 9 Hyper-Synthesis](../phases/phase9_hyper_synthesis/README.md) |
+| **Phase V10** | SPARKLE Full Standalone Offline Shell | [Phase V10 Standalone Shell](../phases/v10_standalone_shell/README.md) |
+
+---
+
+## 🤖 Training & Datasets (`docs/training/`)
+
+- **[Unified Training Guide](../training/TRAINING_GUIDE.md)** — Complete configuration-driven training guide across all dataset domains.
+- **[Bitext Baseline Training](../training/bitext_training.md)** — Fast text classification and NLP baseline pipeline.
+- **[Script Consolidation Guide](../SCRIPT_CONSOLIDATION.md)** — Unified CLI reference (`train.py`, `eval.py`).
+- **[Training Run Summary](../summaries/TRAINING_RUN_SUMMARY.md)** — Reference metrics and run configurations.
+
+---
+
+## 🧪 Testing, Quality & Benchmarking (`docs/testing/`)
+
+- **[Testing Guide](../testing/TESTING_GUIDE.md)** — Complete guide for running unit, integration, robustness, and cognitive test suites.
+- **[Smoke Tests Guide](SMOKE_TESTS.md)** — Rapid pipeline verification for CI/CD and local development.
+- **[Smoke Tests Examples](SMOKE_TESTS_EXAMPLES.md)** — Concrete command examples and expected outputs.
+- **[Smoke Test Validation](SMOKE_TEST_VALIDATION.md)** — Diagnostic criteria and exit status checks.
+- **[Performance Profiling Guide](../performance.md)** — Profiling CPU/GPU throughput, kernel execution, and memory allocation.
+
+---
+
+## 🧠 Cognitive, Immune & Theoretical Systems
+
+- **[Knowledge Gaps & Domain Analysis](../learning/knowledge_gaps_analysis.md)** — Scientific gap classification and 100% resolution roadmap.
+- **[Foundation Curriculum](../learning/foundation_curriculum.md)** — Structured progressive learning path.
+- **[Cognitive & Architectural Audit Results](../cognitive_and_architectural_audit_results.md)** — Formal audit of system consistency.
+- **[Alive Loop Node Documentation](../alive_loop_node_documentation.md)** — Detailed specification of node lifecycle states.
+- **[Enhanced Trust Network](../enhanced_trust_network_documentation.md)** — Inter-node trust mechanics and Byzantine fault tolerance.
+- **[Spatial Dimensions Guide](../SPATIAL_DIMENSIONS_GUIDE.md)** — N-dimensional spatial reasoning representations.
+- **[Cymatics & Wave Acoustics Guide](../SPATIAL_DIMENSIONS_GUIDE.md)** — Modal acoustics and Chladni figure mapping.
+- **[Time Mitigation Architecture](../TIME_MITIGATION.md)** — Asynchronous time scaling and latency compensation.
+
+---
+
+## 🛡️ Ethics, Governance & Security
+
+- **[Comprehensive AI Ethics Framework](../ethics/ethicsframework.md)** — 25 Fundamental Laws, operational safety, and audit functions.
+- **[Nethical Extension](../../extensions/nethical/FUNDAMENTAL_LAWS.md)** — Formal mathematical proofs, OpenAPI v1 schema, and ethical audit gates.
+- **[ADR 0001: Single Shell Decision](../adr/0001-single-shell-decision.md)** — Architectural decision record establishing Rust Tauri v2 as the canonical desktop shell.
+- **[SQL Security Summary](../summaries/SQL_SECURITY_SUMMARY.md)** — Database query parameterization and data protection.
+- **[Data Governance Policy](../DATA_GOVERNANCE.md)** — Offline data sovereignty and local retention standards.
+
+---
+
+## 🗺️ Roadmaps & Strategy (`docs/roadmaps/`)
+
+- **[Roadmap Status](../roadmaps/roadmapstatus.md)** — Current status overview across all active initiatives.
+- **[Roadmap V9 / V10](../roadmaps/roadmap_V9.md)** — Development plan for hybrid core and offline autonomy.
+- **[Advanced Roadmap](../roadmaps/advanced_roadmap.md)** — Long-term research horizons.
+- **[Conscious Roadmap](../roadmaps/roadmap_conscious.md)** — Philosophical and psychological architecture trajectory.
+- **[Hybrid Expansion Plan](../roadmaps/Plan_ekspansji_hybrydowej.md)** — Strategy for distributed offline/online co-adaptation.
+
+---
+
+## 🧭 Quick Navigation by Role
+
+- **Getting Started as a User**: [README.md](../../README.md) → [QUICKSTART.md](../../QUICKSTART.md) → [Master Phase Matrix](../phases/README.md)
+- **Developer / Contributor**: [CONTRIBUTING.md](../../CONTRIBUTING.md) → [ARCHITECTURE.md](../../ARCHITECTURE.md) → [Testing Guide](../testing/TESTING_GUIDE.md)
+- **ML Researcher**: [Training Guide](../training/TRAINING_GUIDE.md) → [Phase 6 Evaluation](../phases/phase6_evaluation/README.md) → [Knowledge Gaps](../learning/knowledge_gaps_analysis.md)
+- **Security Auditor**: [SECURITY.md](../../SECURITY.md) → [Ethics Framework](../ethics/ethicsframework.md) → [Phase 8 Hardening](../phases/phase8_hardening_security/README.md)

@@ -132,9 +132,9 @@ stream = VideoStreamDataset("path/to/video.mp4", config)
 
 ## 📚 Documentation and Examples
 
-- **[Complete Guide](docs/VIDEO_STREAMING_GUIDE.md)**: Comprehensive documentation
-- **[Interactive Notebook](notebooks/Video_Streaming_and_Temporal_Models.py)**: Step-by-step examples
-- **[Demo Script](demo_video_functionality.py)**: Full functionality demonstration
+- **[Complete Guide](VIDEO_STREAMING_GUIDE.md)**: Comprehensive documentation
+- **[Interactive Notebook](../notebooks/Video_Streaming_and_Temporal_Models.py)**: Step-by-step examples
+- **[Demo Script](../notebooks/Video_Streaming_and_Temporal_Models.py)**: Full functionality demonstration
 
 ## 🎯 Use Cases
 
@@ -211,7 +211,7 @@ Video functionality contributions are welcome! Areas for improvement:
 - Performance optimizations
 - Dataset-specific preprocessing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+See [CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines.
 
 ---
 
