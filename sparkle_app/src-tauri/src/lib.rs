@@ -12,6 +12,7 @@ pub struct AppStateInner {
     permission_level: u8, // 1: Sandbox, 2: Workspace, 3: Full OS
     workspace_path: PathBuf,
     backend_child: Option<std::process::Child>,
+    engine_handle: Option<tokio::task::JoinHandle<()>>,
 }
 
 pub struct AppState(pub Mutex<AppStateInner>);
@@ -189,7 +190,7 @@ async fn start_engine(app_handle: AppHandle, state: State<'_, AppState>) -> Resu
     let tx = engine.get_sender();
 
     // Spawnowanie silnika
-    tokio::spawn(async move {
+    let handle = tokio::spawn(async move {
         engine.run().await;
     });
 
@@ -202,6 +203,7 @@ async fn start_engine(app_handle: AppHandle, state: State<'_, AppState>) -> Resu
     });
 
     inner.tx = Some(tx);
+    inner.engine_handle = Some(handle);
     Ok("Silnik Błyskawicy został pomyślnie uruchomiony.".to_string())
 }
 
@@ -680,6 +682,45 @@ async fn execute_sandboxed_mcp_tool(tool_name: String, params: serde_json::Value
     }
 }
 
+#[tauri::command]
+fn stop_engine(state: State<'_, AppState>) -> Result<String, String> {
+    let mut inner = state.0.lock().unwrap();
+    inner.tx = None;
+    if let Some(handle) = inner.engine_handle.take() {
+        handle.abort();
+    }
+    Ok("Silnik został zatrzymany.".to_string())
+}
+
+#[tauri::command]
+fn get_default_workspace(state: State<'_, AppState>) -> Result<String, String> {
+    let inner = state.0.lock().unwrap();
+    Ok(inner.workspace_path.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+async fn run_native_expert_inference(input: Vec<f32>, state: State<'_, AppState>) -> Result<Vec<f32>, String> {
+    let workspace = {
+        let inner = state.0.lock().unwrap();
+        inner.workspace_path.clone()
+    };
+    let weights_path = workspace.join("mock_weights.bin");
+    if !weights_path.exists() {
+        return Err("Plik wag mock_weights.bin nie istnieje w workspace.".to_string());
+    }
+    let data = std::fs::read(&weights_path).map_err(|e| format!("Błąd odczytu wag: {}", e))?;
+    let engine = blyskawica_core::local_inference::LocalInferenceEngine::load_cpu(&data)?;
+    
+    let mut padded_input = input;
+    if padded_input.len() < 128 {
+        padded_input.resize(128, 0.0);
+    } else if padded_input.len() > 128 {
+        padded_input.truncate(128);
+    }
+    
+    engine.project(&padded_input)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
@@ -689,9 +730,11 @@ pub fn run() {
             permission_level: 2, // Standard Workspace by default
             workspace_path: PathBuf::from("."),
             backend_child: None,
+            engine_handle: None,
         })))
         .invoke_handler(tauri::generate_handler![
             start_engine,
+            stop_engine,
             send_user_message,
             set_permission_level,
             get_engine_status,
@@ -706,7 +749,9 @@ pub fn run() {
             vault_retrieve_secret,
             get_hardware_telemetry,
             scan_local_models,
-            execute_sandboxed_mcp_tool
+            execute_sandboxed_mcp_tool,
+            get_default_workspace,
+            run_native_expert_inference
         ])
         .setup(|app| {
             let state = app.state::<AppState>();
@@ -776,6 +821,10 @@ pub fn run() {
         if let tauri::RunEvent::Exit = event {
             let state = app_handle.state::<AppState>();
             let mut inner = state.0.lock().unwrap();
+            if let Some(handle) = inner.engine_handle.take() {
+                println!("🛑 [Tauri Exit]: Zatrzymywanie zadania silnika Rust...");
+                handle.abort();
+            }
             if let Some(mut child) = inner.backend_child.take() {
                 println!("🛑 [Tauri Exit]: Graceful shutdown — wysyłanie sygnału zamykania...");
                 // Attempt graceful shutdown: wait up to 3 seconds for clean exit

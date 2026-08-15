@@ -10,6 +10,10 @@ pub struct LocalInferenceEngine {
 }
 
 impl LocalInferenceEngine {
+    pub fn load_cpu(data: &[u8]) -> Result<Self, String> {
+        Self::load_from_slice(data, &Device::Cpu)
+    }
+
     /// Tworzy silnik wnioskowania na podstawie surowego bufora bajtów (np. z mock_weights.bin).
     pub fn load_from_slice(data: &[u8], device: &Device) -> Result<Self, String> {
         let input_dim = 128;

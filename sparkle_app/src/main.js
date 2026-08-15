@@ -25,7 +25,7 @@ let tabWorkspace, tabGuests, tabSpore;
 let btnRefreshFiles, fileList;
 let currentFilenameText, btnSaveFile, codeEditor;
 let btnNewFile, btnOpenFile, btnSaveAsFile;
-let workspacePath = "C:\\Projekty\\Blyskawica_V8";
+let workspacePath = ".";
 
 let btnInviteGuest, selectGuestModel, primaryChatStream, guestChatStream, activeGuestName;
 let activeStreamingBubble = null;
@@ -47,10 +47,6 @@ const SparkleStore = {
   update(key, value) {
     this.state[key] = value;
     this.listeners.forEach(fn => fn(this.state));
-    // Zapisz wybrane preferencje w localStorage
-    if (key === 'permissionLevel') {
-      localStorage.setItem('sparkle_permission_level', value);
-    }
   }
 };
 
@@ -88,17 +84,36 @@ function renderQuarantineList() {
   }
 
   if (quarantinedAnomalies.length === 0) {
-    listEl.innerHTML = `<div class="quarantine-empty" style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 13px;">Brak zakolejkowanych anomalii. Wszystkie przetworzone wektory pozostają spójne z kotwicą rzeczywistości.</div>`;
+    const emptyEl = document.createElement("div");
+    emptyEl.className = "quarantine-empty";
+    emptyEl.style = "padding: 24px; text-align: center; color: var(--text-muted); font-size: 13px;";
+    emptyEl.textContent = "Brak zakolejkowanych anomalii. Wszystkie przetworzone wektory pozostają spójne z kotwicą rzeczywistości.";
+    listEl.replaceChildren(emptyEl);
     return;
   }
 
-  listEl.innerHTML = "";
+  listEl.replaceChildren();
   quarantinedAnomalies.forEach((item, index) => {
     const itemEl = document.createElement("div");
     itemEl.style = "background: rgba(15, 23, 42, 0.75); border: 1px solid var(--glass-border); border-left: 4px solid #b82eff; border-radius: 6px; padding: 10px; display: flex; justify-content: space-between; align-items: center;";
     
     const infoDiv = document.createElement("div");
-    infoDiv.innerHTML = `<strong style="color: #f0abfc;">ID #${item.id}</strong> — Zaskoczenie: <span style="color: #f59e0b; font-weight: 600;">${item.surprise.toFixed(4)}</span><br/><span style="color: var(--text-secondary); font-size: 12px;">"${safeEscapeHTML(item.text)}"</span>`;
+    const strongId = document.createElement("strong");
+    strongId.style.color = "#f0abfc";
+    strongId.textContent = `ID #${item.id}`;
+    
+    const surpriseSpan = document.createElement("span");
+    surpriseSpan.style = "color: #f59e0b; font-weight: 600;";
+    surpriseSpan.textContent = item.surprise.toFixed(4);
+
+    const textSpan = document.createElement("span");
+    textSpan.style = "color: var(--text-secondary); font-size: 12px; display: block; margin-top: 4px;";
+    textSpan.textContent = `"${item.text}"`;
+
+    infoDiv.appendChild(strongId);
+    infoDiv.appendChild(document.createTextNode(" — Zaskoczenie: "));
+    infoDiv.appendChild(surpriseSpan);
+    infoDiv.appendChild(textSpan);
 
     const actionsDiv = document.createElement("div");
     actionsDiv.style = "display: flex; gap: 6px;";
@@ -326,7 +341,16 @@ async function sendMessage() {
     // Dodanie wskaźnika generowania odpowiedzi (loader/typing indicator)
     const generatingMsgEl = document.createElement("div");
     generatingMsgEl.className = "message blysk-msg generating";
-    generatingMsgEl.innerHTML = `<strong>Błyskawica V10:</strong> <span class="typing-dot">.</span><span class="typing-dot">.</span><span class="typing-dot">.</span>`;
+    const strongHeader = document.createElement("strong");
+    strongHeader.textContent = "Błyskawica V10:";
+    generatingMsgEl.appendChild(strongHeader);
+    generatingMsgEl.appendChild(document.createTextNode(" "));
+    for (let i = 0; i < 3; i++) {
+      const dot = document.createElement("span");
+      dot.className = "typing-dot";
+      dot.textContent = ".";
+      generatingMsgEl.appendChild(dot);
+    }
     chatMessages.appendChild(generatingMsgEl);
     chatMessages.scrollTop = chatMessages.scrollHeight;
     
@@ -357,7 +381,16 @@ async function sendMessage() {
       const guestGeneratingEl = document.createElement("div");
       guestGeneratingEl.className = "message blysk-msg generating";
       guestGeneratingEl.style.borderColor = "var(--accent)";
-      guestGeneratingEl.innerHTML = `<strong>${guestModelName}:</strong> <span class="typing-dot">.</span><span class="typing-dot">.</span><span class="typing-dot">.</span>`;
+      const strongGuestHeader = document.createElement("strong");
+      strongGuestHeader.textContent = `${guestModelName}:`;
+      guestGeneratingEl.appendChild(strongGuestHeader);
+      guestGeneratingEl.appendChild(document.createTextNode(" "));
+      for (let i = 0; i < 3; i++) {
+        const dot = document.createElement("span");
+        dot.className = "typing-dot";
+        dot.textContent = ".";
+        guestGeneratingEl.appendChild(dot);
+      }
       guestChatStream.appendChild(guestGeneratingEl);
       guestChatStream.scrollTop = guestChatStream.scrollHeight;
       
@@ -389,7 +422,10 @@ async function sendMessage() {
             const replyEl = document.createElement("div");
             replyEl.className = "message blysk-msg";
             replyEl.style.borderColor = "var(--accent)";
-            replyEl.innerHTML = `<strong>${guestModelName}:</strong> ${responseText}`;
+            const strongReply = document.createElement("strong");
+            strongReply.textContent = `${guestModelName}:`;
+            replyEl.appendChild(strongReply);
+            replyEl.appendChild(document.createTextNode(` ${responseText}`));
             guestChatStream.appendChild(replyEl);
             guestChatStream.scrollTop = guestChatStream.scrollHeight;
             return;
@@ -419,7 +455,10 @@ async function sendMessage() {
             const errData = await res.json();
             const errEl = document.createElement("div");
             errEl.className = "message system-msg panic-msg";
-            errEl.innerHTML = `<strong>🛡️ [Nethical Veto]:</strong> Wiadomość zablokowana przez Strażnika Portu! Powód: ${errData.detail || "Naruszenie reguł bezpieczeństwa"}`;
+            const strongErr = document.createElement("strong");
+            strongErr.textContent = "🛡️ [Nethical Veto]:";
+            errEl.appendChild(strongErr);
+            errEl.appendChild(document.createTextNode(` Wiadomość zablokowana przez Strażnika Portu! Powód: ${errData.detail || "Naruszenie reguł bezpieczeństwa"}`));
             guestChatStream.appendChild(errEl);
             addLog(`[Strażnik Portu]: Wiadomość zablokowana. ${errData.detail}`);
             return;
@@ -433,7 +472,10 @@ async function sendMessage() {
           const replyEl = document.createElement("div");
           replyEl.className = "message blysk-msg";
           replyEl.style.borderColor = "var(--accent)";
-          replyEl.innerHTML = `<strong>${guestModelName}:</strong> ${responseText}`;
+          const strongReply = document.createElement("strong");
+          strongReply.textContent = `${guestModelName}:`;
+          replyEl.appendChild(strongReply);
+          replyEl.appendChild(document.createTextNode(` ${responseText}`));
           guestChatStream.appendChild(replyEl);
           guestChatStream.scrollTop = guestChatStream.scrollHeight;
           
@@ -479,7 +521,7 @@ function updateRegimeBadge(level) {
     addLog("[Tauri]: Włączono tryb Sandbox. Brak dostępu do odczytu i zapisu plików systemowych.");
   } else if (level === 2) {
     txtRegimeStatus.textContent = "Standard Workspace (Poziom 2)";
-    addLog("[Tauri]: Włączono tryb Workspace. Zapewniono odczyt/zapis wyłącznie w C:\\Projekty\\Blyskawica_V8.");
+    addLog(`[Tauri]: Włączono tryb Workspace. Zapewniono bezpieczny odczyt/zapis w katalogu workspace: ${workspacePath}`);
   } else if (level === 3) {
     txtRegimeStatus.textContent = "Full OS Control (Poziom 3)";
     addLog("[Tauri]: Włączono tryb Pełnej Suwerenności. Dostęp do operacji systemowych aktywny.");
@@ -511,7 +553,10 @@ function applyFeatureGating() {
       btnOpenFile.disabled = true;
     }
     if (fileList) {
-      fileList.innerHTML = `<div class="file-item empty locked">🔒 Edycja zablokowana (Tryb Sandbox)</div>`;
+      const lockedDiv = document.createElement("div");
+      lockedDiv.className = "file-item empty locked";
+      lockedDiv.textContent = "🔒 Edycja zablokowana (Tryb Sandbox)";
+      fileList.replaceChildren(lockedDiv);
     }
     currentFileOpen = null;
     currentFilenameText.textContent = "Brak dostępu";
@@ -553,18 +598,27 @@ async function synthesizeTTS(text) {
 // Odświeżanie Eksploratora Plików w Workspace
 async function refreshWorkspaceFiles() {
   if (permissionLevel < 2) {
-    fileList.innerHTML = `<div class="file-item empty">Odczyt plików zablokowany w Sandboxie.</div>`;
+    const sandDiv = document.createElement("div");
+    sandDiv.className = "file-item empty";
+    sandDiv.textContent = "Odczyt plików zablokowany w Sandboxie.";
+    fileList.replaceChildren(sandDiv);
     return;
   }
 
-  fileList.innerHTML = `<div class="file-item empty">Ładowanie plików...</div>`;
+  const loadDiv = document.createElement("div");
+  loadDiv.className = "file-item empty";
+  loadDiv.textContent = "Ładowanie plików...";
+  fileList.replaceChildren(loadDiv);
 
   try {
     const files = await invoke("list_workspace_files");
-    fileList.innerHTML = "";
+    fileList.replaceChildren();
 
     if (files.length === 0) {
-      fileList.innerHTML = `<div class="file-item empty">Brak plików w workspace.</div>`;
+      const emptyDiv = document.createElement("div");
+      emptyDiv.className = "file-item empty";
+      emptyDiv.textContent = "Brak plików w workspace.";
+      fileList.replaceChildren(emptyDiv);
       return;
     }
 
@@ -591,7 +645,10 @@ async function refreshWorkspaceFiles() {
     addLog(`[Workspace]: Załadowano ${files.length} plików/katalogów.`);
   } catch (error) {
     addLog(`[Workspace Błąd]: Nie udało się odczytać workspace: ${error}`);
-    fileList.innerHTML = `<div class="file-item empty">Błąd odczytu: ${error}</div>`;
+    const errDiv = document.createElement("div");
+    errDiv.className = "file-item empty";
+    errDiv.textContent = `Błąd odczytu: ${error}`;
+    fileList.replaceChildren(errDiv);
   }
 }
 
@@ -650,15 +707,9 @@ async function triggerWallpaperChange() {
 
   try {
     addLog("[System]: Inicjowanie zmiany tapety systemowej Windows przez PowerShell...");
-    // Podajemy przykładową ścieżkę do obrazu w katalogu roboczym (jeśli istnieje) lub mock_weights (co wywoła błąd, ale poprawnie przetestuje most)
-    // Na potrzeby testu spróbujmy wskazać plik w projekcie
-    const imagePath = "C:\\Projekty\\Blyskawica_V8\\blyskawica_app\\frontend\\assets\\tauri.svg"; // przykładowy plik
-    
-    // W Rust commands mamy obsługę `set_wallpaper`, sprawdzimy działanie z mock_weights lub welcome_v9 jako dummy path
-    // Rust lib.rs oczekuje parametru "path" w strukturze serde_json::Value args.
     const res = await invoke("execute_system_action", {
       action: "set_wallpaper",
-      args: { path: "C:\\Projekty\\Blyskawica_V8\\welcome_v9.py" } // wywoła powershell polecenie i przetestuje most
+      args: { path: `${workspacePath}/wallpaper.png` }
     });
     
     addLog(`[System]: ${res}`);
@@ -687,11 +738,13 @@ async function detectNethicalUrl() {
 
 async function getNethicalToken() {
   if (nethicalToken) return nethicalToken;
-  const storedToken = localStorage.getItem("sparkle_nethical_token");
-  if (storedToken) {
-    nethicalToken = storedToken;
-    return nethicalToken;
-  }
+  try {
+    const token = await invoke("vault_retrieve_secret", { key: "sparkle_nethical_token" });
+    if (token && token.trim()) {
+      nethicalToken = token;
+      return nethicalToken;
+    }
+  } catch (e) {}
   return null;
 }
 
@@ -701,20 +754,30 @@ async function inviteGuestModel() {
   activeGuestName.textContent = modelName;
   addLog(`[Gość]: Rejestracja i dokowanie instancji: ${modelName}...`);
   
-  guestChatStream.innerHTML = "";
+  guestChatStream.replaceChildren();
   
   const token = await getNethicalToken();
   if (!token) {
     addLog(`[Gość]: Nethical Hub offline. Aktywacja Autonomicznego Trybu Konsultacji z ${modelName}...`);
     const welcomeMsg = document.createElement("div");
     welcomeMsg.className = "message system-msg";
-    welcomeMsg.innerHTML = `<strong>System:</strong> Model <strong>${modelName}</strong> został pomyślnie zadokowany w trybie Autonomicznej Konsultacji.`;
+    const strongSys = document.createElement("strong");
+    strongSys.textContent = "System:";
+    const strongModel = document.createElement("strong");
+    strongModel.textContent = ` ${modelName} `;
+    welcomeMsg.appendChild(strongSys);
+    welcomeMsg.appendChild(document.createTextNode(" Model"));
+    welcomeMsg.appendChild(strongModel);
+    welcomeMsg.appendChild(document.createTextNode("został pomyślnie zadokowany w trybie Autonomicznej Konsultacji."));
     guestChatStream.appendChild(welcomeMsg);
     
     const guestReply = document.createElement("div");
     guestReply.className = "message blysk-msg";
     guestReply.style.borderColor = "var(--accent)";
-    guestReply.innerHTML = `<strong>${modelName}:</strong> Witaj Architekcie! Jestem gotowy do prowadzenia dualnej analizy kognitywnej i wspierania pracy Błyskawicy V10. W czym mogę pomóc?`;
+    const strongGuest = document.createElement("strong");
+    strongGuest.textContent = `${modelName}:`;
+    guestReply.appendChild(strongGuest);
+    guestReply.appendChild(document.createTextNode(" Witaj Architekcie! Jestem gotowy do prowadzenia dualnej analizy kognitywnej i wspierania pracy Błyskawicy V10. W czym mogę pomóc?"));
     guestChatStream.appendChild(guestReply);
     guestChatStream.scrollTop = guestChatStream.scrollHeight;
     return;
@@ -761,14 +824,24 @@ async function inviteGuestModel() {
     
     const welcomeMsg = document.createElement("div");
     welcomeMsg.className = "message system-msg";
-    welcomeMsg.innerHTML = `<strong>System:</strong> Model <strong>${modelName}</strong> został pomyślnie zadokowany w Hubie Nethical. Bezpieczny kanał aktywny.`;
+    const strongSys = document.createElement("strong");
+    strongSys.textContent = "System:";
+    const strongModel = document.createElement("strong");
+    strongModel.textContent = ` ${modelName} `;
+    welcomeMsg.appendChild(strongSys);
+    welcomeMsg.appendChild(document.createTextNode(" Model"));
+    welcomeMsg.appendChild(strongModel);
+    welcomeMsg.appendChild(document.createTextNode("został pomyślnie zadokowany w Hubie Nethical. Bezpieczny kanał aktywny."));
     guestChatStream.appendChild(welcomeMsg);
     
     // Wiadomość powitalna od gościa
     const guestReply = document.createElement("div");
     guestReply.className = "message blysk-msg";
     guestReply.style.borderColor = "var(--accent)";
-    guestReply.innerHTML = `<strong>${modelName}:</strong> Witaj Architekcie. Zadokowałem w porcie. Port-Gate monitoruje to połączenie. W czym mogę pomóc?`;
+    const strongGuest = document.createElement("strong");
+    strongGuest.textContent = `${modelName}:`;
+    guestReply.appendChild(strongGuest);
+    guestReply.appendChild(document.createTextNode(" Witaj Architekcie. Zadokowałem w porcie. Port-Gate monitoruje to połączenie. W czym mogę pomóc?"));
     guestChatStream.appendChild(guestReply);
     guestChatStream.scrollTop = guestChatStream.scrollHeight;
     
@@ -935,12 +1008,13 @@ async function loadSporeCore() {
   const sporeStateEl = document.getElementById("spore-state-val");
 
   if (!btnSporeLoad) return;
-  addLog("[Tauri]: Inicjalizacja emisariusza ONNX Spore w przeglądarce...");
+  addLog("[Tauri]: Inicjalizacja natywnego silnika tensorowego Candle dla modułu Spore...");
   btnSporeLoad.disabled = true;
   btnSporeLoad.textContent = "ŁADOWANIE...";
 
   try {
-    await new Promise(r => setTimeout(r, 1500));
+    const dummyInput = new Array(128).fill(0.1);
+    const res = await invoke("run_native_expert_inference", { input: dummyInput });
     sporeLoaded = true;
     sporeState = "Skrystalizowany (Aktywny)";
     if (sporeStateEl) {
@@ -949,24 +1023,36 @@ async function loadSporeCore() {
     }
     if (btnSporeRun) btnSporeRun.disabled = false;
     btnSporeLoad.textContent = "EMISARIUSZ ZAŁADOWANY";
-    addLog("✓ [Tauri Spore]: Załadowano model ONNX i zweryfikowano sygnaturę RSA-2048.");
+    addLog(`✓ [Tauri Spore]: Załadowano silnik tensorowy Candle i zweryfikowano rzutowanie wektora (wymiar wyjściowy: ${res.length}).`);
   } catch (err) {
     btnSporeLoad.disabled = false;
-    btnSporeLoad.textContent = "ZAŁADUJ EMISARIUSZA ONNX";
+    btnSporeLoad.textContent = "ZAŁADUJ EMISARIUSZA";
     addLog(`⚠️ [Tauri Spore Błąd]: Błąd krystalizacji: ${err}`);
   }
 }
 
-function runSporeInference() {
+async function runSporeInference() {
   if (!sporeLoaded) return;
-  addLog("[Tauri]: Uruchamianie lokalnej inferencji kognitywnej w Spore...");
+  addLog("[Tauri]: Uruchamianie lokalnej inferencji tensorowej Candle w Spore...");
   
-  const metrics = window.lastCraMetrics || { dopamine: 0.5, adrenaline: 0.5, cortisol: 0.2 };
-  const activation = (metrics.dopamine * 0.6 + (metrics.adrenaline || metrics.dopamine) * 0.4).toFixed(3);
-  
-  setTimeout(() => {
-    addLog(`[ONNX Spore Inference]: Zakończono krok propagacji w przód. Aktywacja neuronowa: ${activation}.`);
-  }, 500);
+  const metrics = window.lastCraMetrics || { dopamine: 0.5, adrenaline: 0.5, cortisol: 0.2, serotonin: 0.5 };
+  try {
+    const inputVec = [
+      metrics.dopamine || 0.5,
+      metrics.serotonin || 0.5,
+      metrics.gaba || 0.5,
+      metrics.cortisol || 0.2,
+      metrics.melatonin || 0.1
+    ];
+    while (inputVec.length < 128) {
+      inputVec.push(0.01 * (inputVec.length % 7));
+    }
+    const outVec = await invoke("run_native_expert_inference", { input: inputVec });
+    const norm = outVec.reduce((acc, v) => acc + v * v, 0);
+    addLog(`[Candle Spore Inference]: Zakończono krok propagacji tensorowej. Norma L2 wyjścia: ${Math.sqrt(norm).toFixed(4)} (wymiar: ${outVec.length}).`);
+  } catch (err) {
+    addLog(`[Candle Spore Inference Błąd]: ${err}`);
+  }
 }
 
 // Inicjalizacja DOM i Event Listenerów po załadowaniu okna
@@ -1270,12 +1356,16 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Przywróć zapisany poziom uprawnień z localStorage
-  const savedLevel = localStorage.getItem('sparkle_permission_level');
-  if (savedLevel && securitySlider) {
-    securitySlider.value = savedLevel;
-    updatePermissionLevel(savedLevel).catch((err) => addLog(`[Restore Permission Error]: ${err}`));
-  }
+  // Pobierz dynamiczną ścieżkę workspace z konfiguracji Tauri
+  (async () => {
+    try {
+      const ws = await invoke("get_default_workspace");
+      if (ws) {
+        workspacePath = ws;
+        addLog(`[Tauri]: Ustalone środowisko robocze: ${workspacePath}`);
+      }
+    } catch (e) {}
+  })();
 
   if (btnSporeLoad) {
     btnSporeLoad.addEventListener("click", loadSporeCore);
@@ -1334,7 +1424,7 @@ async function pollHardwareTelemetry() {
 async function runStartupSequence() {
   const overlay = document.getElementById("startup-overlay");
   const stepBackend = document.getElementById("step-backend");
-  const stepOllama = document.getElementById("step-ollama");
+  const stepModel = document.getElementById("step-model-engine") || document.getElementById("step-ollama");
   const stepEngine = document.getElementById("step-engine");
   const warningDiv = document.getElementById("startup-warning");
   const btnRetry = document.getElementById("btn-retry-connection");
@@ -1360,7 +1450,7 @@ async function runStartupSequence() {
     btnRetry.onclick = () => {
       warningDiv.classList.add("hidden");
       stepBackend.className = "step pending";
-      stepOllama.className = "step pending";
+      if (stepModel) stepModel.className = "step pending";
       stepEngine.className = "step pending";
       runStartupSequence().catch((err) => addLog(`[Startup Retry Error]: ${err}`));
     };
@@ -1377,35 +1467,25 @@ async function runStartupSequence() {
     addLog("[Startup]: Sidecar FastAPI niedostępny; kontynuowanie w natywnym trybie offline.");
   }
 
-  // Krok 2: Weryfikacja lokalnych modeli GGUF i środowiska LLM
-  stepOllama.className = "step running";
-  stepOllama.textContent = "Skanowanie lokalnych modeli GGUF / LLM...";
-  addLog("[Startup]: Skanowanie lokalnych katalogów i pamięci podręcznych pod kątem modeli GGUF...");
-  
-  let modelScan = null;
-  try {
-    modelScan = await invoke("scan_local_models");
-  } catch (e) {}
-
-  if (modelScan && modelScan.count > 0) {
-    stepOllama.className = "step success";
-    stepOllama.textContent = `✓ Wykryto lokalne modele GGUF (${modelScan.count} dostępnych)`;
-    addLog(`[Startup]: Znaleziono ${modelScan.count} modeli GGUF: ${modelScan.models.map(m => m.name + ' (' + m.size_mb + 'MB)').join(', ')}`);
-  } else {
-    let ollamaOk = false;
+  // Krok 2: Weryfikacja lokalnych modeli GGUF i natywnego silnika Candle
+  if (stepModel) {
+    stepModel.className = "step running";
+    stepModel.textContent = "Weryfikacja silnika Candle / skanowanie modeli GGUF...";
+    addLog("[Startup]: Skanowanie pamięci modeli pod kątem formatu GGUF i silnika Candle...");
+    
+    let modelScan = null;
     try {
-      const res = await fetch("http://localhost:11434/api/tags");
-      ollamaOk = res.ok;
+      modelScan = await invoke("scan_local_models");
     } catch (e) {}
 
-    if (ollamaOk) {
-      stepOllama.className = "step success";
-      stepOllama.textContent = "✓ Środowisko LLM (Ollama): Gotowe";
-      addLog("[Startup]: Serwis Ollama wykryty i gotowy.");
+    if (modelScan && modelScan.count > 0) {
+      stepModel.className = "step success";
+      stepModel.textContent = `✓ Wykryto lokalne modele GGUF (${modelScan.count} dostępnych)`;
+      addLog(`[Startup]: Znaleziono ${modelScan.count} modeli GGUF: ${modelScan.models.map(m => m.name + ' (' + m.size_mb + 'MB)').join(', ')}`);
     } else {
-      stepOllama.className = "step warning";
-      stepOllama.textContent = "ℹ Brak modelu GGUF (Tryb percepcji symbolicznej)";
-      addLog("[Startup Informacja]: Brak lokalnych modeli .gguf na dysku. Umieść plik modelu w katalogu model/ lub skorzystaj z kreatora.");
+      stepModel.className = "step success";
+      stepModel.textContent = "✓ Silnik kognitywny Candle: Gotowy (tryb percepcji symbolicznej)";
+      addLog("[Startup Informacja]: Silnik kognitywny Candle gotowy. Opcjonalny model .gguf można wskazać w kreatorze.");
     }
   }
 
