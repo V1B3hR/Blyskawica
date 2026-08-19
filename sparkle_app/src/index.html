@@ -38,6 +38,7 @@
         <span class="version-tag">V10.0</span>
       </div>
       <div class="status-area">
+        <div id="aegis-sentinel-badge" class="telemetry-badge" style="border-color: #10b981; color: #6ee7b7;" title="Tarcza Suwerenności Windows (Aegis Sentinel)">🛡️ Aegis: Aktywna (100%)</div>
         <div id="hw-telemetry-badge" class="telemetry-badge" title="Użycie zasobów systemowych">CPU: ... | RAM: ...</div>
         <div id="engine-status-indicator" class="status-indicator idle"></div>
         <span id="engine-status-text">Silnik nieaktywny</span>
@@ -152,6 +153,7 @@
           <button id="tab-btn-spore" class="tab-btn">ONNX SPORE</button>
           <button id="tab-btn-yant" class="tab-btn">16x16 CYMATICS</button>
           <button id="tab-btn-ledger" class="tab-btn">🛡️ KWARANTANNA & LEDGER</button>
+          <button id="tab-btn-shadow-forge" class="tab-btn">🔨 TABLICA CIENI & KUŹNIA</button>
         </div>
 
         <!-- Tab 1: Workspace & Code Editor -->
@@ -304,10 +306,39 @@
               </div>
             </div>
           </div>
+        <!-- Tab 6: Shadow Board & Tool Forge -->
+        <div id="tab-shadow-forge" class="tab-content">
+          <div class="shadow-forge-layout" style="display: flex; flex-direction: column; gap: 16px; height: 100%; padding: 8px;">
+            <div class="forge-header" style="display: flex; justify-content: space-between; align-items: center; background: rgba(15, 23, 42, 0.7); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--glass-border);">
+              <div>
+                <h3 style="margin: 0; color: #00f0ff; font-size: 14px;">TABLICA CIENI & KOWADŁO KOGNITYWNE (SHADOW-BOARD FORGE)</h3>
+                <p style="margin: 4px 0 0 0; color: var(--text-secondary); font-size: 12px;">Wiszące narzędzia MCP oraz puste cienie czekające na automatyczne wykucie na kowadle.</p>
+              </div>
+              <button id="btn-refresh-shadow-board" class="control-btn small">ODŚWIEŻ TABLICĘ</button>
+            </div>
+            <div id="shadow-board-grid" class="shadow-grid" style="flex: 1; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; padding: 4px;">
+              <!-- Dynamic Tool Slots & Empty Silhouettes -->
+            </div>
+          </div>
         </div>
       </section>
 
     </main>
+
+    <!-- Aegis Security Alert Modal -->
+    <div id="aegis-alert-modal" class="startup-overlay hidden">
+      <div class="startup-card" style="border: 2px solid #ef4444; max-width: 480px;">
+        <span class="startup-logo" style="color: #ef4444;">🛡️</span>
+        <h2 style="color: #ef4444;">TARCZA AEGIS: WYKRYTO INTRUZA!</h2>
+        <p id="aegis-alert-text" style="color: var(--text-primary); font-size: 13px; margin: 12px 0;">Hola hola! Wykryto nieautoryzowaną próbę ingerencji procesu w system Windows.</p>
+        <div id="aegis-alert-details" style="background: rgba(15, 23, 42, 0.9); padding: 10px; border-radius: 6px; font-family: var(--font-family-mono); font-size: 11px; color: #fca5a5; margin-bottom: 16px; text-align: left;"></div>
+        <div style="display: flex; gap: 8px; justify-content: center;">
+          <button id="btn-aegis-quarantine" class="control-btn" style="background: rgba(239, 68, 68, 0.3); border-color: #ef4444; color: #fca5a5;">IZOLUJ W PIASKOWNICY</button>
+          <button id="btn-aegis-terminate" class="control-btn" style="background: rgba(239, 68, 68, 0.8); color: white;">ZAKOŃCZ PROCES</button>
+          <button id="btn-aegis-allow" class="control-btn">ZEZWÓL (POZIOM 3)</button>
+        </div>
+      </div>
+    </div>
 
     <!-- Footer Status / Security Slider -->
     <footer class="app-footer">

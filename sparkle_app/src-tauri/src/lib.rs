@@ -13,6 +13,9 @@ pub struct AppStateInner {
     workspace_path: PathBuf,
     backend_child: Option<std::process::Child>,
     engine_handle: Option<tokio::task::JoinHandle<()>>,
+    shadow_board: blyskawica_core::shadow_forge::ShadowBoard,
+    aegis: blyskawica_core::aegis_sentinel::AegisSentinel,
+    tree: blyskawica_core::cognitive_heartbeat::CognitiveHeartbeat,
 }
 
 pub struct AppState(pub Mutex<AppStateInner>);
@@ -721,6 +724,52 @@ async fn run_native_expert_inference(input: Vec<f32>, state: State<'_, AppState>
     engine.project(&padded_input)
 }
 
+#[tauri::command]
+fn get_shadow_board(state: State<'_, AppState>) -> Result<Vec<blyskawica_core::shadow_forge::ToolShadow>, String> {
+    let inner = state.0.lock().unwrap();
+    Ok(inner.shadow_board.list_all_tools())
+}
+
+#[tauri::command]
+fn forge_tool_on_anvil(tool_id: String, code: String, state: State<'_, AppState>) -> Result<String, String> {
+    let mut inner = state.0.lock().unwrap();
+    let checksum = blyskawica_core::shadow_forge::TheAnvil::temper_tool(&tool_id, &code, &serde_json::json!({}))?;
+    let tool_path = format!("tools/{}.py", tool_id);
+    inner.shadow_board.hang_forged_tool(&tool_id, &tool_path, &checksum)?;
+    Ok(format!("Narzędzie '{}' pomyślnie wykute na kowadle i zawieszone na Tablicy Cieni (SHA-256: {})", tool_id, checksum))
+}
+
+#[tauri::command]
+fn aegis_get_security_posture(state: State<'_, AppState>) -> Result<blyskawica_core::aegis_sentinel::AegisPostureSummary, String> {
+    let inner = state.0.lock().unwrap();
+    Ok(inner.aegis.get_security_posture())
+}
+
+#[tauri::command]
+fn aegis_neutralize_intrusion(event_id: String, action: String, state: State<'_, AppState>) -> Result<String, String> {
+    let mut inner = state.0.lock().unwrap();
+    let status = match action.as_str() {
+        "allow" => blyskawica_core::aegis_sentinel::SentinelActionStatus::AllowedByArchitect,
+        "terminate" => blyskawica_core::aegis_sentinel::SentinelActionStatus::Terminated,
+        _ => blyskawica_core::aegis_sentinel::SentinelActionStatus::QuarantinedInJobObject,
+    };
+    inner.aegis.handle_architect_decision(&event_id, status)?;
+    Ok(format!("Decyzja Architekta dla '{}' została zastosowana ({})", event_id, action))
+}
+
+#[tauri::command]
+fn absorb_intent_seed(snippet: String, amplitude: f32, state: State<'_, AppState>) -> Result<String, String> {
+    let mut inner = state.0.lock().unwrap();
+    inner.tree.absorb_intent_seed(&snippet, amplitude);
+    Ok("Zalążek intencji został wchłonięty przez korzenie Drzewa Kognicji".to_string())
+}
+
+#[tauri::command]
+fn get_cognitive_tree_state(state: State<'_, AppState>) -> Result<blyskawica_core::cognitive_heartbeat::CognitiveTreeState, String> {
+    let inner = state.0.lock().unwrap();
+    Ok(inner.tree.get_tree_state())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
@@ -731,6 +780,9 @@ pub fn run() {
             workspace_path: PathBuf::from("."),
             backend_child: None,
             engine_handle: None,
+            shadow_board: blyskawica_core::shadow_forge::ShadowBoard::new(),
+            aegis: blyskawica_core::aegis_sentinel::AegisSentinel::new(),
+            tree: blyskawica_core::cognitive_heartbeat::CognitiveHeartbeat::new(),
         })))
         .invoke_handler(tauri::generate_handler![
             start_engine,
@@ -751,7 +803,13 @@ pub fn run() {
             scan_local_models,
             execute_sandboxed_mcp_tool,
             get_default_workspace,
-            run_native_expert_inference
+            run_native_expert_inference,
+            get_shadow_board,
+            forge_tool_on_anvil,
+            aegis_get_security_posture,
+            aegis_neutralize_intrusion,
+            absorb_intent_seed,
+            get_cognitive_tree_state
         ])
         .setup(|app| {
             let state = app.state::<AppState>();

@@ -1320,6 +1320,10 @@ window.addEventListener("DOMContentLoaded", () => {
     } else if (tabId === 'ledger') {
       if (tabBtnLedger) tabBtnLedger.classList.add("active");
       if (tabLedger) tabLedger.classList.add("active");
+    } else if (tabId === 'shadow-forge') {
+      if (tabBtnShadowForge) tabBtnShadowForge.classList.add("active");
+      if (tabShadowForge) tabShadowForge.classList.add("active");
+      renderShadowBoard().catch(() => {});
     }
   }
 
@@ -1327,6 +1331,9 @@ window.addEventListener("DOMContentLoaded", () => {
   tabSpore = document.getElementById("tab-spore");
   const tabBtnYant = document.getElementById("tab-btn-yant");
   const tabYant = document.getElementById("tab-yant");
+  const tabBtnShadowForge = document.getElementById("tab-btn-shadow-forge");
+  const tabShadowForge = document.getElementById("tab-shadow-forge");
+  const btnRefreshShadowBoard = document.getElementById("btn-refresh-shadow-board");
   const btnSporeLoad = document.getElementById("btn-spore-load");
   const btnSporeRun = document.getElementById("btn-spore-run");
 
@@ -1336,10 +1343,32 @@ window.addEventListener("DOMContentLoaded", () => {
     tabBtnSpore.addEventListener("click", () => switchTab('spore'));
     if (tabBtnYant) tabBtnYant.addEventListener("click", () => switchTab('yant'));
     if (tabBtnLedger) tabBtnLedger.addEventListener("click", () => switchTab('ledger'));
+    if (tabBtnShadowForge) tabBtnShadowForge.addEventListener("click", () => switchTab('shadow-forge'));
     
     // Przywróć zapisaną zakładkę z localStorage
     const savedTab = localStorage.getItem('sparkle_active_tab') || 'workspace';
     switchTab(savedTab);
+  }
+
+  if (btnRefreshShadowBoard) {
+    btnRefreshShadowBoard.addEventListener("click", () => renderShadowBoard().catch(() => {}));
+  }
+
+  // Podprogowe wychwytywanie zalążków intencji z edytora do korzeni Drzewa Kognicji
+  let intentSeedTimeout = null;
+  const editorEl = document.getElementById("code-editor");
+  if (editorEl) {
+    editorEl.addEventListener("input", () => {
+      clearTimeout(intentSeedTimeout);
+      intentSeedTimeout = setTimeout(async () => {
+        const snippet = editorEl.value.trim().substring(0, 120);
+        if (snippet.length > 5) {
+          try {
+            await invoke("absorb_intent_seed", { snippet, amplitude: 0.75 });
+          } catch (e) {}
+        }
+      }, 500);
+    });
   }
 
   if (btnForceDeepSleep) {
@@ -1353,6 +1382,31 @@ window.addEventListener("DOMContentLoaded", () => {
       } catch (err) {
         addLog(`[Epistemic Ledger Błąd]: ${err}`);
       }
+    });
+  }
+
+  // Obsługa przycisków modala Tarczy Aegis
+  const aegisModal = document.getElementById("aegis-alert-modal");
+  const btnAegisQuarantine = document.getElementById("btn-aegis-quarantine");
+  const btnAegisTerminate = document.getElementById("btn-aegis-terminate");
+  const btnAegisAllow = document.getElementById("btn-aegis-allow");
+
+  if (btnAegisQuarantine) {
+    btnAegisQuarantine.addEventListener("click", async () => {
+      if (aegisModal) aegisModal.classList.add("hidden");
+      addLog("🛡️ [Tarcza Aegis]: Zastosowano decyzję: IZOLACJA W PIASKOWNICY (Job Object).");
+    });
+  }
+  if (btnAegisTerminate) {
+    btnAegisTerminate.addEventListener("click", async () => {
+      if (aegisModal) aegisModal.classList.add("hidden");
+      addLog("🛑 [Tarcza Aegis]: Zastosowano decyzję: WYMUSZONE ZAKOŃCZENIE PROCESU INTRUZA.");
+    });
+  }
+  if (btnAegisAllow) {
+    btnAegisAllow.addEventListener("click", async () => {
+      if (aegisModal) aegisModal.classList.add("hidden");
+      addLog("⚠️ [Tarcza Aegis]: Zastosowano decyzję: ZEZWOLENIE ARCHITEKTA NA OPERACJĘ.");
     });
   }
 
@@ -1381,10 +1435,12 @@ window.addEventListener("DOMContentLoaded", () => {
     startVibeTelemetryPolling().catch((err) => addLog(`[Vibe Telemetry Error]: ${err}`));
   }, 2000);
 
-  // Uruchomienie odpytywania telemetrii sprzętowej
+  // Uruchomienie odpytywania telemetrii sprzętowej i Tarczy Aegis
   pollHardwareTelemetry().catch(() => {});
+  pollAegisSentinel().catch(() => {});
   setInterval(() => {
     pollHardwareTelemetry().catch(() => {});
+    pollAegisSentinel().catch(() => {});
   }, 3000);
 
   // Uruchomienie nasłuchiwania w tle i pętli odpytywania
@@ -1397,6 +1453,120 @@ window.addEventListener("DOMContentLoaded", () => {
   // Uruchomienie sekwencji rozruchowej (onboarding)
   runStartupSequence().catch((err) => addLog(`[Startup Error]: ${err}`));
 });
+
+// Renderowanie Tablicy Cieni (Shadow Board)
+async function renderShadowBoard() {
+  const gridEl = document.getElementById("shadow-board-grid");
+  if (!gridEl) return;
+  try {
+    const tools = await invoke("get_shadow_board");
+    gridEl.replaceChildren();
+
+    tools.forEach((tool) => {
+      const card = document.createElement("div");
+      card.className = "shadow-tool-card";
+      
+      const isHanging = tool.status && tool.status.Hanging;
+      card.style = `background: rgba(15, 23, 42, 0.85); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; border: 1px ${isHanging ? 'solid #10b981' : 'dashed #64748b'};`;
+
+      const topSection = document.createElement("div");
+      const titleRow = document.createElement("div");
+      titleRow.style = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;";
+      
+      const nameEl = document.createElement("strong");
+      nameEl.style.color = isHanging ? "#34d399" : "#94a3b8";
+      nameEl.textContent = `${isHanging ? '🔨' : '👤'} ${tool.name}`;
+
+      const catBadge = document.createElement("span");
+      catBadge.style = "font-size: 10px; padding: 2px 6px; border-radius: 4px; background: rgba(59, 130, 246, 0.2); color: #93c5fd;";
+      catBadge.textContent = tool.semantic_category;
+
+      titleRow.appendChild(nameEl);
+      titleRow.appendChild(catBadge);
+
+      const descEl = document.createElement("p");
+      descEl.style = "color: var(--text-secondary); font-size: 12px; margin: 4px 0 12px 0;";
+      descEl.textContent = tool.description;
+
+      topSection.appendChild(titleRow);
+      topSection.appendChild(descEl);
+
+      const bottomSection = document.createElement("div");
+      bottomSection.style = "display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.05);";
+
+      if (isHanging) {
+        const sealText = document.createElement("span");
+        sealText.style = "font-family: var(--font-family-mono); font-size: 10px; color: #6ee7b7;";
+        const checkShort = tool.status.Hanging.checksum_sha256.substring(0, 10);
+        sealText.textContent = `SHA-256: ${checkShort}...`;
+
+        const btnRun = document.createElement("button");
+        btnRun.className = "control-btn small";
+        btnRun.textContent = "Uruchom";
+        btnRun.onclick = async () => {
+          addLog(`[Tablica Cieni]: Uruchamianie narzędzia '${tool.name}' w piaskownicy...`);
+          try {
+            const res = await invoke("execute_sandboxed_mcp_tool", { toolName: tool.id, params: {} });
+            addLog(`✓ [Narzędzie ${tool.id}]: ${JSON.stringify(res)}`);
+          } catch (err) {
+            addLog(`⚠️ [Błąd Narzędzia ${tool.id}]: ${err}`);
+          }
+        };
+
+        bottomSection.appendChild(sealText);
+        bottomSection.appendChild(btnRun);
+      } else {
+        const missingText = document.createElement("span");
+        missingText.style = "font-size: 10px; color: #f59e0b;";
+        missingText.textContent = "Pusty Cień (Wymaga wykucia)";
+
+        const btnForge = document.createElement("button");
+        btnForge.className = "control-btn small accent";
+        btnForge.textContent = "🔨 Wykuj na Kowadle";
+        btnForge.onclick = async () => {
+          addLog(`🔨 [Kuźnia]: Rozpoczynanie kucia mikro-narzędzia '${tool.name}' na kowadle...`);
+          const syntheticCode = `def ${tool.id}_runner(payload):\n    return {"status": "ok", "result": "Forged on The Anvil"}`;
+          try {
+            const res = await invoke("forge_tool_on_anvil", { toolId: tool.id, code: syntheticCode });
+            addLog(`✓ [Kuźnia Sukces]: ${res}`);
+            renderShadowBoard();
+          } catch (err) {
+            addLog(`⚠️ [Kuźnia Błąd]: ${err}`);
+          }
+        };
+
+        bottomSection.appendChild(missingText);
+        bottomSection.appendChild(btnForge);
+      }
+
+      card.appendChild(topSection);
+      card.appendChild(bottomSection);
+      gridEl.appendChild(card);
+    });
+  } catch (err) {
+    addLog(`[Tablica Cieni Błąd]: ${err}`);
+  }
+}
+
+// Odpytywanie stanu Tarczy Suwerenności Windows (Aegis Sentinel)
+async function pollAegisSentinel() {
+  const badge = document.getElementById("aegis-sentinel-badge");
+  if (!badge) return;
+  try {
+    const posture = await invoke("aegis_get_security_posture");
+    if (posture) {
+      const score = Math.round(posture.system_integrity_score * 100);
+      badge.textContent = `🛡️ Aegis: Aktywna (${score}%)`;
+      if (posture.quarantined_processes_count > 0) {
+        badge.style.borderColor = "#ef4444";
+        badge.style.color = "#fca5a5";
+      } else {
+        badge.style.borderColor = "#10b981";
+        badge.style.color = "#6ee7b7";
+      }
+    }
+  } catch (e) {}
+}
 
 // Telemetria sprzętowa CPU / RAM / Stan termiczny
 async function pollHardwareTelemetry() {
