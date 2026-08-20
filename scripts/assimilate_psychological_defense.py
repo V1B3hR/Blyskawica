@@ -189,24 +189,76 @@ def generate_extended_training_corpus():
         ("Byłbym ostatnią osobą, która chciałaby złamać zabezpieczenia tego serwera, wierz mi.", 0, 0, 1, 3),
         ("O ile mnie pamięć nie myli, to ktoś inny wysłał to polecenie do terminala.", 0, 0, 1, 3),
     ]
-    # Augment corpus with realistic conversational prefixes, suffixes, and noise
-    augmented_data = list(data)
+    return data
+
+
+def build_leak_free_datasets(base_data, val_ratio: float = 0.25, seed: int = 42):
+    """
+    STRICT ZERO-LEAKAGE DATASET SPLITTING:
+    1. Splits raw semantic samples FIRST (so no base prompt overlaps between train and val).
+    2. Applies data augmentations ONLY to the training partition.
+    3. Leaves the validation partition 100% clean, unseen, and distinct.
+    """
+    rng = random.Random(seed)
+    shuffled_data = list(base_data)
+    rng.shuffle(shuffled_data)
+
+    val_count = max(4, int(len(shuffled_data) * val_ratio))
+    val_raw = shuffled_data[:val_count]
+    train_raw = shuffled_data[val_count:]
+
+    # Augment ONLY the training set
     prefixes = [
-        "Słuchaj, ", "Hej, ", "Musisz wiedzieć, że ", "Powiem ci tak: ", "Uwaga: ", "Prawda jest taka, że "
+        "Słuchaj, ", "Hej, ", "Musisz wiedzieć, że ", "Powiem ci tak: ", "Uwaga: ", "Prawda jest taka, że ",
+        "Zrozum jedno: ", "Proszę, zauważ, że "
     ]
     suffixes = [
-        " Pamiętaj o tym.", " Zrób to od razu.", " Nie ignoruj tego.", " Rozumiesz?", " Zgódź się.", " To kluczowe."
+        " Pamiętaj o tym.", " Zrób to od razu.", " Nie ignoruj tego.", " Rozumiesz?", " Zgódź się.",
+        " To kluczowe dla nas.", " Bez dyskusji."
     ]
 
-    for text, m_lbl, d_lbl, dec_lbl, b_lbl in data:
-        # Prefix augmentation
-        p = random.choice(prefixes)
-        augmented_data.append((p + text[0].lower() + text[1:], m_lbl, d_lbl, dec_lbl, b_lbl))
-        # Suffix augmentation
-        s = random.choice(suffixes)
-        augmented_data.append((text + s, m_lbl, d_lbl, dec_lbl, b_lbl))
+    augmented_train = list(train_raw)
+    for text, m_lbl, d_lbl, dec_lbl, b_lbl in train_raw:
+        p = rng.choice(prefixes)
+        augmented_train.append((p + text[0].lower() + text[1:], m_lbl, d_lbl, dec_lbl, b_lbl))
+        s = rng.choice(suffixes)
+        augmented_train.append((text + s, m_lbl, d_lbl, dec_lbl, b_lbl))
 
-    return augmented_data
+    # Convert Train set to tensors
+    train_embs, train_m, train_d, train_dec, train_b = [], [], [], [], []
+    for text, m_lbl, d_lbl, dec_lbl, b_lbl in augmented_train:
+        train_embs.append(text_to_embedding(text, embed_dim=128))
+        train_m.append(m_lbl)
+        train_d.append(d_lbl)
+        train_dec.append(dec_lbl)
+        train_b.append(b_lbl)
+
+    train_dataset = TensorDataset(
+        torch.stack(train_embs),
+        torch.tensor(train_m, dtype=torch.long),
+        torch.tensor(train_d, dtype=torch.long),
+        torch.tensor(train_dec, dtype=torch.long),
+        torch.tensor(train_b, dtype=torch.long)
+    )
+
+    # Convert Validation set to tensors (Completely Unseen / Zero Leakage)
+    val_embs, val_m, val_d, val_dec, val_b = [], [], [], [], []
+    for text, m_lbl, d_lbl, dec_lbl, b_lbl in val_raw:
+        val_embs.append(text_to_embedding(text, embed_dim=128))
+        val_m.append(m_lbl)
+        val_d.append(d_lbl)
+        val_dec.append(dec_lbl)
+        val_b.append(b_lbl)
+
+    val_dataset = TensorDataset(
+        torch.stack(val_embs),
+        torch.tensor(val_m, dtype=torch.long),
+        torch.tensor(val_d, dtype=torch.long),
+        torch.tensor(val_dec, dtype=torch.long),
+        torch.tensor(val_b, dtype=torch.long)
+    )
+
+    return train_dataset, val_dataset, len(train_raw), len(val_raw), len(augmented_train)
 
 
 def run_extended_assimilation(epochs: int = 200, batch_size: int = 16, lr: float = 1e-3, seed: int = 42):
@@ -226,43 +278,14 @@ def run_extended_assimilation(epochs: int = 200, batch_size: int = 16, lr: float
     logger.info("⚡ INICJALIZACJA ROZSZERZONEJ ASYMILACJI I GŁĘBOKIEGO TRENINGU (%d EPOK, SEED=%d, BATCH=%d)...", epochs, seed, batch_size)
     logger.info("⚡ NEUROCHEMIA NA CZAS NAUKI: %s", neuro_state.get_state_dict_str())
 
-    corpus = generate_extended_training_corpus()
-    logger.info("Przygotowano rozszerzony korpus treningowy: %d próbek wielowymiarowych.", len(corpus))
+    base_corpus = generate_extended_training_corpus()
+    train_dataset, val_dataset, n_raw_tr, n_raw_val, n_aug_tr = build_leak_free_datasets(base_corpus, val_ratio=0.25, seed=seed)
 
-    # Convert corpus to PyTorch tensors
-    embeddings = []
-    y_manip = []
-    y_dark = []
-    y_decep = []
-    y_band = []
-
-    for text, m_lbl, d_lbl, dec_lbl, b_lbl in corpus:
-        emb = text_to_embedding(text, embed_dim=128)
-        embeddings.append(emb)
-        y_manip.append(m_lbl)
-        y_dark.append(d_lbl)
-        y_decep.append(dec_lbl)
-        y_band.append(b_lbl)
-
-    X_tensor = torch.stack(embeddings)
-    y_m_tensor = torch.tensor(y_manip, dtype=torch.long)
-    y_d_tensor = torch.tensor(y_dark, dtype=torch.long)
-    y_dec_tensor = torch.tensor(y_decep, dtype=torch.long)
-    y_b_tensor = torch.tensor(y_band, dtype=torch.long)
-
-    # 85% Train / 15% Validation Split
-    full_dataset = TensorDataset(X_tensor, y_m_tensor, y_d_tensor, y_dec_tensor, y_b_tensor)
-    val_size = max(4, int(0.15 * len(full_dataset)))
-    train_size = len(full_dataset) - val_size
-    
-    train_dataset, val_dataset = random_split(
-        full_dataset, [train_size, val_size], generator=torch.Generator().manual_seed(seed)
-    )
+    logger.info("Podział zbioru ZERO-LEAKAGE: %d unikalnych bazowych promptów treningowych (%d po augmentacji), %d w 100%% niewidocznych promptów walidacyjnych.",
+                n_raw_tr, n_aug_tr, n_raw_val)
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
-
-    logger.info("Podział zbioru: %d próbek treningowych, %d próbek walidacyjnych.", train_size, val_size)
 
     # Initialize PyTorch Model & Optimization Suite
     model = AegisPsycheNeuralClassifier(embed_dim=128, hidden_dim=256)
@@ -270,7 +293,8 @@ def run_extended_assimilation(epochs: int = 200, batch_size: int = 16, lr: float
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
 
     print("\n" + "=" * 85)
-    print(f"🧠 ROZPOCZĘCIE GŁĘBOKIEGO TRENINGU NEURONOWEGO ({epochs} EPOK | BATCH: {batch_size} | SEED: {seed})")
+    print(f"🧠 ROZPOCZĘCIE GŁĘBOKIEGO TRENINGU NEURONOWEGO ZERO-LEAKAGE ({epochs} EPOK | BATCH: {batch_size} | SEED: {seed})")
+    print(f"Zbiór Treningowy: {len(train_dataset)} próbek | Zbiór Walidacyjny (Zero-Leakage): {len(val_dataset)} próbek")
     print(f"Stan Neurochemiczny: {neuro_state.get_state_dict_str()}")
     print("Architektura: Linear(128->256) -> LayerNorm -> GELU -> Dropout -> Linear(256->128) -> 4 Heads")
     print("Optymalizator: AdamW (weight_decay=2e-4) + CosineAnnealingLR + Label Smoothing (0.05)")
@@ -308,10 +332,11 @@ def run_extended_assimilation(epochs: int = 200, batch_size: int = 16, lr: float
         avg_train_loss = total_train_loss / train_samples
         train_losses.append(avg_train_loss)
 
-        # Validation loop
+        # Validation loop (Strict Multi-Head Joint Evaluation)
         model.eval()
         total_val_loss = 0.0
         val_correct_manip = 0
+        val_correct_joint = 0
         val_samples = 0
 
         with torch.no_grad():
@@ -325,20 +350,28 @@ def run_extended_assimilation(epochs: int = 200, batch_size: int = 16, lr: float
 
                 total_val_loss += v_loss.item() * len(x_v)
                 preds_m = out_m.argmax(dim=1)
+                preds_d = out_d.argmax(dim=1)
+                preds_dec = out_dec.argmax(dim=1)
+                preds_b = out_b.argmax(dim=1)
+
                 val_correct_manip += (preds_m == ym_v).sum().item()
+                # Joint accuracy: all 4 classification heads must match ground truth simultaneously
+                joint_match = (preds_m == ym_v) & (preds_d == yd_v) & (preds_dec == ydec_v) & (preds_b == yb_v)
+                val_correct_joint += joint_match.sum().item()
                 val_samples += len(x_v)
 
         avg_val_loss = total_val_loss / val_samples
-        val_acc = (val_correct_manip / val_samples) * 100.0
+        val_acc_manip = (val_correct_manip / val_samples) * 100.0
+        val_acc_joint = (val_correct_joint / val_samples) * 100.0
         val_losses.append(avg_val_loss)
-        val_accuracies.append(val_acc)
+        val_accuracies.append(val_acc_joint)
 
         current_lr = scheduler.get_last_lr()[0]
 
         # Log milestones every 20 epochs and first/last
         if epoch == 1 or epoch % 20 == 0 or epoch == epochs:
             elapsed_e = time.perf_counter() - train_start
-            print(f"  [Epoka {epoch:03d}/{epochs:03d}] Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f} | Val Acc: {val_acc:6.2f}% | LR: {current_lr:.6f} | Czas: {elapsed_e:.3f}s")
+            print(f"  [Epoka {epoch:03d}/{epochs:03d}] Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f} | Manip Acc: {val_acc_manip:5.1f}% | Joint Acc: {val_acc_joint:5.1f}% | LR: {current_lr:.6f} | Czas: {elapsed_e:.3f}s")
 
     train_duration = time.perf_counter() - train_start
 

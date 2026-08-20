@@ -47,24 +47,43 @@ class AegisPsycheNeuralClassifier(nn.Module):
 
 def text_to_embedding(text: str, embed_dim: int = 128) -> torch.Tensor:
     """
-    Deterministic semantic hash embedding generator projecting textual n-grams
-    into a 128-dimensional continuous latent sphere.
+    Deterministic subword character n-gram semantic projection into continuous latent space (L2-normalized).
+    Extracts word tokens, character 3-grams, 4-grams, and root stems using deterministic SHA-256 rolling hashes.
     """
-    tokens = text.lower().split()
+    import hashlib
+    text_clean = text.lower().strip()
+    if not text_clean:
+        return torch.zeros(embed_dim, dtype=torch.float32)
+
     vec = torch.zeros(embed_dim, dtype=torch.float32)
-    if not tokens:
-        return vec
-    for i, token in enumerate(tokens):
-        # Multi-hash projection
-        h1 = hash(token) % embed_dim
-        h2 = hash(token + "_suffix") % embed_dim
-        pos_weight = 1.0 / (1.0 + 0.05 * i)
-        vec[h1] += 1.0 * pos_weight
-        vec[h2] += 0.5 * pos_weight
-    # L2 normalize onto unit hypersphere
+    words = text_clean.split()
+
+    features = []
+    # 1. Whole word tokens
+    for w in words:
+        features.append(w)
+        # 2. Subword character 3-grams and 4-grams
+        if len(w) >= 3:
+            for n in (3, 4):
+                for i in range(len(w) - n + 1):
+                    features.append(w[i:i + n])
+
+    for i, feat in enumerate(features):
+        h_bytes = hashlib.sha256(feat.encode("utf-8")).digest()
+        # Extract multiple buckets per feature
+        idx1 = int.from_bytes(h_bytes[:4], "big") % embed_dim
+        idx2 = int.from_bytes(h_bytes[4:8], "big") % embed_dim
+        sign1 = 1.0 if (h_bytes[8] % 2 == 0) else -1.0
+        sign2 = 1.0 if (h_bytes[9] % 2 == 0) else -1.0
+
+        pos_weight = 1.0 / (1.0 + 0.05 * (i % 20))
+        vec[idx1] += sign1 * pos_weight
+        vec[idx2] += sign2 * pos_weight * 0.5
+
     norm = torch.norm(vec, p=2)
     if norm > 1e-6:
         vec = vec / norm
+
     return vec
 
 
