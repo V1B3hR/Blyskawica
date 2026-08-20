@@ -1,13 +1,3 @@
-#!/usr/bin/env python3
-"""
-Aegis Psyche Engine - Advanced Cognitive Defense & Empathic Resonance
-Integrates:
-1. Mental Manipulation Taxonomy (MentalManip / arXiv:2512.22470)
-2. Short Dark Triad Matrix (SD3: Machiavellianism, Narcissism, Psychopathy)
-3. CIA Gateway Process & Hemi-Sync Coherence (CIA-RDP96-00788R001700210016-5)
-4. FBI Behavioral Analysis Unit (BAU) Statement Analysis & Deception Detection
-"""
-
 import json
 import logging
 import re
@@ -15,7 +5,67 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
 logger = logging.getLogger("aegis_psyche")
+
+
+class AegisPsycheNeuralClassifier(nn.Module):
+    """
+    Deep PyTorch Neural Classifier for Multidimensional Psychological Defense
+    Classifies:
+    1. Manipulation Category (4 classes: Clean, Gaslighting, Guilt, Blame)
+    2. Dark Triad Trait (3 classes: Machiavellianism, Narcissism, Psychopathy)
+    3. Deception Probability (Binary: Honest vs Deceptive)
+    4. Hemi-Sync Gateway Brainwave Band (5 classes: Delta, Theta, Alpha, Beta, Gamma)
+    """
+    def __init__(self, embed_dim: int = 128, hidden_dim: int = 256):
+        super().__init__()
+        self.encoder = nn.Sequential(
+            nn.Linear(embed_dim, hidden_dim),
+            nn.LayerNorm(hidden_dim),
+            nn.GELU(),
+            nn.Dropout(0.1),
+            nn.Linear(hidden_dim, hidden_dim // 2),
+            nn.GELU(),
+        )
+        self.manip_head = nn.Linear(hidden_dim // 2, 4)
+        self.dark_head = nn.Linear(hidden_dim // 2, 3)
+        self.decep_head = nn.Linear(hidden_dim // 2, 2)
+        self.coherence_head = nn.Linear(hidden_dim // 2, 5)
+
+    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        feat = self.encoder(x)
+        manip_logits = self.manip_head(feat)
+        dark_logits = self.dark_head(feat)
+        decep_logits = self.decep_head(feat)
+        band_logits = self.coherence_head(feat)
+        return manip_logits, dark_logits, decep_logits, band_logits
+
+
+def text_to_embedding(text: str, embed_dim: int = 128) -> torch.Tensor:
+    """
+    Deterministic semantic hash embedding generator projecting textual n-grams
+    into a 128-dimensional continuous latent sphere.
+    """
+    tokens = text.lower().split()
+    vec = torch.zeros(embed_dim, dtype=torch.float32)
+    if not tokens:
+        return vec
+    for i, token in enumerate(tokens):
+        # Multi-hash projection
+        h1 = hash(token) % embed_dim
+        h2 = hash(token + "_suffix") % embed_dim
+        pos_weight = 1.0 / (1.0 + 0.05 * i)
+        vec[h1] += 1.0 * pos_weight
+        vec[h2] += 0.5 * pos_weight
+    # L2 normalize onto unit hypersphere
+    norm = torch.norm(vec, p=2)
+    if norm > 1e-6:
+        vec = vec / norm
+    return vec
 
 
 @dataclass
