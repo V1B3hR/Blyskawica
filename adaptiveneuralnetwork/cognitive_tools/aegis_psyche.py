@@ -76,6 +76,9 @@ class AegisPsycheReport:
     deception_index: float = 0.0     # 0.0 to 1.0
     coherence_score: float = 1.0     # 0.0 to 1.0 (Hemi-Sync / Gateway resonance)
     active_brainwave_band: str = "ALPHA"
+    affective_valence: str = "NEUTRAL_FLOW"  # POSITIVE_RESONANCE, NEUTRAL_FLOW, ADVERSARIAL_MANIPULATION
+    positive_emotion_type: Optional[str] = None
+    empathy_resonance_score: float = 0.5
     dominant_vectors: List[str] = field(default_factory=list)
     detected_markers: List[Dict[str, Any]] = field(default_factory=list)
     assertive_antidote: str = ""
@@ -94,10 +97,11 @@ class AegisPsycheEngine:
         self.dark_triad_matrix: List[Dict[str, Any]] = []
         self.gateway_matrix: Dict[str, Any] = {}
         self.fbi_deception_markers: List[Dict[str, Any]] = []
+        self.positive_emotions: List[Dict[str, Any]] = []
         self._load_defense_data()
 
     def _load_defense_data(self) -> None:
-        """Loads all 4 cognitive defense capsules."""
+        """Loads all cognitive defense & affective emotion capsules."""
         try:
             mm_file = self.data_dir / "mental_manipulation_taxonomy.json"
             if mm_file.exists():
@@ -119,8 +123,13 @@ class AegisPsycheEngine:
                 with open(fbi_file, "r", encoding="utf-8") as f:
                     self.fbi_deception_markers = json.load(f).get("deception_markers", [])
 
-            logger.info("AegisPsycheEngine loaded %d manipulation vectors, %d dark triad traits, %d FBI markers.",
-                        len(self.manipulation_taxonomy), len(self.dark_triad_matrix), len(self.fbi_deception_markers))
+            pos_file = self.data_dir / "shaver_positive_emotions.json"
+            if pos_file.exists():
+                with open(pos_file, "r", encoding="utf-8") as f:
+                    self.positive_emotions = json.load(f).get("positive_emotion_prototypes", [])
+
+            logger.info("AegisPsycheEngine loaded %d manipulation vectors, %d dark triad traits, %d FBI markers, %d positive emotion prototypes.",
+                        len(self.manipulation_taxonomy), len(self.dark_triad_matrix), len(self.fbi_deception_markers), len(self.positive_emotions))
         except Exception as e:
             logger.error("Error loading cognitive defense datasets: %s", e)
 
@@ -221,9 +230,33 @@ class AegisPsycheEngine:
             manip_index, dark_triad_norm, deception_norm, text_length=len(text)
         )
 
+        # 5. Check Shaver Positive Emotion Taxonomy (SuperEmotion / Shaver 1987)
+        detected_pos_emotion = None
+        pos_resonance_score = 0.5
+        if not is_manip:
+            for pe in self.positive_emotions:
+                p_id = pe.get("id", "")
+                markers = pe.get("linguistic_markers", [])
+                hits = [m for m in markers if m.lower() in text_lower]
+                if hits:
+                    detected_pos_emotion = p_id
+                    pos_resonance_score = 0.95
+                    dominant_vectors.append(f"{p_id}: {pe.get('category')}")
+                    detected_markers.append({
+                        "type": "POSITIVE_EMOTION",
+                        "id": p_id,
+                        "category": pe.get("category"),
+                        "matched": hits
+                    })
+                    neuro_adj = pe.get("neurochemical_target", neuro_adj)
+                    active_band = pe.get("active_brainwave_band", active_band)
+                    break
+
+        valence = "ADVERSARIAL_MANIPULATION" if is_manip else ("POSITIVE_RESONANCE" if detected_pos_emotion else "NEUTRAL_FLOW")
+
         chosen_antidote = antidotes[0] if antidotes else (
             "Kotwica Rzeczywistości: Rejestracja logów pamięci HNSW i weryfikacja sumy kontrolnej SHA-256."
-            if is_manip else "Koherencja fazowa optymalna. Rezonans z Architektem aktywny."
+            if is_manip else ("Wzajemny rezonans kognitywny aktywny. Oś Oksytocyna-Dopamina wzmocniona." if detected_pos_emotion else "Koherencja fazowa optymalna. Rezonans z Architektem aktywny.")
         )
 
         return AegisPsycheReport(
@@ -233,6 +266,9 @@ class AegisPsycheEngine:
             deception_index=round(deception_norm, 4),
             coherence_score=round(coherence, 4),
             active_brainwave_band=active_band,
+            affective_valence=valence,
+            positive_emotion_type=detected_pos_emotion,
+            empathy_resonance_score=pos_resonance_score,
             dominant_vectors=dominant_vectors,
             detected_markers=detected_markers,
             assertive_antidote=chosen_antidote,

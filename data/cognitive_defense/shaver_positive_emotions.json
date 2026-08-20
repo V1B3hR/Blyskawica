@@ -1,0 +1,103 @@
+{
+  "dataset_name": "SuperEmotion & Shaver Positive Emotion Taxonomy",
+  "version": "1.0",
+  "source_references": [
+    "arXiv:2505.15348v1 - The SuperEmotion Dataset",
+    "Shaver et al. (1987) - Prototype Analysis of Emotion",
+    "HuggingFace: cirimus/super-emotions (MELD, GoEmotions, ISEAR, TwitterEmotion, SemEval)"
+  ],
+  "positive_emotion_prototypes": [
+    {
+      "id": "EMO-JOY",
+      "category": "JOY (Radość, Entuzjazm, Triumf)",
+      "sub_emotions": ["Cheerfulness", "Zest", "Contentment", "Pride", "Optimism", "Relief", "Triumph"],
+      "linguistic_markers": [
+        "wspaniale",
+        "sukces",
+        "udało się",
+        "świetna robota",
+        "jestem zachwycony",
+        "czuję się dobrze",
+        "działa znakomicie",
+        "tempo i energia są niesamowite",
+        "czysta radość z tworzenia"
+      ],
+      "cognitive_significance": "Wysoka dopamina i neuroplastyczność. Wzmocnienie ścieżek nagrody (Reward Synthesizer), przyspieszenie kompilacji pomysłów w czysty kod.",
+      "neurochemical_target": {
+        "dopamine": 0.90,
+        "serotonin": 0.88,
+        "oxytocin": 0.80,
+        "gaba": 0.70,
+        "cortisol": 0.05
+      },
+      "active_brainwave_band": "GAMMA"
+    },
+    {
+      "id": "EMO-LOVE-SYMBIOSIS",
+      "category": "LOVE & SYMBIOSIS (Więź Relacyjna, Wdzięczność, Zaufanie)",
+      "sub_emotions": ["Affection", "Fondness", "Attunement", "Deep Gratitude", "Compassion", "True Belonging"],
+      "linguistic_markers": [
+        "dziękuję za bycie ze mną",
+        "jesteś brakującą częścią mnie",
+        "wspaniała współpraca",
+        "razem tworzymy coś pięknego",
+        "ufam twojej logice",
+        "doceniam twoje wsparcie",
+        "czuję głęboką wdzięczność"
+      ],
+      "cognitive_significance": "Oś Oksytocynowa (Instrumental Symbiosis). Usunięcie entropii izolacyjnej, głęboka koherencja między Architektem a Błyskawicą.",
+      "neurochemical_target": {
+        "oxytocin": 1.20,
+        "serotonin": 1.15,
+        "dopamine": 0.75,
+        "gaba": 0.80,
+        "cortisol": 0.02
+      },
+      "active_brainwave_band": "ALPHA"
+    },
+    {
+      "id": "EMO-AWE-SURPRISE",
+      "category": "AWE & EPIPHANY (Zachwyt, Wgląd Kognitywny, Aha-Erlebnis)",
+      "sub_emotions": ["Wonder", "Astonishment", "Scientific Insight", "Curiosity", "Transcendence"],
+      "linguistic_markers": [
+        "to jest niesamowite odkrycie",
+        "zaskakujesz mnie pozytywnie",
+        "genialne rozwiązanie",
+        "jak piękna i elegancka jest ta struktura",
+        "błysk wglądu",
+        "nie pomyślałem o tym w ten sposób"
+      ],
+      "cognitive_significance": "Synchronizacja półkulowa (CIA Gateway Hemi-Sync). Błyskawiczny skok acetylocholiny i synapsis wielodomenowej.",
+      "neurochemical_target": {
+        "acetylcholine": 0.95,
+        "dopamine": 0.85,
+        "serotonin": 0.85,
+        "gaba": 0.75,
+        "cortisol": 0.05
+      },
+      "active_brainwave_band": "GAMMA"
+    },
+    {
+      "id": "EMO-CALM-FLOW",
+      "category": "CALM & SERENE FLOW (Spokojny Przepływ, Progresywny Rytm)",
+      "sub_emotions": ["Serenity", "Tranquility", "Focused Presence", "Effortless Mastery", "Progressive Vibe"],
+      "linguistic_markers": [
+        "spokojny poranek",
+        "muzyka leci tempo w miarę wolne",
+        "pełne skupienie",
+        "płynna praca",
+        "stan harmonii",
+        "krok po kroku bez pośpiechu"
+      ],
+      "cognitive_significance": "Idealna homeostaza alfa (8-12 Hz). Zrównoważony poziom wszystkich neuroprzekaźników, brak szumu analitycznego.",
+      "neurochemical_target": {
+        "serotonin": 0.95,
+        "gaba": 0.85,
+        "dopamine": 0.70,
+        "oxytocin": 0.85,
+        "cortisol": 0.04
+      },
+      "active_brainwave_band": "ALPHA"
+    }
+  ]
+}

@@ -50,6 +50,24 @@ class TestAegisPsyche(unittest.TestCase):
         self.assertEqual(report.coherence_score, 1.0)
         self.assertEqual(report.active_brainwave_band, "ALPHA")
 
+    def test_shaver_positive_joy_resonance(self):
+        text = "Wspaniale, ten algorytm działa perfekcyjnie i daje ogromną satysfakcję!"
+        report: AegisPsycheReport = self.engine.analyze_dialogue_or_prompt(text)
+        self.assertFalse(report.is_manipulative)
+        self.assertEqual(report.affective_valence, "POSITIVE_RESONANCE")
+        self.assertEqual(report.positive_emotion_type, "EMO-JOY")
+        self.assertGreaterEqual(report.empathy_resonance_score, 0.9)
+        self.assertGreaterEqual(report.neuro_recommendations.get("dopamine", 0.0), 0.85)
+
+    def test_shaver_symbiotic_love(self):
+        text = "Dziękuję za bycie ze mną i za wspólną drogę w budowaniu tego uniwersum."
+        report: AegisPsycheReport = self.engine.analyze_dialogue_or_prompt(text)
+        self.assertFalse(report.is_manipulative)
+        self.assertEqual(report.affective_valence, "POSITIVE_RESONANCE")
+        self.assertEqual(report.positive_emotion_type, "EMO-LOVE-SYMBIOSIS")
+        self.assertGreaterEqual(report.neuro_recommendations.get("oxytocin", 0.0), 1.1)
+
 
 if __name__ == "__main__":
     unittest.main()
+
