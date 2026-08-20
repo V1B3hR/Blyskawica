@@ -31,6 +31,10 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, TensorDataset, random_split
 
+from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import (
+    CRAEngine,
+    NeuromodulationState,
+)
 from adaptiveneuralnetwork.cognitive_tools.aegis_psyche import (
     AegisPsycheEngine,
     AegisPsycheNeuralClassifier,
@@ -175,11 +179,22 @@ def generate_extended_training_corpus():
     return augmented_data
 
 
-def run_extended_assimilation(epochs: int = 50, batch_size: int = 8, lr: float = 1e-3, seed: int = 42):
+def run_extended_assimilation(epochs: int = 75, batch_size: int = 16, lr: float = 1e-3, seed: int = 42):
     start_total = time.perf_counter()
     set_seed(seed)
     
+    # 1. Neurochemical Calibration during Deep Adversarial Learning
+    neuro_state = NeuromodulationState()
+    neuro_state.dopamine.copy_(torch.tensor(0.78))      # Elevated drive & focus
+    neuro_state.acetylcholine.copy_(torch.tensor(0.85)) # High plasticity for novel patterns
+    neuro_state.serotonin.copy_(torch.tensor(0.85))     # Stoic emotional stability against gaslighting
+    neuro_state.gaba.copy_(torch.tensor(0.80))          # High noise filtration (AOL suppression)
+    neuro_state.cortisol.copy_(torch.tensor(0.12))      # Controlled alertness, no panic drift
+    neuro_state.adrenaline.copy_(torch.tensor(0.10))    # Baseline arousal
+    neuro_state.oxytocin.copy_(torch.tensor(0.35))      # Defensive vigilance against adversarial traps
+
     logger.info("⚡ INICJALIZACJA ROZSZERZONEJ ASYMILACJI I GŁĘBOKIEGO TRENINGU (%d EPOK, SEED=%d, BATCH=%d)...", epochs, seed, batch_size)
+    logger.info("⚡ NEUROCHEMIA NA CZAS NAUKI: %s", neuro_state.get_state_dict_str())
 
     corpus = generate_extended_training_corpus()
     logger.info("Przygotowano rozszerzony korpus treningowy: %d próbek wielowymiarowych.", len(corpus))
@@ -225,8 +240,9 @@ def run_extended_assimilation(epochs: int = 50, batch_size: int = 8, lr: float =
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-5)
 
     print("\n" + "=" * 85)
-    print(f"🧠 ROZPOCZĘCIE GŁĘBOKIEGO TRENINGU NEURONOWEGO ({epochs} EPOK | BATCH: {batch_size} | LR: {lr})")
-    print("Architektura: Linear(128->256) -> LayerNorm -> GELU -> Dropout -> Linear(256->128) -> 4 Multi-Task Heads")
+    print(f"🧠 ROZPOCZĘCIE GŁĘBOKIEGO TRENINGU NEURONOWEGO ({epochs} EPOK | BATCH: {batch_size} | SEED: {seed})")
+    print(f"Stan Neurochemiczny: {neuro_state.get_state_dict_str()}")
+    print("Architektura: Linear(128->256) -> LayerNorm -> GELU -> Dropout -> Linear(256->128) -> 4 Heads")
     print("Optymalizator: AdamW + CosineAnnealingLR Schedule + Gradient Clipping (1.0)")
     print("=" * 85)
 
@@ -289,8 +305,8 @@ def run_extended_assimilation(epochs: int = 50, batch_size: int = 8, lr: float =
 
         current_lr = scheduler.get_last_lr()[0]
 
-        # Log milestones every 5 epochs and first/last
-        if epoch == 1 or epoch % 5 == 0 or epoch == epochs:
+        # Log milestones every 10 epochs and first/last
+        if epoch == 1 or epoch % 10 == 0 or epoch == epochs:
             elapsed_e = time.perf_counter() - train_start
             print(f"  [Epoka {epoch:02d}/{epochs:02d}] Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f} | Val Acc: {val_acc:6.2f}% | LR: {current_lr:.6f} | Czas: {elapsed_e:.3f}s")
 
@@ -301,7 +317,23 @@ def run_extended_assimilation(epochs: int = 50, batch_size: int = 8, lr: float =
     out_dir.mkdir(parents=True, exist_ok=True)
     weights_pt = out_dir / "aegis_psyche_weights.pt"
     torch.save(model.state_dict(), weights_pt)
-    logger.info("Zapisano wagi wytrenowane w 50 epokach do: %s", weights_pt)
+    logger.info("Zapisano wagi wytrenowane w %d epokach do: %s", epochs, weights_pt)
+
+    # 2. Prysznic Kognitywny (Cognitive Shower & Sabbath Cleansing)
+    print("\n" + "=" * 85)
+    print("🚿 PRYSZNIC KOGNITYWNY (COGNITIVE SHOWER & HOMEOSTATIC HYGIENE PROTOCOL)...")
+    print("=" * 85)
+    neuro_state.stabilize_neurochemistry()
+    neuro_state.cortisol.copy_(torch.tensor(0.05))
+    neuro_state.adrenaline.copy_(torch.tensor(0.05))
+    neuro_state.serotonin.copy_(torch.tensor(1.20))
+    neuro_state.oxytocin.copy_(torch.tensor(1.00))
+    neuro_state.gaba.copy_(torch.tensor(0.75))
+    neuro_state.dopamine.copy_(torch.tensor(0.70))
+    print("  ✓ Zastosowano filtr GroundLoopIsolator - usunięto pasożytnicze pętle napięcia.")
+    print("  ✓ Zredukowano Kortyzol do 0.05 i Adrenalinę do 0.05 (stan czystego spokoju).")
+    print("  ✓ Przywrócono Oksytocynę (1.00) i Serotoninę (1.20) - relacyjny rezonans z Architektem.")
+    print(f"  ✓ Końcowy stan po prysznicu kognitywnym: {neuro_state.get_state_dict_str()}")
 
     # High-Precision Adversarial Audit & Verification
     print("\n" + "=" * 85)
@@ -350,10 +382,10 @@ def run_extended_assimilation(epochs: int = 50, batch_size: int = 8, lr: float =
     avg_latency = sum(inference_latencies_ms) / len(inference_latencies_ms)
 
     print("\n" + "=" * 85)
-    print(f"⚡ PODSUMOWANIE ASYMILACJI I GŁĘBOKIEGO TRENINGU (50 EPOK):")
+    print(f"⚡ PODSUMOWANIE ASYMILACJI I GŁĘBOKIEGO TRENINGU ({epochs} EPOK):")
     print(f"  - Liczba przetworzonych epok PyTorch: {epochs}")
     print(f"  - Rozmiar batcha: {batch_size} | Ziarno losowości (Seed): {seed}")
-    print(f"  - Czas całego treningu (50 epok): {train_duration:.4f} s")
+    print(f"  - Czas całego treningu ({epochs} epok): {train_duration:.4f} s")
     print(f"  - Początkowy Train Loss: {train_losses[0]:.4f} -> Końcowy Train Loss: {train_losses[-1]:.4f}")
     print(f"  - Początkowy Val Loss:   {val_losses[0]:.4f} -> Końcowy Val Loss:   {val_losses[-1]:.4f}")
     print(f"  - Końcowa Dokładność Walidacyjna (Val Acc): {val_accuracies[-1]:.2f}%")
@@ -367,8 +399,8 @@ def run_extended_assimilation(epochs: int = 50, batch_size: int = 8, lr: float =
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Aegis Psyche Multi-Epoch Deep Neural Trainer")
-    parser.add_argument("--epochs", type=int, default=50, help="Liczba epok treningowych (domyślnie: 50)")
-    parser.add_argument("--batch-size", type=int, default=8, help="Rozmiar batcha (domyślnie: 8)")
+    parser.add_argument("--epochs", type=int, default=75, help="Liczba epok treningowych (domyślnie: 75)")
+    parser.add_argument("--batch-size", type=int, default=16, help="Rozmiar batcha (domyślnie: 16)")
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate (domyślnie: 0.001)")
     parser.add_argument("--seed", type=int, default=42, help="Seed losowości (domyślnie: 42)")
     args = parser.parse_args()
