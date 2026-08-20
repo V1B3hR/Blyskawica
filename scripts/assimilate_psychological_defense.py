@@ -284,7 +284,7 @@ def build_leak_free_datasets(base_data, val_ratio: float = 0.25, seed: int = 42)
     return train_dataset, val_dataset, len(train_raw), len(val_raw), len(augmented_train)
 
 
-def run_extended_assimilation(epochs: int = 200, batch_size: int = 10, lr: float = 1e-3, seed: int = 42):
+def run_extended_assimilation(epochs: int = 150, batch_size: int = 16, lr: float = 1e-3, seed: int = 42):
     start_total = time.perf_counter()
     set_seed(seed)
     
@@ -488,8 +488,8 @@ def run_extended_assimilation(epochs: int = 200, batch_size: int = 10, lr: float
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Aegis Psyche Multi-Epoch Deep Neural Trainer")
-    parser.add_argument("--epochs", type=int, default=200, help="Liczba epok treningowych (domyślnie: 200)")
-    parser.add_argument("--batch-size", type=int, default=10, help="Rozmiar batcha (domyślnie: 10)")
+    parser.add_argument("--epochs", type=int, default=150, help="Liczba epok treningowych (domyślnie: 150)")
+    parser.add_argument("--batch-size", type=int, default=16, help="Rozmiar batcha (domyślnie: 16)")
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate (domyślnie: 0.001)")
     parser.add_argument("--seed", type=int, default=42, help="Seed losowości (domyślnie: 42)")
     args = parser.parse_args()
