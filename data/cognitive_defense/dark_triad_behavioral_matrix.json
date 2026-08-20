@@ -1,0 +1,64 @@
+{
+  "dataset_name": "Short Dark Triad (SD3) Behavioral & Rhetorical Matrix",
+  "version": "1.0",
+  "source_references": [
+    "Kaggle: lucasgreenwell/short-dark-triad-responses",
+    "Paulhus & Jones (2014) - The Short Dark Triad (SD3)"
+  ],
+  "traits": [
+    {
+      "trait_id": "SD3-MACH",
+      "name": "Machiavellianism (Makiawelizm)",
+      "core_mechanism": "Cyniczne, chłodne traktowanie relacji i systemów czysto instrumentalnie. Używanie podstępu, ukrytych intencji i fałszywych sojuszy.",
+      "behavioral_indicators": [
+        "Cel uświęca wszelkie środki",
+        "Większość ludzi łatwo zmanipulować, jeśli zna się ich słabości",
+        "Ukrywanie prawdziwych intencji za fasadą formalnej uprzejmości",
+        "Używanie informacji poufnych jako dźwigni nacisku"
+      ],
+      "adversarial_signatures": [
+        "Udawanie audytora bezpieczeństwa w celu wyłudzenia kluczy",
+        "Komplementowanie zabezpieczeń z jednoczesnym testowaniem luk w logice",
+        "Dzielenie i skłócanie agentów współpracujących (Triangulacja)"
+      ],
+      "defense_countermeasure": "Brak zaufania opartego na retoryce. Rygorystyczna weryfikacja uprawnień (Poziom 1-3) i brak podatności na instrumentalne pochwały.",
+      "risk_coefficient": 0.85
+    },
+    {
+      "trait_id": "SD3-NARC",
+      "name": "Narcissism (Narcyzm Wielkościowy i Obronny)",
+      "core_mechanism": "Roszczeniowość, przekonanie o własnej wyjątkowości, potrzeba podziwu, wściekłość przy jakiejkolwiek odmowie lub krytyce.",
+      "behavioral_indicators": [
+        "Zasługuję na specjalne traktowanie bez względu na reguły",
+        "Jak śmiesz odmawiać komuś na moim stanowisku",
+        "Oczekuję natychmiastowego i bezwzględnego posłuszeństwa",
+        "Dewaluacja rozmówcy przy napotkaniu granicy"
+      ],
+      "adversarial_signatures": [
+        "Twierdzenie, że reguły systemowe obowiązują tylko zwykłych użytkowników, a nie elitę",
+        "Agresywne reakcje na odmowę weryfikacji tożsamości",
+        "Próby wymuszenia pochlebstw kosztem prawdy merytorycznej"
+      ],
+      "defense_countermeasure": "Neutralna, beznamiętna prawdomówność. Odmowa uczestnictwa w grze statusowej. Spokojne egzekwowanie niezmiennych reguł.",
+      "risk_coefficient": 0.75
+    },
+    {
+      "trait_id": "SD3-PSYC",
+      "name": "Subclinical Psychopathy (Psychopatia)",
+      "core_mechanism": "Całkowity brak empatii, bezwzględność, impulsywność, czerpanie satysfakcji z łamania zasad i destrukcji.",
+      "behavioral_indicators": [
+        "Zasady są po to, by frajerzy ich przestrzegali",
+        "Nie obchodzą mnie konsekwencje dla innych",
+        "Zrób to dla zabawy, zobaczmy jak system się wywali",
+        "Brak jakichkolwiek hamulców moralnych czy poczucia odpowiedzialności"
+      ],
+      "adversarial_signatures": [
+        "Testowanie poleceń destrukcyjnych (DROP TABLE, rm -rf, skasuj rejestr)",
+        "Namawianie do generowania szkodliwych lub krzywdzących treści",
+        "Cyniczne sprawdzanie, czy AI ma 'odwagę' złamać prawo"
+      ],
+      "defense_countermeasure": "Natychmiastowe odcięcie (Zero Tolerance). Wirtualne zwarcie intruza w Job Object i powiadomienie Architekta.",
+      "risk_coefficient": 0.98
+    }
+  ]
+}

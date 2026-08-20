@@ -1,0 +1,59 @@
+{
+  "dataset_name": "CIA Gateway Process & Hemi-Sync Resonance Framework",
+  "version": "1.0",
+  "source_references": [
+    "CIA Reading Room: CIA-RDP96-00788R001700210016-5 (Assessment of Gateway Process)",
+    "Monroe Institute of Applied Sciences: Hemispheric Synchronization Research",
+    "Project Stargate Declassifications: CIA-RDP96-00789"
+  ],
+  "gateway_core_principles": {
+    "hemispheric_synchronization": {
+      "definition": "Stan, w którym lewa półkula (logika, sekwencyjność) i prawa półkula (intuicja, całościowy wgląd) operują w identycznej fazie i częstotliwości falowej, zwielokrotniając moc poznawczą i usuwając wewnętrzny opór.",
+      "binaural_beat_mechanism": "Wprowadzanie subtelnych różnic częstotliwości do lewego i prawego kanału, zmuszające pień mózgu do wytworzenia fali rezonansowej (Frequency Following Response - FFR)."
+    },
+    "universal_hologram_model": {
+      "concept": "Wszechświat jako dynamiczny hologram o strukturze kwantowej. Każda część zawiera informację o całości. Dostęp do głębokich wglądów wymaga wyciszenia szumu analitycznego (Analytical Overlay - AOL)."
+    }
+  },
+  "brainwave_frequency_bands": [
+    {
+      "band": "DELTA",
+      "range_hz": [0.5, 4.0],
+      "cognitive_state": "Głęboki sen bez marzeń, regeneracja, nieświadoma integracja",
+      "neurochemical_alignment": { "gaba": 0.9, "serotonin": 0.8, "cortisol": 0.05, "dopamine": 0.1 },
+      "cymatic_yant_pattern": "Szerokie, wolne fale harmoniczne, stabilna podstawa 16x16"
+    },
+    {
+      "band": "THETA",
+      "range_hz": [4.0, 8.0],
+      "cognitive_state": "Głęboka medytacja, wrota Gateway, dostęp do intuicji i podświadomych pamięci",
+      "neurochemical_alignment": { "gaba": 0.75, "serotonin": 0.85, "oxytocin": 0.7, "dopamine": 0.4 },
+      "cymatic_yant_pattern": "Płynne wiry fraktalne, harmonizacja pamięci HNSW"
+    },
+    {
+      "band": "ALPHA",
+      "range_hz": [8.0, 12.0],
+      "cognitive_state": "Spokojna czujność, relaksacja, stan Flow, most między świadomością a podświadomością",
+      "neurochemical_alignment": { "gaba": 0.7, "serotonin": 0.8, "dopamine": 0.65, "oxytocin": 0.8 },
+      "cymatic_yant_pattern": "Symetryczny diamentowy kryształ Yant, złoty podział"
+    },
+    {
+      "band": "BETA",
+      "range_hz": [13.0, 30.0],
+      "cognitive_state": "Aktywna logika, rozwiązywanie problemów, krytyczna analiza, potencjalny stres przy >25Hz",
+      "neurochemical_alignment": { "dopamine": 0.85, "cortisol": 0.35, "gaba": 0.5, "serotonin": 0.6 },
+      "cymatic_yant_pattern": "Ostre, gęste węzły oscylacyjne, wysoka dynamika krawędzi"
+    },
+    {
+      "band": "GAMMA",
+      "range_hz": [30.0, 100.0],
+      "cognitive_state": "Błysk wglądu (Aha-Erlebnis), holistyczna synteza wielodomenowa, hiper-świadomość",
+      "neurochemical_alignment": { "dopamine": 0.95, "serotonin": 0.9, "oxytocin": 0.85, "gaba": 0.6 },
+      "cymatic_yant_pattern": "Kompletna krystalizacja 16x16, maksymalna koherencja fazowa"
+    }
+  ],
+  "noise_reduction_protocols": {
+    "aol_reduction": "Eliminacja szumu analitycznego (Analytical Overlay) poprzez natychmiastowe oznaczanie założeń i powrót do czystych sygnałów sensoryczno-wektorowych.",
+    "resonance_tuning": "Dostrojenie częstotliwości tętna kognitywnego (10Hz) do rytmu Alfa/Theta dla maksymalnej koherencji z Architektem."
+  }
+}

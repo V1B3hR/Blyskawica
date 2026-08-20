@@ -338,6 +338,15 @@ async function sendMessage() {
   try {
     addLog(`[Tauri]: Wysyłanie wiadomości do silnika Rust: "${text}"`);
     
+    // Skanowanie psychologiczne Aegis Psyche (MentalManip, Dark Triad, FBI BAU)
+    try {
+      const verdict = await invoke("evaluate_cognitive_shield", { prompt: text });
+      if (verdict && verdict.is_manipulative) {
+        addLog(`🛡️ [Aegis Psyche]: Wykryto wektor manipulacji: ${verdict.dominant_vector || 'ADVERSARIAL'} (Indeks: ${verdict.manipulation_index})`);
+        addLog(`🛡️ [Aegis Antidotum]: ${verdict.assertive_antidote}`);
+      }
+    } catch (e) {}
+    
     // Dodanie wskaźnika generowania odpowiedzi (loader/typing indicator)
     const generatingMsgEl = document.createElement("div");
     generatingMsgEl.className = "message blysk-msg generating";

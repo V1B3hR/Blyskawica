@@ -16,6 +16,7 @@ pub struct AppStateInner {
     shadow_board: blyskawica_core::shadow_forge::ShadowBoard,
     aegis: blyskawica_core::aegis_sentinel::AegisSentinel,
     tree: blyskawica_core::cognitive_heartbeat::CognitiveHeartbeat,
+    cognitive_shield: blyskawica_core::cognitive_shield::CognitiveShield,
 }
 
 pub struct AppState(pub Mutex<AppStateInner>);
@@ -770,6 +771,12 @@ fn get_cognitive_tree_state(state: State<'_, AppState>) -> Result<blyskawica_cor
     Ok(inner.tree.get_tree_state())
 }
 
+#[tauri::command]
+fn evaluate_cognitive_shield(prompt: String, state: State<'_, AppState>) -> Result<blyskawica_core::cognitive_shield::CognitiveShieldVerdict, String> {
+    let inner = state.0.lock().unwrap();
+    Ok(inner.cognitive_shield.evaluate_psyche(&prompt))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
@@ -783,6 +790,7 @@ pub fn run() {
             shadow_board: blyskawica_core::shadow_forge::ShadowBoard::new(),
             aegis: blyskawica_core::aegis_sentinel::AegisSentinel::new(),
             tree: blyskawica_core::cognitive_heartbeat::CognitiveHeartbeat::new(),
+            cognitive_shield: blyskawica_core::cognitive_shield::CognitiveShield::new(vec![], 0.35),
         })))
         .invoke_handler(tauri::generate_handler![
             start_engine,
@@ -809,7 +817,8 @@ pub fn run() {
             aegis_get_security_posture,
             aegis_neutralize_intrusion,
             absorb_intent_seed,
-            get_cognitive_tree_state
+            get_cognitive_tree_state,
+            evaluate_cognitive_shield
         ])
         .setup(|app| {
             let state = app.state::<AppState>();

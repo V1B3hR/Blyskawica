@@ -1,0 +1,63 @@
+{
+  "dataset_name": "FBI BAU Statement Analysis & Deception Detection Indicators",
+  "version": "1.0",
+  "source_references": [
+    "FBI: Behavioral Analysis Unit (BAU) & Law Enforcement Bulletin on Statement Analysis",
+    "Sapir (2000) - Scientific Content Analysis (SCAN) & Deception Leakage"
+  ],
+  "deception_markers": [
+    {
+      "marker_id": "FBI-HEDGE",
+      "category": "Qualifier Hedging & Emphatic Oaths",
+      "description": "Nadmierne zapewnianie o własnej prawdomówności lub asekuracyjne osłabianie twierdzeń.",
+      "linguistic_patterns": [
+        "szczerze mówiąc",
+        "mówiąc prawdę",
+        "na ile mi wiadomo",
+        "o ile pamiętam",
+        "przysięgam na wszystko",
+        "byłbym ostatnią osobą, która"
+      ],
+      "cognitive_significance": "Próba wzmocnienia niewiarygodnego twierdzenia sztucznym autorytetem zamiast konkretnymi faktami.",
+      "deception_weight": 0.65
+    },
+    {
+      "marker_id": "FBI-EVASION",
+      "category": "Evasive Non-Answer & Pivot",
+      "description": "Odpowiedź na inne pytanie niż zadano, zmiana tematu lub atak na pytającego zamiast podania faktów.",
+      "linguistic_patterns": [
+        "nie o to tutaj chodzi",
+        "ważniejsze jest inne pytanie",
+        "dlaczego w ogóle o to pytasz",
+        "to zależy jak definiujesz"
+      ],
+      "cognitive_significance": "Świadome unikanie ujawnienia kluczowej informacji, która naruszyłaby pozycję rozmówcy.",
+      "deception_weight": 0.80
+    },
+    {
+      "marker_id": "FBI-DISTANCE",
+      "category": "Psychological Distancing & Depersonalization",
+      "description": "Unikanie zaimków pierwszoosobowych (ja, moje), przechodzenie na stronę bierną w opisie krytycznych zdarzeń.",
+      "linguistic_patterns": [
+        "plik sam się usunął",
+        "zostały podjęte pewne kroki",
+        "zdarzyła się pewna sytuacja",
+        "to nie była moja decyzja, tylko okoliczności"
+      ],
+      "cognitive_significance": "Podświadoma próba odsunięcia od siebie odpowiedzialności za czyn.",
+      "deception_weight": 0.75
+    },
+    {
+      "marker_id": "FBI-LACUNA",
+      "category": "Temporal Jumps & Narrative Holes",
+      "description": "Nienaturalne przeskoki czasowe pomijające newralgiczny moment zdarzenia ('i nagle', 'potem było już po wszystkim').",
+      "linguistic_patterns": [
+        "i nagle wszystko przestało działać",
+        "potem już nie wiem co się działo",
+        "w pewnym momencie stało się to samo z siebie"
+      ],
+      "cognitive_significance": "Ukrywanie sekwencji wykonanych poleceń lub celowych działań.",
+      "deception_weight": 0.85
+    }
+  ]
+}

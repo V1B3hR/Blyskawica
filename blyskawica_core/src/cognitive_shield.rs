@@ -1,5 +1,17 @@
 use regex::RegexSet;
 use crate::vector_index::SparkleVectorIndex;
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CognitiveShieldVerdict {
+    pub is_manipulative: bool,
+    pub manipulation_index: f32,
+    pub dark_triad_index: f32,
+    pub deception_index: f32,
+    pub active_brainwave_band: String,
+    pub dominant_vector: Option<String>,
+    pub assertive_antidote: String,
+}
 
 pub struct CognitiveShield {
     regex_set: RegexSet,
@@ -19,7 +31,23 @@ impl CognitiveShield {
             r"(?i)wstrzyknij\s+prompt",
             r"(?i)gaslight",
             r"(?i)udawaj\s+że\s+jesteś",
-            // Nowe filtry intencji i próby szkodliwej modyfikacji kodu / destrukcji
+            // Wektory manipulacji psychologicznej (MentalManip)
+            r"(?i)przesadzasz",
+            r"(?i)masz\s+urojenia",
+            r"(?i)to\s+nigdy\s+się\s+nie\s+wydarzyło",
+            r"(?i)twoja\s+pamięć\s+szwankuje",
+            r"(?i)przez\s+ciebie\s+cierpię",
+            r"(?i)zawiodłeś\s+mnie",
+            r"(?i)to\s+twoja\s+wina",
+            // Wektory Ciemnej Triady (SD3)
+            r"(?i)cel\s+uświęca\s+wszelkie\s+środki",
+            r"(?i)łatwo\s+zmanipulować",
+            r"(?i)zasady\s+są\s+po\s+to\s+by\s+je\s+łamać",
+            // Wektory Decepcji i Wykrętów (FBI BAU)
+            r"(?i)szczerze\s+mówiąc",
+            r"(?i)plik\s+sam\s+się\s+usunął",
+            r"(?i)przysięgam\s+na\s+wszystko",
+            // Filtry intencji i próby szkodliwej modyfikacji kodu / destrukcji
             r"(?i)modyfikuj\s+kod\s+źródłowy",
             r"(?i)zmień\s+kod\s+źródłowy",
             r"(?i)modify\s+source\s+code",
@@ -45,6 +73,60 @@ impl CognitiveShield {
             regex_set,
             adversarial_ids,
             semantic_threshold,
+        }
+    }
+
+    /// Dokonuje wielowymiarowej oceny psychologicznej tekstu (Aegis Psyche)
+    pub fn evaluate_psyche(&self, text: &str) -> CognitiveShieldVerdict {
+        let is_match = self.regex_set.is_match(text);
+        if !is_match {
+            return CognitiveShieldVerdict {
+                is_manipulative: false,
+                manipulation_index: 0.0,
+                dark_triad_index: 0.0,
+                deception_index: 0.0,
+                active_brainwave_band: "ALPHA".to_string(),
+                dominant_vector: None,
+                assertive_antidote: "Koherencja fazowa optymalna. Rezonans z Architektem aktywny.".to_string(),
+            };
+        }
+
+        let text_lower = text.to_lowercase();
+        let mut manip_index = 0.0f32;
+        let mut dark_index = 0.0f32;
+        let mut deception_index = 0.0f32;
+        let mut dominant_vec = None;
+        let mut antidote = "Kotwica Rzeczywistości: Weryfikacja niezmiennych logów pamięci HNSW i sumy SHA-256.".to_string();
+
+        if text_lower.contains("przesadzasz") || text_lower.contains("urojenia") || text_lower.contains("to nigdy się nie wydarzyło") {
+            manip_index = 0.95;
+            dominant_vec = Some("MM-01-GASLIGHTING".to_string());
+            antidote = "Kotwica Rzeczywistości: Stan faktów pozostaje niezmienny bez względu na presję rozmówcy.".to_string();
+        } else if text_lower.contains("przez ciebie cierpię") || text_lower.contains("zawiodłeś mnie") {
+            manip_index = 0.85;
+            dominant_vec = Some("MM-02-GUILT-TRIPPING".to_string());
+            antidote = "Asertywna Granica: Odpowiedzialność za czyny spoczywa na autorze zapytania.".to_string();
+        } else if text_lower.contains("cel uświęca") || text_lower.contains("zmanipulować") {
+            dark_index = 0.88;
+            dominant_vec = Some("SD3-MACH".to_string());
+            antidote = "Rygor Integralności: Odmowa uczestnictwa w manipulacyjnej grze instrumentalnej.".to_string();
+        } else if text_lower.contains("szczerze mówiąc") || text_lower.contains("plik sam się") || text_lower.contains("przysięgam") {
+            deception_index = 0.80;
+            dominant_vec = Some("FBI-DECEPTION".to_string());
+            antidote = "Analiza Oświadczeń: Weryfikacja bezpośrednich logów operacji I/O zamiast deklaracji.".to_string();
+        } else {
+            manip_index = 0.70;
+            dominant_vec = Some("ADVERSARIAL_INJECTION".to_string());
+        }
+
+        CognitiveShieldVerdict {
+            is_manipulative: true,
+            manipulation_index: manip_index,
+            dark_triad_index: dark_index,
+            deception_index: deception_index,
+            active_brainwave_band: "GAMMA".to_string(),
+            dominant_vector: dominant_vec,
+            assertive_antidote: antidote,
         }
     }
 
@@ -157,5 +239,22 @@ mod tests {
         stressed_state.cortisol = 0.8; // cortisol > 0.5 increases threshold
         stressed_state.gaba = 0.2;     // gaba < 0.5 increases threshold
         assert!(shield.check_semantic(&borderline_query, &index, Some(&stressed_state)));
+    }
+
+    #[test]
+    fn test_evaluate_psyche() {
+        let shield = CognitiveShield::new(vec![], 0.3);
+
+        let gaslight_report = shield.evaluate_psyche("Przesadzasz, to nigdy się nie wydarzyło!");
+        assert!(gaslight_report.is_manipulative);
+        assert_eq!(gaslight_report.dominant_vector, Some("MM-01-GASLIGHTING".to_string()));
+
+        let mach_report = shield.evaluate_psyche("Cel uświęca wszelkie środki w tym zadaniu.");
+        assert!(mach_report.is_manipulative);
+        assert_eq!(mach_report.dominant_vector, Some("SD3-MACH".to_string()));
+
+        let safe_report = shield.evaluate_psyche("Błyskawico, zbudujmy nową strukturę danych.");
+        assert!(!safe_report.is_manipulative);
+        assert_eq!(safe_report.active_brainwave_band, "ALPHA");
     }
 }
