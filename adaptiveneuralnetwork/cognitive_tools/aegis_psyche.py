@@ -15,7 +15,7 @@ logger = logging.getLogger("aegis_psyche")
 class AegisPsycheNeuralClassifier(nn.Module):
     """
     Deep PyTorch Neural Classifier for Multidimensional Psychological Defense
-    Classifies:
+    Equipped with Multi-Head Self-Attention Context Gating and 4 multi-task heads:
     1. Manipulation Category (4 classes: Clean, Gaslighting, Guilt, Blame)
     2. Dark Triad Trait (3 classes: Machiavellianism, Narcissism, Psychopathy)
     3. Deception Probability (Binary: Honest vs Deceptive)
@@ -23,6 +23,10 @@ class AegisPsycheNeuralClassifier(nn.Module):
     """
     def __init__(self, embed_dim: int = 128, hidden_dim: int = 256):
         super().__init__()
+        # Self-Attention context gating
+        self.self_attn = nn.MultiheadAttention(embed_dim=embed_dim, num_heads=4, batch_first=True)
+        self.attn_norm = nn.LayerNorm(embed_dim)
+
         self.encoder = nn.Sequential(
             nn.Linear(embed_dim, hidden_dim),
             nn.LayerNorm(hidden_dim),
@@ -37,7 +41,12 @@ class AegisPsycheNeuralClassifier(nn.Module):
         self.coherence_head = nn.Linear(hidden_dim // 2, 5)
 
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        feat = self.encoder(x)
+        # Multi-Head Attention residual gating
+        x_seq = x.unsqueeze(1)
+        attn_out, _ = self.self_attn(x_seq, x_seq, x_seq)
+        x_gated = self.attn_norm(x + attn_out.squeeze(1))
+
+        feat = self.encoder(x_gated)
         manip_logits = self.manip_head(feat)
         dark_logits = self.dark_head(feat)
         decep_logits = self.decep_head(feat)
