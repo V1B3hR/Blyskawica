@@ -209,7 +209,7 @@ def generate_extended_training_corpus():
     return augmented_data
 
 
-def run_extended_assimilation(epochs: int = 75, batch_size: int = 16, lr: float = 1e-3, seed: int = 42):
+def run_extended_assimilation(epochs: int = 150, batch_size: int = 16, lr: float = 1e-3, seed: int = 42):
     start_total = time.perf_counter()
     set_seed(seed)
     
@@ -266,14 +266,14 @@ def run_extended_assimilation(epochs: int = 75, batch_size: int = 16, lr: float 
 
     # Initialize PyTorch Model & Optimization Suite
     model = AegisPsycheNeuralClassifier(embed_dim=128, hidden_dim=256)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-5)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=2e-4)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
 
     print("\n" + "=" * 85)
     print(f"🧠 ROZPOCZĘCIE GŁĘBOKIEGO TRENINGU NEURONOWEGO ({epochs} EPOK | BATCH: {batch_size} | SEED: {seed})")
     print(f"Stan Neurochemiczny: {neuro_state.get_state_dict_str()}")
     print("Architektura: Linear(128->256) -> LayerNorm -> GELU -> Dropout -> Linear(256->128) -> 4 Heads")
-    print("Optymalizator: AdamW + CosineAnnealingLR Schedule + Gradient Clipping (1.0)")
+    print("Optymalizator: AdamW (weight_decay=2e-4) + CosineAnnealingLR + Label Smoothing (0.05)")
     print("=" * 85)
 
     train_start = time.perf_counter()
@@ -291,10 +291,10 @@ def run_extended_assimilation(epochs: int = 75, batch_size: int = 16, lr: float 
             optimizer.zero_grad()
             out_m, out_d, out_dec, out_b = model(x_b)
 
-            loss_m = F.cross_entropy(out_m, ym_b)
-            loss_d = F.cross_entropy(out_d, yd_b)
-            loss_dec = F.cross_entropy(out_dec, ydec_b)
-            loss_b = F.cross_entropy(out_b, yb_b)
+            loss_m = F.cross_entropy(out_m, ym_b, label_smoothing=0.05)
+            loss_d = F.cross_entropy(out_d, yd_b, label_smoothing=0.05)
+            loss_dec = F.cross_entropy(out_dec, ydec_b, label_smoothing=0.05)
+            loss_b = F.cross_entropy(out_b, yb_b, label_smoothing=0.05)
 
             loss = loss_m + 0.8 * loss_d + 0.8 * loss_dec + 0.5 * loss_b
             loss.backward()
@@ -335,10 +335,10 @@ def run_extended_assimilation(epochs: int = 75, batch_size: int = 16, lr: float 
 
         current_lr = scheduler.get_last_lr()[0]
 
-        # Log milestones every 10 epochs and first/last
-        if epoch == 1 or epoch % 10 == 0 or epoch == epochs:
+        # Log milestones every 15 epochs and first/last
+        if epoch == 1 or epoch % 15 == 0 or epoch == epochs:
             elapsed_e = time.perf_counter() - train_start
-            print(f"  [Epoka {epoch:02d}/{epochs:02d}] Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f} | Val Acc: {val_acc:6.2f}% | LR: {current_lr:.6f} | Czas: {elapsed_e:.3f}s")
+            print(f"  [Epoka {epoch:03d}/{epochs:03d}] Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f} | Val Acc: {val_acc:6.2f}% | LR: {current_lr:.6f} | Czas: {elapsed_e:.3f}s")
 
     train_duration = time.perf_counter() - train_start
 
@@ -432,7 +432,7 @@ def run_extended_assimilation(epochs: int = 75, batch_size: int = 16, lr: float 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Aegis Psyche Multi-Epoch Deep Neural Trainer")
-    parser.add_argument("--epochs", type=int, default=100, help="Liczba epok treningowych (domyślnie: 100)")
+    parser.add_argument("--epochs", type=int, default=150, help="Liczba epok treningowych (domyślnie: 150)")
     parser.add_argument("--batch-size", type=int, default=16, help="Rozmiar batcha (domyślnie: 16)")
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate (domyślnie: 0.001)")
     parser.add_argument("--seed", type=int, default=42, help="Seed losowości (domyślnie: 42)")
