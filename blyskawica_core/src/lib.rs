@@ -12,3 +12,4 @@ pub mod embedder;
 pub mod shadow_forge;
 pub mod aegis_sentinel;
 pub mod cognitive_heartbeat;
+pub mod aegis_psyche_onnx;

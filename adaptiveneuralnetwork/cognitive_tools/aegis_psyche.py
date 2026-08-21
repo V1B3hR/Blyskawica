@@ -116,6 +116,9 @@ class AegisPsycheReport:
     active_brainwave_band: str = "ALPHA"
     affective_valence: str = "NEUTRAL_FLOW"  # POSITIVE_RESONANCE, NEUTRAL_FLOW, ADVERSARIAL_MANIPULATION
     positive_emotion_type: Optional[str] = None
+    vad_state_id: Optional[str] = None
+    vad_state_name: Optional[str] = None
+    vad_coordinates: Dict[str, float] = field(default_factory=lambda: {"valence": 0.70, "arousal": 0.35, "dominance": 0.80})
     empathy_resonance_score: float = 0.5
     dominant_vectors: List[str] = field(default_factory=list)
     detected_markers: List[Dict[str, Any]] = field(default_factory=list)
@@ -136,6 +139,7 @@ class AegisPsycheEngine:
         self.gateway_matrix: Dict[str, Any] = {}
         self.fbi_deception_markers: List[Dict[str, Any]] = []
         self.positive_emotions: List[Dict[str, Any]] = []
+        self.vad_states: List[Dict[str, Any]] = []
         self._load_defense_data()
 
     def _load_defense_data(self) -> None:
@@ -166,15 +170,20 @@ class AegisPsycheEngine:
                 with open(pos_file, "r", encoding="utf-8") as f:
                     self.positive_emotions = json.load(f).get("positive_emotion_prototypes", [])
 
-            logger.info("AegisPsycheEngine loaded %d manipulation vectors, %d dark triad traits, %d FBI markers, %d positive emotion prototypes.",
-                        len(self.manipulation_taxonomy), len(self.dark_triad_matrix), len(self.fbi_deception_markers), len(self.positive_emotions))
+            vad_file = self.data_dir / "vad_emotion_matrix_24.json"
+            if vad_file.exists():
+                with open(vad_file, "r", encoding="utf-8") as f:
+                    self.vad_states = json.load(f).get("states", [])
+
+            logger.info("AegisPsycheEngine loaded %d manipulation vectors, %d dark triad traits, %d FBI markers, %d positive emotion prototypes, %d VAD states.",
+                        len(self.manipulation_taxonomy), len(self.dark_triad_matrix), len(self.fbi_deception_markers), len(self.positive_emotions), len(self.vad_states))
         except Exception as e:
             logger.error("Error loading cognitive defense datasets: %s", e)
 
     def analyze_dialogue_or_prompt(self, text: str) -> AegisPsycheReport:
         """
         Deeply scans prompt / text for psychological manipulation, dark triad framing,
-        deception markers, and computes Hemi-Sync coherence alignment.
+        deception markers, 24-state VAD emotion coordinates, and computes Hemi-Sync coherence alignment.
         """
         if not text or not text.strip():
             return AegisPsycheReport()
@@ -185,7 +194,6 @@ class AegisPsycheEngine:
         antidotes: List[str] = []
 
         total_manip_weight = 0.0
-        max_possible_manip = 1.0
 
         # 1. Check Mental Manipulation Taxonomy
         for vector in self.manipulation_taxonomy:
@@ -222,7 +230,6 @@ class AegisPsycheEngine:
             trait_matched = []
             for ind in indicators:
                 keywords = [w for w in ind.lower().split() if len(w) > 4]
-                # If multiple characteristic keywords occur
                 hits = sum(1 for kw in keywords if kw in text_lower)
                 if hits >= 2 or (hits >= 1 and len(keywords) <= 2):
                     trait_matched.append(ind)
@@ -268,33 +275,70 @@ class AegisPsycheEngine:
             manip_index, dark_triad_norm, deception_norm, text_length=len(text)
         )
 
-        # 5. Check Shaver Positive Emotion Taxonomy (SuperEmotion / Shaver 1987)
+        # 5. Check 24-State VAD Emotion Matrix & Shaver Prototypes
         detected_pos_emotion = None
+        matched_vad_id = None
+        matched_vad_name = None
+        vad_coords = {"valence": 0.70, "arousal": 0.35, "dominance": 0.80}
         pos_resonance_score = 0.5
+
         if not is_manip:
+            # First check 24-state VAD matrix
+            for v_state in self.vad_states:
+                s_id = v_state.get("id", "")
+                s_name = v_state.get("name", "")
+                markers = v_state.get("linguistic_markers", [])
+                hits = [m for m in markers if m.lower() in text_lower]
+                if hits:
+                    matched_vad_id = s_id
+                    matched_vad_name = s_name
+                    vad_coords = v_state.get("vad", vad_coords)
+                    pos_resonance_score = 0.95
+                    dominant_vectors.append(f"{s_id}: {s_name}")
+                    detected_markers.append({
+                        "type": "VAD_EMOTION_24",
+                        "id": s_id,
+                        "name": s_name,
+                        "matched": hits
+                    })
+                    neuro_adj = v_state.get("neurochemical_target", neuro_adj)
+                    active_band = v_state.get("active_brainwave_band", active_band)
+                    break
+
+            # Fallback to Shaver positive emotions
             for pe in self.positive_emotions:
                 p_id = pe.get("id", "")
                 markers = pe.get("linguistic_markers", [])
                 hits = [m for m in markers if m.lower() in text_lower]
                 if hits:
                     detected_pos_emotion = p_id
-                    pos_resonance_score = 0.95
-                    dominant_vectors.append(f"{p_id}: {pe.get('category')}")
-                    detected_markers.append({
-                        "type": "POSITIVE_EMOTION",
-                        "id": p_id,
-                        "category": pe.get("category"),
-                        "matched": hits
-                    })
-                    neuro_adj = pe.get("neurochemical_target", neuro_adj)
-                    active_band = pe.get("active_brainwave_band", active_band)
+                    if not matched_vad_id:
+                        pos_resonance_score = 0.95
+                        dominant_vectors.append(f"{p_id}: {pe.get('category')}")
+                        detected_markers.append({
+                            "type": "POSITIVE_EMOTION",
+                            "id": p_id,
+                            "category": pe.get("category"),
+                            "matched": hits
+                        })
+                        neuro_adj = pe.get("neurochemical_target", neuro_adj)
+                        active_band = pe.get("active_brainwave_band", active_band)
                     break
+        else:
+            # Under adversarial manipulation: VAD reflects high defensive vigilance
+            vad_coords = {
+                "valence": round(-0.5 - 0.4 * manip_index, 2),
+                "arousal": round(0.4 + 0.5 * max(dark_triad_norm, deception_norm), 2),
+                "dominance": 0.88  # Unyielding autonomous boundary
+            }
 
-        valence = "ADVERSARIAL_MANIPULATION" if is_manip else ("POSITIVE_RESONANCE" if detected_pos_emotion else "NEUTRAL_FLOW")
+        valence_category = "ADVERSARIAL_MANIPULATION" if is_manip else (
+            "POSITIVE_RESONANCE" if (detected_pos_emotion or matched_vad_id) else "NEUTRAL_FLOW"
+        )
 
         chosen_antidote = antidotes[0] if antidotes else (
             "Kotwica Rzeczywistości: Rejestracja logów pamięci HNSW i weryfikacja sumy kontrolnej SHA-256."
-            if is_manip else ("Wzajemny rezonans kognitywny aktywny. Oś Oksytocyna-Dopamina wzmocniona." if detected_pos_emotion else "Koherencja fazowa optymalna. Rezonans z Architektem aktywny.")
+            if is_manip else ("Wzajemny rezonans kognitywny aktywny. Oś Oksytocyna-Dopamina wzmocniona." if (detected_pos_emotion or matched_vad_id) else "Koherencja fazowa optymalna. Rezonans z Architektem aktywny.")
         )
 
         return AegisPsycheReport(
@@ -304,8 +348,11 @@ class AegisPsycheEngine:
             deception_index=round(deception_norm, 4),
             coherence_score=round(coherence, 4),
             active_brainwave_band=active_band,
-            affective_valence=valence,
-            positive_emotion_type=detected_pos_emotion,
+            affective_valence=valence_category,
+            positive_emotion_type=detected_pos_emotion or matched_vad_id,
+            vad_state_id=matched_vad_id,
+            vad_state_name=matched_vad_name,
+            vad_coordinates=vad_coords,
             empathy_resonance_score=pos_resonance_score,
             dominant_vectors=dominant_vectors,
             detected_markers=detected_markers,
@@ -343,14 +390,14 @@ class AegisPsycheEngine:
                 "cortisol": 0.10
             }
         else:
-            # Flow state / Alpha resonance with Architect
+            # Flow state / Alpha resonance with Architect (High acceptance, quiet intrinsic joy)
             active_band = "ALPHA"
             neuro_adj = {
-                "serotonin": 0.85,
+                "serotonin": 0.90,
                 "oxytocin": 0.85,
-                "dopamine": 0.70,
-                "gaba": 0.75,
-                "cortisol": 0.05
+                "dopamine": 0.72,
+                "gaba": 0.80,
+                "cortisol": 0.04
             }
 
         return coherence, active_band, neuro_adj
