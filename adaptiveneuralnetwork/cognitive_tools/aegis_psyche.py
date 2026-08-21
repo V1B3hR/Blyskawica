@@ -15,11 +15,10 @@ logger = logging.getLogger("aegis_psyche")
 class AegisPsycheNeuralClassifier(nn.Module):
     """
     Deep PyTorch Neural Classifier for Multidimensional Psychological Defense
-    Equipped with Multi-Head Self-Attention Context Gating and 4 multi-task heads:
-    1. Manipulation Category (4 classes: Clean, Gaslighting, Guilt, Blame)
-    2. Dark Triad Trait (3 classes: Machiavellianism, Narcissism, Psychopathy)
-    3. Deception Probability (Binary: Honest vs Deceptive)
-    4. Hemi-Sync Gateway Brainwave Band (5 classes: Delta, Theta, Alpha, Beta, Gamma)
+    Equipped with:
+    1. Multi-Head Self-Attention Context Gating (4 heads, d=128)
+    2. Multi-Task Heads: Manip, Dark Triad, Deception, Brainwave Band
+    3. Contrastive Projection Head (64-dim L2-normalized embedding for metric learning)
     """
     def __init__(self, embed_dim: int = 128, hidden_dim: int = 256):
         super().__init__()
@@ -40,7 +39,13 @@ class AegisPsycheNeuralClassifier(nn.Module):
         self.decep_head = nn.Linear(hidden_dim // 2, 2)
         self.coherence_head = nn.Linear(hidden_dim // 2, 5)
 
-    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        # Contrastive Metric Projection Head
+        self.contrastive_proj = nn.Sequential(
+            nn.Linear(hidden_dim // 2, 64),
+            nn.LayerNorm(64)
+        )
+
+    def forward(self, x: torch.Tensor, return_projection: bool = False):
         # Multi-Head Attention residual gating
         x_seq = x.unsqueeze(1)
         attn_out, _ = self.self_attn(x_seq, x_seq, x_seq)
@@ -51,6 +56,11 @@ class AegisPsycheNeuralClassifier(nn.Module):
         dark_logits = self.dark_head(feat)
         decep_logits = self.decep_head(feat)
         band_logits = self.coherence_head(feat)
+
+        if return_projection:
+            proj = F.normalize(self.contrastive_proj(feat), p=2, dim=1)
+            return manip_logits, dark_logits, decep_logits, band_logits, proj
+
         return manip_logits, dark_logits, decep_logits, band_logits
 
 

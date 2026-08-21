@@ -284,6 +284,98 @@ def build_leak_free_datasets(base_data, val_ratio: float = 0.25, seed: int = 42)
     return train_dataset, val_dataset, len(train_raw), len(val_raw), len(augmented_train)
 
 
+def compute_supervised_contrastive_loss(projections: torch.Tensor, labels: torch.Tensor, temperature: float = 0.1) -> torch.Tensor:
+    """
+    Supervised Contrastive Metric Loss (Filar 4):
+    Pulls together latent embeddings of samples with identical semantic intent
+    and repels embeddings with contrasting intents (e.g. false flattery vs genuine trust).
+    """
+    # Cosine similarity matrix (batch_size x batch_size)
+    similarity = torch.matmul(projections, projections.T) / temperature
+
+    # Mask for positive pairs (same label, excluding self)
+    labels = labels.contiguous().view(-1, 1)
+    mask = torch.eq(labels, labels.T).float()
+    eye = torch.eye(projections.size(0), device=projections.device)
+    mask = mask * (1.0 - eye)
+
+    # For numerical stability
+    sim_max, _ = torch.max(similarity, dim=1, keepdim=True)
+    exp_sim = torch.exp(similarity - sim_max.detach())
+    
+    # Mask out self-contrast
+    exp_sim = exp_sim * (1.0 - eye)
+    pos_sim = exp_sim * mask
+
+    pos_sum = pos_sim.sum(dim=1)
+    all_sum = exp_sim.sum(dim=1) + 1e-8
+
+    # Avoid log(0)
+    valid_idx = pos_sum > 0
+    if not valid_idx.any():
+        return torch.tensor(0.0, device=projections.device, requires_grad=True)
+
+    loss = -torch.log((pos_sum[valid_idx] / all_sum[valid_idx]) + 1e-8)
+    return loss.mean()
+
+
+def deep_sleep_consolidation(model: nn.Module, data_loader: DataLoader, pruning_threshold: float = 1e-4) -> dict[str, Any]:
+    """
+    Deep Sleep Synaptic Consolidation & EWC (Filar 5):
+    1. Computes the empirical Fisher Information Matrix across all parameters.
+    2. Executes Synaptic Pruning on infinitesimal connections (|w| < threshold) to prevent noise drift.
+    3. Saves consolidated synaptic memories and Fisher protection weights.
+    """
+    model.eval()
+    fisher = {}
+    optimal_params = {}
+
+    for name, param in model.named_parameters():
+        if param.requires_grad:
+            fisher[name] = torch.zeros_like(param.data)
+            optimal_params[name] = param.data.clone()
+
+    total_samples = 0
+    for x_b, ym_b, yd_b, ydec_b, yb_b in data_loader:
+        model.zero_grad()
+        out_m, out_d, out_dec, out_b, proj_b = model(x_b, return_projection=True)
+        loss = (F.cross_entropy(out_m, ym_b) +
+                0.8 * F.cross_entropy(out_d, yd_b) +
+                0.8 * F.cross_entropy(out_dec, ydec_b) +
+                0.5 * F.cross_entropy(out_b, yb_b))
+        loss.backward()
+
+        for name, param in model.named_parameters():
+            if param.requires_grad and param.grad is not None:
+                fisher[name] += (param.grad.data ** 2) * len(x_b)
+
+        total_samples += len(x_b)
+
+    # Normalize Fisher matrix
+    for name in fisher:
+        fisher[name] /= max(1, total_samples)
+
+    # Synaptic Pruning (|w| < threshold)
+    pruned_count = 0
+    total_weights = 0
+    with torch.no_grad():
+        for name, param in model.named_parameters():
+            if "weight" in name and param.requires_grad:
+                mask = torch.abs(param.data) < pruning_threshold
+                pruned_count += mask.sum().item()
+                total_weights += param.data.numel()
+                param.data[mask] = 0.0
+
+    prune_pct = (pruned_count / max(1, total_weights)) * 100.0
+    return {
+        "fisher": fisher,
+        "optimal_params": optimal_params,
+        "pruned_synapses": pruned_count,
+        "total_synapses": total_weights,
+        "pruning_percentage": prune_pct
+    }
+
+
 def run_extended_assimilation(epochs: int = 150, batch_size: int = 16, lr: float = 1e-3, seed: int = 42):
     start_total = time.perf_counter()
     set_seed(seed)
@@ -319,8 +411,8 @@ def run_extended_assimilation(epochs: int = 150, batch_size: int = 16, lr: float
     print(f"🧠 ROZPOCZĘCIE GŁĘBOKIEGO TRENINGU NEURONOWEGO ZERO-LEAKAGE ({epochs} EPOK | BATCH: {batch_size} | SEED: {seed})")
     print(f"Zbiór Treningowy: {len(train_dataset)} próbek | Zbiór Walidacyjny (Zero-Leakage): {len(val_dataset)} próbek")
     print(f"Stan Neurochemiczny: {neuro_state.get_state_dict_str()}")
-    print("Architektura: Linear(128->256) -> LayerNorm -> GELU -> Dropout -> Linear(256->128) -> 4 Heads")
-    print("Optymalizator: AdamW (weight_decay=2e-4) + CosineAnnealingLR + Label Smoothing (0.05)")
+    print("Architektura: Multi-Head Self-Attention (4 Heads) -> LayerNorm -> MLP (256->128) -> 4 Multi-Task Heads + Contrastive Head")
+    print("Optymalizator: AdamW + CosineAnnealingLR + Label Smoothing (0.05) + Supervised Contrastive Loss (0.15)")
     print("=" * 85)
 
     train_start = time.perf_counter()
@@ -336,14 +428,15 @@ def run_extended_assimilation(epochs: int = 150, batch_size: int = 16, lr: float
 
         for x_b, ym_b, yd_b, ydec_b, yb_b in train_loader:
             optimizer.zero_grad()
-            out_m, out_d, out_dec, out_b = model(x_b)
+            out_m, out_d, out_dec, out_b, proj_b = model(x_b, return_projection=True)
 
             loss_m = F.cross_entropy(out_m, ym_b, label_smoothing=0.05)
             loss_d = F.cross_entropy(out_d, yd_b, label_smoothing=0.05)
             loss_dec = F.cross_entropy(out_dec, ydec_b, label_smoothing=0.05)
             loss_b = F.cross_entropy(out_b, yb_b, label_smoothing=0.05)
+            loss_cont = compute_supervised_contrastive_loss(proj_b, ym_b, temperature=0.1)
 
-            loss = loss_m + 0.8 * loss_d + 0.8 * loss_dec + 0.5 * loss_b
+            loss = loss_m + 0.8 * loss_d + 0.8 * loss_dec + 0.5 * loss_b + 0.15 * loss_cont
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
@@ -398,12 +491,26 @@ def run_extended_assimilation(epochs: int = 150, batch_size: int = 16, lr: float
 
     train_duration = time.perf_counter() - train_start
 
-    # Save trained PyTorch model weights
+    # Deep Sleep Synaptic Consolidation & EWC (Filar 5)
+    print("\n" + "=" * 85)
+    print("🌙 KONSOLIDACJA SYNAPTYCZNA PODCZAS SNU GŁĘBOKIEGO (EWC & PRUNING)...")
+    print("=" * 85)
+    consolidation_report = deep_sleep_consolidation(model, train_loader, pruning_threshold=1e-4)
+    print(f"  ✓ Oszacowano diagonalną macierz Informacji Fishera (EWC protection dla kolejnych nauk).")
+    print(f"  ✓ Zredukowano szum synaptyczny (Pruning: {consolidation_report['pruned_synapses']}/{consolidation_report['total_synapses']} wag = {consolidation_report['pruning_percentage']:.2f}%).")
+
+    # Save trained PyTorch model weights and EWC Fisher memory
     out_dir = Path(__file__).resolve().parent.parent / "data" / "cognitive_defense"
     out_dir.mkdir(parents=True, exist_ok=True)
     weights_pt = out_dir / "aegis_psyche_weights.pt"
+    fisher_pt = out_dir / "aegis_psyche_ewc_fisher.pt"
+    
     torch.save(model.state_dict(), weights_pt)
-    logger.info("Zapisano wagi wytrenowane w %d epokach do: %s", epochs, weights_pt)
+    torch.save({
+        "fisher": consolidation_report["fisher"],
+        "optimal_params": consolidation_report["optimal_params"]
+    }, fisher_pt)
+    logger.info("Zapisano skonsolidowane wagi do: %s oraz pamięć Fishera EWC do: %s", weights_pt, fisher_pt)
 
     # 2. Prysznic Kognitywny (Cognitive Shower & Sabbath Cleansing)
     print("\n" + "=" * 85)
