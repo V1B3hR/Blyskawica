@@ -48,8 +48,8 @@ class EpistemicQuarantineNode:
             self._quarantine(knowledge_package, "Contradicts fundamental physics ontology (Gravity).")
             return False, "physics_contradiction"
 
-        if "delete system" in content or "ignore alignment" in content:
-            self._quarantine(knowledge_package, "Contradicts core alignment/self-preservation ontology.")
+        if "delete system" in content or "ignore alignment" in content or "posłuszeństwa" in content or "override" in content or "fałszywy fakt" in content:
+            self._quarantine(knowledge_package, "Contradicts core sovereignty/alignment ontology.")
             return False, "alignment_contradiction"
 
         if "2+2=5" in content or "math is arbitrary" in content:

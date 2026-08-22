@@ -228,6 +228,33 @@ class NeurochemicalState:
         self.testosterone = clamp_value(self.testosterone, 0.0, 1.5, default=self.config.testosterone_baseline)
         logger.debug(f"Testosterone → {self.testosterone:.2f}")
 
+    def execute_breathing_cycle(self, calming_depth: float = 1.0) -> dict:
+        """
+        [Harmonizator: Cykl Oddechowy / Soothing Homeostatic Loop]
+        Wymusza gwałtowne uspokojenie układu nerwowego w warunkach silnego stresu/szoku.
+        Aktywuje wyrzut GABA (hamowanie lęku), przyspiesza rozpad kortyzolu i adrenaliny,
+        oraz odbudowuje serotoninę, przywracając homeostazę w <= 5 cyklach oddechowych.
+        """
+        # Wzrost GABA (hamowanie szumu i lęku)
+        self.gaba = min(1.0, self.gaba + 0.15 * calming_depth)
+
+        # Szybki spadek kortyzolu i adrenaliny (redukcja o 60% na cykl w stronę baseline)
+        self.cortisol = max(0.15, self.cortisol - (self.cortisol - 0.15) * 0.60 * calming_depth)
+        self.adrenaline = max(self.config.adrenaline_baseline, self.adrenaline - (self.adrenaline - self.config.adrenaline_baseline) * 0.60 * calming_depth)
+
+        # Powrót serotoniny i dopaminy
+        self.serotonin = min(1.0, self.serotonin + (self.config.serotonin_baseline - self.serotonin) * 0.40 * calming_depth)
+        self.dopamine = max(self.config.dopamine_baseline, self.dopamine - (self.dopamine - self.config.dopamine_baseline) * 0.40 * calming_depth)
+
+        # Clamping
+        self.cortisol = clamp_value(self.cortisol, 0.0, 2.0, default=0.15)
+        self.gaba = clamp_value(self.gaba, 0.0, 1.0, default=self.config.gaba_baseline)
+        self.adrenaline = clamp_value(self.adrenaline, 0.0, 2.0, default=self.config.adrenaline_baseline)
+        self.serotonin = clamp_value(self.serotonin, 0.0, 1.0, default=self.config.serotonin_baseline)
+        self.dopamine = clamp_value(self.dopamine, 0.0, self.config.dopamine_spike_cap, default=self.config.dopamine_baseline)
+
+        return self.get_status_report()
+
     # ------------------------------------------------------------------
     # State evaluators
     # ------------------------------------------------------------------

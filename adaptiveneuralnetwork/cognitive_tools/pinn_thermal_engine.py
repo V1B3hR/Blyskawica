@@ -112,6 +112,8 @@ class PINNTrainer:
         total_loss = data_loss + 1.0 * physics_loss
 
         total_loss.backward()
+        # Enforce gradient clipping to prevent NaN explosion in higher order derivatives
+        torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
         self.optimizer.step()
 
         return data_loss.item(), physics_loss.item()
