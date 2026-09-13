@@ -27,7 +27,7 @@ class LiveMonitor:
         self._running = False
         self._task = None
 
-    async def start(self):
+    async def start(self) -> None:
         """Uruchamia monitorowanie w tle jako asynchroniczne zadanie."""
         if self._running:
             return
@@ -35,7 +35,7 @@ class LiveMonitor:
         self._task = asyncio.create_task(self._run_loop())
         logger.info("[LiveMonitor] Monitor aktywności uruchomiony w tle.")
 
-    async def stop(self):
+    async def stop(self) -> None:
         """Zatrzymuje monitorowanie."""
         self._running = False
         if self._task:
@@ -46,7 +46,7 @@ class LiveMonitor:
                 pass
         logger.info("[LiveMonitor] Monitor aktywności zatrzymany.")
 
-    async def _run_loop(self):
+    async def _run_loop(self) -> None:
         """Główna lekka pętla monitorująca."""
         while self._running:
             try:

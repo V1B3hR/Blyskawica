@@ -2,17 +2,26 @@ services:
   blyskawica:
     build: .
     container_name: blyskawica_agent
+    user: "1000:1000"
     ports:
       - "8000:8000"
     volumes:
-      - ./blyskawica_app/memory:/app/blyskawica_app/memory
-      - ./blyskawica_app/media_storage:/app/blyskawica_app/media_storage
-      - ./checkpoints:/app/checkpoints
+      - ./blyskawica_app/memory:/app/blyskawica_app/memory:rw
+      - ./blyskawica_app/media_storage:/app/blyskawica_app/media_storage:rw
+      - ./checkpoints:/app/checkpoints:rw
     restart: always
     environment:
       - PYTHONUNBUFFERED=1
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 8G
+        reservations:
+          cpus: "1.0"
+          memory: 2G
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/system_status"]
+      test: ["CMD", "curl", "-f", "--max-time", "5", "http://localhost:8000/api/system_status"]
       interval: 30s
       timeout: 10s
       retries: 3

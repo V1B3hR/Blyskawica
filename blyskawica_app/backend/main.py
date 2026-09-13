@@ -61,90 +61,8 @@ from blyskawica_app.backend.app_learning_agent import AppLearningAgent
 app_learning_agent = AppLearningAgent()
 
 
-class BlyskawicaDatabase:
-    def __init__(self, db_path):
-        self.db_path = db_path
-        self._init_db()
-
-    def _init_db(self):
-        try:
-            conn = sqlite3.connect(str(self.db_path))
-            cursor = conn.cursor()
-            # Crash-safe SQLite configuration
-            cursor.execute("PRAGMA journal_mode=WAL")
-            cursor.execute("PRAGMA synchronous=FULL")
-            # 1. Search cache
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS search_cache (
-                    query TEXT PRIMARY KEY,
-                    results_json TEXT,
-                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-            # 2. User metadata (DPAPI encrypted or plain)
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS user_metadata (
-                    key TEXT PRIMARY KEY,
-                    value BLOB
-                )
-            """)
-            # 3. Cognitive snapshots
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS cognitive_snapshots (
-                    timestamp TEXT PRIMARY KEY,
-                    version TEXT,
-                    data_json TEXT
-                )
-            """)
-            conn.commit()
-            conn.close()
-        except Exception as e:
-            log_system(f"Błąd inicjalizacji bazy danych SQLite: {e}", "error")
-
-    def get_metadata(self, key: str) -> bytes:
-        try:
-            conn = sqlite3.connect(str(self.db_path))
-            cursor = conn.cursor()
-            cursor.execute("SELECT value FROM user_metadata WHERE key = ?", (key,))
-            row = cursor.fetchone()
-            conn.close()
-            return row[0] if row else None
-        except Exception as e:
-            log_system(f"Błąd odczytu metadata {key} z SQLite: {e}", "error")
-            return None
-
-    def set_metadata(self, key: str, value: bytes):
-        try:
-            conn = sqlite3.connect(str(self.db_path))
-            cursor = conn.cursor()
-            cursor.execute("INSERT OR REPLACE INTO user_metadata (key, value) VALUES (?, ?)", (key, value))
-            conn.commit()
-            conn.close()
-        except Exception as e:
-            log_system(f"Błąd zapisu metadata {key} do SQLite: {e}", "error")
-
-    def add_snapshot(self, timestamp: str, version: str, data_json: str):
-        try:
-            conn = sqlite3.connect(str(self.db_path))
-            cursor = conn.cursor()
-            cursor.execute("INSERT OR REPLACE INTO cognitive_snapshots (timestamp, version, data_json) VALUES (?, ?, ?)",
-                           (timestamp, version, data_json))
-            conn.commit()
-            conn.close()
-        except Exception as e:
-            log_system(f"Błąd zapisu snapshotu {timestamp} do SQLite: {e}", "error")
-
-    def get_all_snapshots(self):
-        try:
-            conn = sqlite3.connect(str(self.db_path))
-            cursor = conn.cursor()
-            cursor.execute("SELECT timestamp, version, data_json FROM cognitive_snapshots ORDER BY timestamp DESC")
-            rows = cursor.fetchall()
-            conn.close()
-            return [{"timestamp": r[0], "version": r[1], "data_json": r[2]} for r in rows]
-        except Exception as e:
-            log_system(f"Błąd odczytu snapshotów z SQLite: {e}", "error")
-            return []
+# Import bazy danych z modułu wydzielonego
+from blyskawica_app.backend.database import BlyskawicaDatabase
 
 db_manager = None
 
@@ -221,80 +139,37 @@ def log_system(msg: str, level: str = "info"):
     else:
         logging.info(msg)
 
-def is_inside_workspace(target_path: Path) -> bool:
-    try:
-        resolved_target = Path(target_path).resolve()
-        resolved_root = Path(ROOT_DIR).resolve()
-        return resolved_root in resolved_target.parents or resolved_target == resolved_root
-    except Exception:
-        return False
+# Import modułów bezpieczeństwa, kontroli ścieżek, CORS i Rate Limitingu
+from blyskawica_app.backend.security import (
+    STARTUP_TOKEN,
+    ALLOWED_CORS_ORIGINS,
+    ALLOWED_CORS_HEADERS,
+    is_inside_workspace,
+    is_protected_core_file,
+    is_restricted_system_path,
+    verify_startup_token,
+    RateLimitMiddleware,
+)
 
-def is_protected_core_file(filepath: Path) -> bool:
-    try:
-        resolved = Path(filepath).resolve()
-        path_str = str(resolved).lower().replace("\\", "/")
-        
-        # Chronione pliki i katalogi zawierajace tozsamosc i silnik
-        protected_patterns = [
-            "/welcome_v9.py",
-            "/blyskawica_start.py",
-            "/uruchom_sparkle.bat",
-            "/adaptiveneuralnetwork/central_nervous_system/",
-            "/adaptiveneuralnetwork/immune_system/",
-            "/identity_vault/",
-            "/blyskawica_app/backend/main.py",
-            "/blyskawica_app/backend/immortality.py",
-            "/blyskawica_app/backend/memory/user_identity.json"
-        ]
-        return any(pattern in path_str for pattern in protected_patterns)
-    except Exception:
-        return False
-
-def is_restricted_system_path(filepath: Path) -> bool:
-    """Check if the path targets a sensitive Windows system directory."""
-    try:
-        raw_path = str(filepath).lower().replace("\\", "/")
-        resolved_path = str(Path(filepath).resolve()).lower().replace("\\", "/")
-        restricted_directories = [
-            "c:/windows",
-            "c:/program files",
-            "c:/program files (x86)",
-            "c:/users/default",
-            "c:/users/all users"
-        ]
-        return any(
-            candidate.startswith(rdir)
-            for candidate in (raw_path, resolved_path)
-            for rdir in restricted_directories
-        )
-    except Exception:
-        return True
-
-def verify_startup_token(x_token: str = Header(None)):
-    """Verifies that the supplied token matches the startup-generated token."""
-    if not x_token or x_token != STARTUP_TOKEN:
-        from fastapi import HTTPException
-        raise HTTPException(status_code=401, detail="Niezautoryzowane zapytanie. Brakujący lub błędny token sesji.")
+# Wsteczna kompatybilność dla zmiennych modułowych
+ALLOWED_ORIGINS = ALLOWED_CORS_ORIGINS
 
 app = FastAPI(title="Błyskawica Win11 Bridge API & Sparkle VIBE IDE")
 
-# Security: Restrict CORS to Sparkle's actual deployment origins
-# This prevents arbitrary websites from accessing the API with credentials
-ALLOWED_ORIGINS = [
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
-    "http://localhost:1420",   # Tauri dev server
-    "http://127.0.0.1:1420",
-    "tauri://localhost",       # Tauri production origin
-    "https://tauri.localhost", # Tauri v2 production origin
-]
-
+# Security: Zaostrzone CORS ze ściśle zdefiniowanymi nagłówkami i metodami
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
+    allow_origins=ALLOWED_CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["GET", "POST"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=ALLOWED_CORS_HEADERS,
+)
+
+# Security: Ograniczenie częstotliwości zapytań (Sliding Window Rate Limiter)
+app.add_middleware(
+    RateLimitMiddleware,
+    max_requests=120,
+    window_seconds=60.0,
 )
 
 from blyskawica_app.backend.vibe_telemetry_bridge import vibe_telemetry_bridge
@@ -315,73 +190,7 @@ async def get_vibe_telemetry():
     return vibe_telemetry_bridge.get_live_vibe_state()
 
 # ---- Persistence & Identity ----
-
-def get_user_fingerprint():
-    """Generate a unique fingerprint for the user/PC."""
-    mac = ':'.join(['{:02x}'.format((uuid.getnode() >> ele) & 0xff) for ele in range(0, 8*6, 8)][::-1])
-    return {
-        "mac": mac,
-        "pc_name": os.environ.get('COMPUTERNAME', 'Unknown-PC'),
-        "username": os.environ.get('USERNAME', 'Unknown-User'),
-        "os": "Windows 11"
-    }
-
-# DPAPI encryption for Windows identity protection
-if os.name == 'nt':
-    import ctypes
-    from ctypes import wintypes
-
-    class DATA_BLOB(ctypes.Structure):
-        _fields_ = [("cbData", wintypes.DWORD), ("pbData", ctypes.POINTER(ctypes.c_char))]
-
-    def encrypt_dpapi(data: bytes) -> bytes:
-        try:
-            pDataIn = DATA_BLOB(len(data), ctypes.create_string_buffer(data))
-            pDataOut = DATA_BLOB()
-            success = ctypes.windll.crypt32.CryptProtectData(
-                ctypes.byref(pDataIn),
-                None,
-                None,
-                None,
-                None,
-                0,
-                ctypes.byref(pDataOut)
-            )
-            if not success:
-                raise OSError("CryptProtectData failed")
-            result = ctypes.string_at(pDataOut.pbData, pDataOut.cbData)
-            ctypes.windll.kernel32.LocalFree(pDataOut.pbData)
-            return result
-        except Exception as e:
-            logging.error(f"DPAPI Encryption error: {e}")
-            return data
-
-    def decrypt_dpapi(data: bytes) -> bytes:
-        try:
-            pDataIn = DATA_BLOB(len(data), ctypes.create_string_buffer(data))
-            pDataOut = DATA_BLOB()
-            success = ctypes.windll.crypt32.CryptUnprotectData(
-                ctypes.byref(pDataIn),
-                None,
-                None,
-                None,
-                None,
-                0,
-                ctypes.byref(pDataOut)
-            )
-            if not success:
-                raise OSError("CryptUnprotectData failed")
-            result = ctypes.string_at(pDataOut.pbData, pDataOut.cbData)
-            ctypes.windll.kernel32.LocalFree(pDataOut.pbData)
-            return result
-        except Exception as e:
-            logging.debug(f"DPAPI Decryption error: {e}")
-            return data
-else:
-    def encrypt_dpapi(data: bytes) -> bytes:
-        return data
-    def decrypt_dpapi(data: bytes) -> bytes:
-        return data
+from blyskawica_app.backend.dpapi import get_user_fingerprint, encrypt_dpapi, decrypt_dpapi
 
 def load_user_memory():
     # 1. Spróbuj odczytać z SQLite
@@ -1523,10 +1332,13 @@ async def vibe_code(
 @app.post("/api/ide/analyze")
 async def analyze_code(path: str = Form(...)):
     project_root = BASE_DIR.parent
-    target_path = (project_root / path).resolve()
+    target_path = Path(path)
+    if not target_path.is_absolute():
+        target_path = project_root / target_path
+    target_path = target_path.resolve()
     
-    if not str(target_path).startswith(str(project_root)):
-        return JSONResponse(status_code=403, content={"status": "error", "message": "Dostęp zablokowany."})
+    if not is_inside_workspace(target_path, project_root):
+        return JSONResponse(status_code=403, content={"status": "error", "message": "Dostęp zablokowany. Ścieżka poza dozwolonym obszarem Workspace."})
         
     try:
         with open(target_path, 'r', encoding='utf-8') as f:
@@ -1607,7 +1419,12 @@ async def upload_media(media_type: str, file: UploadFile = File(...)):
     
     # SEC-05: Sanityzacja nazwy pliku — ochrona przed Path Traversal
     safe_filename = re.sub(r'[^\w\-.]', '_', Path(file.filename).name) if file.filename else "uploaded_file"
-    file_path = MEDIA_DIR / media_type / safe_filename
+    target_dir = (MEDIA_DIR / media_type).resolve()
+    file_path = (target_dir / safe_filename).resolve()
+    
+    if not file_path.is_relative_to(target_dir):
+        return JSONResponse(status_code=403, content={"status": "error", "message": "Zablokowano: nieprawidłowa lub niebezpieczna ścieżka pliku."})
+        
     content = await file.read()
     with open(file_path, "wb") as f:
         f.write(content)

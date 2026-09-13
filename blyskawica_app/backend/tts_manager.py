@@ -1,25 +1,28 @@
+from __future__ import annotations
+
 import logging
 import os
 from pathlib import Path
+from typing import Any, Dict, Optional
 
 import requests
 
 logger = logging.getLogger(__name__)
 
 class BłyskawicaTTS:
-    def __init__(self, api_url="http://127.0.0.1:7851"):
-        self.api_url = api_url
-        self.is_initialized = False
-        self.speaker_wav = None # Ścieżka do próbki referencyjnej głosu Błyskawicy
+    def __init__(self, api_url: str = "http://127.0.0.1:7851") -> None:
+        self.api_url: str = api_url
+        self.is_initialized: bool = False
+        self.speaker_wav: Optional[str] = None # Ścieżka do próbki referencyjnej głosu Błyskawicy
 
         # Oczekiwany katalog z nagraniem referencyjnym
-        self.media_dir = Path(__file__).resolve().parent.parent / "media_storage" / "voices"
+        self.media_dir: Path = Path(__file__).resolve().parent.parent / "media_storage" / "voices"
         self.media_dir.mkdir(parents=True, exist_ok=True)
 
         # Domyślny plik referencyjny
-        self.default_reference = self.media_dir / "blyskawica_base_voice.mp3"
+        self.default_reference: Path = self.media_dir / "blyskawica_base_voice.mp3"
 
-    def initialize(self):
+    def initialize(self) -> None:
         """Sprawdza połączenie z serwerem XTTS-API."""
         logger.info(f"⏳ Szukam serwera mowy pod adresem: {self.api_url}...")
         try:
@@ -36,13 +39,12 @@ class BłyskawicaTTS:
                 logger.warning(f"⚠️ Brak pliku referencyjnego: {self.default_reference}. "
                                f"Aby generować mowę, musisz najpierw wrzucić próbkę 3-5 sekund do tego folderu.")
 
-
         except requests.exceptions.ConnectionError:
             logger.error(f"❌ Serwer API mowy nie odpowiada ({self.api_url}). Upewnij się, że XTTS-API-Server jest włączony.")
         except Exception as e:
             logger.error(f"❌ Błąd podczas łączenia z XTTS API: {e}")
 
-    def synthesize(self, text: str, output_path: str, neuro_state: dict = None):
+    def synthesize(self, text: str, output_path: str, neuro_state: Optional[Dict[str, Any]] = None) -> bool:
         """
         Generuje audio na podstawie tekstu.
         W przyszłości neuro_state będzie modyfikować parametry generacji (Faza 3.5).
@@ -56,7 +58,7 @@ class BłyskawicaTTS:
             return False
 
         try:
-            def parse_metric(val, default):
+            def parse_metric(val: Any, default: float) -> float:
                 if val is None:
                     return default
                 try:

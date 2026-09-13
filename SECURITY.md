@@ -48,11 +48,12 @@ For confirmed vulnerabilities:
 
 ### Data Handling
 
-**Training Data:**
-- The bitext training system can download datasets from Kaggle
-- Ensure you have rights to use any datasets
-- Be aware of data privacy implications
-- Validate data sources and content
+**Training Data & Privacy Policy:**
+- **Explicit Consent**: The bitext training system and local cognitive assimilation require user opt-in before downloading external datasets (e.g. Kaggle) or ingesting user documents.
+- **Anonymization & PII Scrubbing**: All training data, user queries, and chat transcripts must be sanitized to strip personally identifiable information (PII, email addresses, phone numbers, auth credentials) before ingestion.
+- **Right to Erasure (Forgetfulness)**: Users maintain full ownership and the right to permanently purge memory stores (`blyskawica_memory.db`, `user_identity.json`, `cognitive_snapshots`, and `media_storage/`) via local reset.
+- **Offline Confidentiality**: As a standalone offline AI, no user interaction, training vector, or cognitive weight is transmitted to third-party cloud servers without user-configured external adapters.
+- Validate data sources, checksums, and license rights prior to assimilation.
 
 **Configuration Files:**
 - Configuration files may contain sensitive parameters
@@ -65,13 +66,18 @@ For confirmed vulnerabilities:
 - Be cautious when sharing or deploying models
 - Consider differential privacy for sensitive datasets
 
-### Network Communications
+### Network Communications & Secret Management
+
+**Secret & Token Rotation Policy:**
+- **90-Day Rotation Cycle**: External API keys (e.g., Kaggle credentials, Google Drive OAuth secrets, cloud registry tokens) must be rotated at least every 90 days.
+- **Session Tokens**: Startup session tokens (`X_BLY_TOKEN`, `SPARKLE_SHELL_SECRET`) are ephemeral, cryptographically randomized per process start via `secrets.token_hex(32)`, and never persisted to public storage.
+- **Emergency Revocation**: If any key or token is suspected of being exposed or committed to version control, it must be invalidated immediately (within 24 hours) and replaced with a fresh token.
 
 **Kaggle Integration:**
 - API keys are transmitted over HTTPS
 - Credentials are stored locally in `~/.kaggle/kaggle.json`
 - Use secure file permissions (600) for credential files
-- Rotate API keys periodically
+- Rotate Kaggle API keys every 90 days
 
 **GitHub Actions:**
 - Secrets are handled securely by GitHub Actions
