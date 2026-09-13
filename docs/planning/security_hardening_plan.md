@@ -19,7 +19,7 @@ This security hardening plan identifies architectural flaws in the privilege esc
 
 The system operates locally on Windows 11 with three declared permission levels:
 1. **Sandbox (Level 1)**: In-memory simulation only, no local disk write operations.
-2. **Workspace (Level 2)**: Disk operations restricted to the project root (`c:\Projekty\Blyskawica_V8`).
+2. **Workspace (Level 2)**: Disk operations restricted to the project root (`c:\Projekty\Blyskawica`).
 3. **Full OS Control (Level 3)**: Unrestricted OS integration (changing wallpapers, directory creation, shell execution).
 
 The primary threat vectors include:
@@ -82,7 +82,7 @@ async def set_permission_level_endpoint(
 
 ### [C2] Unauthenticated Privilege Elevation (Tauri IPC)
 
-*   **Vulnerability Analysis**: The Tauri command `set_permission_level` in [lib.rs](file:///c:/Projekty/Blyskawica_V8/sparkle_app/src-tauri/src/lib.rs#L177) updates `inner.permission_level` directly based on a parameter sent from Javascript.
+*   **Vulnerability Analysis**: The Tauri command `set_permission_level` in [lib.rs](file:///c:/Projekty/Blyskawica/sparkle_app/src-tauri/src/lib.rs#L177) updates `inner.permission_level` directly based on a parameter sent from Javascript.
 *   **Architectural Impact**: If a malicious script runs within the WebView, it can call the Rust backend directly and bypass the Sandbox restriction.
 *   **Remediation Strategy**: Restrict access to Tauri commands. Instead of allowing arbitrary elevation, implement a prompt-based confirmation (using native OS dialogs) before elevating permissions to Level 2 or 3.
 
@@ -123,7 +123,7 @@ async fn set_permission_level(
 
 ### [C3] WebView Security Policy Deficiencies (Tauri Config)
 
-*   **Vulnerability Analysis**: The Tauri configuration file [tauri.conf.json](file:///c:/Projekty/Blyskawica_V8/sparkle_app/src-tauri/tauri.conf.json) disables the Content Security Policy (`"csp": null`) and enables `"withGlobalTauri": true`.
+*   **Vulnerability Analysis**: The Tauri configuration file [tauri.conf.json](file:///c:/Projekty/Blyskawica/sparkle_app/src-tauri/tauri.conf.json) disables the Content Security Policy (`"csp": null`) and enables `"withGlobalTauri": true`.
 *   **Architectural Impact**: Disabling CSP exposes the app to Cross-Site Scripting (XSS) attacks. Enabling `withGlobalTauri` allows any script on the window to call Rust backend functions directly via the global `window.__TAURI__` variable.
 *   **Remediation Strategy**: Re-enable CSP with strict restrictions. Disable `withGlobalTauri`.
 

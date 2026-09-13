@@ -46,7 +46,13 @@ class EnvironmentSnapshot:
         if torch.cuda.is_available():
             cuda_version = torch.version.cuda
             if hasattr(torch.backends.cudnn, 'version'):
-                cudnn_version = list(torch.backends.cudnn.version())
+                ver = torch.backends.cudnn.version()
+                if isinstance(ver, (list, tuple)):
+                    cudnn_version = list(ver)
+                elif ver is not None:
+                    cudnn_version = [ver]
+
+
 
             device_names = [
                 torch.cuda.get_device_name(i)

@@ -64,7 +64,7 @@ Comprehensive test suite covering:
 **File**: `tests/test_phase2_optimizations.py`
 
 ### 8. Documentation
-- Comprehensive Phase 2 documentation in `docs/phase2/README.md`
+- Comprehensive Phase 2 documentation in `docs/phases/phase2_tensor_path/README.md`
 - Updated main README.md with completion status
 - Detailed profiling results and metrics
 
@@ -100,7 +100,7 @@ Throughput: 130.0 samples/sec
 2. `scripts/phase2_profiler.py` - Performance profiling tool
 3. `scripts/phase2_comparison.py` - Comparison tool
 4. `tests/test_phase2_optimizations.py` - Test suite
-5. `docs/phase2/README.md` - Comprehensive documentation
+5. `docs/phases/phase2_tensor_path/README.md` - Comprehensive documentation
 6. `benchmarks/phase2_baseline.json` - Baseline metrics
 7. `benchmarks/phase2_comparison.json` - Comparison results
 

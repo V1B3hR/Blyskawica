@@ -176,7 +176,7 @@ Throughput: 130.0 samples/sec
 
 ### 3. ✅ Documentation
 
-- `docs/phase2/README.md`: This comprehensive documentation
+- `docs/phases/phase2_tensor_path/README.md`: This comprehensive documentation
 
 ## Success Metrics
 

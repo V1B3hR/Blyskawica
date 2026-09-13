@@ -233,6 +233,15 @@ sparkle_app/src-tauri/bin/
 *.key
 blyskawica_app/frontend/models/keys/
 
+# Node / Frontend dependencies
+node_modules/
+*/node_modules/
+
+# Rust build target
+target/
+sparkle_app/src-tauri/target/
+
 # SQLite WAL files
 *.db-wal
 *.db-shm
+

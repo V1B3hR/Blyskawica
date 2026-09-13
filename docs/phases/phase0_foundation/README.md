@@ -10,14 +10,14 @@ All Phase 0 tasks have been completed successfully. The baseline metrics, module
 - **Script**: `scripts/phase0_inventory.py`
 - **Output**: 
   - `benchmarks/module_inventory.json`
-  - `docs/phase0/module_inventory.md`
+  - `docs/phases/phase0_foundation/module_inventory.md`
 - **Results**: 13 modules, 99 files, ~30K lines of code analyzed
 
 ### ✅ Task 2: Dependency Graph
 - **Script**: `scripts/phase0_dependencies.py`
 - **Output**: 
   - `benchmarks/module_dependencies.json`
-  - `docs/phase0/dependency_graph.md`
+  - `docs/phases/phase0_foundation/dependency_graph.md`
 - **Results**: 24 internal dependencies mapped
 
 ### ✅ Task 3: Lightweight Instrumentation
@@ -56,11 +56,11 @@ All Phase 0 tasks have been completed successfully. The baseline metrics, module
 
 All required Phase 0 deliverables have been created:
 
-1. ✅ **System map diagram**: `docs/phase0/system_map.md`
-2. ✅ **Profiling report**: `docs/phase0/profiling_report.md`
+1. ✅ **System map diagram**: `docs/phases/phase0_foundation/system_map.md`
+2. ✅ **Profiling report**: `docs/phases/phase0_foundation/profiling_report.md`
 3. ✅ **Baseline metrics file**: `benchmarks/baseline.json`
 4. ✅ **Module inventory**: `benchmarks/module_inventory.json`
-5. ✅ **Dependency analysis**: `docs/phase0/dependency_graph.md`
+5. ✅ **Dependency analysis**: `docs/phases/phase0_foundation/dependency_graph.md`
 
 ## Phase 0 Exit Criteria ✅
 
@@ -136,7 +136,7 @@ python scripts/phase0_dependencies.py
 
 # View results
 cat benchmarks/baseline.json
-cat docs/phase0/profiling_report.md
+cat docs/phases/phase0_foundation/profiling_report.md
 ```
 
 ## Next Steps
@@ -154,10 +154,10 @@ cat docs/phase0/profiling_report.md
 - `scripts/phase0_inventory.py` - Module inventory tool
 - `scripts/phase0_profiler.py` - Profiling and benchmarking tool
 - `scripts/phase0_dependencies.py` - Dependency analysis tool
-- `docs/phase0/system_map.md` - System architecture documentation
-- `docs/phase0/profiling_report.md` - Profiling results and analysis
-- `docs/phase0/module_inventory.md` - Module statistics report
-- `docs/phase0/dependency_graph.md` - Dependency visualization
+- `docs/phases/phase0_foundation/system_map.md` - System architecture documentation
+- `docs/phases/phase0_foundation/profiling_report.md` - Profiling results and analysis
+- `docs/phases/phase0_foundation/module_inventory.md` - Module statistics report
+- `docs/phases/phase0_foundation/dependency_graph.md` - Dependency visualization
 - `benchmarks/baseline.json` - Baseline metrics data
 - `benchmarks/module_inventory.json` - Module statistics data
 - `benchmarks/module_dependencies.json` - Dependency mapping data

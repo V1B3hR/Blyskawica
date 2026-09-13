@@ -1,6 +1,10 @@
 # Phase 2 - Core Tensor Path Optimization
 
+> [!NOTE]
+> **Canonical Documentation Location**: This phase documentation is consolidated in the master phase matrix at [docs/phases/phase2_tensor_path/README.md](../phases/phase2_tensor_path/README.md).
+
 ## Status: ✅ COMPLETE
+
 
 All Phase 2 tasks have been completed successfully. The tensor computation path has been optimized to reduce per-batch compute overhead and allocation churn.
 

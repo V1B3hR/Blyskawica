@@ -19,7 +19,7 @@ Phase 5 maximizes device compute and memory efficiency by:
 ## Core Components & Architecture
 
 ### 1. `DistributedConfig` & `DistributedTrainer`
-**Source**: [`adaptiveneuralnetwork/training/distributed.py`](file:///c:/Projekty/Blyskawica_V8/adaptiveneuralnetwork/training/distributed.py)
+**Source**: [`adaptiveneuralnetwork/training/distributed.py`](file:///c:/Projekty/Blyskawica/adaptiveneuralnetwork/training/distributed.py)
 
 Encapsulates distributed cluster configuration, process group initialization, and rank-specific dispatch:
 

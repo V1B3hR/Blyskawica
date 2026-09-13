@@ -14,3 +14,4 @@ pub mod aegis_sentinel;
 pub mod cognitive_heartbeat;
 pub mod aegis_psyche_onnx;
 pub mod visual_grounding;
+pub mod quantum_core;

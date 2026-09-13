@@ -1,6 +1,10 @@
 # Phase 0 - Implementation Summary
 
+> [!NOTE]
+> **Canonical Documentation Location**: This phase documentation is consolidated in the master phase matrix at [docs/phases/phase0_foundation/README.md](../phases/phase0_foundation/README.md).
+
 ## Status: ✅ COMPLETE
+
 
 All Phase 0 tasks have been completed successfully. The baseline metrics, module inventory, and system documentation are now in place.
 

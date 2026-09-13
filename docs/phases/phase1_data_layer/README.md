@@ -95,7 +95,7 @@ Reuses buffers across batches to reduce allocation overhead.
 - [x] **New Dataset/Buffer API**: `adaptiveneuralnetwork/data/optimized_datasets.py`
 - [x] **Loader benchmark script**: `benchmarks/scripts/benchmark_dataloader.py`
 - [x] **Updated metrics snapshot**: `benchmarks/phase1_metrics.json`
-- [x] **Phase 1 documentation**: `docs/phase1/README.md` (this file)
+- [x] **Phase 1 documentation**: `docs/phases/phase1_data_layer/README.md` (this file)
 
 ## Exit Criteria ✓
 
@@ -171,7 +171,7 @@ python benchmarks/scripts/benchmark_dataloader.py \
 - `adaptiveneuralnetwork/data/optimized_datasets.py` - Core optimizations
 - `benchmarks/scripts/benchmark_dataloader.py` - Benchmark tool
 - `benchmarks/phase1_metrics.json` - Performance metrics
-- `docs/phase1/README.md` - This documentation
+- `docs/phases/phase1_data_layer/README.md` - This documentation
 
 ### Existing Files Modified
 - `adaptiveneuralnetwork/data/__init__.py` - Added exports for optimized classes

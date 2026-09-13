@@ -1,7 +1,7 @@
 use std::fs::File;
 use std::path::Path;
 use candle_core::{Device, Tensor};
-use candle_transformers::models::quantized_llama::ModelWeights;
+use candle_transformers::models::quantized_qwen2::ModelWeights;
 use tokenizers::Tokenizer;
 
 #[derive(Debug, Clone)]
@@ -138,13 +138,21 @@ impl CognitiveLlmEngine {
             let context = &tokens[tokens.len() - context_size..];
             
             let input_tensor = Tensor::new(context, &self.device)
-                .map_err(|e| format!("Błąd tworzenia tensora wejściowego: {}", e))?;
+                .map_err(|e| format!("Błąd tensora wejściowego: {}", e))?
+                .unsqueeze(0)
+                .map_err(|e| format!("Błąd unsqueeze: {}", e))?;
             
             let logits = self.model.forward(&input_tensor, index_pos)
                 .map_err(|e| format!("Błąd inferencji w modelu: {}", e))?;
             
             let logits = logits.squeeze(0)
                 .map_err(|e| format!("Błąd dopasowania wymiarowości: {}", e))?;
+            let logits = if logits.rank() == 2 {
+                let seq_len = logits.dim(0).map_err(|e| format!("{}", e))?;
+                logits.get(seq_len - 1).map_err(|e| format!("{}", e))?
+            } else {
+                logits
+            };
             let mut logits = logits.to_vec1::<f32>()
                 .map_err(|e| format!("Błąd odczytu logits: {}", e))?;
 

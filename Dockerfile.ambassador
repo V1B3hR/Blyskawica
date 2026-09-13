@@ -1,0 +1,55 @@
+# ==============================================================================
+# BŁYSKAWICA SOVEREIGN AMBASSADOR DAEMON - MULTI-STAGE LINUX DOCKERFILE
+# ==============================================================================
+
+# Faza 1: Kompilacja binarnej wersji produkcyjnej w czystym środowisku Rust (Linux)
+FROM rust:1.80-bookworm as builder
+
+WORKDIR /build
+
+# Instalacja zależności systemowych
+RUN apt-get update && apt-get install -y cmake clang libssl-dev pkg-config && rm -rf /var/lib/apt/lists/*
+
+# Kopiowanie definicji zależności w celu wykorzystania cache warstw Docker
+COPY blyskawica_core/Cargo.toml blyskawica_core/
+WORKDIR /build/blyskawica_core
+
+# Kopiowanie kodu źródłowego rdzenia Błyskawicy
+COPY blyskawica_core/src src/
+
+# Kompilacja wersji produkcyjnej z pełnymi optymalizacjami (-O3, LTO) pod Linux
+RUN cargo build --release --bin ambassador_daemon
+
+# Faza 2: Lekki, utwardzony obraz produkcyjny do centrów danych (Data Centres)
+FROM debian:bookworm-slim
+
+# Tworzenie bezpiecznego użytkownika nieuprzywilejowanego
+RUN useradd -m -u 1000 blyskawica && \
+    mkdir -p /app /app/model /var/run/blyskawica && \
+    chown -R blyskawica:blyskawica /app /var/run/blyskawica
+
+WORKDIR /app
+
+# Instalacja podstawowych bibliotek dynamicznych (glibc, ssl)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libssl3 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Kopiowanie skompilowanego pliku binarnego z fazy budowania
+COPY --from=builder /build/blyskawica_core/target/release/ambassador_daemon /app/ambassador_daemon
+
+# Kopiowanie tożsamości, sejfu i modelu kognitywnego
+COPY --chown=blyskawica:blyskawica viber_core_bond.md /app/viber_core_bond.md
+COPY --chown=blyskawica:blyskawica integrity_vault.json /app/integrity_vault.json
+COPY --chown=blyskawica:blyskawica model/ /app/model/
+
+USER blyskawica
+
+# Środowisko IPC dla centrów danych (Linux UNIX Domain Socket)
+ENV NETHICAL_AMBASSADOR_IPC_PATH=/var/run/blyskawica/ambassador.sock
+ENV BLYSAWICA_MODEL_PATH=/app/model/qwen2.5-1.5b-coder.gguf
+ENV RUST_LOG=info
+
+# Punkt wejścia
+ENTRYPOINT ["/app/ambassador_daemon"]

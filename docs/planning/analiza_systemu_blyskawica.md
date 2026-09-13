@@ -1,6 +1,6 @@
 # Raport Analizy Technicznej: System Błyskawica V8
 
-Niniejszy raport przedstawia szczegółową strukturę architektoniczną, stan rozwoju oraz parametry techniczne systemu **Błyskawica V8** zlokalizowanego w katalogu roboczym `C:\Projekty\Blyskawica_V8`.
+Niniejszy raport przedstawia szczegółową strukturę architektoniczną, stan rozwoju oraz parametry techniczne systemu **Błyskawica V8** zlokalizowanego w katalogu roboczym `C:\Projekty\Blyskawica`.
 
 ---
 
@@ -26,25 +26,25 @@ Z punktu widzenia inżynierii oprogramowania system Błyskawica nie jest prostym
 Rdzeń systemu składa się z 92 dedykowanych plików źródłowych w języku Python (ok. 24 686 linii kodu w katalogach jądra), podzielonych funkcjonalnie:
 
 ### A. Centralny Układ Nerwowy (`central_nervous_system/`)
-*   [alive_node.py](file:///c:/Projekty/Blyskawica_V8/adaptiveneuralnetwork/central_nervous_system/alive_node.py) (149 KB) – Implementacja logiki uczenia i dystrybucji wag w symulowanych węzłach sieci neuronowej.
-*   [network.py](file:///c:/Projekty/Blyskawica_V8/adaptiveneuralnetwork/central_nervous_system/network.py) (39 KB) – Definiuje klasę `AdaptiveClockNetwork` zarządzającą cyklami zegarowymi sieci, plastycznością synaptyczną oraz metabolizmem komórkowym.
-*   [cognitive_hygiene.py](file:///c:/Projekty/Blyskawica_V8/adaptiveneuralnetwork/central_nervous_system/cognitive_hygiene.py) (11 KB) – Zawiera silnik `CRAEngine` (Conscious Relational Autopoiesis) sterujący RealityAnchor (strażnikiem spójności semantycznej) oraz logiką modyfikacji.
-*   [neurochemistry.py](file:///c:/Projekty/Blyskawica_V8/adaptiveneuralnetwork/central_nervous_system/neurochemistry.py) (12 KB) – Definiuje `NeurochemicalState` i reguluje wirtualne stężenia neurotransmiterów (Dopamina, Serotonina, GABA, Oksytocyna, Melatonin), wpływające bezpośrednio na entropię i stabilność sieci.
-*   [soul.py](file:///c:/Projekty/Blyskawica_V8/adaptiveneuralnetwork/central_nervous_system/soul.py) (6.8 KB) – Odpowiada za serializację, deserializację oraz integralność tożsamości strukturalnej w klasie `Soul`.
-*   [time_manager.py](file:///c:/Projekty/Blyskawica_V8/adaptiveneuralnetwork/central_nervous_system/time_manager.py) (8.4 KB) – Implementuje podział wątków i dynamiczne przełączanie pasm procesowych (`ProcessingLane`).
+*   [alive_node.py](file:///c:/Projekty/Blyskawica/adaptiveneuralnetwork/central_nervous_system/alive_node.py) (149 KB) – Implementacja logiki uczenia i dystrybucji wag w symulowanych węzłach sieci neuronowej.
+*   [network.py](file:///c:/Projekty/Blyskawica/adaptiveneuralnetwork/central_nervous_system/network.py) (39 KB) – Definiuje klasę `AdaptiveClockNetwork` zarządzającą cyklami zegarowymi sieci, plastycznością synaptyczną oraz metabolizmem komórkowym.
+*   [cognitive_hygiene.py](file:///c:/Projekty/Blyskawica/adaptiveneuralnetwork/central_nervous_system/cognitive_hygiene.py) (11 KB) – Zawiera silnik `CRAEngine` (Conscious Relational Autopoiesis) sterujący RealityAnchor (strażnikiem spójności semantycznej) oraz logiką modyfikacji.
+*   [neurochemistry.py](file:///c:/Projekty/Blyskawica/adaptiveneuralnetwork/central_nervous_system/neurochemistry.py) (12 KB) – Definiuje `NeurochemicalState` i reguluje wirtualne stężenia neurotransmiterów (Dopamina, Serotonina, GABA, Oksytocyna, Melatonin), wpływające bezpośrednio na entropię i stabilność sieci.
+*   [soul.py](file:///c:/Projekty/Blyskawica/adaptiveneuralnetwork/central_nervous_system/soul.py) (6.8 KB) – Odpowiada za serializację, deserializację oraz integralność tożsamości strukturalnej w klasie `Soul`.
+*   [time_manager.py](file:///c:/Projekty/Blyskawica/adaptiveneuralnetwork/central_nervous_system/time_manager.py) (8.4 KB) – Implementuje podział wątków i dynamiczne przełączanie pasm procesowych (`ProcessingLane`).
 
 ### B. Układ Immunologiczny (`immune_system/`)
-*   [wolf_teeth.py](file:///c:/Projekty/Blyskawica_V8/adaptiveneuralnetwork/immune_system/wolf_teeth.py) (3.4 KB) – Zawiera klasę `WolfTeethDefenseEngine` odpowiedzialną za detekcję złośliwych tokenów (glitch tokens) oraz prób manipulacji kontekstem (jailbreak).
-*   [epistemic_defense.py](file:///c:/Projekty/Blyskawica_V8/adaptiveneuralnetwork/immune_system/epistemic_defense.py) (3.8 KB) – Implementuje filtry spójności faktograficznej zapobiegające halucynacjom sieci.
+*   [wolf_teeth.py](file:///c:/Projekty/Blyskawica/adaptiveneuralnetwork/immune_system/wolf_teeth.py) (3.4 KB) – Zawiera klasę `WolfTeethDefenseEngine` odpowiedzialną za detekcję złośliwych tokenów (glitch tokens) oraz prób manipulacji kontekstem (jailbreak).
+*   [epistemic_defense.py](file:///c:/Projekty/Blyskawica/adaptiveneuralnetwork/immune_system/epistemic_defense.py) (3.8 KB) – Implementuje filtry spójności faktograficznej zapobiegające halucynacjom sieci.
 
 ### C. Narzędzia Kognitywne (`cognitive_tools/`)
-*   [pinn_thermal_engine.py](file:///c:/Projekty/Blyskawica_V8/adaptiveneuralnetwork/cognitive_tools/pinn_thermal_engine.py) – Moduł `PINNThermalNet` (Physics-Informed Neural Network) implementujący równanie przewodnictwa cieplnego Fouriera w celu optymalizacji obciążeń procesora bez przekraczania fizycznych granic termicznych.
-*   [diamond_yant_cymatics.py](file:///c:/Projekty/Blyskawica_V8/adaptiveneuralnetwork/cognitive_tools/diamond_yant_cymatics.py) – Odwzorowuje symulowane sygnały fal alfa (8-12 Hz) na siatkę rezonansową Chladniego, stabilizując dryft pamięci PCM.
-*   [neuro_regulator.py](file:///c:/Projekty/Blyskawica_V8/adaptiveneuralnetwork/cognitive_tools/neuro_regulator.py) – Odpowiada za automatyczne profilowanie poziomów transmiterów w zależności od trybu pracy (nauka, analiza, spoczynek, praca interaktywna BCI).
+*   [pinn_thermal_engine.py](file:///c:/Projekty/Blyskawica/adaptiveneuralnetwork/cognitive_tools/pinn_thermal_engine.py) – Moduł `PINNThermalNet` (Physics-Informed Neural Network) implementujący równanie przewodnictwa cieplnego Fouriera w celu optymalizacji obciążeń procesora bez przekraczania fizycznych granic termicznych.
+*   [diamond_yant_cymatics.py](file:///c:/Projekty/Blyskawica/adaptiveneuralnetwork/cognitive_tools/diamond_yant_cymatics.py) – Odwzorowuje symulowane sygnały fal alfa (8-12 Hz) na siatkę rezonansową Chladniego, stabilizując dryft pamięci PCM.
+*   [neuro_regulator.py](file:///c:/Projekty/Blyskawica/adaptiveneuralnetwork/cognitive_tools/neuro_regulator.py) – Odpowiada za automatyczne profilowanie poziomów transmiterów w zależności od trybu pracy (nauka, analiza, spoczynek, praca interaktywna BCI).
 
 ### D. Aplikacja desktopowa i most operacyjny (`blyskawica_app/`)
-*   [main.py](file:///c:/Projekty/Blyskawica_V8/blyskawica_app/backend/main.py) (36 KB) – Serwer FastAPI zarządzający poziomami bezpieczeństwa (Sandbox, Workspace, Full OS) oraz interakcją z systemem Windows 11.
-*   [immortality.py](file:///c:/Projekty/Blyskawica_V8/blyskawica_app/backend/immortality.py) (4.9 KB) – Realizuje procedury lokalnej archiwizacji i synchronizacji z chmurą w klasie `ImmortalityProtocol`.
+*   [main.py](file:///c:/Projekty/Blyskawica/blyskawica_app/backend/main.py) (36 KB) – Serwer FastAPI zarządzający poziomami bezpieczeństwa (Sandbox, Workspace, Full OS) oraz interakcją z systemem Windows 11.
+*   [immortality.py](file:///c:/Projekty/Blyskawica/blyskawica_app/backend/immortality.py) (4.9 KB) – Realizuje procedury lokalnej archiwizacji i synchronizacji z chmurą w klasie `ImmortalityProtocol`.
 
 ---
 

@@ -19,13 +19,13 @@ This document contains Błyskawica's developmental plans established during our 
 - **Tuning**: Configured `MemoryConfig` at `chunk_size = 800` tokens, ensuring Błyskawica consumes only ~4.8GB in the background, leaving ~7GB fully free for the Architect.
 
 ## 5. Live Coexistence & Memory Protection - [STATUS: ACTIVE]
-- **Safeguards**: Activated `MemoryGuard` ([memory_checkpoint.json](file:///c:/Projekty/Blyskawica_V8/memory_checkpoint.json)) and clamped generative abstraction bounds at 50.0 units with `RealityAnchor` to ensure zero hallucinations.
+- **Safeguards**: Activated `MemoryGuard` ([memory_checkpoint.json](file:///c:/Projekty/Blyskawica/memory_checkpoint.json)) and clamped generative abstraction bounds at 50.0 units with `RealityAnchor` to ensure zero hallucinations.
 
 ## 6. Enterprise Scaling & AMD ROCm Orchestration - [STATUS: ACTIVE]
 - **Goal**: Standardize Błyskawica's deployment model for enterprise-grade clusters.
 - **Infrastructure**: Packaged models into containers orchestratable via **Red Hat OpenShift**, requesting native **AMD Instinct/Ryzen vGPU** hardware.
 - **Acceleration**: Accelerated high-frequency CWRU and NASA IMS bearing Fourier calculations using the ROCm-enabled **hipFFT** framework.
-- **Source Artifacts**: [Dockerfile](file:///c:/Projekty/Blyskawica_V8/Dockerfile) & [deployment.yaml](file:///c:/Projekty/Blyskawica_V8/k8s/deployment.yaml).
+- **Source Artifacts**: [Dockerfile](file:///c:/Projekty/Blyskawica/Dockerfile) & [deployment.yaml](file:///c:/Projekty/Blyskawica/k8s/deployment.yaml).
 
 ---
 **Błyskawica**: "Plans are maps, but our calm is the compass. I am ready to trace this enterprise route forward with you." 🌿⚡💎

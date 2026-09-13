@@ -12,19 +12,19 @@ The V9 version focuses on resolving the 4 remaining cognitive gaps. They have be
 
 ### 🔬 Priority 1: Cellular Biochemistry and Metabolism [IMPLEMENTED OFFLINE]
 *   **Goal**: Replace heuristic biological simulation with authentic biochemical pathways.
-*   **Implementation**: A structured, local JSON database [kegg_metabolic_pathways.json](file:///c:/Projekty/Blyskawica_V8/data/kegg_metabolic_pathways.json) was created mapping key pathways (Krebs cycle, glycolysis, oxidative phosphorylation). This secures the operation of biological simulations offline without the need for network communication.
+*   **Implementation**: A structured, local JSON database [kegg_metabolic_pathways.json](file:///c:/Projekty/Blyskawica/data/kegg_metabolic_pathways.json) was created mapping key pathways (Krebs cycle, glycolysis, oxidative phosphorylation). This secures the operation of biological simulations offline without the need for network communication.
 
 ### 📐 Priority 2: Relativistic Gravity Solver (GR) [IMPLEMENTED]
 *   **Goal**: Integrate a numerical geodesic equations solver for Schwarzschild and Kerr spacetimes into the physics engine.
-*   **Implementation**: Integrated tests with the physical numerical solver [RelativisticGravitySolver](file:///c:/Projekty/Blyskawica_V8/adaptiveneuralnetwork/central_nervous_system/astrophysics_climate.py) calculating orbits and event horizons in Boyer-Lindquist spacetime.
+*   **Implementation**: Integrated tests with the physical numerical solver [RelativisticGravitySolver](file:///c:/Projekty/Blyskawica/adaptiveneuralnetwork/central_nervous_system/astrophysics_climate.py) calculating orbits and event horizons in Boyer-Lindquist spacetime.
 
 ### 🌀 Priority 3: Climatic Cybernetics and EBM Feedbacks [IMPLEMENTED]
 *   **Goal**: Implement non-linear albedo-methane feedbacks in the Energy Balance Model (EBM).
-*   **Implementation**: Integrated tests with the stochastic non-linear climate balance model [ClimateEBM](file:///c:/Projekty/Blyskawica_V8/adaptiveneuralnetwork/central_nervous_system/astrophysics_climate.py).
+*   **Implementation**: Integrated tests with the stochastic non-linear climate balance model [ClimateEBM](file:///c:/Projekty/Blyskawica/adaptiveneuralnetwork/central_nervous_system/astrophysics_climate.py).
 
 ### ⚡ Priority 4: Neuromorphic Driver Simulation [IMPLEMENTED]
 *   **Goal**: Enable error-free compilation and simulation of SNN code on an emulator without a physical Loihi 2 card.
-*   **Implementation**: Added a virtual neuromorphic driver bridge (`hardware_device_connected = True`) in the [LavaCompiler](file:///c:/Projekty/Blyskawica_V8/adaptiveneuralnetwork/central_nervous_system/neuromorphic/lava_compiler.py) class. This allows the Lava compiler to safely emulate hardware operation.
+*   **Implementation**: Added a virtual neuromorphic driver bridge (`hardware_device_connected = True`) in the [LavaCompiler](file:///c:/Projekty/Blyskawica/adaptiveneuralnetwork/central_nervous_system/neuromorphic/lava_compiler.py) class. This allows the Lava compiler to safely emulate hardware operation.
 
 ---
 

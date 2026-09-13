@@ -17,6 +17,9 @@ pub struct AppStateInner {
     aegis: blyskawica_core::aegis_sentinel::AegisSentinel,
     tree: blyskawica_core::cognitive_heartbeat::CognitiveHeartbeat,
     cognitive_shield: blyskawica_core::cognitive_shield::CognitiveShield,
+    current_neurochemistry: blyskawica_core::neurochemistry::NeurochemicalState,
+    aegis_psyche: blyskawica_core::aegis_psyche_onnx::AegisPsycheRustEngine,
+    quantum_bridge: blyskawica_core::quantum_core::QuantumEntanglementBridge,
 }
 
 pub struct AppState(pub Mutex<AppStateInner>);
@@ -200,8 +203,14 @@ async fn start_engine(app_handle: AppHandle, state: State<'_, AppState>) -> Resu
 
     // Spawnowanie forwardera zdarzeń z Core do Tauri frontend
     let app_handle_clone = app_handle.clone();
+    let state_clone = app_handle.state::<AppState>();
     tokio::spawn(async move {
         while let Some(event) = event_rx.recv().await {
+            if let blyskawica_core::state_manager::EngineEvent::Neurochemistry(ref ns) = event {
+                if let Ok(mut inner) = state_clone.0.lock() {
+                    inner.current_neurochemistry = ns.clone();
+                }
+            }
             let _ = app_handle_clone.emit("engine-event", event);
         }
     });
@@ -302,24 +311,32 @@ fn fetch_fastapi_status() -> Option<serde_json::Value> {
 
 #[tauri::command]
 async fn get_engine_status(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
-    let (is_running, permission_level, workspace_path_str, backend_alive) = {
+    let (is_running, permission_level, workspace_path_str, backend_alive, neuro) = {
         let mut inner = state.0.lock().unwrap();
         let is_running = inner.tx.is_some();
         let backend_alive = inner.backend_child.as_mut()
             .map(|c| c.try_wait().ok().flatten().is_none())
             .unwrap_or(false);
-        (is_running, inner.permission_level, inner.workspace_path.to_string_lossy().to_string(), backend_alive)
+        (is_running, inner.permission_level, inner.workspace_path.to_string_lossy().to_string(), backend_alive, inner.current_neurochemistry.clone())
     };
 
     let mut response = serde_json::json!({
         "running": is_running,
         "permission_level": permission_level,
         "workspace_path": workspace_path_str,
-        "neurochemistry": serde_json::Value::Null,
+        "neurochemistry": {
+            "dopamine": neuro.dopamine,
+            "serotonin": neuro.serotonin,
+            "oxytocin": neuro.oxytocin,
+            "gaba": neuro.gaba,
+            "melatonin": neuro.melatonin,
+            "cortisol": neuro.cortisol,
+            "temperature": neuro.temperature
+        },
         "backend_connected": backend_alive,
     });
     
-    // Non-blocking fetch of sidecar status via spawn_blocking
+    // Non-blocking fetch of sidecar status via spawn_blocking if backend is active
     if backend_alive {
         if let Ok(Some(fastapi_status)) = tokio::task::spawn_blocking(fetch_fastapi_status).await {
             if let Some(metrics) = fastapi_status.get("cra_metrics") {
@@ -423,6 +440,15 @@ async fn read_workspace_file(path: String, state: State<'_, AppState>) -> Result
 
     if permission_level == 2 && !is_inside_workspace(&absolute_path, &workspace_path) {
         return Err("Zablokowano. W Poziomie 2 dozwolony jest dostęp wyłącznie do katalogu roboczego.".to_string());
+    }
+
+    let meta = tokio::fs::metadata(&absolute_path)
+        .await
+        .map_err(|e| format!("Błąd odczytu metadanych pliku: {}", e))?;
+
+    // Bezpieczny limit rozmiaru pliku (max 10 MB) chroniący przed wyczerpaniem pamięci (OOM)
+    if meta.len() > 10 * 1024 * 1024 {
+        return Err(format!("Zablokowano: Plik przekracza bezpieczny limit rozmiaru edytora (10 MB). Rozmiar: {:.2} MB", meta.len() as f64 / (1024.0 * 1024.0)));
     }
 
     tokio::fs::read_to_string(&absolute_path)
@@ -777,6 +803,43 @@ fn evaluate_cognitive_shield(prompt: String, state: State<'_, AppState>) -> Resu
     Ok(inner.cognitive_shield.evaluate_psyche(&prompt))
 }
 
+#[tauri::command]
+fn aegis_evaluate_psyche_vad(text: String, state: State<'_, AppState>) -> Result<blyskawica_core::aegis_psyche_onnx::AegisPsycheRustReport, String> {
+    let inner = state.0.lock().unwrap();
+    Ok(inner.aegis_psyche.analyze(&text))
+}
+
+#[tauri::command]
+fn quantum_get_state(state: State<'_, AppState>) -> Result<blyskawica_core::quantum_core::QuantumState, String> {
+    let inner = state.0.lock().unwrap();
+    Ok(inner.quantum_bridge.get_snapshot())
+}
+
+#[tauri::command]
+fn quantum_trigger_tunneling(barrier_potential: f32, state: State<'_, AppState>) -> Result<serde_json::Value, String> {
+    let inner = state.0.lock().unwrap();
+    let mut mock_weights = vec![0.5f32; 128];
+    let (gamma, count) = inner.quantum_bridge.execute_quantum_tunneling(&mut mock_weights, barrier_potential);
+    Ok(serde_json::json!({
+        "gamma": gamma,
+        "tunneled_weights_count": count,
+        "barrier_potential": barrier_potential,
+        "status": "Quantum Tunneling Phase Barrier Broken"
+    }))
+}
+
+#[tauri::command]
+fn quantum_observe_collapse(query: String, state: State<'_, AppState>) -> Result<blyskawica_core::quantum_core::SuperpositionBranch, String> {
+    let inner = state.0.lock().unwrap();
+    Ok(inner.quantum_bridge.collapse_superposition(&query))
+}
+
+#[tauri::command]
+fn quantum_get_cymatics_matrix(state: State<'_, AppState>) -> Result<blyskawica_core::quantum_core::CymaticsState, String> {
+    let inner = state.0.lock().unwrap();
+    Ok(inner.quantum_bridge.get_snapshot().cymatics)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
@@ -791,6 +854,9 @@ pub fn run() {
             aegis: blyskawica_core::aegis_sentinel::AegisSentinel::new(),
             tree: blyskawica_core::cognitive_heartbeat::CognitiveHeartbeat::new(),
             cognitive_shield: blyskawica_core::cognitive_shield::CognitiveShield::new(vec![], 0.35),
+            current_neurochemistry: blyskawica_core::neurochemistry::NeurochemicalState::default(),
+            aegis_psyche: blyskawica_core::aegis_psyche_onnx::AegisPsycheRustEngine::new(),
+            quantum_bridge: blyskawica_core::quantum_core::QuantumEntanglementBridge::new(),
         })))
         .invoke_handler(tauri::generate_handler![
             start_engine,
@@ -818,7 +884,12 @@ pub fn run() {
             aegis_neutralize_intrusion,
             absorb_intent_seed,
             get_cognitive_tree_state,
-            evaluate_cognitive_shield
+            evaluate_cognitive_shield,
+            aegis_evaluate_psyche_vad,
+            quantum_get_state,
+            quantum_trigger_tunneling,
+            quantum_observe_collapse,
+            quantum_get_cymatics_matrix
         ])
         .setup(|app| {
             let state = app.state::<AppState>();

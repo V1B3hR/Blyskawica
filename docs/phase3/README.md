@@ -1,6 +1,10 @@
 # Phase 3: Model Architecture Modularization
 
+> [!NOTE]
+> **Canonical Documentation Location**: This phase documentation is consolidated in the master phase matrix at [docs/phases/phase3_modular_arch/README.md](../phases/phase3_modular_arch/README.md).
+
 ## Overview
+
 
 Phase 3 introduces a modular architecture system that makes the codebase configurable and extensible without editing core logic. The implementation uses a **layer registry pattern** and **config-driven model assembly** to enable rapid development of new model variants.
 

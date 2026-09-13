@@ -193,8 +193,8 @@ All exit criteria have been met:
 
 ## Deliverables Checklist ✓
 
-- [x] **System map diagram**: `docs/phase0/system_map.md`
-- [x] **Profiling report**: `docs/phase0/profiling_report.md` (this file)
+- [x] **System map diagram**: `docs/phases/phase0_foundation/system_map.md`
+- [x] **Profiling report**: `docs/phases/phase0_foundation/profiling_report.md` (this file)
 - [x] **Baseline metrics file**: `benchmarks/baseline.json`
 - [x] **Module inventory**: `benchmarks/module_inventory.json`
 

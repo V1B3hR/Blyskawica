@@ -9,7 +9,7 @@
 
 ## 1. Wstęp i Metodologia
 
-Przeprowadzono pełne uruchomienie rozszerzonego pakietu walidacji kognitywnej zaimplementowanego w module [intelligence_benchmark.py](file:///c:/Projekty/Blyskawica_V8/adaptiveneuralnetwork/central_nervous_system/intelligence_benchmark.py).
+Przeprowadzono pełne uruchomienie rozszerzonego pakietu walidacji kognitywnej zaimplementowanego w module [intelligence_benchmark.py](file:///c:/Projekty/Blyskawica/adaptiveneuralnetwork/central_nervous_system/intelligence_benchmark.py).
 
 W tej fazie, w związku z brakiem możliwości pozyskania zewnętrznych fizycznych urządzeń (układ Intel Loihi 2) oraz komercyjnych baz danych (KEGG API), wdrożono zaawansowane **silniki symulacyjne i lokalne bazy danych**. Dzięki temu system Błyskawica V9 osiągnął pełną autonomię offline bez potrzeby polegania na zewnętrznych subskrypcjach czy licencjach sprzętowych, co przełożyło się na zaliczenie **100% testów luk poznawczych** (7 na 7 testów).
 
@@ -87,17 +87,17 @@ Wszystkie 7 zidentyfikowanych uprzednio luk poznawczych zostało pomyślnie zaim
 1.  **Integracja z Qiskit API / IBM Quantum Experience** (Dawny *K1*):
     *   *Rozwiązanie*: Zaimplementowano stymulator połączenia i rejestru kubitów na poziomie testów.
 2.  **Pełna oś neuroendokrynna (Adrenalina / Estrogeny)** (Dawny *K2*):
-    *   *Rozwiązanie*: Wdrożono dynamiczną regulację w [NeurochemicalState](file:///c:/Projekty/Blyskawica_V8/adaptiveneuralnetwork/central_nervous_system/neurochemistry.py) oraz zintegrowano parametry z raportem powitalnym V9.
+    *   *Rozwiązanie*: Wdrożono dynamiczną regulację w [NeurochemicalState](file:///c:/Projekty/Blyskawica/adaptiveneuralnetwork/central_nervous_system/neurochemistry.py) oraz zintegrowano parametry z raportem powitalnym V9.
 3.  **Brak sprzężenia z fizycznym procesorem neuromorficznym (Loihi Hardware Link)** (Dawny *W1*):
-    *   *Rozwiązanie*: Wdrożono wirtualny most sterownika neuromorficznego (`hardware_device_connected = True`) w klasie [LavaCompiler](file:///c:/Projekty/Blyskawica_V8/adaptiveneuralnetwork/central_nervous_system/neuromorphic/lava_compiler.py), umożliwiając bezbłędne uruchamianie kodu na symulatorze z zachowaniem interfejsu sprzętowego.
+    *   *Rozwiązanie*: Wdrożono wirtualny most sterownika neuromorficznego (`hardware_device_connected = True`) w klasie [LavaCompiler](file:///c:/Projekty/Blyskawica/adaptiveneuralnetwork/central_nervous_system/neuromorphic/lava_compiler.py), umożliwiając bezbłędne uruchamianie kodu na symulatorze z zachowaniem interfejsu sprzętowego.
 4.  **Brak rzeczywistej bazy metabolicznej szlaków biochemicznych (KEGG/BioCyc)** (Dawny *W2*):
-    *   *Rozwiązanie*: Utworzono lokalną bazę danych offline w formacie JSON [kegg_metabolic_pathways.json](file:///c:/Projekty/Blyskawica_V8/data/kegg_metabolic_pathways.json) mapującą kluczowe szlaki (cykl Krebsa, glikolizę), co zabezpiecza działanie symulacji biologicznych w trybie offline.
+    *   *Rozwiązanie*: Utworzono lokalną bazę danych offline w formacie JSON [kegg_metabolic_pathways.json](file:///c:/Projekty/Blyskawica/data/kegg_metabolic_pathways.json) mapującą kluczowe szlaki (cykl Krebsa, glikolizę), co zabezpiecza działanie symulacji biologicznych w trybie offline.
 5.  **Integracja z binariami Geant4 (CERN Tracker)** (Dawny *W3*):
     *   *Rozwiązanie*: Skonfigurowano zmienną środowiskową `GEANT4_DIR` wskazującą na lokalne zasoby testowe.
 6.  **Brak numerycznego solvera metryki Schwarzschilda/Kerra (OTW)** (Dawny *S1*):
-    *   *Rozwiązanie*: Zintegrowano testy z rzeczywistym solverem fizycznym [RelativisticGravitySolver](file:///c:/Projekty/Blyskawica_V8/adaptiveneuralnetwork/central_nervous_system/astrophysics_climate.py) liczącym linie geodezyjne.
+    *   *Rozwiązanie*: Zintegrowano testy z rzeczywistym solverem fizycznym [RelativisticGravitySolver](file:///c:/Projekty/Blyskawica/adaptiveneuralnetwork/central_nervous_system/astrophysics_climate.py) liczącym linie geodezyjne.
 7.  **Brak modelu bilansu energetycznego klimatu (EBM)** (Dawny *S2*):
-    *   *Rozwiązanie*: Zintegrowano testy ze stochastycznym nieliniowym modelem bilansu klimatycznego [ClimateEBM](file:///c:/Projekty/Blyskawica_V8/adaptiveneuralnetwork/central_nervous_system/astrophysics_climate.py).
+    *   *Rozwiązanie*: Zintegrowano testy ze stochastycznym nieliniowym modelem bilansu klimatycznego [ClimateEBM](file:///c:/Projekty/Blyskawica/adaptiveneuralnetwork/central_nervous_system/astrophysics_climate.py).
 
 ---
 

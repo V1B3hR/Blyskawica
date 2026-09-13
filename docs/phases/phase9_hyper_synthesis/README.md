@@ -20,7 +20,7 @@ Phase 9 transitions the cognitive framework from heuristic approximations to rig
 ## Technical Implementations
 
 ### 1. Relativistic Gravity Solver (`astrophysics_climate.py`)
-**Source**: [`adaptiveneuralnetwork/central_nervous_system/astrophysics_climate.py`](file:///c:/Projekty/Blyskawica_V8/adaptiveneuralnetwork/central_nervous_system/astrophysics_climate.py)
+**Source**: [`adaptiveneuralnetwork/central_nervous_system/astrophysics_climate.py`](file:///c:/Projekty/Blyskawica/adaptiveneuralnetwork/central_nervous_system/astrophysics_climate.py)
 
 Calculates null and timelike geodesics around rotating Kerr black holes using Boyer-Lindquist coordinates $(t, r, \theta, \phi)$:
 $$\frac{dr}{d\lambda} = \pm \sqrt{\mathcal{R}(r)}, \quad \frac{d\theta}{d\lambda} = \pm \sqrt{\Theta(\theta)}$$
@@ -28,14 +28,14 @@ $$\frac{dr}{d\lambda} = \pm \sqrt{\mathcal{R}(r)}, \quad \frac{d\theta}{d\lambda
 - Used to model relativistic time dilation and computational entropy damping during sleep states.
 
 ### 2. Climate Energy Balance Model (`ClimateEBM`)
-**Source**: [`adaptiveneuralnetwork/central_nervous_system/astrophysics_climate.py`](file:///c:/Projekty/Blyskawica_V8/adaptiveneuralnetwork/central_nervous_system/astrophysics_climate.py)
+**Source**: [`adaptiveneuralnetwork/central_nervous_system/astrophysics_climate.py`](file:///c:/Projekty/Blyskawica/adaptiveneuralnetwork/central_nervous_system/astrophysics_climate.py)
 
 Models non-linear planetological thermodynamic feedback:
 $$C \frac{dT}{dt} = \frac{S_0}{4}(1 - \alpha(T)) - (A + B T) + \Delta F_{GHG} + \eta(t)$$
 - Tracks tipping points, bistable equilibria, and resistance against stochastic noise $\eta(t)$.
 
 ### 3. Cellular Metabolism Database (`kegg_metabolic_pathways.json`)
-**Source**: [`data/kegg_metabolic_pathways.json`](file:///c:/Projekty/Blyskawica_V8/data/kegg_metabolic_pathways.json)
+**Source**: [`data/kegg_metabolic_pathways.json`](file:///c:/Projekty/Blyskawica/data/kegg_metabolic_pathways.json)
 
 Provides fully offline, structured stoichiometric mappings for:
 - Glycolysis / Gluconeogenesis
@@ -44,7 +44,7 @@ Provides fully offline, structured stoichiometric mappings for:
 - Flux Balance Analysis (FBA) constraints for cognitive node energy pools.
 
 ### 4. Lava Neuromorphic Compiler (`lava_compiler.py`)
-**Source**: [`adaptiveneuralnetwork/central_nervous_system/neuromorphic/lava_compiler.py`](file:///c:/Projekty/Blyskawica_V8/adaptiveneuralnetwork/central_nervous_system/neuromorphic/lava_compiler.py)
+**Source**: [`adaptiveneuralnetwork/central_nervous_system/neuromorphic/lava_compiler.py`](file:///c:/Projekty/Blyskawica/adaptiveneuralnetwork/central_nervous_system/neuromorphic/lava_compiler.py)
 
 Compiles dynamic neural topologies into neuromorphic process graphs with virtual hardware emulation (`hardware_device_connected = True`), enabling low-power SNN execution without requiring physical Intel Loihi 2 hardware.
 
@@ -52,7 +52,7 @@ Compiles dynamic neural topologies into neuromorphic process graphs with virtual
 
 ## 25-Domain Omniscience Matrix
 
-The Hyper-Synthesis curriculum covers 25 core scientific domains organized in [`docs/curriculum/hyper_synthesis_v4/matrix.json`](file:///c:/Projekty/Blyskawica_V8/docs/curriculum/hyper_synthesis_v4/matrix.json):
+The Hyper-Synthesis curriculum covers 25 core scientific domains organized in [`docs/curriculum/hyper_synthesis_v4/matrix.json`](file:///c:/Projekty/Blyskawica/docs/curriculum/hyper_synthesis_v4/matrix.json):
 
 1. Non-Equilibrium Thermodynamics & Dissipative Structures
 2. Quantum Information & Decoherence Mechanics
@@ -86,7 +86,7 @@ The Hyper-Synthesis curriculum covers 25 core scientific domains organized in [`
 
 - ✅ **Cognitive Gap Resolution**: 100.0% pass rate across all domain tests.
 - ✅ **Offline Autonomy**: Zero external network API calls required for full physical simulation.
-- ✅ **Curriculum Tracking**: Verified in [`docs/curriculum/hyper_synthesis_v4/tracking.md`](file:///c:/Projekty/Blyskawica_V8/docs/curriculum/hyper_synthesis_v4/tracking.md).
+- ✅ **Curriculum Tracking**: Verified in [`docs/curriculum/hyper_synthesis_v4/tracking.md`](file:///c:/Projekty/Blyskawica/docs/curriculum/hyper_synthesis_v4/tracking.md).
 
 ---
 

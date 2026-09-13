@@ -490,15 +490,15 @@ class PhaseScheduler:
 
         if self.stochastic_policy:
             low_energy_probs = torch.zeros(4, device=self.device)
-            base_sleep_prob = 0.7
+            base_sleep_prob = 0.85
             if anxiety > self.anxiety_threshold * 0.5:
-                base_sleep_prob = 0.9  # Higher probability when anxious
+                base_sleep_prob = 0.95  # Higher probability when anxious
             low_energy_probs[Phase.SLEEP.value] = base_sleep_prob
-            low_energy_probs[Phase.INTERACTIVE.value] = 1 - base_sleep_prob
-            low_energy_probs = torch.softmax(low_energy_probs / self.policy_temperature, dim=0)
+            low_energy_probs[Phase.INTERACTIVE.value] = 1.0 - base_sleep_prob
             return torch.multinomial(low_energy_probs, 1).item()
         else:
             return Phase.SLEEP.value
+
 
     def _handle_high_energy_low_activity_phase(self, energy: float, activity: float, anxiety: float, circadian_factor: float) -> int:
         """Handle phase transitions for high energy with low activity."""

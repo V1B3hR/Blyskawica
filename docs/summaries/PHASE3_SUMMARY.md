@@ -129,7 +129,7 @@ Interactive demonstration of Phase 3 features:
 
 ### 7. Documentation ✅
 
-**File**: `docs/phase3/README.md`
+**File**: `docs/phases/phase3_modular_arch/README.md`
 
 Comprehensive documentation including:
 - Component overview and architecture
@@ -157,7 +157,7 @@ Comprehensive documentation including:
 7. `config/models/video_transformer.yaml` - Transformer config
 8. `tests/test_phase3_modularization.py` - Test suite
 9. `scripts/phase3_demo.py` - Demo script
-10. `docs/phase3/README.md` - Documentation
+10. `docs/phases/phase3_modular_arch/README.md` - Documentation
 
 ## Key Achievements
 

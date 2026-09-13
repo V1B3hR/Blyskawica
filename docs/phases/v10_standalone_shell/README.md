@@ -47,7 +47,7 @@ graph TB
 ## Key Components
 
 ### 1. Tauri v2 Application Shell (`sparkle_app/`)
-**Source**: [`sparkle_app/src-tauri/`](file:///c:/Projekty/Blyskawica_V8/sparkle_app/src-tauri)
+**Source**: [`sparkle_app/src-tauri/`](file:///c:/Projekty/Blyskawica/sparkle_app/src-tauri)
 
 - **Entry Point**: `lib.rs` / `main.rs` — initializes window management, system tray, IPC handlers, and error boundaries.
 - **Tauri IPC**: High-throughput asynchronous message bus connecting the frontend UI to backend Rust services.
@@ -57,7 +57,7 @@ graph TB
 - Supports quantized GGUF weights for minimal RAM footprint (~1.2 GB VRAM / RAM).
 
 ### 3. Native Security Core (`blyskawica_core/`)
-**Source**: [`blyskawica_core/`](file:///c:/Projekty/Blyskawica_V8/blyskawica_core)
+**Source**: [`blyskawica_core/`](file:///c:/Projekty/Blyskawica/blyskawica_core)
 
 - Enforces execution quotas, memory sandboxing, and quarantine boundaries before any system call or file I/O is allowed.
 

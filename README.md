@@ -188,14 +188,18 @@ mypy adaptiveneuralnetwork/
 
 | Resource | Description | Link |
 |---|---|---|
+| **⚡ Baza Zbiorcza Dokumentacji** | Centralny portal nawigacyjny i zbiór wszystkich 10 domen dokumentacji | [Baza Zbiorcza (docs/README.md)](docs/README.md) |
 | **Master Documentation Index** | Complete catalogue of all project guides and documents | [Documentation Index](docs/technical/DOCUMENTATION_INDEX.md) |
 | **System Architecture** | Technical blueprint of Tauri v2, Candle, CNS, and security | [ARCHITECTURE.md](ARCHITECTURE.md) |
+| **V11 Next-Gen Roadmap** | Active evolutionary plan: WebGPU Spores, BCI loop, sleep EWC, Z3 Nethical | [Roadmap V11](docs/roadmaps/ROADMAP_V11_NEXTGEN.md) |
 | **Quick Start Guide** | 5-minute training and validation guide | [QUICKSTART.md](QUICKSTART.md) |
 | **Unified Training Guide** | Dataset loading, training configs, and hyperparameter tuning | [Training Guide](docs/training/TRAINING_GUIDE.md) |
 | **Testing Guide** | Unit, integration, cognitive, and performance test suites | [Testing Guide](docs/testing/TESTING_GUIDE.md) |
 | **AI Ethics Framework** | 25 Fundamental Laws and operational safety principles | [Ethics Framework](docs/ethics/ethicsframework.md) |
 | **Knowledge Gaps Analysis** | Domain coverage and 100% cognitive resolution report | [Knowledge Gaps](docs/learning/knowledge_gaps_analysis.md) |
+| **Roadmap Status Audit** | Comprehensive audit of all completed milestones through V10 | [Roadmap Status](docs/roadmaps/roadmapstatus.md) |
 | **Changelog** | Release history, bug fixes, and feature milestones | [CHANGELOG.md](CHANGELOG.md) |
+
 
 ---
 

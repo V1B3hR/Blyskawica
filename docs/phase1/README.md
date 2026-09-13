@@ -1,4 +1,7 @@
-# Phase 1 - Data Layer Rework
+# Phase 1: Vectorized Data Layer & Ingestion Pipeline
+
+> [!NOTE]
+> **Canonical Documentation Location**: This phase documentation is consolidated in the master phase matrix at [docs/phases/phase1_data_layer/README.md](../phases/phase1_data_layer/README.md).
 
 ## Status: ✅ COMPLETE
 

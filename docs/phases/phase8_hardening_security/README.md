@@ -29,26 +29,26 @@ graph LR
 ```
 
 ### 1. Wolf Teeth Defense (`wolf_teeth.py`)
-**Source**: [`adaptiveneuralnetwork/immune_system/wolf_teeth.py`](file:///c:/Projekty/Blyskawica_V8/adaptiveneuralnetwork/immune_system/wolf_teeth.py)
+**Source**: [`adaptiveneuralnetwork/immune_system/wolf_teeth.py`](file:///c:/Projekty/Blyskawica/adaptiveneuralnetwork/immune_system/wolf_teeth.py)
 
 - **Honey-pot Tokens**: Decoy lures that detect prompt injection and jailbreak payloads.
 - **Sticky Ooze**: Rate-throttles and traps malicious token sequences.
 - **Dissolve**: Deconstructs and neutralizes adversarial glitch tokens before reaching the cognitive core.
 
 ### 2. Epistemic Defense (`epistemic_defense.py`)
-**Source**: [`adaptiveneuralnetwork/immune_system/epistemic_defense.py`](file:///c:/Projekty/Blyskawica_V8/adaptiveneuralnetwork/immune_system/epistemic_defense.py)
+**Source**: [`adaptiveneuralnetwork/immune_system/epistemic_defense.py`](file:///c:/Projekty/Blyskawica/adaptiveneuralnetwork/immune_system/epistemic_defense.py)
 
 Monitors belief consistency and isolates self-contradictory assertions into a secure quarantine memory space to prevent semantic drift.
 
 ### 3. Nethical Governance Framework
-**Source**: [`extensions/nethical/`](file:///c:/Projekty/Blyskawica_V8/extensions/nethical)
+**Source**: [`extensions/nethical/`](file:///c:/Projekty/Blyskawica/extensions/nethical)
 
 - **25 Fundamental Laws**: Defined in `FUNDAMENTAL_LAWS.md` ensuring non-harm, agency preservation, transparency, and architectural stability.
 - **Formal Verification**: Mathematical proof checks (`extensions/nethical/formal/`) ensuring safety invariants cannot be bypassed.
 - **OpenAPI v1**: Standardized REST endpoint schema (`openapi-v1.yaml`) for cross-service ethical compliance checks.
 
 ### 4. Single Shell Decision (ADR 0001)
-**Source**: [`docs/adr/0001-single-shell-decision.md`](file:///c:/Projekty/Blyskawica_V8/docs/adr/0001-single-shell-decision.md)
+**Source**: [`docs/adr/0001-single-shell-decision.md`](file:///c:/Projekty/Blyskawica/docs/adr/0001-single-shell-decision.md)
 
 Deprecates fragmented UI wrappers in favor of a unified Rust Tauri desktop shell (`sparkle_app`) paired with low-level native sandboxing in `blyskawica_core`.
 

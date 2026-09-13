@@ -20,21 +20,21 @@ Phase 7 bridges mathematical neuroscience with theoretical physics by:
 ## Key Modules & Implementations
 
 ### 1. Physics-Informed Thermal Engine (`pinn_thermal_engine.py`)
-**Source**: [`adaptiveneuralnetwork/cognitive_tools/pinn_thermal_engine.py`](file:///c:/Projekty/Blyskawica_V8/adaptiveneuralnetwork/cognitive_tools/pinn_thermal_engine.py)
+**Source**: [`adaptiveneuralnetwork/cognitive_tools/pinn_thermal_engine.py`](file:///c:/Projekty/Blyskawica/adaptiveneuralnetwork/cognitive_tools/pinn_thermal_engine.py)
 
 Solves the 2D non-steady heat conduction PDE (Fourier's law):
 $$\frac{\partial T}{\partial t} = \alpha \left( \frac{\partial^2 T}{\partial x^2} + \frac{\partial^2 T}{\partial y^2} \right) + Q(x,y,t)$$
 Uses automatic differentiation (`torch.autograd.grad`) to enforce zero physical residual during neural training.
 
 ### 2. Diamond Yant Cymatics (`diamond_yant_cymatics.py`)
-**Source**: [`adaptiveneuralnetwork/cognitive_tools/diamond_yant_cymatics.py`](file:///c:/Projekty/Blyskawica_V8/adaptiveneuralnetwork/cognitive_tools/diamond_yant_cymatics.py)
+**Source**: [`adaptiveneuralnetwork/cognitive_tools/diamond_yant_cymatics.py`](file:///c:/Projekty/Blyskawica/adaptiveneuralnetwork/cognitive_tools/diamond_yant_cymatics.py)
 
 Simulates 2D Chladni plate resonance and modal vibration geometries:
 $$w(x,y) = a \sin\left(\frac{n\pi x}{L}\right) \sin\left(\frac{m\pi y}{L}\right) + b \sin\left(\frac{m\pi x}{L}\right) \sin\left(\frac{n\pi y}{L}\right)$$
 Maps harmonic acoustic resonance to topological weight organization.
 
 ### 3. Neurochemical Homeostasis (`neurochemistry.py`)
-**Source**: [`adaptiveneuralnetwork/central_nervous_system/neurochemistry.py`](file:///c:/Projekty/Blyskawica_V8/adaptiveneuralnetwork/central_nervous_system/neurochemistry.py)
+**Source**: [`adaptiveneuralnetwork/central_nervous_system/neurochemistry.py`](file:///c:/Projekty/Blyskawica/adaptiveneuralnetwork/central_nervous_system/neurochemistry.py)
 
 Dynamic hormonal & neurotransmitter regulation:
 - **Adenosine**: Accumulates with computational load; triggers `DEEP_SLEEP` phase when threshold is exceeded.
@@ -42,7 +42,7 @@ Dynamic hormonal & neurotransmitter regulation:
 - **GABA & Oxytocin**: Inhibitory control and relational bonding/trust anchoring.
 
 ### 4. Cognitive Hygiene Engine (`cognitive_hygiene.py`)
-**Source**: [`adaptiveneuralnetwork/central_nervous_system/cognitive_hygiene.py`](file:///c:/Projekty/Blyskawica_V8/adaptiveneuralnetwork/central_nervous_system/cognitive_hygiene.py)
+**Source**: [`adaptiveneuralnetwork/central_nervous_system/cognitive_hygiene.py`](file:///c:/Projekty/Blyskawica/adaptiveneuralnetwork/central_nervous_system/cognitive_hygiene.py)
 
 Maintains cognitive alignment:
 - **RealityAnchor**: Grounding against hallucination and epistemic drift.
@@ -50,7 +50,7 @@ Maintains cognitive alignment:
 - **ExistentialPause**: Halts runaway recursive loops for introspection and recovery.
 
 ### 5. Unified Memory Consolidation (`consolidation.py`)
-**Source**: [`adaptiveneuralnetwork/central_nervous_system/consolidation.py`](file:///c:/Projekty/Blyskawica_V8/adaptiveneuralnetwork/central_nervous_system/consolidation.py)
+**Source**: [`adaptiveneuralnetwork/central_nervous_system/consolidation.py`](file:///c:/Projekty/Blyskawica/adaptiveneuralnetwork/central_nervous_system/consolidation.py)
 
 - **Phase-based Consolidation**: Sleep-state synaptic reorganization and memory replay.
 - **Synaptic Consolidation**: Elastic Weight Consolidation (EWC) to prevent catastrophic forgetting.
