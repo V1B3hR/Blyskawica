@@ -14,9 +14,13 @@ import time
 logger = logging.getLogger("MemoryGuard")
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+from pathlib import Path
+
+DEFAULT_BACKUP_FILE = str(Path(__file__).resolve().parents[2] / "memory_checkpoint.json")
+
 class MemoryGuard:
-    def __init__(self, backup_file="c:/Projekty/Blyskawica_V8/memory_checkpoint.json"):
-        self.backup_file = backup_file
+    def __init__(self, backup_file=None):
+        self.backup_file = backup_file or DEFAULT_BACKUP_FILE
         self.state = {
             "last_thought": "",
             "neurochemistry": {},

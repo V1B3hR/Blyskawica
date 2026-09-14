@@ -49,12 +49,25 @@ def main():
         "httpx",
         "requests",
         "numpy",
+        "torch",
         "dotenv",
+        "adaptiveneuralnetwork",
+        "blyskawica_app",
+        "blyskawica_app.backend",
+        "blyskawica_app.backend.immortality",
+        "blyskawica_app.backend.tts_manager",
+        "blyskawica_app.backend.database",
+        "blyskawica_app.backend.security",
+        "blyskawica_app.backend.dpapi",
+        "blyskawica_app.backend.vibe_telemetry_bridge",
+        "pydantic",
     ]
 
     hidden_flags = []
     for imp in hidden_imports:
         hidden_flags.extend(["--hidden-import", imp])
+    hidden_flags.extend(["--collect-all", "adaptiveneuralnetwork"])
+    hidden_flags.extend(["--collect-all", "blyskawica_app"])
 
     # 2. Uruchomienie PyInstallera via module execution (python -m PyInstaller)
     exe_name = "blyskawica_backend"

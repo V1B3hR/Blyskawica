@@ -2,10 +2,12 @@ import os
 import unittest
 
 
+from pathlib import Path
+
 class TestKnowledgeGaps(unittest.TestCase):
     def setUp(self):
         # Resolve Priority 3: Mock the presence of Geant4 installation path
-        os.environ["GEANT4_DIR"] = "C:\\Projekty\\Blyskawica_V8\\data\\geant4"
+        os.environ["GEANT4_DIR"] = str(Path(__file__).resolve().parent.parent / "data" / "geant4")
 
     def test_k1_physical_quantum_hardware_api(self):
         """K1: Real IBM Quantum connection (no Qiskit-hardware link)"""

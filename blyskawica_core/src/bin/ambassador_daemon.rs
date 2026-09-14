@@ -61,10 +61,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let shield = CognitiveShield::new(vec![], 0.82);
     let neuro = Mutex::new(NeurochemicalState::default());
 
-    let model_path = PathBuf::from(
-        std::env::var("BLYSAWICA_MODEL_PATH")
-            .unwrap_or_else(|_| r"C:\Projekty\Blyskawica\model\qwen2.5-1.5b-coder.gguf".to_string())
-    );
+    let model_path = std::env::var("BLYSKAWICA_MODEL_PATH")
+        .or_else(|_| std::env::var("BLYSAWICA_MODEL_PATH"))
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| {
+            let p = PathBuf::from("model/qwen2.5-1.5b-coder.gguf");
+            if p.exists() {
+                p
+            } else {
+                PathBuf::from(r"C:\Projekty\Blyskawica\model\qwen2.5-1.5b-coder.gguf")
+            }
+        });
     let model_loaded = model_path.exists();
 
     let state = Arc::new(AmbassadorState {

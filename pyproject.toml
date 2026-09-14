@@ -15,7 +15,7 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
@@ -81,9 +81,9 @@ pos = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/V1B3hR/adaptiveneuralnetwork"
-Repository = "https://github.com/V1B3hR/adaptiveneuralnetwork"
-Issues = "https://github.com/V1B3hR/adaptiveneuralnetwork/issues"
+Homepage = "https://github.com/V1B3hR/Blyskawica"
+Repository = "https://github.com/V1B3hR/Blyskawica"
+Issues = "https://github.com/V1B3hR/Blyskawica/issues"
 
 [project.scripts]
 adaptive-benchmark = "adaptiveneuralnetwork.scripts.run_benchmark:main"
@@ -94,7 +94,7 @@ adaptive-robustness-guard = "adaptiveneuralnetwork.scripts.robustness_guard:main
 adaptive-sparsity-guard = "adaptiveneuralnetwork.scripts.sparsity_guard:main"
 
 [tool.setuptools.packages.find]
-include = ["adaptiveneuralnetwork*"]
+include = ["adaptiveneuralnetwork*", "blyskawica_app*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "adaptiveneuralnetwork/tests"]

@@ -20,6 +20,26 @@ class TestAPISecurity(unittest.TestCase):
 
     def setUp(self):
         self.client = TestClient(app)
+        # Ensure clean state for each test
+        self.client.post(
+            "/api/quarantine/reset",
+            headers={"X-Blyskawica-Token": STARTUP_TOKEN, "X-Quarantine-Admin-Key": STARTUP_TOKEN}
+        )
+        self.client.post(
+            "/api/permission_level?level=2",
+            headers={"X-Blyskawica-Token": STARTUP_TOKEN}
+        )
+
+    def tearDown(self):
+        # Reset quarantine and level after each test
+        self.client.post(
+            "/api/quarantine/reset",
+            headers={"X-Blyskawica-Token": STARTUP_TOKEN, "X-Quarantine-Admin-Key": STARTUP_TOKEN}
+        )
+        self.client.post(
+            "/api/permission_level?level=2",
+            headers={"X-Blyskawica-Token": STARTUP_TOKEN}
+        )
 
     def test_get_token(self):
         """Test that the auth token endpoint returns the correct token"""
@@ -46,36 +66,30 @@ class TestAPISecurity(unittest.TestCase):
         self.assertEqual(response.status_code, 401)
 
     def test_permission_level_authorized(self):
-        """Test that setting permission level with a valid token succeeds"""
-        # Save original permission level
-        status_res = self.client.get("/api/permission_level")
-        original_level = status_res.json()["permission_level"]
+        """Test setting and getting permission levels with a valid token"""
+        # Set to Level 1
+        response = self.client.post(
+            "/api/permission_level?level=1",
+            headers={"X-Blyskawica-Token": STARTUP_TOKEN}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["permission_level"], 1)
 
-        try:
-            # Set to level 1
-            response = self.client.post(
-                "/api/permission_level?level=1",
-                headers={"X-Blyskawica-Token": STARTUP_TOKEN}
-            )
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.json()["permission_level"], 1)
+        # Verify via GET
+        get_res = self.client.get("/api/permission_level")
+        self.assertEqual(get_res.status_code, 200)
+        self.assertEqual(get_res.json()["permission_level"], 1)
 
-            # Set to level 2
-            response = self.client.post(
-                "/api/permission_level?level=2",
-                headers={"X-Blyskawica-Token": STARTUP_TOKEN}
-            )
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.json()["permission_level"], 2)
-        finally:
-            # Restore original permission level
-            self.client.post(
-                f"/api/permission_level?level={original_level}",
-                headers={"X-Blyskawica-Token": STARTUP_TOKEN}
-            )
+        # Restore to Level 2
+        response = self.client.post(
+            "/api/permission_level?level=2",
+            headers={"X-Blyskawica-Token": STARTUP_TOKEN}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["permission_level"], 2)
 
     def test_vibe_code_unauthorized(self):
-        """Test that executing code writes without a token is blocked"""
+        """Test that code generation/writing fails without auth token"""
         response = self.client.post(
             "/api/ide/vibe_code",
             data={"path": "test.txt", "content": "hello"}
@@ -188,13 +202,44 @@ class TestAPISecurity(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 403)
 
-        # Reset quarantine by resetting permission level
-        self.client.post(
+        # Verify that unprivileged permission level change cannot deactivate quarantine (Issue 6)
+        bypass_attempt = self.client.post(
             "/api/permission_level?level=2",
             headers={"X-Blyskawica-Token": STARTUP_TOKEN}
         )
+        self.assertEqual(bypass_attempt.status_code, 403)
+        status_res = self.client.get("/api/permission_level")
+        self.assertTrue(status_res.json()["quarantine_active"])
+
+        # Reset quarantine via authorized admin endpoint
+        reset_res = self.client.post(
+            "/api/quarantine/reset",
+            headers={"X-Blyskawica-Token": STARTUP_TOKEN, "X-Quarantine-Admin-Key": STARTUP_TOKEN}
+        )
+        self.assertEqual(reset_res.status_code, 200)
         status_res = self.client.get("/api/permission_level")
         self.assertFalse(status_res.json()["quarantine_active"])
+
+    def test_file_content_security(self):
+        """Test GET /api/ide/file_content requires auth and restricts system files (Issue 5)"""
+        # Unauthenticated request fails
+        res_unauth = self.client.get("/api/ide/file_content?path=README.md")
+        self.assertEqual(res_unauth.status_code, 401)
+
+        # Restricted system file fails even with token
+        res_sys = self.client.get(
+            "/api/ide/file_content?path=c:/windows/system32/drivers/etc/hosts",
+            headers={"X-Blyskawica-Token": STARTUP_TOKEN}
+        )
+        self.assertEqual(res_sys.status_code, 403)
+
+        # Valid workspace file succeeds with token
+        res_ok = self.client.get(
+            "/api/ide/file_content?path=README.md",
+            headers={"X-Blyskawica-Token": STARTUP_TOKEN}
+        )
+        self.assertEqual(res_ok.status_code, 200)
+        self.assertIn("content", res_ok.json())
 
     def test_cors_origins(self):
         """Test that CORS policy restricts unauthorized origins"""

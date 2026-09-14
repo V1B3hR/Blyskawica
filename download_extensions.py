@@ -16,16 +16,40 @@ BASE_DIR = Path(__file__).resolve().parent
 EXT_DIR = BASE_DIR / "extensions"
 EXT_DIR.mkdir(exist_ok=True)
 
-def download_and_extract():
+import sys
+
+
+def is_safe_zip_path(target_dir: Path, path: Path) -> bool:
+    try:
+        resolved_target = target_dir.resolve()
+        resolved_path = path.resolve()
+        return resolved_path.is_relative_to(resolved_target)
+    except Exception:
+        return False
+
+
+def safe_extract_zip(zip_file: zipfile.ZipFile, extract_to: Path) -> None:
+    extract_to_resolved = extract_to.resolve()
+    for member in zip_file.infolist():
+        member_path = extract_to_resolved / member.filename
+        if not is_safe_zip_path(extract_to_resolved, member_path):
+            raise RuntimeError(f"Zip Slip detected! Malicious path inside archive: {member.filename}")
+    if sys.version_info >= (3, 12):
+        getattr(zip_file, "extractall")(extract_to, filter="data")
+    else:
+        zip_file.extractall(extract_to)
+
+
+def download_and_extract() -> None:
     for name, url in REPOS.items():
         print(f"Downloading {name}...")
         zip_path = EXT_DIR / f"{name}.zip"
         try:
             urllib.request.urlretrieve(url, zip_path)
 
-            print(f"Extracting {name}...")
+            print(f"Extracting {name} safely...")
             with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-                zip_ref.extractall(EXT_DIR)
+                safe_extract_zip(zip_ref, EXT_DIR)
 
             # GitHub zips usually extract to a folder named repo-main
             extracted_folder = EXT_DIR / f"{name}-main"

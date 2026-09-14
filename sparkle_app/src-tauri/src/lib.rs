@@ -12,6 +12,7 @@ pub struct AppStateInner {
     permission_level: u8, // 1: Sandbox, 2: Workspace, 3: Full OS
     workspace_path: PathBuf,
     backend_child: Option<std::process::Child>,
+    shell_secret: Option<String>,
     engine_handle: Option<tokio::task::JoinHandle<()>>,
     shadow_board: blyskawica_core::shadow_forge::ShadowBoard,
     aegis: blyskawica_core::aegis_sentinel::AegisSentinel,
@@ -849,6 +850,7 @@ pub fn run() {
             permission_level: 2, // Standard Workspace by default
             workspace_path: PathBuf::from("."),
             backend_child: None,
+            shell_secret: None,
             engine_handle: None,
             shadow_board: blyskawica_core::shadow_forge::ShadowBoard::new(),
             aegis: blyskawica_core::aegis_sentinel::AegisSentinel::new(),
@@ -921,11 +923,21 @@ pub fn run() {
                 sidecar_path = app_dir.join("bin").join("blyskawica_backend.exe");
             }
             
-            if sidecar_path.exists() {
-                println!("🚀 [Tauri Setup]: Wykryto Sidecar backend ({:?}). Uruchamianie w tle...", sidecar_path);
+            let enable_sidecar = std::env::var("SPARKLE_ENABLE_SIDECAR")
+                .map(|v| v != "0" && v.to_lowercase() != "false")
+                .unwrap_or(true);
+
+            if enable_sidecar && sidecar_path.exists() {
+                let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_nanos();
+                let pid = std::process::id();
+                let dynamic_secret = format!("sparkle-{:x}-{:x}", pid, now);
+                inner.shell_secret = Some(dynamic_secret.clone());
+
+                println!("🚀 [Tauri Setup]: Wykryto Sidecar backend ({:?}). Uruchamianie w tle z dynamicznym sekretem...", sidecar_path);
                 
                 let mut cmd = std::process::Command::new(&sidecar_path);
                 cmd.env("SPARKLE_WORKSPACE", &workspace)
+                   .env("SPARKLE_SHELL_SECRET", &dynamic_secret)
                    .stdout(std::process::Stdio::null())
                    .stderr(std::process::Stdio::null());
                 

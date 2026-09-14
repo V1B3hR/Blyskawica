@@ -20,6 +20,7 @@ import hashlib
 import json
 import logging
 import math
+import os
 import random
 import threading
 import time
@@ -48,15 +49,15 @@ try:
 except ImportError:
     _AER_AVAILABLE = False
 
-def get_workspace_root():
+def get_workspace_root() -> Path:
     from pathlib import Path
     current = Path(__file__).resolve()
     for parent in current.parents:
         if (parent / "blyskawica_app").exists() or (parent / "blyskawica_core").exists():
             return parent
-    return Path(r"C:\Projekty\Blyskawica_V8")
+    return current.parents[3]
 
-WORKSPACE_ROOT = get_workspace_root()
+WORKSPACE_ROOT: Path = get_workspace_root()
 
 
 # ---------------------------------------------------------------------------
@@ -83,7 +84,7 @@ class WatchdogConfig:
     check_interval_sec: int = 3600    # Co godzinę domyślnie
     drift_sigma_threshold: float = 2.5
     vault_path: str = str(WORKSPACE_ROOT / "integrity_vault.json")
-    api_key_path: str = r"C:\Projekty\Quantlion\apikey Błyskawica.json"
+    api_key_path: str = os.environ.get("QUANTUM_API_KEY_PATH", str(WORKSPACE_ROOT / "config" / "apikey_blyskawica.json"))
     use_gli_stabilization: bool = True
     isolation_ratio: float = 0.05
 
@@ -98,8 +99,8 @@ class QuantumIntegrityWatchdog:
     Używa IBM Quantum jako zewnętrznego, niezależnego źródła prawdy.
     """
 
-    def __init__(self, config: WatchdogConfig = None,
-                 identity_guard=None):
+    def __init__(self, config: WatchdogConfig | None = None,
+                 identity_guard: Any = None) -> None:
         self.config = config or WatchdogConfig()
         self.identity_guard = identity_guard
         self.service: Any | None = None
@@ -119,7 +120,7 @@ class QuantumIntegrityWatchdog:
         if _QUANTUM_AVAILABLE:
             self._connect()
 
-    def _connect(self):
+    def _connect(self) -> None:
         try:
             with open(self.config.api_key_path, encoding='utf-8') as f:
                 api_key = json.load(f).get("apikey")
@@ -130,7 +131,7 @@ class QuantumIntegrityWatchdog:
         except Exception as e:
             logger.warning(f"[Watchdog] Brak połączenia IBM: {e}. Tryb offline.")
 
-    def _load_vault(self):
+    def _load_vault(self) -> None:
         """Ładuje historię pomiarów z dysku."""
         vault_path = Path(self.config.vault_path)
         if vault_path.exists():
@@ -142,7 +143,7 @@ class QuantumIntegrityWatchdog:
             except Exception as e:
                 logger.warning(f"[Watchdog] Błąd ładowania vault: {e}")
 
-    def _save_vault(self):
+    def _save_vault(self) -> None:
         """Zapisuje historię na dysk."""
         try:
             with open(self.config.vault_path, 'w', encoding='utf-8') as f:
@@ -220,7 +221,7 @@ class QuantumIntegrityWatchdog:
                 qc = self._build_integrity_circuit()
                 isa = qc
                 total_qubits = self.config.n_qubits
-            else:
+            elif self.service is not None:
                 backend = self.service.least_busy(simulator=False, operational=True)
                 backend_name = backend.name
                 qc = self._build_integrity_circuit()
@@ -228,9 +229,15 @@ class QuantumIntegrityWatchdog:
                 isa = pm.run(qc)
                 estimator = IBMEstimator(mode=backend)
                 total_qubits = backend.num_qubits
+            else:
+                backend_name = "aer_simulator"
+                estimator = AerEstimator()
+                qc = self._build_integrity_circuit()
+                isa = qc
+                total_qubits = self.config.n_qubits
 
             # Observable: Z_i dla każdego z kubitów logicznych
-            def make_obs(q, total):
+            def make_obs(q: int, total: int) -> SparsePauliOp:
                 return SparsePauliOp("I" * (total - 1 - q) + "Z" + "I" * q)
 
             observables = [make_obs(i, total_qubits) for i in range(self.config.n_qubits)]
@@ -246,7 +253,7 @@ class QuantumIntegrityWatchdog:
                 logger.error(f"[Watchdog] Błąd wykonania obwodu: {e}. Fallback do klasycznego.")
                 t = time.time()
                 drift_base = 0.05 * math.sin(t / 100.0)
-                evs = [float(min(max(drift_base + random.normalvariate(0.0, 0.02), -1.0, 1.0))) for _ in range(self.config.n_qubits)]
+                evs = [float(max(-1.0, min(1.0, drift_base + random.normalvariate(0.0, 0.02)))) for _ in range(self.config.n_qubits)]
                 job_id = f"fail-fallback-{int(t)}"
                 backend_name = f"fallback-{backend_name}"
 
@@ -317,7 +324,7 @@ class QuantumIntegrityWatchdog:
     # Tryb cykliczny (background thread)
     # ------------------------------------------------------------------
 
-    def start_continuous(self):
+    def start_continuous(self) -> None:
         """Uruchamia cykliczne audyty w tle."""
         if self._thread and self._thread.is_alive():
             logger.warning("[Watchdog] Już działa.")
@@ -328,12 +335,12 @@ class QuantumIntegrityWatchdog:
         self._thread.start()
         logger.info(f"[Watchdog] Cykliczny tryb aktywny. Interwał: {self.config.check_interval_sec}s")
 
-    def stop(self):
+    def stop(self) -> None:
         """Zatrzymuje cykliczne audyty."""
         self._stop_event.set()
         logger.info("[Watchdog] Zatrzymano.")
 
-    def _watch_loop(self):
+    def _watch_loop(self) -> None:
         while not self._stop_event.is_set():
             try:
                 snap = self.run_single_audit()

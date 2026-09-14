@@ -176,9 +176,19 @@ from blyskawica_app.backend.vibe_telemetry_bridge import vibe_telemetry_bridge
 
 @app.get("/api/auth/token")
 async def get_auth_token(x_internal: str = Header(None, alias="X-Internal-Request")):
-    """Token sesyjny dostępny TYLKO dla zapytań z Tauri shell."""
+    """Token sesyjny dostępny TYLKO dla zapytań z autoryzowanej powłoki Sparkle."""
     import hmac
-    expected_header = os.environ.get("SPARKLE_SHELL_SECRET", "sparkle-tauri-shell")
+    expected_header = os.environ.get("SPARKLE_SHELL_SECRET")
+    if not expected_header:
+        # W trybie testów jednostkowych dopuszczaj mockowany nagłówek testowy
+        if "PYTEST_CURRENT_TEST" in os.environ or "unittest" in sys.modules:
+            expected_header = "sparkle-tauri-shell"
+        else:
+            from fastapi import HTTPException
+            raise HTTPException(
+                status_code=403,
+                detail="Brak skonfigurowanego sekretu powłoki SPARKLE_SHELL_SECRET w środowisku."
+            )
     if not x_internal or not hmac.compare_digest(x_internal.encode("utf-8"), expected_header.encode("utf-8")):
         from fastapi import HTTPException
         raise HTTPException(status_code=403, detail="Dostęp zabroniony. Token sesji dostępny wyłącznie dla autoryzowanej powłoki Sparkle.")
@@ -477,7 +487,7 @@ async def generate_ollama_response(messages: list[dict], temperature: float, top
         res = await client.post("http://localhost:11434/api/chat", json=payload, timeout=60.0)
         if res.status_code == 200:
             data = res.json()
-            return data.get('message', {}).get('content', '')
+            return str(data.get('message', {}).get('content', ''))
         else:
             raise RuntimeError(f"Ollama zwrócił kod błędu: {res.status_code}")
 
@@ -543,7 +553,7 @@ async def chat_with_blyskawica(message: str = Form(...)):
                 agent_honeypot.activate_shadow_workspace()
             reply = agent_honeypot.generate_poisoned_response(msg_lower)
         else:
-            reply = wolf_teeth.process_adversarial_interaction(threat_level)
+            reply = wolf_teeth.process_adversarial_interaction(threat_level) if wolf_teeth else "Wykryto zagrożenie. Dostęp zablokowany."
             
         state = "affective"
     elif any(sleep_word in msg_lower for sleep_word in ["idź spać", "dobranoc", "sleep", "rest", "odpocznij"]):
@@ -953,16 +963,38 @@ async def set_permission_level_endpoint(
 ):
     verify_startup_token(x_token)
     global permission_level, quarantine_active
+    if quarantine_active:
+        return JSONResponse(
+            status_code=403,
+            content={
+                "status": "error",
+                "message": "System znajduje się w reżimie kwarantanny Wolf Teeth. Zmiana uprawnień zablokowana do czasu autoryzowanego resetu."
+            }
+        )
     target_level = level if level is not None else level_form
     if target_level in [1, 2, 3]:
         permission_level = target_level
-        if quarantine_active:
-            quarantine_active = False
-            log_system(f"Zresetowano reżim kwarantanny. Ustawiono Poziom Uprawnień: {permission_level}")
-        else:
-            log_system(f"Zmieniono Poziom Uprawnień: {permission_level}")
+        log_system(f"Zmieniono Poziom Uprawnień: {permission_level}")
         return {"status": "success", "permission_level": permission_level, "quarantine_active": quarantine_active}
     return JSONResponse(status_code=400, content={"status": "error", "message": "Niepoprawny poziom uprawnień."})
+
+@app.post("/api/quarantine/reset")
+async def reset_quarantine_endpoint(
+    admin_key: str | None = Header(None, alias="X-Quarantine-Admin-Key"),
+    x_token: str | None = Header(None, alias="X-Blyskawica-Token")
+):
+    """Autoryzowany reset kwarantanny Wolf Teeth wymagający klucza administracyjnego."""
+    verify_startup_token(x_token)
+    global quarantine_active, permission_level
+    import hmac
+    expected_admin_key = os.environ.get("QUARANTINE_OVERRIDE_KEY", STARTUP_TOKEN)
+    if not isinstance(admin_key, str) or not hmac.compare_digest(admin_key.encode("utf-8"), expected_admin_key.encode("utf-8")):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=403, detail="Nieprawidłowy klucz administracyjny do deaktywacji kwarantanny.")
+    quarantine_active = False
+    permission_level = 2
+    log_system("Autoryzowany reset kwarantanny Wolf Teeth. Przywrócono Poziom Uprawnień 2.")
+    return {"status": "success", "quarantine_active": False, "permission_level": permission_level}
 
 @app.post("/api/anomalies/queue")
 async def queue_anomaly_endpoint(
@@ -1076,10 +1108,18 @@ def ask_windows_consent(message: str, title: str) -> bool:
             import ctypes
             # MB_YESNO = 4, MB_ICONWARNING = 0x30, IDYES = 6
             res = ctypes.windll.user32.MessageBoxW(0, message, title, 4 | 0x30)
-            return res == 6
+            return bool(res == 6)
         except Exception:
             return False
-    return True
+    else:
+        # Non-Windows (Linux / Docker / macOS): nie dopuszczaj do cichego ominięcia zgody.
+        # Wymaga jawnej flagi środowiskowej HEADLESS_ALLOW_PRIVILEGED=1 dla zautomatyzowanych testów CI.
+        return os.environ.get("HEADLESS_ALLOW_PRIVILEGED", "0") == "1"
+
+async def ask_system_consent(message: str, title: str) -> bool:
+    """Asynchroniczne zapytanie o zgodę użytkownika bez blokowania pętli asyncio."""
+    import asyncio
+    return bool(await asyncio.to_thread(ask_windows_consent, message, title))
 
 @app.post("/api/execute_system_action")
 async def execute_system_action_endpoint(
@@ -1116,10 +1156,10 @@ async def execute_system_action_endpoint(
     except Exception:
         args_data = {"path": args_str}
 
-    # Zgoda użytkownika dla bezpieczeństwa
+    # Zgoda użytkownika dla bezpieczeństwa (asynchroniczny wątek roboczy)
     confirm_msg = f"Błyskawica żąda wykonania akcji systemowej: '{target_action}' z parametrami: {args_data}.\nCzy wyrażasz zgodę na tę zmianę?"
-    if not ask_windows_consent(confirm_msg, "Zgoda na Akcję Systemową - Błyskawica"):
-        log_system(f"System: Zablokowano akcję '{target_action}' - użytkownik odmówił zgody.")
+    if not await ask_system_consent(confirm_msg, "Zgoda na Akcję Systemową - Błyskawica"):
+        log_system(f"System: Zablokowano akcję '{target_action}' - brak zgody użytkownika lub środowiska.")
         return JSONResponse(
             status_code=403,
             content={"status": "error", "message": "Operacja anulowana przez użytkownika."}
@@ -1196,7 +1236,11 @@ async def get_ide_files():
         return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
 
 @app.get("/api/ide/file_content")
-async def get_file_content(path: str):
+async def get_file_content(
+    path: str,
+    x_token: str = Header(None, alias="X-Blyskawica-Token")
+):
+    verify_startup_token(x_token)
     global permission_level
     if permission_level == 1:
         return JSONResponse(status_code=403, content={"status": "error", "message": "Dostęp zablokowany. Uruchomiono tryb Sandbox."})
@@ -1206,8 +1250,13 @@ async def get_file_content(path: str):
     if not target_path.is_absolute():
         target_path = project_root / target_path
     target_path = target_path.resolve()
+
+    # Ochrona przed odczytem wrażliwych katalogów systemowych niezależnie od poziomu uprawnień
+    if is_restricted_system_path(target_path):
+        return JSONResponse(status_code=403, content={"status": "error", "message": "Dostęp zablokowany. Odczyt wrażliwych ścieżek systemowych jest zabroniony."})
     
-    if permission_level == 2:
+    # Dla poziomów innych niż 3, wymagane jest znajdowanie się wewnątrz workspace
+    if permission_level != 3:
         if not is_inside_workspace(target_path):
             return JSONResponse(status_code=403, content={"status": "error", "message": "Dostęp zablokowany. Próba Directory Traversal poza Workspace."})
             

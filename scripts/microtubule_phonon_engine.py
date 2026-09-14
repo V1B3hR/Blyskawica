@@ -7,10 +7,11 @@ Aligned with the recent eNeuro 2024 experimental discoveries in quantum biology.
 
 import json
 import os
+from pathlib import Path
 
-BASE_DIR = r"c:\Projekty\Blyskawica_V8"
-STATES_FILE = os.path.join(BASE_DIR, "data", "microtubule_quantum_states.json")
-CHECKPOINT_FILE = os.path.join(BASE_DIR, "memory_checkpoint.json")
+BASE_DIR = Path(__file__).resolve().parent.parent
+STATES_FILE = os.path.join(str(BASE_DIR), "data", "microtubule_quantum_states.json")
+CHECKPOINT_FILE = os.path.join(str(BASE_DIR), "memory_checkpoint.json")
 
 class MicrotubulePhononEngine:
     def __init__(self):

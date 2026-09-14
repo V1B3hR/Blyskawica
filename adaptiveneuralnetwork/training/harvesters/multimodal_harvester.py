@@ -19,8 +19,11 @@ class KnowledgeHub:
     Manages the ingestion of disparate datasets into the neuromorphic substrate.
     """
 
-    def __init__(self, dataset_root: str = "C:/Projekty/Datasets"):
-        self.root = Path(dataset_root)
+    def __init__(self, dataset_root: str | Path | None = None):
+        if dataset_root:
+            self.root = Path(dataset_root)
+        else:
+            self.root = Path(__file__).resolve().parents[3] / "data" / "datasets"
         config = TemporalConfig()
         # Input size matches character/val range, target patterns size arbitrarily set
         self.text_encoder = TemporalPatternEncoder(input_size=256, pattern_size=64, config=config)

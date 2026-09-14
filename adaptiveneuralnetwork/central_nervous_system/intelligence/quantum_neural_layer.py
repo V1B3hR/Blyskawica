@@ -50,15 +50,15 @@ try:
 except ImportError:
     _IBM_AVAILABLE = False
 
-def get_workspace_root():
+def get_workspace_root() -> Path:
     from pathlib import Path
     current = Path(__file__).resolve()
     for parent in current.parents:
         if (parent / "blyskawica_app").exists() or (parent / "blyskawica_core").exists():
             return parent
-    return Path(r"C:\Projekty\Blyskawica_V8")
+    return current.parents[3]
 
-WORKSPACE_ROOT = get_workspace_root()
+WORKSPACE_ROOT: Path = get_workspace_root()
 
 
 # ---------------------------------------------------------------------------
@@ -112,7 +112,7 @@ class QuantumNeuralLayer(nn.Module):
     Może działać na:
         - Lokalnym symulatorze Aer (szybki, do debuggowania)
         - Prawdziwym procesorze IBM (wolny, ale kwantowy)
-        - Trybie klasycznym fallback (jeśli Qiskit niedostępny)
+        - Trybie klasycznego fallback (jeśli Qiskit niedostępny)
     """
 
     def __init__(self,
@@ -121,8 +121,8 @@ class QuantumNeuralLayer(nn.Module):
                  n_layers: int = 2,
                  backend: str = "aer",
                  shots: int = 1024,
-                 ibm_service: object | None = None,
-                 use_gli_stabilization: bool = True):
+                 ibm_service: Any = None,
+                 use_gli_stabilization: bool = True) -> None:
         """
         Args:
             in_features: Rozmiar wejścia (zostanie zredukowany/dopasowany do n_qubits)
@@ -142,33 +142,40 @@ class QuantumNeuralLayer(nn.Module):
         self.ibm_service = ibm_service
         self.use_gli_stabilization = use_gli_stabilization
 
+        # Liczba parametrów PQC
+        self.n_params = _calculate_num_params(n_qubits, n_layers)
+
+        # Wagi trenowalne (inicjalizacja losowa mała, blisko zera)
+        self.theta = nn.Parameter(
+            torch.randn(self.n_params, dtype=torch.float32) * 0.1
+        )
+
+        # Adapter wejściowy: rzutuje in_features -> n_qubits jeśli się różnią
+        if in_features != n_qubits:
+            self.input_adapter = nn.Linear(in_features, n_qubits)
+        else:
+            self.input_adapter = nn.Identity()
+        self.input_projection = self.input_adapter
+
+        # Inicjalizacja Asynchronicznej Izolacji Galwanicznej (Ground Loop Isolator)
         if self.use_gli_stabilization:
-            self.gli = GroundLoopIsolator(isolation_ratio=0.05)
+            self.gli = GroundLoopIsolator(isolation_ratio=0.08)
         else:
             self.gli = None
 
-        # Liczba parametrów wariacyjnych: n_layers * n_qubits * 2 (RY + RZ)
-        self.n_params = n_layers * n_qubits * 2
-
-        # Wagi kwantowe (optymalizowane przez PSR)
-        self.theta = nn.Parameter(
-            torch.randn(self.n_params) * 0.1
-        )
-
-        # Warstwa redukująca wejście do n_qubits (klasyczna projekcja)
-        self.input_projection = nn.Linear(in_features, n_qubits, bias=False)
-
-        # Inicjalizacja obwodu (jeśli Qiskit dostępny)
-        self._estimator = None
+        # Obwód symboliczny (inicjalizowany tylko raz)
         self._pqc_template = None
         self._x_params = None
         self._theta_params = None
+        self._estimator = None
 
-        if _QISKIT_AVAILABLE:
+        if _QUANTUM_AVAILABLE:
             self._init_circuit()
             self._init_estimator()
+        else:
+            logger.warning("[QuantumLayer] Tryb klasyczny fallback (brak Qiskit).")
 
-    def _init_circuit(self):
+    def _init_circuit(self) -> None:
         """Buduje szablon obwodu PQC z symbolicznymi parametrami."""
         self._x_params = ParameterVector('x', self.n_qubits)
         self._theta_params = ParameterVector('θ', self.n_params)
@@ -179,13 +186,13 @@ class QuantumNeuralLayer(nn.Module):
         logger.info(f"[QuantumLayer] PQC zbudowany: {self.n_qubits} kubitów, "
                     f"{self.n_layers} warstwy, {self.n_params} parametrów")
 
-    def _init_estimator(self):
+    def _init_estimator(self) -> None:
         """Inicjalizuje estymator dla wybranego backendu."""
         if self.backend_mode == "aer" and _AER_AVAILABLE:
             self._estimator = AerEstimator()
             logger.info("[QuantumLayer] Backend: Qiskit Aer (lokalny symulator)")
         elif self.backend_mode == "ibm" and _IBM_AVAILABLE and self.ibm_service:
-            hw_backend = self.ibm_service.least_busy(simulator=False, operational=True)
+            hw_backend = getattr(self.ibm_service, "least_busy")(simulator=False, operational=True)
             pm = generate_preset_pass_manager(optimization_level=1, backend=hw_backend)
             self._pqc_template = pm.run(self._pqc_template)
             self._estimator = IBMEstimator(mode=hw_backend)
@@ -198,7 +205,7 @@ class QuantumNeuralLayer(nn.Module):
         Uruchamia obwód dla podanych wartości parametrów.
         Zwraca wartości oczekiwane <Z_i> dla każdego kubitu.
         """
-        if self._estimator is None or self._pqc_template is None:
+        if self._estimator is None or self._pqc_template is None or self._x_params is None or self._theta_params is None:
             return np.tanh(x_vals)
 
         # Operatory Pauliego-Z dla każdego kubitu
@@ -292,7 +299,7 @@ class QuantumNeuralLayer(nn.Module):
         if self.use_gli_stabilization and self.gli is not None:
             q_out = self.gli(q_out)
 
-        return q_out
+        return q_out if isinstance(q_out, torch.Tensor) else torch.tensor(q_out, dtype=torch.float32)
 
 
 class QuantumFunction(torch.autograd.Function):
@@ -302,7 +309,7 @@ class QuantumFunction(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(ctx, x: torch.Tensor, theta: torch.Tensor,
+    def forward(ctx: Any, x: torch.Tensor, theta: torch.Tensor,
                 layer: QuantumNeuralLayer) -> torch.Tensor:
         ctx.layer = layer
         ctx.save_for_backward(x, theta)
@@ -318,7 +325,8 @@ class QuantumFunction(torch.autograd.Function):
         return torch.tensor(np.array(results), dtype=torch.float32)
 
     @staticmethod
-    def backward(ctx, grad_output: torch.Tensor):
+    def backward(ctx: Any, *grad_outputs: Any) -> tuple[torch.Tensor, torch.Tensor, None]:
+        grad_output: torch.Tensor = grad_outputs[0]
         x, theta = ctx.saved_tensors
         layer = ctx.layer
         theta_np = theta.detach().numpy()

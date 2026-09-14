@@ -5,14 +5,16 @@ import unittest
 from adaptiveneuralnetwork.immune_system import AgenticHoneypot, MemoryLedger
 
 
+import tempfile
+
 class TestNewImmuneFeatures(unittest.TestCase):
     def setUp(self):
-        self.decoy_dir = "C:\\Projekty\\Blyskawica_V8\\test_decoy_workspace"
+        self._temp_dir = tempfile.TemporaryDirectory()
+        self.decoy_dir = self._temp_dir.name
         self.honeypot = AgenticHoneypot(decoy_dir=self.decoy_dir)
 
     def tearDown(self):
-        if os.path.exists(self.decoy_dir):
-            shutil.rmtree(self.decoy_dir)
+        self._temp_dir.cleanup()
 
     def test_agentic_honeypot_activation_and_watermarking(self):
         """Verify that Shadow Workspace correctly populates mock credentials (watermarks)."""

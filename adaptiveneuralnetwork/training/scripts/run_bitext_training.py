@@ -398,6 +398,8 @@ def run_benchmark(
 
         # Create visualization if matplotlib available
         try:
+            import matplotlib
+            matplotlib.use('Agg')
             import matplotlib.pyplot as plt
 
             if 'confusion_matrix' in eval_metrics:
@@ -414,8 +416,8 @@ def run_benchmark(
 
                 logger.info(f"Confusion matrix saved to: {confusion_plot}")
 
-        except ImportError:
-            logger.info("matplotlib not available, skipping visualization")
+        except Exception as e:
+            logger.info(f"matplotlib visualization skipped: {e}")
 
         logger.info(f"Benchmark completed successfully in {runtime:.2f} seconds")
         logger.info(f"Results saved to: {results_file}")

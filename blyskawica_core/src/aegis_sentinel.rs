@@ -195,8 +195,7 @@ mod tests {
         
         let result = sentinel.audit_system_access(
             1200,
-            "sparkle_ide.exe",
-            "C:\\Projekty\\Blyskawica_V8\\workspace\\main.py",
+            "workspace/main.py",
             AegisActionType::UnauthorizedFileWrite,
         );
 

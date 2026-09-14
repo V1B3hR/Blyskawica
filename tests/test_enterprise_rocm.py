@@ -21,8 +21,7 @@ from scripts.enterprise_rocm_orchestration import (
 class TestEnterpriseROCmOrchestration(unittest.TestCase):
 
     def setUp(self):
-        """Set up and backup existing manifests if any."""
-        self.project_root = Path(r"c:\Projekty\Blyskawica_V8")
+        self.project_root = Path(__file__).resolve().parent.parent
         self.dockerfile_path = self.project_root / "Dockerfile"
         self.deployment_path = Path(OUTPUT_DIR) / "deployment.yaml"
 

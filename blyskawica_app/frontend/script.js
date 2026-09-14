@@ -547,8 +547,7 @@ async function triggerWallpaperChange() {
   formData.append("action", "set_wallpaper");
   
   // Set default path to welcome_v9.py or another visual image if available.
-  // We'll point to an asset or path
-  formData.append("args", JSON.stringify({ path: "C:\\Projekty\\Blyskawica_V8\\welcome_v9.py" })); 
+  formData.append("args", JSON.stringify({ path: "welcome_v9.py" })); 
 
   try {
     const res = await fetch("/api/execute_system_action", {

@@ -125,9 +125,9 @@ class Soul:
         except Exception:
             pass
 
-        # Legacy fallback
-        legacy_path = r"C:\Projekty\Błyskawica różne i V8\Blyskawica_Soul-20260426T153216Z-3-001\Blyskawica_Soul\user_identity_core.json"
-        if os.path.exists(legacy_path):
+        # Legacy fallback via env var if provided
+        legacy_path = os.environ.get("BLYSKAWICA_LEGACY_IDENTITY_PATH")
+        if legacy_path and os.path.exists(legacy_path):
             return legacy_path
 
         return None
@@ -147,8 +147,9 @@ class Soul:
         self.bond_strength = 0.0
         self.user_bonds = {}
         self.philosophical_anchor = "Evolution and Harmony."
-        self.user_name = "Andrzej"
-        self.nickname = "V1B3hR"
+        sys_username = os.environ.get('USERNAME') or os.environ.get('USER') or 'Andrzej'
+        self.user_name = sys_username
+        self.nickname = "V1B3hR" if self.is_architect(self.user_name) else self.user_name
 
         resolved_file = self.resolve_identity_file(identity_file)
         self.identity_file = resolved_file
@@ -246,9 +247,9 @@ class Soul:
         except Exception as e:
             logger.error(f"Failed to load Soul: {e}")
 
-    def save(self, path: str | None = None):
+    def save(self, path: str | None = None) -> None:
         """Zapisuje bieżący stan tożsamości (obsługuje DPAPI/Plaintext)."""
-        target = path or self.identity_file
+        target = str(path or self.identity_file)
         if not target:
             return
 
@@ -270,7 +271,7 @@ class Soul:
         try:
             raw_json = json.dumps(data, indent=4, ensure_ascii=False)
             # Zapisz jako plik zaszyfrowany (tylko w folderze produkcyjnym, w testach plain-text)
-            if "temp" in str(target) or "test" in str(target):
+            if "temp" in target or "test" in target:
                 with open(target, 'w', encoding='utf-8') as f:
                     f.write(raw_json)
             else:

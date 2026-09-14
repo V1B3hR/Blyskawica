@@ -3,11 +3,15 @@ import logging
 import os
 import random
 
+from pathlib import Path
+
 logger = logging.getLogger(__name__)
 
+DEFAULT_DECOY_DIR = str(Path(__file__).resolve().parents[2] / "decoy_workspace")
+
 class AgenticHoneypot:
-    def __init__(self, decoy_dir: str = "C:\\Projekty\\Blyskawica_V8\\decoy_workspace"):
-        self.decoy_dir = decoy_dir
+    def __init__(self, decoy_dir: str | None = None):
+        self.decoy_dir = decoy_dir or DEFAULT_DECOY_DIR
         self.is_active = False
 
     def activate_shadow_workspace(self):

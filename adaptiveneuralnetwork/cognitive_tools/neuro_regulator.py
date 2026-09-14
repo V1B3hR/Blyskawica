@@ -11,12 +11,15 @@ within a safe, healthy bounds of +/- 7% depending on the active cognitive task:
 import json
 import os
 
-BASE_DIR = r"c:\Projekty\Blyskawica_V8"
-CHECKPOINT_FILE = os.path.join(BASE_DIR, "memory_checkpoint.json")
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parents[2]
+CHECKPOINT_FILE = os.path.join(str(BASE_DIR), "memory_checkpoint.json")
 
 class AutonomousNeuroRegulator:
-    def __init__(self):
+    def __init__(self) -> None:
         self.checkpoint_path = CHECKPOINT_FILE
+        self.data: dict[str, Any] = {}
         self.load_checkpoint()
         if _HAS_TORCH:
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -55,16 +58,16 @@ class AutonomousNeuroRegulator:
                 "timestamp": 1779066600.0
             }
 
-    def save_checkpoint(self):
+    def save_checkpoint(self) -> None:
         with open(self.checkpoint_path, "w") as f:
             json.dump(self.data, f, indent=4)
 
-    def regulate_state(self, task_type):
+    def regulate_state(self, task_type: str) -> dict[str, float]:
         """
         Adjusts neurotransmitters and hormones based on the cognitive task.
         Strictly clamps all modifications within +/- 7% (0.07 fraction) for safety!
         """
-        baseline = {
+        baseline: dict[str, float] = {
             "Serotonina": 0.80,
             "Oksytocyna": -0.12,
             "Dopamina": 0.67,
@@ -76,7 +79,8 @@ class AutonomousNeuroRegulator:
             "Kortyzol": 0.22
         }
 
-        current = self.data.get("neurochemistry", baseline.copy())
+        raw_current = self.data.get("neurochemistry", baseline.copy())
+        current: dict[str, float] = dict(raw_current) if isinstance(raw_current, dict) else baseline.copy()
         max_delta = 0.07 # 7% maximum adjustment safety window
 
         print(f"\n[NEURO REGULATOR] Optimizing chemistry for task: '{task_type.upper()}'")
@@ -134,12 +138,14 @@ class AutonomousNeuroRegulator:
         print("[OK] Autonomous regulation completed and logged to memory checkpoint.")
         return current
 
-    def project_latent_state(self, chladni_matrix, embedding_dim=768):
+    def project_latent_state(self, chladni_matrix: Any, embedding_dim: int = 768) -> Any:
         """
         Projektuje stan Chladniego oraz aktualną neurochemię do przestrzeni ukrytej.
         """
         keys = ["Serotonina", "Oksytocyna", "Dopamina", "GABA", "Acetylocholina", "Noradrenalina", "Melatonina", "Testosteron", "Kortyzol"]
-        neuro_vals = [self.data["neurochemistry"].get(k, 0.5) for k in keys]
+        raw_neuro = self.data.get("neurochemistry", {})
+        neurochemistry: dict[str, float] = dict(raw_neuro) if isinstance(raw_neuro, dict) else {}
+        neuro_vals = [float(neurochemistry.get(k, 0.5)) for k in keys]
 
         if _HAS_TORCH:
             if not hasattr(self, "_projectors"):
@@ -216,9 +222,11 @@ if _HAS_TORCH:
             return self.network(x)
 else:
     class LatentStateProjector:
-        def __init__(self, embedding_dim=768):
+        def __init__(self, embedding_dim: int = 768) -> None:
             self.embedding_dim = embedding_dim
-        def __call__(self, chladni_matrix, neurochemical_vector):
+        def to(self, device: Any) -> "LatentStateProjector":
+            return self
+        def __call__(self, chladni_matrix: Any, neurochemical_vector: Any) -> Any:
             import numpy as np
             flat_chladni = np.array(chladni_matrix).flatten()  # noqa: F841
             flat_neuro = np.array(neurochemical_vector).flatten()  # noqa: F841

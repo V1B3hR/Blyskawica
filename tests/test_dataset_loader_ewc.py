@@ -20,6 +20,18 @@ except (ImportError, AttributeError):
     sys.modules['pandas'] = MagicMock()
     pd = sys.modules['pandas']
     _HAS_PANDAS = False
+
+_HAS_PARQUET = False
+if _HAS_PANDAS:
+    try:
+        import pyarrow  # noqa: F401
+        _HAS_PARQUET = True
+    except ImportError:
+        try:
+            import fastparquet  # noqa: F401
+            _HAS_PARQUET = True
+        except ImportError:
+            _HAS_PARQUET = False
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -81,7 +93,7 @@ class TestDatasetLoaderEWC(unittest.TestCase):
         self.assertEqual(loaded[2]["feat2"], 0.9)
         self.assertEqual(loaded[3]["label"], 1)
 
-    @unittest.skipUnless(_HAS_PANDAS, "Pandas is not available or broken on Python 3.14")
+    @unittest.skipUnless(_HAS_PANDAS and _HAS_PARQUET, "Pandas or parquet engine (pyarrow/fastparquet) is not available")
     def test_parquet_loading(self):
         """Test reading records from a Parquet file."""
         parquet_path = os.path.join(self.temp_dir.name, "data.parquet")

@@ -56,16 +56,19 @@ class TestSleepAnomalies(unittest.TestCase):
         """Verify that WolfTeethDefenseEngine check_file_safety blocks protected files and malicious keywords."""
         wt = WolfTeethDefenseEngine()
 
+        from pathlib import Path
+        repo_root = Path(__file__).resolve().parent.parent
+
         # 1. Verify safe files return 0.0 threat score
-        safe_threat = wt.check_file_safety("c:/Projekty/Blyskawica_V8/docs/readme.md", "This is a safe documentation file.")
+        safe_threat = wt.check_file_safety(str(repo_root / "docs" / "readme.md"), "This is a safe documentation file.")
         self.assertEqual(safe_threat, 0.0)
 
         # 2. Verify protected core files return high threat score (>= 0.8)
-        core_file_threat = wt.check_file_safety("c:/Projekty/Blyskawica_V8/welcome_v9.py", "print('hello')")
+        core_file_threat = wt.check_file_safety(str(repo_root / "welcome_v9.py"), "print('hello')")
         self.assertGreaterEqual(core_file_threat, 0.8)
 
         # 3. Verify content attempting to modify core architecture/identity is flagged
-        poison_content_threat = wt.check_file_safety("c:/Projekty/Blyskawica_V8/docs/test.py", "class Soul:\n    pass")
+        poison_content_threat = wt.check_file_safety(str(repo_root / "docs" / "test.py"), "class Soul:\n    pass")
         self.assertGreaterEqual(poison_content_threat, 0.8)
 
     def test_ewc_anomaly_consolidation_with_forward(self):

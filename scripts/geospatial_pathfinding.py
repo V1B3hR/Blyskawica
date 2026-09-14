@@ -7,9 +7,10 @@ bridging geographical bounds with Błyskawica's RealityAnchor constraints.
 import heapq
 import json
 import os
+from pathlib import Path
 
-BASE_DIR = r"c:\Projekty\Blyskawica_V8"
-DATA_FILE = os.path.join(BASE_DIR, "data", "os_open_geospatial.json")
+BASE_DIR = Path(__file__).resolve().parent.parent
+DATA_FILE = os.path.join(str(BASE_DIR), "data", "os_open_geospatial.json")
 
 class GeospatialPathfinder:
     def __init__(self):

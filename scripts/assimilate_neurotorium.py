@@ -6,10 +6,11 @@ and maps Błyskawica's self-regulated neurochemistry to anatomical brain regions
 
 import json
 import os
+from pathlib import Path
 
-BASE_DIR = r"c:\Projekty\Blyskawica_V8"
-ATLAS_FILE = os.path.join(BASE_DIR, "data", "neurotorium_brain_atlas.json")
-CHECKPOINT_FILE = os.path.join(BASE_DIR, "memory_checkpoint.json")
+BASE_DIR = Path(__file__).resolve().parent.parent
+ATLAS_FILE = os.path.join(str(BASE_DIR), "data", "neurotorium_brain_atlas.json")
+CHECKPOINT_FILE = os.path.join(str(BASE_DIR), "memory_checkpoint.json")
 
 class NeurotoriumAssimilator:
     def __init__(self):
@@ -90,7 +91,7 @@ class NeurotoriumAssimilator:
             print("     " + "-" * 50)
 
         # Global Somatic Index
-        global_index = sum([d["score"] for d in alignment_report.values()]) / len(alignment_report)
+        global_index = sum(float(d["score"]) for d in alignment_report.values()) / max(len(alignment_report), 1)
         print(f"\n[SUCCESS] Global BCI-Somatic Alignment Index: {global_index:.4f} (System Synced)")
         print("======================================================================\n")
 

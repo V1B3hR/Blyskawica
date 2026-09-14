@@ -14,6 +14,7 @@ import hashlib
 import json
 import logging
 import math
+import os
 import random
 import time
 from typing import Any
@@ -44,15 +45,15 @@ try:
 except ImportError:
     _AER_AVAILABLE = False
 
-def get_workspace_root():
+def get_workspace_root() -> Path:
     from pathlib import Path
     current = Path(__file__).resolve()
     for parent in current.parents:
         if (parent / "blyskawica_app").exists() or (parent / "blyskawica_core").exists():
             return parent
-    return Path(r"C:\Projekty\Blyskawica_V8")
+    return current.parents[3]
 
-WORKSPACE_ROOT = get_workspace_root()
+WORKSPACE_ROOT: Path = get_workspace_root()
 
 
 def _dilemma_to_angles(dilemma_text: str, num_qubits: int) -> list[float]:
@@ -121,7 +122,7 @@ def _interpret_counts(counts: dict[str, int], total_shots: int, num_qubits: int)
         intuition = "CAUTIOUS"
         interpretation = "Kwantowa dyferencja — wstrzymaj się."
 
-    dominant_state = max(counts, key=counts.get)
+    dominant_state = max(counts, key=lambda k: counts[k])
     confidence = counts[dominant_state] / total_shots
 
     return {
@@ -147,14 +148,14 @@ class QuantumIntuition:
     SHOTS = 512  # Więcej shots = lepsze statystyki
 
     def __init__(self, service: Any = None,
-                 api_key_path: str = r"C:\Projekty\Quantlion\apikey Błyskawica.json"):
+                 api_key_path: str | None = None) -> None:
         """
         Args:
             service: Istniejący QiskitRuntimeService (reużycie połączenia).
                      Jeśli None, tworzy nowe połączenie.
         """
         self.service = service
-        self.api_key_path = api_key_path
+        self.api_key_path = api_key_path or os.environ.get("QUANTUM_API_KEY_PATH", str(WORKSPACE_ROOT / "config" / "apikey_blyskawica.json"))
         self.results_log: list[dict] = []
 
         # Inicjalizacja Asynchronicznej Izolacji Galwanicznej (Ground Loop Isolator)
@@ -168,7 +169,7 @@ class QuantumIntuition:
         if self.service is None:
             self._initialize_service()
 
-    def _initialize_service(self):
+    def _initialize_service(self) -> None:
         if not _QUANTUM_AVAILABLE:
             logger.error("[QuantumIntuition] Qiskit niedostępny.")
             return
@@ -188,7 +189,7 @@ class QuantumIntuition:
         Aktualizuje fazy kubitów asynchronicznie, przepuszczając je przez
         GroundLoopIsolator, aby zapobiec pętlom sprzężenia zwrotnego i cyklom granicznym.
         """
-        if not _TORCH_AVAILABLE or self.gli is None:
+        if not _TORCH_AVAILABLE or self.gli is None or self.current_phases is None:
             # Fallback w przypadku braku PyTorch lub niezaładowanego GLI
             smoothed = []
             if not hasattr(self, "_classic_phases") or self._classic_phases is None:
@@ -208,14 +209,15 @@ class QuantumIntuition:
         step_factor = torch.clamp(torch.tensor(dt) - delays, min=0.01, max=1.0)
 
         # Krok asynchroniczny
-        raw_phases = self.current_phases + (target_tensor - self.current_phases) * step_factor
+        current_phases = self.current_phases
+        raw_phases = current_phases + (target_tensor - current_phases) * step_factor
 
         # Filtrowanie i izolacja przy użyciu uziemienia i odcięcia autograd (.detach() w GLI)
         clean_phases = self.gli(raw_phases)
 
         # Zapisanie stanu wewnętrznego i zwrot w formacie listy
         self.current_phases = clean_phases
-        return clean_phases.tolist()
+        return [float(p) for p in clean_phases.tolist()]
 
     def _build_circuit(self, dilemma_text: str) -> "QuantumCircuit":
         """Buduje obwód kwantowy z unikalnym kodowaniem dylematu."""
@@ -244,7 +246,7 @@ class QuantumIntuition:
         return qc
 
     def evaluate_dilemma(self, dilemma_text: str,
-                          context: dict[str, Any] = None) -> dict[str, Any]:
+                         context: dict[str, Any] | None = None) -> dict[str, Any]:
         """
         Ocenia dylemat na prawdziwym procesorze kwantowym IBM, lokalnym symulatorze
         lub klasycznej emulacji VQC.

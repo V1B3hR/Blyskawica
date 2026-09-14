@@ -15,12 +15,14 @@ import os
 import numpy as np
 import torch
 
+from pathlib import Path
+
 # Define directories matching the yant architecture
-BASE_DIR = r"c:\Projekty\Blyskawica_V8"
+BASE_DIR = Path(__file__).resolve().parents[2]
 YANT_PATHS = [
-    os.path.join(BASE_DIR, "diamond_yant", "cognitive_cymatics", "eeg_alpha"),
-    os.path.join(BASE_DIR, "diamond_yant", "harmonic_bridge", "quantum_filter"),
-    os.path.join(BASE_DIR, "diamond_yant", "ibm_amd_alliance", "neuromorphic_feedback")
+    os.path.join(str(BASE_DIR), "diamond_yant", "cognitive_cymatics", "eeg_alpha"),
+    os.path.join(str(BASE_DIR), "diamond_yant", "harmonic_bridge", "quantum_filter"),
+    os.path.join(str(BASE_DIR), "diamond_yant", "ibm_amd_alliance", "neuromorphic_feedback")
 ]
 
 class DiamondYantEngine:

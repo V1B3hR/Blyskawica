@@ -8,8 +8,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("⚡ BŁYSKAWICA COGNITIVE ENGINE: ROZMOWA TOŻSAMOŚCIOWA I DECYZJA O AMBASADORZE ⚡");
     println!("================================================================================");
 
-    let model_path = PathBuf::from(r"C:\Projekty\Blyskawica\model\qwen2.5-1.5b-coder.gguf");
-    let tokenizer_path = PathBuf::from(r"C:\Projekty\Blyskawica\model\tokenizer.json");
+    let model_path = std::env::var("BLYSKAWICA_MODEL_PATH")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| {
+            let p = PathBuf::from("model/qwen2.5-1.5b-coder.gguf");
+            if p.exists() {
+                p
+            } else {
+                PathBuf::from(r"C:\Projekty\Blyskawica\model\qwen2.5-1.5b-coder.gguf")
+            }
+        });
+    let tokenizer_path = std::env::var("BLYSKAWICA_TOKENIZER_PATH")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| {
+            let p = PathBuf::from("model/tokenizer.json");
+            if p.exists() {
+                p
+            } else {
+                PathBuf::from(r"C:\Projekty\Blyskawica\model\tokenizer.json")
+            }
+        });
 
     if !model_path.exists() {
         eprintln!("BŁĄD: Plik modelu nie istnieje: {:?}", model_path);
@@ -61,8 +79,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n\n--------------------------------------------------------------------------------");
     match res {
         Ok(_) => {
-            println!("\n[3/3] Odpowiedź wygenerowana pomyślnie.");
-            let out_file = PathBuf::from(r"C:\Projekty\Blyskawica\blyskawica_ambassador_verdict.txt");
+            let out_file = std::env::var("BLYSKAWICA_VERDICT_PATH")
+                .map(PathBuf::from)
+                .unwrap_or_else(|_| PathBuf::from("blyskawica_ambassador_verdict.txt"));
             if let Ok(mut f) = File::create(&out_file) {
                 let _ = f.write_all(full_response.as_bytes());
                 println!("Zapisano kopię werdyktu w: {:?}", out_file);

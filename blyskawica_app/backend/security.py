@@ -8,12 +8,13 @@ wykrywaniem chronionych plików rdzenia oraz rate limitingiem zapytań.
 from __future__ import annotations
 
 import collections
+import hmac
 import logging
 import os
 import secrets
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from fastapi import Header, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
@@ -28,19 +29,18 @@ STARTUP_TOKEN: str = os.environ.get("X_BLY_TOKEN", secrets.token_hex(32))
 ALLOWED_CORS_ORIGINS: List[str] = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
-    "http://localhost:1420",    # Tauri dev server
-    "http://127.0.0.1:1420",
-    "tauri://localhost",        # Tauri production origin
-    "https://tauri.localhost",  # Tauri v2 production origin
+    "tauri://localhost",
+    "http://tauri.localhost",
+    "https://tauri.localhost",
 ]
 
 # Ściśle określone nagłówki HTTP (ochrona przed arbitrary headers)
 ALLOWED_CORS_HEADERS: List[str] = [
-    "Content-Type",
-    "Authorization",
     "X-Blyskawica-Token",
     "X-Token",
     "X-Internal-Request",
+    "Content-Type",
+    "Authorization",
     "Accept",
     "Origin",
 ]
@@ -58,13 +58,30 @@ PROTECTED_CORE_PATTERNS: List[str] = [
     "/blyskawica_app/backend/memory/user_identity.json",
 ]
 
-# Wrażliwe katalogi systemowe Windows
+# Wrażliwe katalogi systemowe Windows oraz Unix / Linux / macOS
 RESTRICTED_SYSTEM_DIRECTORIES: List[str] = [
+    # Windows
     "c:/windows",
     "c:/program files",
     "c:/program files (x86)",
     "c:/users/default",
     "c:/users/all users",
+    # Unix / Linux / macOS
+    "/etc",
+    "/proc",
+    "/sys",
+    "/dev",
+    "/boot",
+    "/root",
+    "/usr",
+    "/var",
+]
+
+RESTRICTED_USER_SUBDIRECTORIES: List[str] = [
+    ".ssh",
+    ".aws",
+    ".gnupg",
+    ".config/gcloud",
 ]
 
 
@@ -101,26 +118,44 @@ def is_protected_core_file(filepath: Union[str, Path]) -> bool:
 
 
 def is_restricted_system_path(filepath: Union[str, Path]) -> bool:
-    """Sprawdza, czy ścieżka wskazuje na wrażliwe katalogi systemowe Windows."""
+    """Sprawdza, czy ścieżka wskazuje na wrażliwe katalogi systemowe Windows, Unix lub klucze użytkownika."""
     try:
-        raw_path = str(filepath).lower().replace("\\", "/")
-        resolved_path = str(Path(filepath).resolve()).lower().replace("\\", "/")
-        return any(
+        expanded = os.path.expanduser(str(filepath))
+        raw_path = expanded.lower().replace("\\", "/")
+        resolved_path = str(Path(expanded).resolve()).lower().replace("\\", "/")
+        home_path = str(Path.home().resolve()).lower().replace("\\", "/")
+
+        # 1. System directories
+        if any(
             candidate.startswith(rdir)
             for candidate in (raw_path, resolved_path)
             for rdir in RESTRICTED_SYSTEM_DIRECTORIES
-        )
+        ):
+            return True
+
+        # 2. Sensitive user dotfiles (.ssh, .aws, etc.)
+        for sensitive_sub in RESTRICTED_USER_SUBDIRECTORIES:
+            sensitive_full = f"{home_path}/{sensitive_sub}"
+            if raw_path.startswith(sensitive_full) or resolved_path.startswith(sensitive_full):
+                return True
+
+        return False
     except Exception:
         return True
 
 
 def verify_startup_token(
-    x_token: Optional[str] = Header(None, alias="X-Blyskawica-Token"),
-    x_fallback_token: Optional[str] = Header(None, alias="X-Token")
+    x_token: Optional[Any] = None,
+    x_fallback_token: Optional[Any] = None
 ) -> None:
-    """Weryfikuje, czy dostarczony nagłówek odpowiada wygenerowanemu tokenowi sesji."""
-    token_candidate = x_token or x_fallback_token
-    if not token_candidate or token_candidate != STARTUP_TOKEN:
+    """Weryfikuje, czy dostarczony nagłówek odpowiada wygenerowanemu tokenowi sesji (odporny na timing attack)."""
+    token_candidate = None
+    if isinstance(x_token, str) and x_token:
+        token_candidate = x_token
+    elif isinstance(x_fallback_token, str) and x_fallback_token:
+        token_candidate = x_fallback_token
+
+    if not token_candidate or not hmac.compare_digest(token_candidate, STARTUP_TOKEN):
         raise HTTPException(
             status_code=401,
             detail="Niezautoryzowane zapytanie. Brakujący lub błędny token sesji."
@@ -130,13 +165,27 @@ def verify_startup_token(
 class InMemoryRateLimiter:
     """
     Lekki ogranicznik częstotliwości zapytań (Sliding Window Rate Limiter).
-    Działa bez zewnętrznych zależności w pamięci RAM procesu.
+    Działa bez zewnętrznych zależności w pamięci RAM procesu z automatyczną eksmisją (bound memory).
     """
 
-    def __init__(self, max_requests: int = 120, window_seconds: float = 60.0) -> None:
+    def __init__(self, max_requests: int = 120, window_seconds: float = 60.0, max_clients: int = 10000) -> None:
         self.max_requests: int = max_requests
         self.window_seconds: float = window_seconds
+        self.max_clients: int = max_clients
         self._history: Dict[str, collections.deque] = collections.defaultdict(collections.deque)
+        self._last_cleanup: float = time.time()
+
+    def _cleanup_stale_entries(self, now: float) -> None:
+        cutoff = now - self.window_seconds
+        stale_keys = [k for k, q in self._history.items() if not q or q[-1] < cutoff]
+        for k in stale_keys:
+            del self._history[k]
+
+        # Jeśli liczba klientów nadal przekracza max_clients, eksmituj najstarsze
+        if len(self._history) > self.max_clients:
+            excess = len(self._history) - self.max_clients
+            for k in list(self._history.keys())[:excess]:
+                del self._history[k]
 
     def is_allowed(self, client_key: str) -> Tuple[bool, int, int]:
         """
@@ -144,6 +193,12 @@ class InMemoryRateLimiter:
         Zwraca: (dopuszczone: bool, pozostały_limit: int, czas_do_odblokowania: int)
         """
         now = time.time()
+
+        # Okresowe czyszczenie co window_seconds lub przy dużym rozmiarze
+        if now - self._last_cleanup > self.window_seconds or len(self._history) > self.max_clients:
+            self._cleanup_stale_entries(now)
+            self._last_cleanup = now
+
         queue = self._history[client_key]
 
         # Usuń znaczniki czasu starsze niż okno
@@ -168,7 +223,7 @@ class InMemoryRateLimiter:
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """Middleware FastAPI nakładający limity zapytań na endpointy API."""
 
-    def __init__(self, app, max_requests: int = 120, window_seconds: float = 60.0) -> None:
+    def __init__(self, app: Any, max_requests: int = 120, window_seconds: float = 60.0) -> None:
         super().__init__(app)
         self.limiter = InMemoryRateLimiter(max_requests=max_requests, window_seconds=window_seconds)
 

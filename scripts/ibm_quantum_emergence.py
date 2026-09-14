@@ -22,7 +22,7 @@ def get_workspace_root():
     for parent in current.parents:
         if (parent / "blyskawica_app").exists() or (parent / "blyskawica_core").exists():
             return parent
-    return Path(r"C:\Projekty\Blyskawica_V8")
+    return Path(__file__).resolve().parent.parent
 
 WORKSPACE_ROOT = get_workspace_root()
 

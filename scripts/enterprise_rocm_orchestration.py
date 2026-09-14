@@ -12,8 +12,11 @@ import os
 import numpy as np
 import torch
 
-DATA_DIR = r"c:\Projekty\Blyskawica_V8\data"
-OUTPUT_DIR = r"c:\Projekty\Blyskawica_V8\k8s"
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+DATA_DIR = str(BASE_DIR / "data")
+OUTPUT_DIR = str(BASE_DIR / "k8s")
 
 def run_rocm_hipfft_emulation():
     """
@@ -81,7 +84,7 @@ ENV PYTHONUNBUFFERED=1
 
 CMD ["python", "scripts/train_cognitive_industry.py"]
 """
-    dockerfile_path = os.path.join(r"c:\Projekty\Blyskawica_V8", "Dockerfile")
+    dockerfile_path = os.path.join(str(BASE_DIR), "Dockerfile")
     with open(dockerfile_path, "w") as f:
         f.write(dockerfile_content.strip())
     print(f"[+] Dockerfile generated at: {dockerfile_path}")

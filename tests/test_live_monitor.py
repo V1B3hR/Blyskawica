@@ -71,7 +71,9 @@ class TestWindows11Integration(unittest.IsolatedAsyncioTestCase):
         mock_get.side_effect = mock_get_async
 
         # Ścieżka tymczasowa
-        temp_db = Path("c:/Projekty/Blyskawica_V8/scratch/temp_manuals_test.json")
+        import tempfile
+        temp_dir = tempfile.gettempdir()
+        temp_db = Path(temp_dir) / "temp_manuals_test.json"
         if temp_db.exists():
             try:
                 temp_db.unlink()
@@ -106,7 +108,8 @@ class TestWindows11Integration(unittest.IsolatedAsyncioTestCase):
         bly_main.permission_level = 3
 
         # Wyślij żądanie utworzenia katalogu testowego
-        temp_folder = "c:/Projekty/Blyskawica_V8/scratch/test_folder_consent"
+        import tempfile
+        temp_folder = os.path.join(tempfile.gettempdir(), "test_folder_consent")
         response = self.client.post(
             "/api/execute_system_action",
             data={"action": "create_folder", "args": json.dumps({"path": temp_folder})},

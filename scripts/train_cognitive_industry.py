@@ -14,7 +14,10 @@ import torch
 
 from adaptiveneuralnetwork.cognitive_tools.pinn_thermal_engine import PINNTrainer
 
-DATA_DIR = r"c:\Projekty\Blyskawica_V8\data"
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+DATA_DIR = str(BASE_DIR / "data")
 
 def train_pinn_on_real_materials():
     """Wczytuje stałe fizyczne materiałów i trenuje sieć PINN na realnych danych."""
