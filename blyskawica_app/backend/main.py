@@ -1265,13 +1265,14 @@ async def get_file_content(
         return JSONResponse(status_code=403, content={"status": "error", "message": "Dostęp zablokowany. Uruchomiono tryb Sandbox."})
 
     project_root = BASE_DIR.parent
+    normalized_input = str(path).replace("\\", "/")
     target_path = Path(path)
     if not target_path.is_absolute():
         target_path = project_root / target_path
     target_path = target_path.resolve()
 
     # Ochrona przed odczytem wrażliwych katalogów systemowych niezależnie od poziomu uprawnień
-    if is_restricted_system_path(target_path):
+    if is_restricted_system_path(normalized_input) or is_restricted_system_path(target_path):
         return JSONResponse(status_code=403, content={"status": "error", "message": "Dostęp zablokowany. Odczyt wrażliwych ścieżek systemowych jest zabroniony."})
 
     # Dla poziomów innych niż 3, wymagane jest znajdowanie się wewnątrz workspace

@@ -37,9 +37,10 @@ class TestPathTraversalSecurity(unittest.TestCase):
         ]
         for bad_path in traversal_attempts:
             with self.subTest(bad_path=str(bad_path)):
-                # When resolved relative to workspace, these escape it
+                clean_path = str(bad_path).replace("\\", "/")
+                target = (self.workspace / clean_path) if not Path(clean_path).is_absolute() else Path(clean_path)
                 self.assertFalse(
-                    is_inside_workspace(self.workspace / bad_path if isinstance(bad_path, str) else bad_path, self.workspace),
+                    is_inside_workspace(target, self.workspace),
                     f"Ścieżka {bad_path} nie powinna być dozwolona w workspace!"
                 )
 

@@ -101,7 +101,11 @@ def is_inside_workspace(target_path: str | Path, base_dir: str | Path | None = N
         else:
             resolved_base = Path(base_dir).resolve()
 
-        resolved_target = Path(target_path).resolve()
+        target_str = str(target_path).replace("\\", "/")
+        if not Path(target_str).is_absolute():
+            resolved_target = (resolved_base / target_str).resolve()
+        else:
+            resolved_target = Path(target_str).resolve()
         return resolved_target.is_relative_to(resolved_base)
     except (ValueError, Exception):
         return False
