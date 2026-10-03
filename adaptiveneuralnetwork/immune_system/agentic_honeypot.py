@@ -2,7 +2,6 @@ import json
 import logging
 import os
 import random
-
 from pathlib import Path
 
 logger = logging.getLogger(__name__)

@@ -6,22 +6,22 @@ Supports circadian rhythms, dual-rotor cognitive processing, energy and memory m
 attack resilience, proactive interventions, and social/emotional signaling.
 """
 
+import logging
 from collections import deque
 from dataclasses import dataclass, field
-import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
 import torch
 
-from adaptiveneuralnetwork.central_nervous_system.ai_ethics import audit_decision
-from adaptiveneuralnetwork.central_nervous_system.time_manager import (
-    get_time_manager,
-    get_timestamp,
+from adaptiveneuralnetwork.central_nervous_system.neurochemistry import (
+    NeurochemicalState,
 )
 from adaptiveneuralnetwork.config import (
     AdaptiveNeuralNetworkConfig,
-    get_global_config,
+)
+from adaptiveneuralnetwork.immune_system.epistemic_defense import (
+    EpistemicQuarantineNode,
 )
 
 logger = logging.getLogger(__name__)
@@ -36,9 +36,18 @@ class Memory:
     timestamp: int = 0
     memory_type: str = "general"
     emotional_valence: float = 0.0
-    source_id: Optional[int] = None
+    source_id: int | None = None
+    source_node: int | None = None
     privacy_level: str = "public"
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    decay_rate: float = 0.01
+    reinforcement_count: int = 0
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if self.source_node is not None and self.source_id is None:
+            self.source_id = self.source_node
+        elif self.source_id is not None and self.source_node is None:
+            self.source_node = self.source_id
 
     def __getitem__(self, item: str) -> Any:
         if hasattr(self, item):
@@ -63,14 +72,14 @@ class SocialSignal:
     """Represents a communication or social/emotional signal exchanged between nodes."""
 
     source_id: int
-    target_id: Optional[int] = None
+    target_id: int | None = None
     signal_type: str = "general"
     content: Any = None
     urgency: float = 0.5
     timestamp: int = 0
     requires_response: bool = False
     emotional_valence: float = 0.0
-    signature: Optional[str] = None
+    signature: str | None = None
 
 
 class AliveLoopNode:
@@ -83,13 +92,13 @@ class AliveLoopNode:
 
     def __init__(
         self,
-        position: Union[List[float], Tuple[float, ...], np.ndarray] = (0.0, 0.0),
-        velocity: Union[List[float], Tuple[float, ...], np.ndarray] = (0.0, 0.0),
+        position: list[float] | tuple[float, ...] | np.ndarray = (0.0, 0.0),
+        velocity: list[float] | tuple[float, ...] | np.ndarray = (0.0, 0.0),
         initial_energy: float = 10.0,
         field_strength: float = 1.0,
         node_id: int = 0,
-        config: Optional[AdaptiveNeuralNetworkConfig] = None,
-        spatial_dims: Optional[int] = None,
+        config: AdaptiveNeuralNetworkConfig | None = None,
+        spatial_dims: int | None = None,
     ):
         self.position = np.array(position, dtype=float)
         self.velocity = np.array(velocity, dtype=float)
@@ -119,6 +128,7 @@ class AliveLoopNode:
             "formality": 0.3,
             "expressiveness": 0.6,
         }
+        self.neurochemistry = NeurochemicalState()
 
         # Dual Rotor / Quantum Engine
         self.dual_rotor_engine = None
@@ -127,14 +137,16 @@ class AliveLoopNode:
 
         # Network and Communication
         self.communication_range = 15.0
-        self.trust_network: Dict[int, float] = {}
-        self.influence_network: Dict[int, float] = {}
-        self.shared_experience_buffer: List[Any] = []
+        self.trust_network: dict[int, float] = {}
+        self.influence_network: dict[int, float] = {}
+        self.shared_experience_buffer: list[Any] = []
         self.collective_contribution = 0.0
         self.knowledge_diversity = 0.0
-        self.suspicious_events: List[Any] = []
+        self.suspicious_events: list[Any] = []
         self.energy_sharing_enabled = True
-        self.energy_sharing_history: List[Dict[str, Any]] = []
+        self.energy_sharing_history: list[dict[str, Any]] = []
+        self.epistemic_quarantine = EpistemicQuarantineNode()
+        self.polymath_hub: Any = None
 
         # Proactive Intervention & Attack Resilience Parameters from Config
         proactive = getattr(self.config, "proactive_interventions", None)
@@ -158,7 +170,7 @@ class AliveLoopNode:
         self.joy_history: deque = deque(maxlen=max_history_len)
         self.energy_history: deque = deque(maxlen=max_history_len)
         self.calm_history: deque = deque(maxlen=max_history_len)
-        self.emotion_histories: Dict[str, deque] = {
+        self.emotion_histories: dict[str, deque] = {
             "joy": self.joy_history,
             "anxiety": self.anxiety_history,
             "calm": self.calm_history,
@@ -168,8 +180,8 @@ class AliveLoopNode:
 
         self.memory: deque = deque(maxlen=1000)
         self.working_memory: deque = deque(maxlen=7)
-        self.long_term_memory: Dict[str, Any] = {}
-        self.collaborative_memories: List[Any] = []
+        self.long_term_memory: dict[str, Any] = {}
+        self.collaborative_memories: list[Any] = []
         self.communication_queue: deque = deque(maxlen=20)
         self.signal_history: deque = deque(maxlen=50)
 
@@ -177,23 +189,37 @@ class AliveLoopNode:
         self.max_communications_per_step = 5
         self.communications_this_step = 0
 
-    def step_phase(self, current_time: Optional[int] = None) -> None:
-        """Advance the circadian and cognitive phase cycle."""
-        tm = get_time_manager()
-        self._time = current_time if current_time is not None else (self._time + 1)
-
-        # Transition Rules
-        if self.anxiety > 15.0 or self.energy < 2.0:
+    def _determine_phase_transition(self) -> None:
+        """Evaluate internal state and neurochemistry to transition phases."""
+        if hasattr(self, "neurochemistry") and self.neurochemistry.should_force_sleep():
+            self.phase = "sleep"
+            self.sleep_stage = "deep"
+            return
+        if self.anxiety > 15.0 or self.energy <= 2.0:
             self.phase = "sleep"
             self.sleep_stage = "deep" if self.anxiety > 10.0 else "light"
         elif self.energy > 20.0 and self.anxiety < 5.0:
             self.phase = "inspired"
             self.sleep_stage = "light"
+        else:
+            self.phase = "active"
+
+    def step_phase(self, current_time: int | None = None) -> None:
+        """Advance the circadian and cognitive phase cycle."""
+        self._time = current_time if current_time is not None else (self._time + 1)
+
+        # Transition Rules
+        if hasattr(self, "neurochemistry") and self.neurochemistry.should_force_sleep():
+            self.phase = "sleep"
+            self.sleep_stage = "deep"
+        elif self.anxiety > 15.0 or self.energy <= 2.0:
+            self.phase = "sleep"
+            self.sleep_stage = "deep" if self.anxiety > 10.0 else "light"
         elif current_time is not None and (current_time >= 22 or current_time < 6):
             self.phase = "sleep"
             self.sleep_stage = "REM"
         else:
-            self.phase = "active"
+            self._determine_phase_transition()
 
         self.phase_history.append(self.phase)
         self.anxiety_history.append(self.anxiety)
@@ -229,6 +255,17 @@ class AliveLoopNode:
                     total_delta += item.content.get("transfer", 0.0)
                 elif item.memory_type == "signal" and isinstance(item.content, dict):
                     total_delta += item.content.get("energy", 0.0)
+
+        # Temporal pattern prediction
+        pattern_energies = [
+            (m["content"]["energy"] if isinstance(m, dict) else m.content["energy"])
+            for m in self.memory
+            if (isinstance(m, dict) and m.get("memory_type") == "pattern" and isinstance(m.get("content"), dict) and "energy" in m["content"])
+            or (isinstance(m, Memory) and m.memory_type == "pattern" and isinstance(m.content, dict) and "energy" in m.content)
+        ]
+        if len(pattern_energies) >= 2 and pattern_energies[-1] < pattern_energies[-2]:
+            total_delta = max(total_delta, float(pattern_energies[-2] - pattern_energies[-1] + 1.0))
+
         self.predicted_energy = self.energy + total_delta
         return self.predicted_energy
 
@@ -242,9 +279,9 @@ class AliveLoopNode:
 
     def train(
         self,
-        experiences: List[Dict[str, Any]],
-        learning_rate: Optional[float] = None,
-    ) -> Dict[str, Any]:
+        experiences: list[dict[str, Any]],
+        learning_rate: float | None = None,
+    ) -> dict[str, Any]:
         """Learn and consolidate memories from batches of experiences."""
         lr = learning_rate or 0.01
         total_reward = 0.0
@@ -283,19 +320,28 @@ class AliveLoopNode:
 
     def update(
         self,
-        external_activity: Optional[torch.Tensor] = None,
-        internal_stimuli: float = 0.0,
+        external_activity: torch.Tensor | None = None,
+        internal_stimuli: Any = 0.0,
+        emotional_trigger: float = 0.0,
+        **kwargs: Any,
     ) -> None:
         """Run cognitive cycle with the Dual Rotor engine if tensor is supplied."""
+        if emotional_trigger:
+            self.anxiety = min(20.0, self.anxiety + float(emotional_trigger))
         if external_activity is not None and isinstance(external_activity, torch.Tensor):
             hidden_dim = external_activity.shape[-1]
-            if self.dual_rotor_engine is None:
+            device = external_activity.device
+            dtype = external_activity.dtype
+            if self.dual_rotor_engine is None or next(self.dual_rotor_engine.parameters()).device != device:
                 from adaptiveneuralnetwork.cognitive_tools.quantum_dual_rotor import (
                     DualRotorEngine,
                 )
-                self.dual_rotor_engine = DualRotorEngine(hidden_dim)
-                self.inner_state = torch.zeros(external_activity.shape[0], hidden_dim)
-                self.outer_state = torch.zeros(external_activity.shape[0], hidden_dim)
+                self.dual_rotor_engine = DualRotorEngine(hidden_dim).to(device=device)
+                self.inner_state = torch.zeros(external_activity.shape[0], hidden_dim, device=device, dtype=dtype)
+                self.outer_state = torch.zeros(external_activity.shape[0], hidden_dim, device=device, dtype=dtype)
+            elif self.inner_state is None or self.inner_state.shape[0] != external_activity.shape[0] or self.inner_state.device != device:
+                self.inner_state = torch.zeros(external_activity.shape[0], hidden_dim, device=device, dtype=dtype)
+                self.outer_state = torch.zeros(external_activity.shape[0], hidden_dim, device=device, dtype=dtype)
 
             res = self.dual_rotor_engine(
                 external_activity, self.inner_state, self.outer_state
@@ -309,7 +355,8 @@ class AliveLoopNode:
             self.activity = float(torch.mean(torch.abs(out_inner)).item())
 
         else:
-            self.activity = float(max(0.0, min(1.0, self.activity + internal_stimuli)))
+            stim = float(internal_stimuli) if isinstance(internal_stimuli, (int, float)) else 0.0
+            self.activity = float(max(0.0, min(1.0, self.activity + stim)))
 
     def check_anxiety_overwhelm(self) -> bool:
         """Determine whether anxiety levels exceed the intervention threshold."""
@@ -319,7 +366,7 @@ class AliveLoopNode:
         """Check if rate limits permit dispatching another help signal."""
         return self.help_signals_sent < self.max_help_signals_per_period
 
-    def send_help_signal(self, nearby_nodes: List["AliveLoopNode"]) -> List["AliveLoopNode"]:
+    def send_help_signal(self, nearby_nodes: list["AliveLoopNode"]) -> list["AliveLoopNode"]:
         """Send urgent help requests to peers within range."""
         if not self.can_send_help_signal():
             return []
@@ -348,6 +395,14 @@ class AliveLoopNode:
         if len(self.suspicious_events) > 3:
             self.signal_redundancy_level = min(5, self.signal_redundancy_level + 1)
 
+    def handle_attack_detection(self) -> str:
+        """Evaluate accumulated suspicious events and trigger Wolf Teeth defense response."""
+        from adaptiveneuralnetwork.immune_system.wolf_teeth import WolfTeethDefenseEngine
+
+        threat_level = min(1.0, len(self.suspicious_events) / 6.0)
+        wolf = WolfTeethDefenseEngine()
+        return wolf.process_adversarial_interaction(threat_level)
+
     def apply_calm_effect(self) -> None:
         """Reinforce serenity and dampen acute anxiety."""
         self.calm = min(10.0, self.calm + 1.0)
@@ -360,7 +415,7 @@ class AliveLoopNode:
         updated = current + (emotional_valence - current) * 0.2 * trust
         self.emotional_state["valence"] = float(np.clip(updated, -1.0, 1.0))
 
-    def share_valuable_memory(self, nodes: List["AliveLoopNode"]) -> List[SocialSignal]:
+    def share_valuable_memory(self, nodes: list["AliveLoopNode"]) -> list[SocialSignal]:
         """Broadcast top memory to trustworthy neighbors."""
         if not self.memory:
             return []
@@ -386,12 +441,12 @@ class AliveLoopNode:
 
     def send_signal(
         self,
-        target_nodes: List["AliveLoopNode"],
+        target_nodes: list["AliveLoopNode"],
         signal_type: str,
         content: Any,
         urgency: float = 0.5,
         requires_response: bool = False,
-    ) -> List[SocialSignal]:
+    ) -> list[SocialSignal]:
         """Dispatch a general signal to specified peers."""
         dispatched = []
         for target in target_nodes:
@@ -405,9 +460,28 @@ class AliveLoopNode:
             )
             target.receive_signal(sig)
             dispatched.append(sig)
+            self.signal_history.append(sig)
         return dispatched
 
-    def receive_signal(self, signal: SocialSignal) -> Optional[SocialSignal]:
+    def _process_query_signal(self, signal: SocialSignal) -> SocialSignal:
+        """Process incoming query signals via PolymathicHub."""
+        from adaptiveneuralnetwork.cognitive_tools.polymathic_hub import PolymathicHub
+
+        if self.polymath_hub is None:
+            self.polymath_hub = PolymathicHub()
+        cost, response = self.polymath_hub.process_polymathic_signal(
+            str(signal.content), current_energy=self.energy
+        )
+        self.energy = max(0.0, self.energy - cost)
+        return SocialSignal(
+            source_id=self.node_id,
+            target_id=signal.source_id,
+            signal_type="memory",
+            content=response,
+            urgency=signal.urgency,
+        )
+
+    def receive_signal(self, signal: SocialSignal) -> SocialSignal | None:
         """Process received incoming social signal."""
         self.signal_history.append(signal)
         if signal.signal_type == "anxiety_help":
@@ -423,6 +497,37 @@ class AliveLoopNode:
         elif signal.signal_type == "memory_share":
             self.collaborative_memories.append(signal.content)
             self._apply_emotional_contagion(signal.emotional_valence, signal.source_id)
+        elif signal.signal_type == "query":
+            return self._process_query_signal(signal)
+        elif signal.signal_type == "memory":
+            raw_content = signal.content.content if isinstance(signal.content, Memory) else signal.content
+            pkg = {
+                "source": getattr(signal, "source_id", ""),
+                "content": raw_content,
+                "urgency": getattr(signal, "urgency", 0.5),
+            }
+            cortisol = (
+                getattr(self.neurochemistry, "cortisol", 0.0)
+                if hasattr(self, "neurochemistry")
+                else 0.0
+            )
+            if cortisol > 1.0:
+                self.epistemic_quarantine._quarantine(
+                    pkg, f"High cortisol ({cortisol:.2f}) elevated skepticism quarantine."
+                )
+            else:
+                accepted, _reason = self.epistemic_quarantine.vet_knowledge(pkg)
+                if accepted:
+                    mem = (
+                        signal.content
+                        if isinstance(signal.content, Memory)
+                        else Memory(
+                            content=signal.content,
+                            source_id=signal.source_id,
+                            timestamp=self._time,
+                        )
+                    )
+                    self.memory.append(mem)
         return None
 
     def process_social_interactions(self) -> None:
@@ -433,7 +538,7 @@ class AliveLoopNode:
             self.communications_this_step += 1
 
 
-def run_social_simulation(nodes: List[AliveLoopNode], steps: int = 10) -> Dict[str, Any]:
+def run_social_simulation(nodes: list[AliveLoopNode], steps: int = 10) -> dict[str, Any]:
     """Helper to run a multi-node social simulation."""
     for step in range(steps):
         for node in nodes:

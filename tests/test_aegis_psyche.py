@@ -5,6 +5,7 @@ Unit test suite for AegisPsycheEngine (Cognitive Defense & Empathic Resonance)
 
 import unittest
 from pathlib import Path
+
 from adaptiveneuralnetwork.cognitive_tools.aegis_psyche import (
     AegisPsycheEngine,
     AegisPsycheReport,

@@ -2,8 +2,8 @@
 Testy bezpieczeństwa: weryfikacja rate limitingu (InMemoryRateLimiter i RateLimitMiddleware).
 """
 
-import time
 import unittest
+
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -66,7 +66,7 @@ class TestRateLimitingSecurity(unittest.TestCase):
         client = TestClient(test_app)
 
         # 3 dozwolone zapytania
-        for i in range(3):
+        for _ in range(3):
             res = client.get("/api/test_endpoint")
             self.assertEqual(res.status_code, 200)
             self.assertEqual(res.headers.get("X-RateLimit-Limit"), "3")

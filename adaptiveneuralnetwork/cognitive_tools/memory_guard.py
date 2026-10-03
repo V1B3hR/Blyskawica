@@ -10,11 +10,10 @@ import json
 import logging
 import os
 import time
+from pathlib import Path
 
 logger = logging.getLogger("MemoryGuard")
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-from pathlib import Path
 
 DEFAULT_BACKUP_FILE = str(Path(__file__).resolve().parents[2] / "memory_checkpoint.json")
 

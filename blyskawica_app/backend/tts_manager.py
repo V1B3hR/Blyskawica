@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 import requests
 
@@ -13,7 +13,7 @@ class BłyskawicaTTS:
     def __init__(self, api_url: str = "http://127.0.0.1:7851") -> None:
         self.api_url: str = api_url
         self.is_initialized: bool = False
-        self.speaker_wav: Optional[str] = None # Ścieżka do próbki referencyjnej głosu Błyskawicy
+        self.speaker_wav: str | None = None # Ścieżka do próbki referencyjnej głosu Błyskawicy
 
         # Oczekiwany katalog z nagraniem referencyjnym
         self.media_dir: Path = Path(__file__).resolve().parent.parent / "media_storage" / "voices"
@@ -44,7 +44,7 @@ class BłyskawicaTTS:
         except Exception as e:
             logger.error(f"❌ Błąd podczas łączenia z XTTS API: {e}")
 
-    def synthesize(self, text: str, output_path: str, neuro_state: Optional[Dict[str, Any]] = None) -> bool:
+    def synthesize(self, text: str, output_path: str, neuro_state: dict[str, Any] | None = None) -> bool:
         """
         Generuje audio na podstawie tekstu.
         W przyszłości neuro_state będzie modyfikować parametry generacji (Faza 3.5).

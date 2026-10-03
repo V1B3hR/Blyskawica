@@ -67,6 +67,6 @@ class TestCyberDefenseModule(unittest.TestCase):
 
         # Sprawdź czy wartości straty są obliczalne
         criterion = torch.nn.CrossEntropyLoss()
-        loss = criterion(logits, target_batch)
+        loss = criterion(logits, target_batch.to(logits.device))
         self.assertTrue(torch.isfinite(loss))
         self.assertGreater(loss.item(), 0.0)

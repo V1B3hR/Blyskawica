@@ -8,6 +8,7 @@ training on various dataset types, and saving results.
 import argparse
 import json
 import logging
+import tempfile
 import time
 from pathlib import Path
 from typing import Any
@@ -85,7 +86,7 @@ def train_dataset(dataset_type: str, args: argparse.Namespace) -> dict[str, Any]
             synthetic_df = create_synthetic_dataset(dataset_type, args.num_samples)
 
             # Save synthetic data temporarily
-            temp_path = f"/tmp/{dataset_type}_synthetic.csv"
+            temp_path = str(Path(tempfile.gettempdir()) / f"{dataset_type}_synthetic.csv")
             synthetic_df.to_csv(temp_path, index=False)
 
             # Load using appropriate loader
@@ -177,7 +178,7 @@ def simulate_training(dataset_type: str, dataset, epochs: int) -> dict[str, Any]
 def save_results(results: dict[str, Any], output_dir: str = "outputs"):
     """Save training results to files."""
     output_path = Path(output_dir)
-    output_path.mkdir(exist_ok=True)
+    output_path.mkdir(parents=True, exist_ok=True)
 
     dataset_type = results.get("dataset_type", "unknown")
     results_file = output_path / f"{dataset_type}_training_results.json"

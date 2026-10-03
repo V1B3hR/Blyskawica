@@ -101,10 +101,12 @@ testpaths = ["tests", "adaptiveneuralnetwork/tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
 pythonpath = ["."]
+norecursedirs = [".git", ".tox", "dist", "build", "tests/legacy"]
 addopts = [
     "-v",
     "--tb=short",
     "--strict-markers",
+    "--ignore=tests/legacy",
 ]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",

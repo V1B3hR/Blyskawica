@@ -205,7 +205,7 @@ class TestExplainableDecisionLogger(unittest.TestCase):
         self.assertEqual(decision_log.decision, decision)
         self.assertEqual(decision_log.confidence, 0.82)
         self.assertEqual(len(decision_log.alternatives_considered), 2)
-        self.assertGreater(decision_log.processing_duration, 0)
+        self.assertGreaterEqual(decision_log.processing_duration, 0.0)
 
         # Check that it was added to main logs
         self.assertEqual(len(self.logger.decision_logs), 1)

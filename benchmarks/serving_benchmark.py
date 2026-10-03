@@ -5,13 +5,13 @@ and concurrent request handling for ModelServer.
 """
 
 import asyncio
-import time
 import statistics
-from typing import List, Dict, Any
+import time
+from typing import Any
 
-from adaptiveneuralnetwork.production.serving import ModelServer, ServingConfig
-from adaptiveneuralnetwork.api.model import AdaptiveModel
 from adaptiveneuralnetwork.api.config import AdaptiveConfig
+from adaptiveneuralnetwork.api.model import AdaptiveModel
+from adaptiveneuralnetwork.production.serving import ModelServer, ServingConfig
 
 
 class ServingBenchmark:
@@ -30,10 +30,10 @@ class ServingBenchmark:
         self.server.model = AdaptiveModel(AdaptiveConfig(input_dim=128, hidden_dim=64, output_dim=10))
         self.server.model.eval()
 
-    async def run_concurrent_load(self, num_requests: int = 100, concurrency: int = 10) -> Dict[str, Any]:
+    async def run_concurrent_load(self, num_requests: int = 100, concurrency: int = 10) -> dict[str, Any]:
         """Run concurrent prediction requests and compute performance statistics."""
         semaphore = asyncio.Semaphore(concurrency)
-        latencies: List[float] = []
+        latencies: list[float] = []
 
         async def worker():
             async with semaphore:

@@ -9,6 +9,7 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -18,7 +19,7 @@ class TestCoreTrainModule(unittest.TestCase):
 
     def setUp(self):
         """Set up test environment."""
-        self.test_output_dir = Path("/tmp/test_core_train_outputs")
+        self.test_output_dir = Path(tempfile.gettempdir()) / "test_core_train_outputs"
         if self.test_output_dir.exists():
             shutil.rmtree(self.test_output_dir)
         self.test_output_dir.mkdir(exist_ok=True)

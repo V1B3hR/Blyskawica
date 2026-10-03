@@ -17,6 +17,7 @@ import math
 import os
 import random
 import time
+from pathlib import Path
 from typing import Any
 
 try:
@@ -46,7 +47,6 @@ except ImportError:
     _AER_AVAILABLE = False
 
 def get_workspace_root() -> Path:
-    from pathlib import Path
     current = Path(__file__).resolve()
     for parent in current.parents:
         if (parent / "blyskawica_app").exists() or (parent / "blyskawica_core").exists():

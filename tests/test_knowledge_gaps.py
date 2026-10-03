@@ -1,8 +1,7 @@
 import os
 import unittest
-
-
 from pathlib import Path
+
 
 class TestKnowledgeGaps(unittest.TestCase):
     def setUp(self):

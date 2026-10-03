@@ -16,8 +16,6 @@ BASE_DIR = Path(__file__).resolve().parent
 EXT_DIR = BASE_DIR / "extensions"
 EXT_DIR.mkdir(exist_ok=True)
 
-import sys
-
 
 def is_safe_zip_path(target_dir: Path, path: Path) -> bool:
     try:
@@ -34,10 +32,7 @@ def safe_extract_zip(zip_file: zipfile.ZipFile, extract_to: Path) -> None:
         member_path = extract_to_resolved / member.filename
         if not is_safe_zip_path(extract_to_resolved, member_path):
             raise RuntimeError(f"Zip Slip detected! Malicious path inside archive: {member.filename}")
-    if sys.version_info >= (3, 12):
-        getattr(zip_file, "extractall")(extract_to, filter="data")
-    else:
-        zip_file.extractall(extract_to)
+    zip_file.extractall(extract_to, filter="data")
 
 
 def download_and_extract() -> None:

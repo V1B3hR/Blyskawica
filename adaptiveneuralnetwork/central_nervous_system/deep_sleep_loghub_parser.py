@@ -11,15 +11,15 @@ import logging
 import re
 import time
 from dataclasses import asdict, dataclass, field
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - [%(levelname)s] - %(name)s: %(message)s")
 logger = logging.getLogger("loghub_parser")
 
 
-class LogCategory(str, Enum):
+class LogCategory(StrEnum):
     SHADER_ERROR = "SHADER_COMPILATION_ERROR"
     TAURI_IPC_ANOMALY = "TAURI_IPC_ANOMALY"
     WINDOWS_EVENT_CRASH = "WINDOWS_EVENT_CRASH"
@@ -36,10 +36,10 @@ class LogHubParsedEvent:
     category: LogCategory
     template_id: str
     raw_message: str
-    structured_params: Dict[str, Any] = field(default_factory=dict)
+    structured_params: dict[str, Any] = field(default_factory=dict)
     is_hard_anomaly: bool = False
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
         d["category"] = self.category.value
         return d
@@ -53,11 +53,11 @@ class HardAnomalyReport:
     ipc_failures: int
     memory_leaks: int
     integrity_status: str  # "STABLE_CLEAN" or "HARD_ANOMALIES_DETECTED"
-    detailed_anomalies: List[Dict[str, Any]] = field(default_factory=list)
-    remediation_suggestions: List[str] = field(default_factory=list)
+    detailed_anomalies: list[dict[str, Any]] = field(default_factory=list)
+    remediation_suggestions: list[str] = field(default_factory=list)
     timestamp: float = field(default_factory=time.time)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -138,11 +138,11 @@ class DeepSleepLogHubParser:
             is_hard_anomaly=is_hard
         )
 
-    def process_log_batch(self, log_lines: List[str], source: str = "TAURI_CORE") -> HardAnomalyReport:
+    def process_log_batch(self, log_lines: list[str], source: str = "TAURI_CORE") -> HardAnomalyReport:
         """
         Processes a batch of logs and compiles an unvarnished Hard Anomaly Report.
         """
-        parsed_events = [self.parse_line(l, default_source=source) for l in log_lines if l.strip()]
+        parsed_events = [self.parse_line(log_line, default_source=source) for log_line in log_lines if log_line.strip()]
 
         hard_anomalies = [e for e in parsed_events if e.is_hard_anomaly]
 
@@ -183,7 +183,7 @@ class DeepSleepLogHubParser:
             remediation_suggestions=remediations
         )
 
-    def export_audit_report(self, report: HardAnomalyReport, out_path: Optional[Path] = None) -> bool:
+    def export_audit_report(self, report: HardAnomalyReport, out_path: Path | None = None) -> bool:
         """Persists the Hard Anomaly Report into integrity_audit_latest.json."""
         if out_path is None:
             out_path = Path(__file__).resolve().parent.parent.parent / "integrity_audit_latest.json"

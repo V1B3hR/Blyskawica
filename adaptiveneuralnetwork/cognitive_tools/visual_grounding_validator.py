@@ -8,7 +8,7 @@ and mathematical state synchronization between Sparkle UI DOM and Blyskawica Rus
 import logging
 import time
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - [%(levelname)s] - %(name)s: %(message)s")
 logger = logging.getLogger("visual_grounding")
@@ -18,10 +18,10 @@ logger = logging.getLogger("visual_grounding")
 class UIBoundingBox:
     element_id: str
     element_type: str  # SLIDER, CANVAS, BADGE, TERMINAL, BUTTON, CONTAINER, OSCILLOSCOPE
-    bbox: Tuple[float, float, float, float]  # (xmin, ymin, xmax, ymax) in physical window coordinates
+    bbox: tuple[float, float, float, float]  # (xmin, ymin, xmax, ymax) in physical window coordinates
     is_visible: bool = True
     z_index: int = 0
-    rendered_value: Optional[Any] = None
+    rendered_value: Any | None = None
 
     @property
     def width(self) -> float:
@@ -52,7 +52,7 @@ class UIBoundingBox:
         union = self.area + other.area - inter
         return inter / union if union > 0 else 0.0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -60,7 +60,7 @@ class UIBoundingBox:
 class UILayoutSnapshot:
     window_width: int
     window_height: int
-    elements: Dict[str, UIBoundingBox] = field(default_factory=dict)
+    elements: dict[str, UIBoundingBox] = field(default_factory=dict)
     fps_render_rate: float = 60.0
     timestamp: float = field(default_factory=time.time)
 
@@ -74,10 +74,10 @@ class VisualHealthReport:
     health_score: float  # 0.0 to 1.0
     total_elements: int
     synced_elements: int
-    anomalies: List[Dict[str, Any]] = field(default_factory=list)
+    anomalies: list[dict[str, Any]] = field(default_factory=list)
     timestamp: float = field(default_factory=time.time)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -89,7 +89,7 @@ class VisualGroundingValidator:
     def __init__(self, tolerance: float = 0.005):
         self.tolerance = tolerance
 
-    def validate_layout_geometry(self, snapshot: UILayoutSnapshot) -> List[Dict[str, Any]]:
+    def validate_layout_geometry(self, snapshot: UILayoutSnapshot) -> list[dict[str, Any]]:
         """
         Scans all UI bounding boxes for physical layout anomalies:
         - Viewport boundary clipping (elements cut off by window edges)
@@ -161,8 +161,8 @@ class VisualGroundingValidator:
         return anomalies
 
     def validate_state_synchronization(
-        self, snapshot: UILayoutSnapshot, rust_state: Dict[str, Any]
-    ) -> List[Dict[str, Any]]:
+        self, snapshot: UILayoutSnapshot, rust_state: dict[str, Any]
+    ) -> list[dict[str, Any]]:
         """
         Cross-validates rendered DOM values with internal Rust/Python logic state.
         Detects silent UI freezes (e.g. WebView2 process throttled by Win 11).
@@ -203,7 +203,7 @@ class VisualGroundingValidator:
         return anomalies
 
     def audit_visual_health(
-        self, snapshot: UILayoutSnapshot, rust_state: Dict[str, Any]
+        self, snapshot: UILayoutSnapshot, rust_state: dict[str, Any]
     ) -> VisualHealthReport:
         """
         Performs full visual autonomy audit (Geometry + State Sync + Frame rate health).

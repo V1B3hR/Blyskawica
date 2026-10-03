@@ -10,8 +10,8 @@ within a safe, healthy bounds of +/- 7% depending on the active cognitive task:
 
 import json
 import os
-
 from pathlib import Path
+from typing import Any
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 CHECKPOINT_FILE = os.path.join(str(BASE_DIR), "memory_checkpoint.json")

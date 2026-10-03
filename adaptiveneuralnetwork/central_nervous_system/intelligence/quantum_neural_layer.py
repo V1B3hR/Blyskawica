@@ -16,6 +16,8 @@ Parameter Shift Rule (PSR):
 
 import logging
 import math
+from pathlib import Path
+from typing import Any
 
 import numpy as np
 import torch
@@ -51,7 +53,6 @@ except ImportError:
     _IBM_AVAILABLE = False
 
 def get_workspace_root() -> Path:
-    from pathlib import Path
     current = Path(__file__).resolve()
     for parent in current.parents:
         if (parent / "blyskawica_app").exists() or (parent / "blyskawica_core").exists():
@@ -59,6 +60,11 @@ def get_workspace_root() -> Path:
     return current.parents[3]
 
 WORKSPACE_ROOT: Path = get_workspace_root()
+
+
+def _calculate_num_params(n_qubits: int, n_layers: int) -> int:
+    """Oblicza liczbę parametrów obwodu PQC: 2 parametry (RY, RZ) na kubit na warstwę."""
+    return n_qubits * n_layers * 2
 
 
 # ---------------------------------------------------------------------------
@@ -159,7 +165,7 @@ class QuantumNeuralLayer(nn.Module):
 
         # Inicjalizacja Asynchronicznej Izolacji Galwanicznej (Ground Loop Isolator)
         if self.use_gli_stabilization:
-            self.gli = GroundLoopIsolator(isolation_ratio=0.08)
+            self.gli = GroundLoopIsolator(isolation_ratio=0.05)
         else:
             self.gli = None
 
@@ -169,7 +175,7 @@ class QuantumNeuralLayer(nn.Module):
         self._theta_params = None
         self._estimator = None
 
-        if _QUANTUM_AVAILABLE:
+        if _QISKIT_AVAILABLE:
             self._init_circuit()
             self._init_estimator()
         else:
@@ -192,7 +198,7 @@ class QuantumNeuralLayer(nn.Module):
             self._estimator = AerEstimator()
             logger.info("[QuantumLayer] Backend: Qiskit Aer (lokalny symulator)")
         elif self.backend_mode == "ibm" and _IBM_AVAILABLE and self.ibm_service:
-            hw_backend = getattr(self.ibm_service, "least_busy")(simulator=False, operational=True)
+            hw_backend = self.ibm_service.least_busy(simulator=False, operational=True)
             pm = generate_preset_pass_manager(optimization_level=1, backend=hw_backend)
             self._pqc_template = pm.run(self._pqc_template)
             self._estimator = IBMEstimator(mode=hw_backend)

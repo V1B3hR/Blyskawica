@@ -11,11 +11,10 @@ Core engine designed to integrate:
 
 import json
 import os
+from pathlib import Path
 
 import numpy as np
 import torch
-
-from pathlib import Path
 
 # Define directories matching the yant architecture
 BASE_DIR = Path(__file__).resolve().parents[2]

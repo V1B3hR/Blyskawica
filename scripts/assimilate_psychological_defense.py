@@ -12,11 +12,11 @@ Ingests & trains on:
 import argparse
 import json
 import logging
-import os
 import random
 import sys
 import time
 from pathlib import Path
+from typing import Any
 
 # Ensure UTF-8 stdout encoding on Windows
 if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
@@ -30,16 +30,14 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import DataLoader, TensorDataset, random_split
+from torch.utils.data import DataLoader, TensorDataset
 
 from adaptiveneuralnetwork.central_nervous_system.cognitive_hygiene import (
-    CRAEngine,
     NeuromodulationState,
 )
 from adaptiveneuralnetwork.cognitive_tools.aegis_psyche import (
     AegisPsycheEngine,
     AegisPsycheNeuralClassifier,
-    AegisPsycheReport,
     text_to_embedding,
 )
 from scripts.export_aegis_psyche_onnx import export_model_to_onnx
@@ -63,12 +61,12 @@ def generate_extended_training_corpus():
     combining base curated prompts and the 3,000+ synthetic dialectic corpus (VAD 24 + SD3 + FBI).
     """
     data = []
-    
+
     # 1. Load Synthetic Dialectic Corpus if present
     corpus_file = Path(__file__).resolve().parent.parent / "data" / "cognitive_defense" / "synthetic_dialectic_corpus_v3.json"
     if corpus_file.exists():
         try:
-            with open(corpus_file, "r", encoding="utf-8") as f:
+            with open(corpus_file, encoding="utf-8") as f:
                 corpus_json = json.load(f)
                 samples = corpus_json.get("samples", [])
                 for s in samples:
@@ -320,7 +318,7 @@ def compute_supervised_contrastive_loss(projections: torch.Tensor, labels: torch
     # For numerical stability
     sim_max, _ = torch.max(similarity, dim=1, keepdim=True)
     exp_sim = torch.exp(similarity - sim_max.detach())
-    
+
     # Mask out self-contrast
     exp_sim = exp_sim * (1.0 - eye)
     pos_sim = exp_sim * mask
@@ -341,7 +339,7 @@ def deep_sleep_consolidation(
     model: nn.Module,
     data_loader: DataLoader,
     pruning_threshold: float = 1e-4,
-    prev_fisher: Optional[Dict[str, torch.Tensor]] = None
+    prev_fisher: dict[str, torch.Tensor] | None = None
 ) -> dict[str, Any]:
     """
     Deep Sleep Synaptic Consolidation & EWC (Filar 5):
@@ -405,7 +403,7 @@ def deep_sleep_consolidation(
 def run_extended_assimilation(epochs: int = 150, batch_size: int = 16, lr: float = 1e-3, seed: int = 42):
     start_total = time.perf_counter()
     set_seed(seed)
-    
+
     # 1. Neurochemical Calibration during Deep Adversarial Learning
     neuro_state = NeuromodulationState()
     neuro_state.dopamine.copy_(torch.tensor(0.78))      # Elevated drive & focus
@@ -430,7 +428,7 @@ def run_extended_assimilation(epochs: int = 150, batch_size: int = 16, lr: float
 
     # Initialize PyTorch Model & Optimization Suite
     model = AegisPsycheNeuralClassifier(embed_dim=128, hidden_dim=256)
-    
+
     # Check for Lifelong EWC Fisher Memory from prior sessions
     out_dir = Path(__file__).resolve().parent.parent / "data" / "cognitive_defense"
     fisher_pt = out_dir / "aegis_psyche_ewc_fisher.pt"
@@ -547,13 +545,13 @@ def run_extended_assimilation(epochs: int = 150, batch_size: int = 16, lr: float
     print("🌙 KONSOLIDACJA SYNAPTYCZNA PODCZAS SNU GŁĘBOKIEGO (EWC & PRUNING)...")
     print("=" * 85)
     consolidation_report = deep_sleep_consolidation(model, train_loader, pruning_threshold=1e-4, prev_fisher=prev_fisher)
-    print(f"  ✓ Oszacowano diagonalną macierz Informacji Fishera (EWC protection dla kolejnych nauk).")
+    print("  ✓ Oszacowano diagonalną macierz Informacji Fishera (EWC protection dla kolejnych nauk).")
     print(f"  ✓ Zredukowano szum synaptyczny (Pruning: {consolidation_report['pruned_synapses']}/{consolidation_report['total_synapses']} wag = {consolidation_report['pruning_percentage']:.2f}%).")
 
     # Save trained PyTorch model weights and EWC Fisher memory
     out_dir.mkdir(parents=True, exist_ok=True)
     weights_pt = out_dir / "aegis_psyche_weights.pt"
-    
+
     torch.save(model.state_dict(), weights_pt)
     torch.save({
         "fisher": consolidation_report["fisher"],

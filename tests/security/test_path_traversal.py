@@ -2,7 +2,6 @@
 Testy bezpieczeństwa: weryfikacja odporności na Path Traversal i ochrona katalogów systemowych.
 """
 
-import os
 import unittest
 from pathlib import Path
 

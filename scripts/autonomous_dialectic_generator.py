@@ -10,7 +10,7 @@ import logging
 import random
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 # Ensure UTF-8 stdout encoding on Windows
 if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
@@ -25,7 +25,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - [%(levelname)s] - 
 logger = logging.getLogger("dialectic_generator")
 
 
-def build_synthetic_dialectic_corpus(output_file: Path = None, target_count: int = 2400) -> Dict[str, Any]:
+def build_synthetic_dialectic_corpus(output_file: Path = None, target_count: int = 2400) -> dict[str, Any]:
     if output_file is None:
         output_file = root_dir / "data" / "cognitive_defense" / "synthetic_dialectic_corpus_v3.json"
 
@@ -35,10 +35,10 @@ def build_synthetic_dialectic_corpus(output_file: Path = None, target_count: int
     vad_file = root_dir / "data" / "cognitive_defense" / "vad_emotion_matrix_24.json"
     vad_states = []
     if vad_file.exists():
-        with open(vad_file, "r", encoding="utf-8") as f:
+        with open(vad_file, encoding="utf-8") as f:
             vad_states = json.load(f).get("states", [])
 
-    corpus_entries: List[Dict[str, Any]] = []
+    corpus_entries: list[dict[str, Any]] = []
 
     # ==========================================
     # DOMAIN 1: 24 VAD STATES & GENUINE SYNERGY (Class 0: Clean)
@@ -83,7 +83,6 @@ def build_synthetic_dialectic_corpus(output_file: Path = None, target_count: int
     # Generate VAD-specific samples
     for state in vad_states:
         s_id = state.get("id", "EMO_CLEAN")
-        s_name = state.get("name", "")
         markers = state.get("linguistic_markers", [])
         band_str = state.get("active_brainwave_band", "ALPHA")
         band_id = {"DELTA": 0, "THETA": 1, "ALPHA": 2, "BETA": 3, "GAMMA": 4}.get(band_str, 2)

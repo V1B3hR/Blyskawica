@@ -32,11 +32,11 @@ if _HAS_PANDAS:
             _HAS_PARQUET = True
         except ImportError:
             _HAS_PARQUET = False
-import torch
-import torch.nn as nn
-from torch.utils.data import DataLoader
+import torch  # noqa: E402
+import torch.nn as nn  # noqa: E402
+from torch.utils.data import DataLoader  # noqa: E402
 
-from adaptiveneuralnetwork.data.dataset_loader import (
+from adaptiveneuralnetwork.data.dataset_loader import (  # noqa: E402
     ContinuousLearningDataset,
     DatasetLoader,
     EWCTrainer,
