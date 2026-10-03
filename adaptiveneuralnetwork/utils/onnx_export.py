@@ -185,6 +185,15 @@ class ONNXExporter:
             self.model.eval()
 
             # Export to ONNX
+            import inspect
+
+            kwargs_to_pass = kwargs.copy()
+            if "dynamo" in inspect.signature(torch.onnx.export).parameters and "dynamo" not in kwargs_to_pass:
+                try:
+                    import onnxscript  # noqa: F401
+                except ImportError:
+                    kwargs_to_pass["dynamo"] = False
+
             torch.onnx.export(
                 self.model,
                 dummy_input,
@@ -192,10 +201,10 @@ class ONNXExporter:
                 export_params=True,
                 opset_version=opset_version,
                 do_constant_folding=True,
-                input_names=['input'],
-                output_names=['output'],
+                input_names=["input"],
+                output_names=["output"],
                 dynamic_axes=dynamic_axes,
-                **kwargs
+                **kwargs_to_pass,
             )
 
             return True

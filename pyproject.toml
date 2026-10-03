@@ -41,6 +41,7 @@ dependencies = [
     "requests>=2.31.0,<3.0.0",
     "scikit-learn>=1.2.0",
     "cryptography>=41.0.0",
+    "onnxscript>=0.1.0",
 ]
 
 [project.optional-dependencies]
