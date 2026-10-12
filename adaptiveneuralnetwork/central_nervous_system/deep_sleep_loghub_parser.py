@@ -19,7 +19,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - [%(levelname)s] - 
 logger = logging.getLogger("loghub_parser")
 
 
-class LogCategory(str, Enum):
+class LogCategory(str, Enum):  # noqa: UP042
     SHADER_ERROR = "SHADER_COMPILATION_ERROR"
     TAURI_IPC_ANOMALY = "TAURI_IPC_ANOMALY"
     WINDOWS_EVENT_CRASH = "WINDOWS_EVENT_CRASH"
@@ -142,7 +142,9 @@ class DeepSleepLogHubParser:
         """
         Processes a batch of logs and compiles an unvarnished Hard Anomaly Report.
         """
-        parsed_events = [self.parse_line(l, default_source=source) for l in log_lines if l.strip()]
+        parsed_events = [
+            self.parse_line(line, default_source=source) for line in log_lines if line.strip()
+        ]
 
         hard_anomalies = [e for e in parsed_events if e.is_hard_anomaly]
 

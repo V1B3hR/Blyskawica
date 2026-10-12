@@ -15,7 +15,7 @@ root_dir = Path(__file__).resolve().parent.parent
 if str(root_dir) not in sys.path:
     sys.path.insert(0, str(root_dir))
 
-from adaptiveneuralnetwork.cognitive_tools.aegis_psyche import (
+from adaptiveneuralnetwork.cognitive_tools.aegis_psyche import (  # noqa: E402
     AegisPsycheNeuralClassifier,
     text_to_embedding,
 )

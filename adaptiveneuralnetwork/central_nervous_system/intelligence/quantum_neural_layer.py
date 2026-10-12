@@ -16,6 +16,8 @@ Parameter Shift Rule (PSR):
 
 import logging
 import math
+from pathlib import Path
+from typing import Any
 
 import numpy as np
 import torch
@@ -24,6 +26,11 @@ import torch.nn as nn
 from adaptiveneuralnetwork.cognitive_tools.ground_loop_isolator import GroundLoopIsolator
 
 logger = logging.getLogger(__name__)
+
+
+def _calculate_num_params(n_qubits: int, n_layers: int) -> int:
+    return n_qubits * n_layers * 2
+
 
 # ---------------------------------------------------------------------------
 # Sprawdzenie dostępności Qiskit
@@ -51,7 +58,6 @@ except ImportError:
     _IBM_AVAILABLE = False
 
 def get_workspace_root() -> Path:
-    from pathlib import Path
     current = Path(__file__).resolve()
     for parent in current.parents:
         if (parent / "blyskawica_app").exists() or (parent / "blyskawica_core").exists():
@@ -169,7 +175,7 @@ class QuantumNeuralLayer(nn.Module):
         self._theta_params = None
         self._estimator = None
 
-        if _QUANTUM_AVAILABLE:
+        if _QISKIT_AVAILABLE:
             self._init_circuit()
             self._init_estimator()
         else:

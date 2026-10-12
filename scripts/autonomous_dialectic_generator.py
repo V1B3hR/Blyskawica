@@ -83,7 +83,6 @@ def build_synthetic_dialectic_corpus(output_file: Path = None, target_count: int
     # Generate VAD-specific samples
     for state in vad_states:
         s_id = state.get("id", "EMO_CLEAN")
-        s_name = state.get("name", "")
         markers = state.get("linguistic_markers", [])
         band_str = state.get("active_brainwave_band", "ALPHA")
         band_id = {"DELTA": 0, "THETA": 1, "ALPHA": 2, "BETA": 3, "GAMMA": 4}.get(band_str, 2)
