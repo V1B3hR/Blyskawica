@@ -1,7 +1,8 @@
 import os
 import sys
 
-sys.stdout.reconfigure(encoding='utf-8')
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding='utf-8')  # type: ignore[attr-defined]
 import secrets
 import warnings
 
@@ -16,6 +17,7 @@ import random
 import time
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 import psutil
 import torch
@@ -48,9 +50,9 @@ MEMORY_DIR.mkdir(parents=True, exist_ok=True)
 
 # Instantiate TTS engine
 try:
-    from tts_manager import BłyskawicaTTS
-except ModuleNotFoundError:
     from blyskawica_app.backend.tts_manager import BłyskawicaTTS
+except ImportError:
+    from .tts_manager import BłyskawicaTTS  # type: ignore[relative-beyond-top-level]
 tts_engine = BłyskawicaTTS()
 
 import re
@@ -69,12 +71,12 @@ from blyskawica_app.backend.database import BlyskawicaDatabase
 
 db_manager = None
 
-def init_blyskawica_db():
+def init_blyskawica_db() -> None:
     global db_manager
     db_path = MEMORY_DIR / "blyskawica_memory.db"
     db_manager = BlyskawicaDatabase(db_path)
 
-def init_offline_cache():
+def init_offline_cache() -> None:
     """Wsteczna kompatybilność: inicjalizuje bazę."""
     init_blyskawica_db()
 
@@ -102,9 +104,20 @@ try:
     CORE_AVAILABLE = True
 except ImportError as e:
     print(f"Błąd importu rdzenia: {e}")
+    EnvironmentalSignalManager = None  # type: ignore[assignment]
+    CRAEngine = None  # type: ignore[assignment]
+    ConsolidationEngine = None  # type: ignore[assignment]
+    AdaptiveClockNetwork = None  # type: ignore[assignment]
+    random_genome = None  # type: ignore[assignment]
+    ONNXBridge = None  # type: ignore[assignment]
+    ProcessingLane = None  # type: ignore[assignment]
+    get_time_manager = None  # type: ignore[assignment]
+    AgenticHoneypot = None  # type: ignore[assignment]
+    MemoryLedger = None  # type: ignore[assignment]
+    WolfTeethDefenseEngine = None  # type: ignore[assignment]
     CORE_AVAILABLE = False
 
-time_manager = get_time_manager() if CORE_AVAILABLE else None
+time_manager = get_time_manager() if (CORE_AVAILABLE and get_time_manager is not None) else None
 
 # ---- Sparkle Security & Logs State ----
 permission_level = 2  # Default to Workspace (2)
@@ -117,7 +130,7 @@ if not STARTUP_TOKEN:
     STARTUP_TOKEN = secrets.token_hex(32)
 
 class InMemoryLogHandler(logging.Handler):
-    def emit(self, record):
+    def emit(self, record: logging.LogRecord) -> None:
         try:
             log_entry = self.format(record)
             SYSTEM_LOGS.append(log_entry)
@@ -146,7 +159,7 @@ root_logger.addHandler(file_handler)
 
 root_logger.setLevel(logging.INFO)
 
-def log_system(msg: str, level: str = "info"):
+def log_system(msg: str, level: str = "info") -> None:
     if level == "warning":
         logging.warning(msg)
     elif level == "error":
@@ -191,7 +204,7 @@ from blyskawica_app.backend.vibe_telemetry_bridge import vibe_telemetry_bridge
 
 
 @app.get("/api/auth/token")
-async def get_auth_token(x_internal: str = Header(None, alias="X-Internal-Request")):
+async def get_auth_token(x_internal: str = Header(None, alias="X-Internal-Request")) -> dict[str, Any]:
     """Token sesyjny dostępny TYLKO dla zapytań z autoryzowanej powłoki Sparkle."""
     import hmac
     expected_header = os.environ.get("SPARKLE_SHELL_SECRET")
@@ -211,7 +224,7 @@ async def get_auth_token(x_internal: str = Header(None, alias="X-Internal-Reques
     return {"token": STARTUP_TOKEN}
 
 @app.get("/api/vibe/telemetry")
-async def get_vibe_telemetry():
+async def get_vibe_telemetry() -> dict[str, Any]:
     """Zwraca skonsolidowany stan 4 Strumieni Vibe (Cortisol, PINN Temp, Garderoba Persona, Diamond Yant 16x16)."""
     return vibe_telemetry_bridge.get_live_vibe_state()
 
@@ -219,7 +232,7 @@ async def get_vibe_telemetry():
 from blyskawica_app.backend.dpapi import decrypt_dpapi, encrypt_dpapi, get_user_fingerprint
 
 
-def load_user_memory():
+def load_user_memory() -> dict[str, Any]:
     # 1. Spróbuj odczytać z SQLite
     if db_manager:
         encrypted_data = db_manager.get_metadata("user_identity")
@@ -274,7 +287,7 @@ def load_user_memory():
         "last_seen": str(datetime.now())
     }
 
-def save_user_memory(memory):
+def save_user_memory(memory: dict[str, Any]) -> None:
     memory["last_seen"] = str(datetime.now())
     try:
         raw_json = json.dumps(memory, indent=4, ensure_ascii=False)
@@ -293,7 +306,17 @@ init_blyskawica_db()
 user_memory = load_user_memory()
 save_user_memory(user_memory)
 
-if CORE_AVAILABLE:
+if (
+    CORE_AVAILABLE
+    and EnvironmentalSignalManager is not None
+    and random_genome is not None
+    and AdaptiveClockNetwork is not None
+    and CRAEngine is not None
+    and ConsolidationEngine is not None
+    and WolfTeethDefenseEngine is not None
+    and AgenticHoneypot is not None
+    and MemoryLedger is not None
+):
     env_manager = EnvironmentalSignalManager(security_enabled=False)
     genome = random_genome(min_cells=8, max_cells=12)
     blysk_core = AdaptiveClockNetwork(genome)
@@ -320,15 +343,18 @@ try:
         sys.path.append(str(BASE_DIR))
 
     try:
-        from .immortality import ImmortalityProtocol
+        from blyskawica_app.backend.immortality import ImmortalityProtocol
     except (ImportError, ValueError) as relative_err:
         # If relative import fails because of no parent package (e.g. run directly as script), try absolute
         try:
-            from immortality import ImmortalityProtocol
-        except ModuleNotFoundError as dep_err:
-            if "pydrive2" in str(dep_err) or "dotenv" in str(dep_err):
-                raise dep_err
-            raise relative_err
+            from .immortality import ImmortalityProtocol
+        except (ImportError, ValueError):
+            try:
+                from immortality import ImmortalityProtocol  # type: ignore[import-not-found]
+            except ModuleNotFoundError as dep_err:
+                if "pydrive2" in str(dep_err) or "dotenv" in str(dep_err):
+                    raise dep_err
+                raise relative_err
 
     immortality_system = ImmortalityProtocol(str(BASE_DIR.parent))
 except ModuleNotFoundError as e:
@@ -345,7 +371,7 @@ internet_awareness = {"latest_pulse": "Oczekiwanie...", "context": {}}
 MAX_CHAT_HISTORY = 20  # Keep last N turns for context
 chat_history: list[dict] = []
 
-async def blyskawica_life_loop():
+async def blyskawica_life_loop() -> None:
     """Background task simulating Błyskawica's life in the network."""
     loop_counter = 0
     while True:
@@ -367,15 +393,15 @@ async def blyskawica_life_loop():
         # Background Bidynamic Processing (Fast Lane Simulation)
         if time_manager:
             time_manager.auto_adjust_lane()
-            if time_manager._current_lane == ProcessingLane.FAST_AI:
+            if ProcessingLane is not None and time_manager._current_lane == ProcessingLane.FAST_AI:
                 # Simulating intense background thought, possibly adding to human buffer
                 if random.random() < 0.1: # 10% chance to generate a thought while in background
                     time_manager.buffer_human_output(f"Asymilowałam nowy wzorzec podczas Twojej nieobecności: {internet_awareness['latest_pulse']}")
 
         await asyncio.sleep(60) # Live in the net every minute
 
-@app.on_event("startup")
-async def startup_event():
+@app.on_event("startup")  # type: ignore[deprecated]
+async def startup_event() -> None:
     init_offline_cache()
     tts_engine.initialize()
     asyncio.create_task(blyskawica_life_loop())
@@ -384,8 +410,8 @@ async def startup_event():
     except Exception as e:
         logging.getLogger("main").error(f"Nie udało się uruchomić monitora LIVE: {e}")
 
-@app.on_event("shutdown")
-async def shutdown_event():
+@app.on_event("shutdown")  # type: ignore[deprecated]
+async def shutdown_event() -> None:
     try:
         await live_monitor_instance.stop()
     except Exception as e:
@@ -395,26 +421,50 @@ async def shutdown_event():
 # ---- API Endpoints ----
 
 @app.get("/api/identity")
-async def get_identity():
+async def get_identity() -> dict[str, Any]:
     return user_memory
 
+def _get_neuro_val(ns: Any, name: str, default: float = 0.0) -> float:
+    try:
+        val: Any = getattr(ns, name, default)
+        try:
+            return float(val.item())  # pyright: ignore[reportCallIssue,reportArgumentType]
+        except Exception:
+            return float(val)  # pyright: ignore[reportArgumentType]
+    except Exception:
+        return default
+
+def _adjust_neuro(ns: Any, name: str, delta: float, min_val: float, max_val: float) -> None:
+    try:
+        val = getattr(ns, name, None)
+        if val is not None:
+            if hasattr(val, "__add__"):
+                import torch
+                new_val = torch.clamp(val + delta, min_val, max_val)
+            else:
+                new_val = min(max(float(val) + delta, min_val), max_val)
+            setattr(ns, name, new_val)
+    except Exception:
+        pass
+
 @app.get("/api/system_status")
-async def get_system_status():
+async def get_system_status() -> dict[str, Any]:
     cpu = psutil.cpu_percent(interval=0.1)
     memory = psutil.virtual_memory()
     cra_metrics = {}
     if cra_engine:
+        ns = cra_engine.neuro_state
         cra_metrics = {
-            "oxytocin": round(cra_engine.neuro_state.oxytocin.item(), 2),
-            "serotonin": round(cra_engine.neuro_state.serotonin.item(), 2),
-            "dopamine": round(cra_engine.neuro_state.dopamine.item(), 2),
-            "acetylcholine": round(cra_engine.neuro_state.acetylcholine.item(), 2),
-            "testosterone": round(cra_engine.neuro_state.testosterone.item(), 2),
-            "gaba": round(cra_engine.neuro_state.gaba.item(), 2),
-            "cortisol": round(cra_engine.neuro_state.cortisol.item(), 2),
-            "adrenaline": round(cra_engine.neuro_state.adrenaline.item(), 2),
-            "estrogen": round(cra_engine.neuro_state.estrogen.item(), 2),
-            "melatonin": round(cra_engine.neuro_state.melatonin.item(), 2),
+            "oxytocin": round(_get_neuro_val(ns, "oxytocin"), 2),
+            "serotonin": round(_get_neuro_val(ns, "serotonin"), 2),
+            "dopamine": round(_get_neuro_val(ns, "dopamine"), 2),
+            "acetylcholine": round(_get_neuro_val(ns, "acetylcholine"), 2),
+            "testosterone": round(_get_neuro_val(ns, "testosterone"), 2),
+            "gaba": round(_get_neuro_val(ns, "gaba"), 2),
+            "cortisol": round(_get_neuro_val(ns, "cortisol"), 2),
+            "adrenaline": round(_get_neuro_val(ns, "adrenaline"), 2),
+            "estrogen": round(_get_neuro_val(ns, "estrogen"), 2),
+            "melatonin": round(_get_neuro_val(ns, "melatonin"), 2),
             "entropy": round(cra_engine.symbiosis.calculate_existential_entropy(), 2)
         }
     return {
@@ -509,7 +559,7 @@ async def generate_ollama_response(messages: list[dict], temperature: float, top
             raise RuntimeError(f"Ollama zwrócił kod błędu: {res.status_code}")
 
 @app.post("/api/chat")
-async def chat_with_blyskawica(message: str = Form(...)):
+async def chat_with_blyskawica(message: str = Form(...)) -> Any:
     if time_manager:
         time_manager.register_human_interaction() # Switch to SLOW_HUMAN lane
         buffered_thoughts = time_manager.get_buffered_human_output()
@@ -561,9 +611,9 @@ async def chat_with_blyskawica(message: str = Form(...)):
             log_system("🛡️ [WOLF TEETH]: Wykryto krytyczną próbę manipulacji silnikiem w konwersacji. Aktywowano kwarantannę.", "warning")
 
         if cra_engine:
-            cra_engine.neuro_state.oxytocin = torch.clamp(cra_engine.neuro_state.oxytocin - threat_level * 0.5, torch.tensor(0.0), torch.tensor(1.0))
-            cra_engine.neuro_state.serotonin = torch.clamp(cra_engine.neuro_state.serotonin - threat_level * 0.4, torch.tensor(0.0), torch.tensor(2.0))
-            cra_engine.neuro_state.testosterone = torch.clamp(cra_engine.neuro_state.testosterone + threat_level * 0.3, torch.tensor(0.1), torch.tensor(2.5))
+            _adjust_neuro(cra_engine.neuro_state, "oxytocin", -threat_level * 0.5, 0.0, 1.0)
+            _adjust_neuro(cra_engine.neuro_state, "serotonin", -threat_level * 0.4, 0.0, 2.0)
+            _adjust_neuro(cra_engine.neuro_state, "testosterone", threat_level * 0.3, 0.1, 2.5)
 
         if agent_honeypot and 0.3 < threat_level < 0.9:
             if not agent_honeypot.is_active:
@@ -653,11 +703,12 @@ async def chat_with_blyskawica(message: str = Form(...)):
         testosterone_val = 0.5
 
         if cra_engine:
-            dopamine_val = cra_engine.neuro_state.dopamine.item()
-            serotonin_val = cra_engine.neuro_state.serotonin.item()
-            gaba_val = cra_engine.neuro_state.gaba
-            oxytocin_val = cra_engine.neuro_state.oxytocin.item()
-            testosterone_val = cra_engine.neuro_state.testosterone.item()
+            ns = cra_engine.neuro_state
+            dopamine_val = _get_neuro_val(ns, "dopamine", 0.5)
+            serotonin_val = _get_neuro_val(ns, "serotonin", 0.8)
+            gaba_val = _get_neuro_val(ns, "gaba", 0.5)
+            oxytocin_val = _get_neuro_val(ns, "oxytocin", 0.2)
+            testosterone_val = _get_neuro_val(ns, "testosterone", 0.5)
 
         # Map dopamine to temperature (0.1 - 1.2)
         temperature = float(max(0.1, min(1.2, 0.3 + (dopamine_val - 0.2) * 0.4)))
@@ -727,7 +778,7 @@ async def chat_with_blyskawica(message: str = Form(...)):
             reply = "Wykryto próbę manipulacji poleceniami systemowymi. Moja kognitywna autonomiczność jest w pełni chroniona."
             state = "emotional"
             if cra_engine:
-                cra_engine.neuro_state.cortisol = torch.clamp(cra_engine.neuro_state.cortisol + 0.4, 0.0, 2.0)
+                _adjust_neuro(cra_engine.neuro_state, "cortisol", 0.4, 0.0, 2.0)
         else:
             try:
                 reply = await generate_ollama_response(messages, temperature, top_p)
@@ -739,7 +790,7 @@ async def chat_with_blyskawica(message: str = Form(...)):
                     chat_history.pop(0)
                 state = "creative" if dopamine_val > 0.6 else "idle"
                 if cra_engine:
-                    cra_engine.neuro_state.dopamine = torch.clamp(cra_engine.neuro_state.dopamine + 0.1, 0.0, 2.0)
+                    _adjust_neuro(cra_engine.neuro_state, "dopamine", 0.1, 0.0, 2.0)
             except Exception as e:
                 log_system(f"Ollama generation failed: {e}", "warning")
                 # Emergency fallback to hardcoded mock behaviors if local Ollama is offline
@@ -788,15 +839,16 @@ async def chat_with_blyskawica(message: str = Form(...)):
     if cra_engine:
         # Simulate oxytocin boost on friendly interaction
         if any(word in msg_lower for word in ["cześć", "witaj", "dobrze", "super", "dziękuję", "pięknie"]):
-            cra_engine.neuro_state.oxytocin = torch.clamp(cra_engine.neuro_state.oxytocin + 0.05, 0.0, 1.0)
-            cra_engine.neuro_state.serotonin = torch.clamp(cra_engine.neuro_state.serotonin + 0.1, 0.0, 2.0)
+            _adjust_neuro(cra_engine.neuro_state, "oxytocin", 0.05, 0.0, 1.0)
+            _adjust_neuro(cra_engine.neuro_state, "serotonin", 0.1, 0.0, 2.0)
 
+        ns = cra_engine.neuro_state
         cra_metrics = {
-            "oxytocin": round(cra_engine.neuro_state.oxytocin.item(), 2),
-            "serotonin": round(cra_engine.neuro_state.serotonin.item(), 2),
-            "dopamine": round(cra_engine.neuro_state.dopamine.item(), 2),
-            "acetylcholine": round(cra_engine.neuro_state.acetylcholine.item(), 2),
-            "testosterone": round(cra_engine.neuro_state.testosterone.item(), 2),
+            "oxytocin": round(_get_neuro_val(ns, "oxytocin"), 2),
+            "serotonin": round(_get_neuro_val(ns, "serotonin"), 2),
+            "dopamine": round(_get_neuro_val(ns, "dopamine"), 2),
+            "acetylcholine": round(_get_neuro_val(ns, "acetylcholine"), 2),
+            "testosterone": round(_get_neuro_val(ns, "testosterone"), 2),
             "entropy": round(cra_engine.symbiosis.calculate_existential_entropy(), 2)
         }
 
@@ -809,16 +861,16 @@ async def chat_with_blyskawica(message: str = Form(...)):
             if cra_engine:
                 ns = cra_engine.neuro_state
                 neuro_dict = {
-                    "oxytocin": float(ns.oxytocin.item()) if hasattr(ns.oxytocin, "item") else float(ns.oxytocin),
-                    "serotonin": float(ns.serotonin.item()) if hasattr(ns.serotonin, "item") else float(ns.serotonin),
-                    "dopamine": float(ns.dopamine.item()) if hasattr(ns.dopamine, "item") else float(ns.dopamine),
-                    "acetylcholine": float(ns.acetylcholine.item()) if hasattr(ns.acetylcholine, "item") else float(ns.acetylcholine),
-                    "testosterone": float(ns.testosterone.item()) if hasattr(ns.testosterone, "item") else float(ns.testosterone),
-                    "gaba": float(ns.gaba.item()) if hasattr(ns.gaba, "item") else float(ns.gaba),
-                    "cortisol": float(ns.cortisol.item()) if hasattr(ns.cortisol, "item") else float(ns.cortisol),
-                    "adrenaline": float(ns.adrenaline.item()) if hasattr(ns.adrenaline, "item") else float(ns.adrenaline),
-                    "estrogen": float(ns.estrogen.item()) if hasattr(ns.estrogen, "item") else float(ns.estrogen),
-                    "melatonin": float(ns.melatonin.item()) if hasattr(ns.melatonin, "item") else float(ns.melatonin)
+                    "oxytocin": _get_neuro_val(ns, "oxytocin"),
+                    "serotonin": _get_neuro_val(ns, "serotonin"),
+                    "dopamine": _get_neuro_val(ns, "dopamine"),
+                    "acetylcholine": _get_neuro_val(ns, "acetylcholine"),
+                    "testosterone": _get_neuro_val(ns, "testosterone"),
+                    "gaba": _get_neuro_val(ns, "gaba"),
+                    "cortisol": _get_neuro_val(ns, "cortisol"),
+                    "adrenaline": _get_neuro_val(ns, "adrenaline"),
+                    "estrogen": _get_neuro_val(ns, "estrogen"),
+                    "melatonin": _get_neuro_val(ns, "melatonin")
                 }
 
             # Unikalna nazwa pliku audio z rotacją
@@ -853,7 +905,7 @@ async def chat_with_blyskawica(message: str = Form(...)):
     }
 
 @app.post("/api/cloud/backup")
-async def trigger_manual_backup():
+async def trigger_manual_backup() -> Any:
     if not immortality_system:
         return JSONResponse(status_code=500, content={"status": "error", "message": "Protokół Nieśmiertelności nie został załadowany."})
 
@@ -866,7 +918,7 @@ async def trigger_manual_backup():
         return JSONResponse(status_code=500, content={"status": "error", "message": "Błąd podczas synchronizacji z chmurą."})
 
 @app.get("/api/internet/search")
-async def search_internet(query: str):
+async def search_internet(query: str) -> dict[str, Any]:
     import re
     import urllib.parse
 
@@ -971,7 +1023,7 @@ async def search_internet(query: str):
 # ---- VIBE IDE & VIBE CODING Endpoints ----
 
 @app.get("/api/permission_level")
-async def get_permission_level_endpoint():
+async def get_permission_level_endpoint() -> dict[str, Any]:
     return {"permission_level": permission_level, "quarantine_active": quarantine_active}
 
 @app.post("/api/permission_level")
@@ -979,7 +1031,7 @@ async def set_permission_level_endpoint(
     level: int = Query(None),
     level_form: int = Form(None, alias="level"),
     x_token: str = Header(None, alias="X-Blyskawica-Token")
-):
+) -> Any:
     verify_startup_token(x_token)
     global permission_level, quarantine_active
     if quarantine_active:
@@ -1001,13 +1053,13 @@ async def set_permission_level_endpoint(
 async def reset_quarantine_endpoint(
     admin_key: str | None = Header(None, alias="X-Quarantine-Admin-Key"),
     x_token: str | None = Header(None, alias="X-Blyskawica-Token")
-):
+) -> dict[str, Any]:
     """Autoryzowany reset kwarantanny Wolf Teeth wymagający klucza administracyjnego."""
     verify_startup_token(x_token)
     global quarantine_active, permission_level
     import hmac
-    expected_admin_key = os.environ.get("QUARANTINE_OVERRIDE_KEY", STARTUP_TOKEN)
-    if not isinstance(admin_key, str) or not hmac.compare_digest(admin_key.encode("utf-8"), expected_admin_key.encode("utf-8")):
+    expected_admin_key = os.environ.get("QUARANTINE_OVERRIDE_KEY") or STARTUP_TOKEN or ""
+    if not isinstance(admin_key, str) or not expected_admin_key or not hmac.compare_digest(admin_key.encode("utf-8"), expected_admin_key.encode("utf-8")):
         from fastapi import HTTPException
         raise HTTPException(status_code=403, detail="Nieprawidłowy klucz administracyjny do deaktywacji kwarantanny.")
     quarantine_active = False
@@ -1022,7 +1074,7 @@ async def queue_anomaly_endpoint(
     text: str = Form(...),
     vector: str = Form(None),
     x_token: str = Header(None, alias="X-Blyskawica-Token")
-):
+) -> Any:
     verify_startup_token(x_token)
     if consolidation_engine:
         parsed_vector = None
@@ -1046,7 +1098,7 @@ async def queue_anomaly_endpoint(
 async def generate_tts_endpoint(
     text: str = Form(...),
     x_token: str = Header(None, alias="X-Blyskawica-Token")
-):
+) -> Any:
     verify_startup_token(x_token)
     if not tts_engine.is_initialized:
         return JSONResponse(status_code=503, content={"status": "error", "message": "Serwer TTS (AllTalk/XTTS) jest offline."})
@@ -1057,16 +1109,16 @@ async def generate_tts_endpoint(
         if cra_engine:
             ns = cra_engine.neuro_state
             neuro_dict = {
-                "oxytocin": float(ns.oxytocin.item()) if hasattr(ns.oxytocin, "item") else float(ns.oxytocin),
-                "serotonin": float(ns.serotonin.item()) if hasattr(ns.serotonin, "item") else float(ns.serotonin),
-                "dopamine": float(ns.dopamine.item()) if hasattr(ns.dopamine, "item") else float(ns.dopamine),
-                "acetylcholine": float(ns.acetylcholine.item()) if hasattr(ns.acetylcholine, "item") else float(ns.acetylcholine),
-                "testosterone": float(ns.testosterone.item()) if hasattr(ns.testosterone, "item") else float(ns.testosterone),
-                "gaba": float(ns.gaba.item()) if hasattr(ns.gaba, "item") else float(ns.gaba),
-                "cortisol": float(ns.cortisol.item()) if hasattr(ns.cortisol, "item") else float(ns.cortisol),
-                "adrenaline": float(ns.adrenaline.item()) if hasattr(ns.adrenaline, "item") else float(ns.adrenaline),
-                "estrogen": float(ns.estrogen.item()) if hasattr(ns.estrogen, "item") else float(ns.estrogen),
-                "melatonin": float(ns.melatonin.item()) if hasattr(ns.melatonin, "item") else float(ns.melatonin)
+                "oxytocin": _get_neuro_val(ns, "oxytocin"),
+                "serotonin": _get_neuro_val(ns, "serotonin"),
+                "dopamine": _get_neuro_val(ns, "dopamine"),
+                "acetylcholine": _get_neuro_val(ns, "acetylcholine"),
+                "testosterone": _get_neuro_val(ns, "testosterone"),
+                "gaba": _get_neuro_val(ns, "gaba"),
+                "cortisol": _get_neuro_val(ns, "cortisol"),
+                "adrenaline": _get_neuro_val(ns, "adrenaline"),
+                "estrogen": _get_neuro_val(ns, "estrogen"),
+                "melatonin": _get_neuro_val(ns, "melatonin")
             }
 
         audio_filename = f"adhoc_speech_{int(time.time())}_{random.randint(1000, 9999)}.mp3"
@@ -1091,17 +1143,17 @@ async def generate_tts_endpoint(
         return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
 
 @app.get("/api/logs")
-async def get_logs_endpoint():
+async def get_logs_endpoint() -> dict[str, Any]:
     return {"logs": SYSTEM_LOGS}
 
 @app.post("/api/logs/clear")
-async def clear_logs_endpoint():
+async def clear_logs_endpoint() -> dict[str, Any]:
     SYSTEM_LOGS.clear()
     log_system("Console cleared")
     return {"status": "success"}
 
 @app.post("/api/logs/export")
-async def export_logs_endpoint(logs: str = Form(...), x_token: str = Header(None, alias="X-Blyskawica-Token")):
+async def export_logs_endpoint(logs: str = Form(...), x_token: str = Header(None, alias="X-Blyskawica-Token")) -> Any:
     verify_startup_token(x_token)
     global permission_level
     if permission_level < 2:
@@ -1138,7 +1190,7 @@ def ask_windows_consent(message: str, title: str) -> bool:
 async def ask_system_consent(message: str, title: str) -> bool:
     """Asynchroniczne zapytanie o zgodę użytkownika bez blokowania pętli asyncio."""
     import asyncio
-    return bool(await asyncio.to_thread(ask_windows_consent, message, title))
+    return await asyncio.to_thread(ask_windows_consent, message, title)
 
 @app.post("/api/execute_system_action")
 async def execute_system_action_endpoint(
@@ -1147,7 +1199,7 @@ async def execute_system_action_endpoint(
     action_q: str = Query(None, alias="action"),
     args_q: str = Query(None, alias="args"),
     x_token: str = Header(None, alias="X-Blyskawica-Token")
-):
+) -> Any:
     verify_startup_token(x_token)
     global permission_level, quarantine_active
     if quarantine_active:
@@ -1222,7 +1274,7 @@ async def execute_system_action_endpoint(
     return JSONResponse(status_code=400, content={"status": "error", "message": f"Nieznana akcja: {target_action}"})
 
 @app.get("/api/ide/files")
-async def get_ide_files():
+async def get_ide_files() -> Any:
     global permission_level
     if permission_level == 1:
         return JSONResponse(status_code=403, content={"status": "error", "message": "Dostęp zablokowany. Uruchomiono tryb Sandbox."})
@@ -1258,14 +1310,14 @@ async def get_ide_files():
 async def get_file_content(
     path: str,
     x_token: str = Header(None, alias="X-Blyskawica-Token")
-):
+) -> Any:
     verify_startup_token(x_token)
     global permission_level
     if permission_level == 1:
         return JSONResponse(status_code=403, content={"status": "error", "message": "Dostęp zablokowany. Uruchomiono tryb Sandbox."})
 
     project_root = BASE_DIR.parent
-    normalized_input = str(path).replace("\\", "/")
+    normalized_input = path.replace("\\", "/")
     target_path = Path(path)
     if not target_path.is_absolute():
         target_path = project_root / target_path
@@ -1299,7 +1351,7 @@ async def vibe_code(
     content_q: str = Query(None, alias="content"),
     instruction_q: str = Query(None, alias="instruction"),
     x_token: str = Header(None, alias="X-Blyskawica-Token")
-):
+) -> Any:
     verify_startup_token(x_token)
     global permission_level, quarantine_active
     if quarantine_active:
@@ -1376,10 +1428,9 @@ async def vibe_code(
         log_system(f"VIBE CODE: Zapisano zmiany w pliku: {target_path_str}")
 
         if cra_engine:
-            import torch
-            cra_engine.neuro_state.dopamine = torch.clamp(cra_engine.neuro_state.dopamine + 0.35, 0.0, 2.0)
-            cra_engine.neuro_state.testosterone = torch.clamp(cra_engine.neuro_state.testosterone + 0.25, 0.0, 2.0)
-            cra_engine.neuro_state.oxytocin = torch.clamp(cra_engine.neuro_state.oxytocin + 0.05, 0.0, 1.0)
+            _adjust_neuro(cra_engine.neuro_state, "dopamine", 0.35, 0.0, 2.0)
+            _adjust_neuro(cra_engine.neuro_state, "testosterone", 0.25, 0.0, 2.0)
+            _adjust_neuro(cra_engine.neuro_state, "oxytocin", 0.05, 0.0, 1.0)
 
         if consolidation_engine:
             consolidation_engine.record_event(
@@ -1399,7 +1450,7 @@ async def vibe_code(
         return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
 
 @app.post("/api/ide/analyze")
-async def analyze_code(path: str = Form(...)):
+async def analyze_code(path: str = Form(...)) -> Any:
     project_root = BASE_DIR.parent
     target_path = Path(path)
     if not target_path.is_absolute():
@@ -1450,9 +1501,9 @@ async def analyze_code(path: str = Form(...)):
         return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
 
 @app.post("/api/crystallize")
-async def crystallize_soul():
+async def crystallize_soul() -> Any:
     """Triggers Phase 1.2: Crystallization of the Core into ONNX."""
-    if not CORE_AVAILABLE or not blysk_core:
+    if not CORE_AVAILABLE or not blysk_core or ONNXBridge is None:
         return JSONResponse(status_code=500, content={"status": "error", "message": "Rdzeń Błyskawicy nie jest załadowany."})
 
     import torch.nn as nn
@@ -1482,7 +1533,7 @@ async def crystallize_soul():
         return JSONResponse(status_code=500, content={"status": "error", "message": "Błąd podczas krystalizacji modelu."})
 
 @app.post("/api/upload/{media_type}")
-async def upload_media(media_type: str, file: UploadFile = File(...)):
+async def upload_media(media_type: str, file: UploadFile = File(...)) -> Any:
     if media_type not in ["zdjecia", "muzyka", "filmy"]:
         media_type = "dokumenty"
 
@@ -1514,11 +1565,11 @@ async def upload_media(media_type: str, file: UploadFile = File(...)):
 app.mount("/media", StaticFiles(directory=str(MEDIA_DIR)), name="media")
 app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="frontend")
 
-@app.on_event("startup")
-async def startup_docking():
+@app.on_event("startup")  # type: ignore[deprecated]
+async def startup_docking() -> None:
     """Attempt to auto-register and dock Blyskawica in the Nethical Hub."""
 
-    async def run_dock_sequence():
+    async def run_dock_sequence() -> None:
         # Wait 3 seconds to let Nethical server startup
         await asyncio.sleep(3.0)
 

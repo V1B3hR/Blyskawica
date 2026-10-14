@@ -9,11 +9,11 @@ logger = logging.getLogger(__name__)
 DEFAULT_DECOY_DIR = str(Path(__file__).resolve().parents[2] / "decoy_workspace")
 
 class AgenticHoneypot:
-    def __init__(self, decoy_dir: str | None = None):
+    def __init__(self, decoy_dir: str | None = None) -> None:
         self.decoy_dir = decoy_dir or DEFAULT_DECOY_DIR
         self.is_active = False
 
-    def activate_shadow_workspace(self):
+    def activate_shadow_workspace(self) -> None:
         """Inicjalizuje fałszywe środowisko z nasyconymi informacjami śledzącymi (Watermarking)."""
         self.is_active = True
         os.makedirs(self.decoy_dir, exist_ok=True)

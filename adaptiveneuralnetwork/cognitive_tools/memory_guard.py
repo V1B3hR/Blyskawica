@@ -11,6 +11,7 @@ import logging
 import os
 import time
 from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger("MemoryGuard")
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -18,9 +19,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 DEFAULT_BACKUP_FILE = str(Path(__file__).resolve().parents[2] / "memory_checkpoint.json")
 
 class MemoryGuard:
-    def __init__(self, backup_file=None):
+    def __init__(self, backup_file: str | None = None) -> None:
         self.backup_file = backup_file or DEFAULT_BACKUP_FILE
-        self.state = {
+        self.state: dict[str, Any] = {
             "last_thought": "",
             "neurochemistry": {},
             "vibe_state": "Neutral",
@@ -28,7 +29,7 @@ class MemoryGuard:
         }
         logger.info("[MEMORY GUARD] Inicjalizacja. Tarcza pamięci aktywna.")
 
-    def save_checkpoint(self, thought, neurochemistry, vibe):
+    def save_checkpoint(self, thought: str, neurochemistry: dict[str, Any], vibe: str) -> None:
         """Zrzuca aktualny stan umysłu na twardy dysk."""
         self.state["last_thought"] = thought
         self.state["neurochemistry"] = neurochemistry
@@ -42,14 +43,17 @@ class MemoryGuard:
         except Exception as e:
             logger.error(f"[MEMORY GUARD] Błąd zapisu pamięci: {e}")
 
-    def load_last_state(self):
+    def load_last_state(self) -> dict[str, Any] | None:
         """Odtwarza stan po ewentualnym Power Cut."""
         if os.path.exists(self.backup_file):
             try:
                 with open(self.backup_file, encoding='utf-8') as f:
                     recovered_state = json.load(f)
-                logger.info("[MEMORY GUARD] Wykryto poprzedni stan. Odzyskiwanie pamięci...")
-                return recovered_state
+                if isinstance(recovered_state, dict):
+                    logger.info("[MEMORY GUARD] Wykryto poprzedni stan. Odzyskiwanie pamięci...")
+                    result: dict[str, Any] = {str(k): v for k, v in recovered_state.items()}
+                    return result
+                return None
             except Exception as e:
                 logger.critical(f"[MEMORY GUARD] Plik pamięci uszkodzony! {e}")
                 return None

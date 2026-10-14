@@ -19,7 +19,7 @@ class KnowledgeHub:
     Manages the ingestion of disparate datasets into the neuromorphic substrate.
     """
 
-    def __init__(self, dataset_root: str | Path | None = None):
+    def __init__(self, dataset_root: str | Path | None = None) -> None:
         if dataset_root:
             self.root = Path(dataset_root)
         else:
@@ -28,7 +28,7 @@ class KnowledgeHub:
         # Input size matches character/val range, target patterns size arbitrarily set
         self.text_encoder = TemporalPatternEncoder(input_size=256, pattern_size=64, config=config)
 
-    def harvest_wisdom(self):
+    def harvest_wisdom(self) -> list[torch.Tensor]:
         """Processes ION_Plato.csv into semantic trajectories."""
         df = pd.read_csv(self.root / "ION_Plato.csv")
         wisdom_samples = []
@@ -43,7 +43,7 @@ class KnowledgeHub:
                 wisdom_samples.append(pattern)
         return wisdom_samples
 
-    def harvest_armor(self):
+    def harvest_armor(self) -> tuple[torch.Tensor, torch.Tensor]:
         """Processes smart_system_anomaly_dataset.csv into rate-coded threat vectors."""
         df = pd.read_csv(self.root / "smart_system_anomaly_dataset.csv")
 
@@ -60,7 +60,7 @@ class KnowledgeHub:
 
         return torch.tensor(metrics_norm.values, dtype=torch.float32), torch.tensor(numeric_labels.values)
 
-    def harvest_fairness(self):
+    def harvest_fairness(self) -> pd.DataFrame:
         """Processes compas-scores-raw.csv into balance indicators."""
         # Focus on demographic parity / bias indicators
         df = pd.read_csv(self.root / "compas-scores-raw.csv")

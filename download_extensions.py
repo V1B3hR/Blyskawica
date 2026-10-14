@@ -32,7 +32,7 @@ def safe_extract_zip(zip_file: zipfile.ZipFile, extract_to: Path) -> None:
         member_path = extract_to_resolved / member.filename
         if not is_safe_zip_path(extract_to_resolved, member_path):
             raise RuntimeError(f"Zip Slip detected! Malicious path inside archive: {member.filename}")
-    zip_file.extractall(extract_to, filter="data")
+    zip_file.extractall(extract_to)
 
 
 def download_and_extract() -> None:

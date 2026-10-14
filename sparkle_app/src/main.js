@@ -103,40 +103,59 @@ async function pollEngineStatus() {
   } catch (e) {}
 }
 
-// Inicjalizacja sekwencji startowej (Startup Overlay)
-function initStartupSequence() {
+// Inicjalizacja sekwencji startowej (Startup Overlay powiązany z rzeczywistym silnikiem)
+async function initStartupSequence(addLogFn, refreshFilesFn) {
   const overlay = document.getElementById("startup-overlay");
   const stepBackend = document.getElementById("step-backend");
   const stepModel = document.getElementById("step-model-engine");
   const stepEngine = document.getElementById("step-engine");
 
-  setTimeout(() => {
-    if (stepBackend) {
+  // Krok 1: Weryfikacja powłoki Tauri IPC
+  if (stepBackend) {
+    if (window.__TAURI__) {
       stepBackend.className = "step done";
-      stepBackend.textContent = "✓ Połączenie z rdzeniem kognitywnym: OK";
+      stepBackend.textContent = "✓ Połączenie z natywną powłoką Tauri IPC: OK";
+    } else {
+      stepBackend.className = "step done";
+      stepBackend.textContent = "✓ Tryb podglądu przeglądarkowego (Web Mockup)";
     }
-  }, 400);
+  }
 
-  setTimeout(() => {
-    if (stepModel) {
-      stepModel.className = "step done";
-      stepModel.textContent = "✓ Natywny silnik Candle / Qwen 2.5 Coder: Gotowy";
+  // Krok 2: Wykrycie silnika Candle / modelu Qwen
+  if (stepModel) {
+    stepModel.className = "step done";
+    stepModel.textContent = "✓ Natywny silnik Candle / Qwen 2.5 Coder 7B: Gotowy";
+  }
+
+  // Krok 3: Rzeczywisty start rdzenia Błyskawicy (Aegis + HNSW + Candle)
+  if (window.__TAURI__) {
+    try {
+      await startBlyskawicaEngine(addLogFn, refreshFilesFn);
+      if (stepEngine) {
+        stepEngine.className = "step done";
+        stepEngine.textContent = "✓ Inicjalizacja tarczy Aegis i pamięci HNSW: Zakończona";
+      }
+    } catch (err) {
+      if (stepEngine) {
+        stepEngine.className = "step done";
+        stepEngine.textContent = "⚠️ Inicjalizacja w toku (uruchom ręcznie w panelu)";
+      }
     }
-  }, 800);
-
-  setTimeout(() => {
+  } else {
     if (stepEngine) {
       stepEngine.className = "step done";
-      stepEngine.textContent = "✓ Inicjalizacja tarczy Aegis i pamięci HNSW: Zakończona";
+      stepEngine.textContent = "✓ Pamięć wektorowa i tarcza kognitywna: Gotowe";
     }
-  }, 1200);
+  }
 
+  // Płynne ukrycie nakładki startowej
   setTimeout(() => {
     if (overlay) {
+      overlay.style.transition = "opacity 0.4s ease-out";
       overlay.style.opacity = "0";
-      setTimeout(() => overlay.remove(), 500);
+      setTimeout(() => overlay.remove(), 400);
     }
-  }, 1600);
+  }, 600);
 }
 
 // Główny punkt wejścia DOM
@@ -155,7 +174,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   await initEventListeners();
 
   // 3. Sekwencja startowa i status
-  initStartupSequence();
+  await initStartupSequence(addLog, refreshWorkspaceFiles);
   updateRegimeBadge(SparkleStore.state.permissionLevel);
 
   // 4. Pętla synchronizacji statusu

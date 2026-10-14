@@ -12,6 +12,7 @@ Core engine designed to integrate:
 import json
 import os
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import torch
@@ -25,13 +26,18 @@ YANT_PATHS = [
 ]
 
 class DiamondYantEngine:
-    def __init__(self, lattice_size=16):
+    def __init__(self, lattice_size: int = 16) -> None:
         self.lattice_size = lattice_size
         # Create directories
         for path in YANT_PATHS:
             os.makedirs(path, exist_ok=True)
 
-    def generate_mock_eeg(self, duration_sec=1.0, sampling_rate_hz=250, state="focused"):
+    def generate_mock_eeg(
+        self,
+        duration_sec: float = 1.0,
+        sampling_rate_hz: int = 250,
+        state: str = "focused"
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Generates simulated EEG signal.
         - "focused": High power in 8-12 Hz Alpha band.
@@ -49,7 +55,7 @@ class DiamondYantEngine:
 
         return t, signal
 
-    def map_eeg_to_yant_matrix(self, eeg_signal):
+    def map_eeg_to_yant_matrix(self, eeg_signal: Any) -> tuple[torch.Tensor, tuple[float, float]]:
         """
         Performs Cognitive Cymatics mapping.
         Transforms 1D EEG signal to a 2D resonant Chladni-like matrix on the Diamond Yant.
@@ -97,7 +103,12 @@ class DiamondYantEngine:
 
         return yant_matrix, (alpha_intensity, beta_gamma_intensity)
 
-    def apply_harmonic_bridge(self, yant_matrix, spectral_intensities, base_ibm_drift):
+    def apply_harmonic_bridge(
+        self,
+        yant_matrix: torch.Tensor,
+        spectral_intensities: tuple[float, float],
+        base_ibm_drift: float
+    ) -> tuple[float, dict[str, Any]]:
         """
         Harmonic Bridge: Stabilizes IBM PCM resistance drift using Alpha wave resonance.
         Coherence is defined as relative Alpha power against high-frequency distraction.

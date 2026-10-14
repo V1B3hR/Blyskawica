@@ -195,6 +195,7 @@ mod tests {
         
         let result = sentinel.audit_system_access(
             1200,
+            "python.exe",
             "workspace/main.py",
             AegisActionType::UnauthorizedFileWrite,
         );

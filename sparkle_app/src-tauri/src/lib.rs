@@ -204,13 +204,12 @@ async fn start_engine(app_handle: AppHandle, state: State<'_, AppState>) -> Resu
 
     // Spawnowanie forwardera zdarzeń z Core do Tauri frontend
     let app_handle_clone = app_handle.clone();
-    let state_clone = app_handle.state::<AppState>();
     tokio::spawn(async move {
         while let Some(event) = event_rx.recv().await {
             if let blyskawica_core::state_manager::EngineEvent::Neurochemistry(ref ns) = event {
-                if let Ok(mut inner) = state_clone.0.lock() {
+                if let Ok(mut inner) = app_handle_clone.state::<AppState>().0.lock() {
                     inner.current_neurochemistry = ns.clone();
-                }
+                };
             }
             let _ = app_handle_clone.emit("engine-event", event);
         }

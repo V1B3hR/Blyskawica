@@ -15,10 +15,11 @@ import warnings
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, Generator
 
 import numpy as np
 import torch
+import torch.version
 
 
 @dataclass
@@ -79,7 +80,7 @@ class SeedState:
     """Captures complete random state for reproducibility."""
     master_seed: int
     python_random_state: Any
-    numpy_random_state: dict[str, Any]
+    numpy_random_state: Any
     torch_random_state: Any
     torch_cuda_random_state: Any | None
 
@@ -132,7 +133,7 @@ class DeterminismReport:
 class ReproducibilityHarness:
     """Comprehensive reproducibility management system."""
 
-    def __init__(self, master_seed: int = 42, strict_mode: bool = True):
+    def __init__(self, master_seed: int = 42, strict_mode: bool = True) -> None:
         self.master_seed = master_seed
         self.strict_mode = strict_mode
         self.environment = EnvironmentSnapshot.capture()
@@ -189,7 +190,7 @@ class ReproducibilityHarness:
             )
 
     @contextmanager
-    def isolated_seed_context(self, seed: int):
+    def isolated_seed_context(self, seed: int) -> Generator[None, None, None]:
         """Context manager for isolated seed usage."""
         # Capture current state
         current_state = SeedState.capture(seed)
@@ -204,11 +205,11 @@ class ReproducibilityHarness:
 
     def verify_determinism(
         self,
-        test_function,
+        test_function: Callable[..., Any],
         test_name: str,
         run_count: int = 3,
-        *args,
-        **kwargs
+        *args: Any,
+        **kwargs: Any
     ) -> DeterminismReport:
         """
         Verify that a function produces deterministic outputs.
@@ -294,7 +295,7 @@ class ReproducibilityHarness:
 
     def generate_reproducibility_report(self, output_path: str | Path | None = None) -> dict[str, Any]:
         """Generate comprehensive reproducibility report."""
-        report = {
+        report: dict[str, Any] = {
             "harness_config": {
                 "master_seed": self.master_seed,
                 "strict_mode": self.strict_mode,
@@ -378,7 +379,7 @@ def set_global_seed(seed: int = 42, strict_mode: bool = True) -> None:
     harness.set_seed(seed)
 
 
-def verify_reproducible_function(func, *args, **kwargs) -> bool:
+def verify_reproducible_function(func: Callable[..., Any], *args: Any, **kwargs: Any) -> bool:
     """Quick verification that a function is reproducible."""
     harness = ReproducibilityHarness()
     report = harness.verify_determinism(func, func.__name__, *args, **kwargs)

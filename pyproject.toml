@@ -183,6 +183,37 @@ module = [
 ]
 ignore_missing_imports = true
 
+[tool.pyright]
+include = ["adaptiveneuralnetwork", "blyskawica_app", "scripts"]
+exclude = [
+    "**/node_modules",
+    "**/__pycache__",
+    ".git",
+    "tests",
+    "tests/legacy"
+]
+typeCheckingMode = "standard"
+
+[tool.basedpyright]
+include = ["adaptiveneuralnetwork", "blyskawica_app", "scripts"]
+exclude = [
+    "**/node_modules",
+    "**/__pycache__",
+    ".git",
+    "tests",
+    "tests/legacy"
+]
+typeCheckingMode = "standard"
+reportMissingTypeAnnotations = false
+reportAny = false
+reportExplicitAny = false
+reportUnknownVariableType = false
+reportUnknownMemberType = false
+reportUnknownArgumentType = false
+reportMissingParameterType = false
+
+
+
 [tool.black]
 line-length = 100
 target-version = ["py312"]

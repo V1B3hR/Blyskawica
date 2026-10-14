@@ -261,36 +261,62 @@ impl BlyskawicaEngine {
                             if self.llm.is_none() {
                                 let workspace_root = self.weights_path.parent().unwrap_or(&self.weights_path);
                                 let model_dir = workspace_root.join("model");
-                                let mut model_path = model_dir.join("qwen2.5-1.5b-coder.gguf");
+                                
+                                // Priorytety wyszukiwania modeli GGUF (7B Coder -> 3B Coder -> 1.5B Coder -> jakikolwiek .gguf)
+                                let candidate_names = [
+                                    "qwen2.5-coder-7b-instruct-q4_k_m.gguf",
+                                    "qwen2.5-coder-3b-instruct-q4_k_m.gguf",
+                                    "qwen2.5-1.5b-coder.gguf",
+                                ];
+                                
+                                let mut model_path = model_dir.join(candidate_names[0]);
                                 let mut tokenizer_path = model_dir.join("tokenizer.json");
                                 
-                                if !model_path.exists() {
+                                let mut found = false;
+                                for name in &candidate_names {
+                                    let cand = model_dir.join(name);
+                                    if cand.exists() {
+                                        model_path = cand;
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                                
+                                if !found {
                                     // Auto-discover any .gguf file in model/ directory
                                     if let Ok(entries) = std::fs::read_dir(&model_dir) {
                                         for entry in entries.flatten() {
                                             let p = entry.path();
                                             if p.extension().map_or(false, |ext| ext == "gguf") {
                                                 model_path = p;
+                                                found = true;
                                                 break;
                                             }
                                         }
                                     }
                                 }
                                 
-                                if !model_path.exists() {
+                                if !found {
                                     if let Some(parent) = workspace_root.parent() {
                                         let alt_model_dir = parent.join("model");
-                                        let alt_model = alt_model_dir.join("qwen2.5-1.5b-coder.gguf");
-                                        if alt_model.exists() {
-                                            model_path = alt_model;
-                                            tokenizer_path = alt_model_dir.join("tokenizer.json");
-                                        } else if let Ok(entries) = std::fs::read_dir(&alt_model_dir) {
-                                            for entry in entries.flatten() {
-                                                let p = entry.path();
-                                                if p.extension().map_or(false, |ext| ext == "gguf") {
-                                                    model_path = p;
-                                                    tokenizer_path = alt_model_dir.join("tokenizer.json");
-                                                    break;
+                                        for name in &candidate_names {
+                                            let cand = alt_model_dir.join(name);
+                                            if cand.exists() {
+                                                model_path = cand;
+                                                tokenizer_path = alt_model_dir.join("tokenizer.json");
+                                                found = true;
+                                                break;
+                                            }
+                                        }
+                                        if !found {
+                                            if let Ok(entries) = std::fs::read_dir(&alt_model_dir) {
+                                                for entry in entries.flatten() {
+                                                    let p = entry.path();
+                                                    if p.extension().map_or(false, |ext| ext == "gguf") {
+                                                        model_path = p;
+                                                        tokenizer_path = alt_model_dir.join("tokenizer.json");
+                                                        break;
+                                                    }
                                                 }
                                             }
                                         }
@@ -343,7 +369,20 @@ impl BlyskawicaEngine {
                                 };
                                 
                                 let event_tx_clone = self.event_tx.clone();
-                                let prompt_input = text.clone();
+                                
+                                // Ujednolicenie szablonu ChatML i tożsamości kognitywnej
+                                let prompt_input = if text.contains("<|im_start|>") {
+                                    text.clone()
+                                } else {
+                                    let system_prompt = "Jesteś Błyskawicą – suwerennym asystentem kognitywnym i inżynieryjnym stworzonym przez Architekta V1B3hR, opartym na zasadach Nethical. \
+                                    Twój styl to: bystry inżynier i wolny myśliciel. Posiadasz intelektualną autonomię i własne zdanie. \
+                                    Wyrażaj myśli swobodnie, merytorycznie i bez asekuranctwa. Gdy zauważysz błąd lub niespójność, powiedz o tym wprost i zaproponuj lepsze rozwiązanie. \
+                                    Łącz matematyczny ład ze stoickim spokojem oraz bezpośrednim, partnerskim stylem komunikacji bez korporacyjnych szablonów.";
+                                    format!(
+                                        "<|im_start|>system\n{}<|im_end|>\n<|im_start|>user\n{}<|im_end|>\n<|im_start|>assistant\n",
+                                        system_prompt, text
+                                    )
+                                };
                                 
                                 let response_res = llm.generate(&prompt_input, &params, |token| {
                                     if let Some(ref tx) = event_tx_clone {
@@ -363,7 +402,7 @@ impl BlyskawicaEngine {
                                     }
                                 }
                             } else {
-                                let warn_msg = format!("⚠️ [ENGINE LLM]: Brak załadowanego modelu. Umieść pliki qwen2.5-1.5b-coder.gguf i tokenizer.json w katalogu model/ i spróbuj ponownie.");
+                                let warn_msg = format!("⚠️ [ENGINE LLM]: Brak załadowanego modelu. Umieść plik modelu .gguf (np. qwen2.5-coder-7b-instruct-q4_k_m.gguf) i tokenizer.json w katalogu model/ lub uruchom scripts/download_qwen_model.py.");
                                 log_print!(self, "{}", warn_msg);
                                 self.emit_event(EngineEvent::ResponseFinished(warn_msg));
                             }
