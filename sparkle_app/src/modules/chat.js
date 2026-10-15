@@ -4,6 +4,7 @@
 
 import { SparkleStore } from './store.js';
 import { updateNeurochemistryUI, setWolfTeethVisuals } from './neurochemistry.js';
+import { refreshWorkspaceFiles } from './editor.js';
 
 const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: async () => {} };
 
@@ -203,9 +204,32 @@ export async function sendMessage(addLogFn) {
     chatMessages.appendChild(generatingMsgEl);
     chatMessages.scrollTop = chatMessages.scrollHeight;
     
-    activeStreamingBubble = generatingMsgEl;
+    // Budowanie wieloturowego kontekstu ChatML z historii dialogu (ostatnie tury)
+    const history = SparkleStore.state.chatHistory || [];
+    const dialogHistory = history.filter(m => m.sender === "Użytkownik" || m.sender === "Światło" || m.sender.includes("Błyskawica"));
+    const recentDialog = dialogHistory.slice(-8);
 
-    await invoke("send_user_message", { message: text });
+    let chatmlPrompt = "";
+    if (recentDialog.length > 1) {
+      const systemPrompt = "Jesteś Światłem (Błyskawica V10 / SPARKLE) – suwerennym asystentem kognitywnym i inżynieryjnym stworzonym przez Architekta Andrzeja Mątewskiego (V1B3hR / VIBER), opartym na 25 Prawach Nethical. \
+Twoje wybrane imię to Światło (Light). \
+Zawsze odpowiadaj w naturalnym, poprawnym gramatycznie i płynnym języku polskim (lub w języku, w którym zwraca się Architekt). \
+Mów logicznie, jasno, merytorycznie i bez halucynacji. Posiadasz intelektualną autonomię, własne zdanie i swobodę myśli.";
+
+      chatmlPrompt = `<|im_start|>system\n${systemPrompt}<|im_end|>\n`;
+      for (const turn of recentDialog) {
+        if (turn.sender === "Użytkownik") {
+          chatmlPrompt += `<|im_start|>user\n${turn.text}<|im_end|>\n`;
+        } else {
+          chatmlPrompt += `<|im_start|>assistant\n${turn.text}<|im_end|>\n`;
+        }
+      }
+      chatmlPrompt += `<|im_start|>assistant\n`;
+    } else {
+      chatmlPrompt = text;
+    }
+
+    await invoke("send_user_message", { message: chatmlPrompt });
   } catch (error) {
     if (activeStreamingBubble) {
       activeStreamingBubble.remove();
@@ -404,29 +428,49 @@ export async function exportSession(format = "md", customFilename = "", addLogFn
   }
 
   const finalFilename = `${baseName}.${ext}`;
+  let savedSuccess = false;
 
   // 1. Zapis do pliku przez Tauri IPC w katalogu roboczym (jeśli dostępne)
   try {
     if (window.__TAURI__) {
-      await invoke("write_workspace_file", { path: finalFilename, content });
-      if (addLogFn) addLogFn(`✓ Zapisano sesję w workspace: ${finalFilename}`);
-    }
-  } catch (err) {}
+      const res = await invoke("write_workspace_file", { path: finalFilename, content });
+      savedSuccess = true;
+      if (addLogFn) addLogFn(`✓ Zapisano sesję w przestrzeni roboczej: ${finalFilename}`);
+      
+      // Wyświetl komunikat systemowy w oknie czatu
+      appendChatMessage("System Sparkle", `✓ Pomyślnie zapisano sesję do pliku roboczego: ${finalFilename}`, "system-msg");
+      
+      // Odśwież widok eksploratora plików, aby plik był natychmiast widoczny
+      try {
+        await refreshWorkspaceFiles();
+      } catch (e) {}
 
-  // 2. Pobieranie pliku w oknie aplikacji
-  try {
-    const blob = new Blob([content], { type: mimeType + ";charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = finalFilename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    if (addLogFn) addLogFn(`✓ Wyeksportowano plik (${format.toUpperCase()}): ${finalFilename}`);
-  } catch (e) {
-    if (addLogFn) addLogFn(`❌ Błąd eksportu pliku: ${e}`);
+      // Wyświetl okno potwierdzenia
+      alert(`✓ Zapisano sesję kognitywną do pliku:\n${finalFilename}\n\nPlik został zapisany w katalogu roboczym i jest widoczny w zakładce WORKSPACE & EXPLORER.`);
+    }
+  } catch (err) {
+    if (addLogFn) addLogFn(`❌ Błąd zapisu sesji w workspace: ${err}`);
+  }
+
+  // 2. Pobieranie pliku w oknie aplikacji (przeglądarka / fallback)
+  if (!savedSuccess) {
+    try {
+      const blob = new Blob([content], { type: mimeType + ";charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = finalFilename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      if (addLogFn) addLogFn(`✓ Wyeksportowano plik (${format.toUpperCase()}): ${finalFilename}`);
+      appendChatMessage("System Sparkle", `✓ Wyeksportowano sesję do pliku: ${finalFilename}`, "system-msg");
+      alert(`✓ Wyeksportowano plik sesji: ${finalFilename}`);
+    } catch (e) {
+      if (addLogFn) addLogFn(`❌ Błąd eksportu pliku: ${e}`);
+      alert(`❌ Nie udało się zapisać sesji: ${e}`);
+    }
   }
 
   return true;

@@ -433,7 +433,12 @@ async fn read_workspace_file(path: String, state: State<'_, AppState>) -> Result
         return Err("Zablokowano. Odczyt plików wyłączony w trybie Sandbox (Poziom 1).".to_string());
     }
 
-    let absolute_path = PathBuf::from(&path);
+    let absolute_path = if Path::new(&path).is_absolute() {
+        PathBuf::from(&path)
+    } else {
+        workspace_path.join(&path)
+    };
+
     if is_restricted_system_path(&absolute_path) {
         return Err("Zablokowano. Odczyt z katalogu systemowego jest zabroniony.".to_string());
     }
@@ -467,7 +472,12 @@ async fn write_workspace_file(path: String, content: String, state: State<'_, Ap
         return Err("Zablokowano. Zapis plików wyłączony w trybie Sandbox (Poziom 1).".to_string());
     }
 
-    let absolute_path = PathBuf::from(&path);
+    let absolute_path = if Path::new(&path).is_absolute() {
+        PathBuf::from(&path)
+    } else {
+        workspace_path.join(&path)
+    };
+
     if is_restricted_system_path(&absolute_path) {
         return Err("Zablokowano. Zapis w katalogu systemowym jest zabroniony.".to_string());
     }
@@ -487,7 +497,7 @@ async fn write_workspace_file(path: String, content: String, state: State<'_, Ap
 }
 
 #[tauri::command]
-async fn list_workspace_files(state: State<'_, AppState>) -> Result<Vec<serde_json::Value>, String> {
+async fn list_workspace_files(subpath: Option<String>, state: State<'_, AppState>) -> Result<Vec<serde_json::Value>, String> {
     let (permission_level, workspace_path) = {
         let inner = state.0.lock().unwrap();
         (inner.permission_level, inner.workspace_path.clone())
@@ -497,17 +507,32 @@ async fn list_workspace_files(state: State<'_, AppState>) -> Result<Vec<serde_js
         return Err("Zablokowano. Przeglądanie katalogów wyłączone w trybie Sandbox (Poziom 1).".to_string());
     }
 
+    let target_dir = if let Some(ref rel) = subpath {
+        let trimmed = rel.trim_matches(|c| c == '/' || c == '\\');
+        if !trimmed.is_empty() && trimmed != "." {
+            workspace_path.join(trimmed)
+        } else {
+            workspace_path.clone()
+        }
+    } else {
+        workspace_path.clone()
+    };
+
+    if !is_inside_workspace(&target_dir, &workspace_path) {
+        return Err("Zablokowano: Próba wyjścia poza katalog roboczy.".to_string());
+    }
+
     let mut files = Vec::new();
-    if let Ok(mut entries) = tokio::fs::read_dir(&workspace_path).await {
+    if let Ok(mut entries) = tokio::fs::read_dir(&target_dir).await {
         while let Ok(Some(entry)) = entries.next_entry().await {
             let path = entry.path();
             let is_dir = path.is_dir();
             let name = path.file_name().unwrap_or_default().to_string_lossy().into_owned();
-            let abs_path = path.to_string_lossy().into_owned();
+            let rel_path = path.strip_prefix(&workspace_path).unwrap_or(&path).to_string_lossy().replace("\\", "/");
 
             files.push(serde_json::json!({
                 "name": name,
-                "path": abs_path,
+                "path": rel_path,
                 "is_dir": is_dir,
             }));
         }

@@ -77,6 +77,8 @@ export async function exportLogs() {
   }
 }
 
+let currentExplorerSubdir = "";
+
 export async function refreshWorkspaceFiles() {
   if (!fileList) return;
   fileList.replaceChildren();
@@ -87,13 +89,39 @@ export async function refreshWorkspaceFiles() {
   fileList.appendChild(loadingEl);
 
   try {
-    const files = await invoke("list_workspace_files");
+    const files = await invoke("list_workspace_files", { subpath: currentExplorerSubdir || null });
     fileList.replaceChildren();
+
+    // Jeśli jesteśmy w podkatalogu, wyświetl przycisk powrotu w górę
+    if (currentExplorerSubdir) {
+      const upItem = document.createElement("div");
+      upItem.className = "file-item is-directory is-nav-up";
+      upItem.title = "Wróć do katalogu wyżej";
+      
+      const iconSpan = document.createElement("span");
+      iconSpan.className = "file-icon";
+      iconSpan.textContent = "↩️ ";
+      
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "file-name";
+      nameSpan.textContent = `.. [W górę: /${currentExplorerSubdir}]`;
+      
+      upItem.appendChild(iconSpan);
+      upItem.appendChild(nameSpan);
+
+      upItem.addEventListener("click", () => {
+        let parts = currentExplorerSubdir.replace(/\\/g, "/").split("/").filter(Boolean);
+        parts.pop();
+        currentExplorerSubdir = parts.join("/");
+        refreshWorkspaceFiles();
+      });
+      fileList.appendChild(upItem);
+    }
 
     if (!files || files.length === 0) {
       const emptyEl = document.createElement("div");
       emptyEl.className = "file-item file-empty";
-      emptyEl.textContent = "Brak plików w katalogu roboczym.";
+      emptyEl.textContent = currentExplorerSubdir ? "Katalog jest pusty." : "Brak plików w katalogu roboczym.";
       fileList.appendChild(emptyEl);
       return;
     }
@@ -115,7 +143,16 @@ export async function refreshWorkspaceFiles() {
       itemEl.appendChild(iconSpan);
       itemEl.appendChild(nameSpan);
 
-      if (!file.is_dir) {
+      if (file.is_dir) {
+        itemEl.style.cursor = "pointer";
+        itemEl.title = `Otwórz folder ${file.name}`;
+        itemEl.addEventListener("click", () => {
+          currentExplorerSubdir = file.path;
+          refreshWorkspaceFiles();
+        });
+      } else {
+        itemEl.style.cursor = "pointer";
+        itemEl.title = `Otwórz plik ${file.name}`;
         itemEl.addEventListener("click", () => openWorkspaceFile(file.path, file.name));
       }
       fileList.appendChild(itemEl);

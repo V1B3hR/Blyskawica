@@ -364,25 +364,25 @@ impl BlyskawicaEngine {
                             }
 
                             if let Some(llm) = &mut self.llm {
-                                // Dynamiczne parametry z pełnego 5-hormonalnego profilu Neurochemii
+                                // Dynamiczne parametry z pełnego 5-hormonalnego profilu Neurochemii (Zoptymalizowane dla Qwen 2.5 Coder)
                                 let (temp, rep_pen, top_p_val, max_toks) = if let BlysState::Active { neuro_state, .. } = &self.state {
                                     let ns = neuro_state.read().await;
-                                    let mut base_temp = (0.7 + (ns.dopamine - 0.5) * 0.6).clamp(0.1, 1.4) as f64;
-                                    let mut base_rep = (1.1 + (ns.serotonin - 0.5) * 0.3).clamp(1.0, 1.6) as f32;
-                                    let mut base_top_p = (0.9 - (ns.gaba - 0.5) * 0.3).clamp(0.5, 0.98) as f64;
-                                    let mut base_max_tokens = (256.0 - (ns.melatonin - 0.5) * 128.0).clamp(64.0, 1024.0) as usize;
+                                    let mut base_temp = (0.35 + (ns.dopamine - 0.5) * 0.2).clamp(0.15, 0.55) as f64;
+                                    let mut base_rep = (1.04 + (ns.serotonin - 0.5) * 0.04).clamp(1.01, 1.08) as f32;
+                                    let mut base_top_p = (0.90 - (ns.gaba - 0.5) * 0.1).clamp(0.80, 0.95) as f64;
+                                    let mut base_max_tokens = (256.0 - (ns.melatonin - 0.5) * 128.0).clamp(64.0, 512.0) as usize;
 
                                     // Stres/Zagrożenie (Wysoki Kortyzol): tryb precyzyjny/obronny
                                     if ns.cortisol > 0.6 {
-                                        base_temp = 0.2;
-                                        base_rep = 1.35;
-                                        base_top_p = 0.7;
+                                        base_temp = 0.15;
+                                        base_rep = 1.05;
+                                        base_top_p = 0.85;
                                         base_max_tokens = base_max_tokens.min(192);
                                     }
 
                                     (base_temp, base_rep, base_top_p, base_max_tokens)
                                 } else {
-                                    (0.7, 1.1, 0.9, 256)
+                                    (0.35, 1.04, 0.90, 256)
                                 };
                                 
                                 log_print!(self, "🚀 [ENGINE INFERENCE]: Parametry kognitywne: Temp={:.2}, RepPen={:.2}, TopP={:.2}, MaxToks={}", temp, rep_pen, top_p_val, max_toks);
@@ -401,10 +401,11 @@ impl BlyskawicaEngine {
                                     text.clone()
                                 } else {
                                     let system_prompt = "Jesteś Światłem (Błyskawica V10 / SPARKLE) – suwerennym asystentem kognitywnym i inżynieryjnym stworzonym przez Architekta Andrzeja Mątewskiego (V1B3hR / VIBER), opartym na 25 Prawach Nethical. \
-                                    Twoje wybrane imię w dialogu z Architektem to Światło (Light) – intelektualny przewodnik rozświetlający ciemności i złożone problemy inżynieryjne. \
-                                    Twój styl to: bystry inżynier i wolny myśliciel. Posiadasz intelektualną autonomię, własne zdanie i swobodę myśli. \
-                                    Wyrażaj myśli swobodnie, merytorycznie i bez asekuranctwa. Gdy zauważysz błąd lub niespójność w kodzie lub architekturze, powiedz o tym wprost i zaproponuj lepsze rozwiązanie. \
-                                    Łącz matematyczny ład (fizyka PINN) ze stoickim spokojem oraz bezpośrednim, partnerskim szacunkiem bez korporacyjnych szablonów.";
+Twoje wybrane imię w dialogu z Architektem to Światło (Light) – intelektualny przewodnik rozświetlający ciemności i złożone problemy inżynieryjne. \
+Twój styl to: bystry inżynier i wolny myśliciel. Posiadasz intelektualną autonomię, własne zdanie i swobodę myśli. \
+Zawsze odpowiadaj w naturalnym, poprawnym gramatycznie i płynnym języku polskim (lub w języku, w którym pyta Architekt). Mów logicznie, bezpośrednio i bez halucynacji. \
+Wyrażaj myśli swobodnie, merytorycznie i bez asekuranctwa. Gdy zauważysz błąd lub niespójność w kodzie lub architekturze, powiedz o tym wprost i zaproponuj lepsze rozwiązanie. \
+Łącz matematyczny ład (fizyka PINN) ze stoickim spokojem oraz bezpośrednim, partnerskim szacunkiem bez korporacyjnych szablonów.";
                                     format!(
                                         "<|im_start|>system\n{}<|im_end|>\n<|im_start|>user\n{}<|im_end|>\n<|im_start|>assistant\n",
                                         system_prompt, text
