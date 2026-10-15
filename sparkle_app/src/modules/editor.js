@@ -143,6 +143,9 @@ export async function openWorkspaceFile(path, filename) {
     if (btnSaveFile) {
       btnSaveFile.disabled = false;
     }
+    if (btnSaveAsFile) {
+      btnSaveAsFile.disabled = false;
+    }
     SparkleStore.update("currentFileOpen", path);
     addLog(`✓ Otwarto plik: ${filename}`);
   } catch (error) {
@@ -178,6 +181,9 @@ export function createNewFile() {
   }
   if (btnSaveFile) {
     btnSaveFile.disabled = false;
+  }
+  if (btnSaveAsFile) {
+    btnSaveAsFile.disabled = false;
   }
   SparkleStore.update("currentFileOpen", filename);
   addLog(`[Pliki]: Utworzono nowy dokument '${filename}'. Kliknij Zapisz, aby zapisać na dysku.`);

@@ -622,9 +622,16 @@ async fn scan_local_models(app: tauri::AppHandle) -> Result<serde_json::Value, S
     let app_data_dir = app.path().app_data_dir().unwrap_or_else(|_| std::env::temp_dir().join("Blyskawica"));
     scan_dirs.push(app_data_dir.join("models"));
 
-    // 2. Current workspace model dir
+    // 2. Current workspace and executable model dir
     scan_dirs.push(PathBuf::from("model"));
     scan_dirs.push(PathBuf::from("models"));
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(exe_dir) = exe.parent() {
+            scan_dirs.push(exe_dir.join("model"));
+            scan_dirs.push(exe_dir.join("models"));
+        }
+    }
+    scan_dirs.push(PathBuf::from(r"C:\Projekty\Blyskawica\model"));
 
     // 3. User profile caches (Ollama, LM Studio, HuggingFace)
     if let Ok(home) = std::env::var("USERPROFILE").or_else(|_| std::env::var("HOME")) {
@@ -896,12 +903,33 @@ pub fn run() {
             let state = app.state::<AppState>();
             let mut inner = state.0.lock().unwrap();
             
-            // Dynamic workspace resolution: use local repo dir if valid, else fallback to app_data_dir
+            // Dynamic workspace resolution: use local repo dir if valid, else standalone bundle dir, else fallback to app_data_dir
             let app_data_dir = app.path().app_data_dir().unwrap_or_else(|_| std::env::temp_dir().join("Blyskawica"));
             let current_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
             
             if current_dir.join("adaptiveneuralnetwork").exists() || current_dir.join("blyskawica_core").exists() {
                 inner.workspace_path = current_dir;
+            } else if current_dir.join("model").exists() {
+                inner.workspace_path = current_dir;
+            } else if let Ok(exe_path) = std::env::current_exe() {
+                if let Some(exe_dir) = exe_path.parent() {
+                    if exe_dir.join("model").exists() {
+                        inner.workspace_path = exe_dir.to_path_buf();
+                    } else if let Some(parent) = exe_dir.parent().and_then(|p| p.parent()) {
+                        if parent.join("model").exists() {
+                            inner.workspace_path = parent.to_path_buf();
+                        } else {
+                            let _ = std::fs::create_dir_all(&app_data_dir);
+                            inner.workspace_path = app_data_dir.clone();
+                        }
+                    } else {
+                        let _ = std::fs::create_dir_all(&app_data_dir);
+                        inner.workspace_path = app_data_dir.clone();
+                    }
+                } else {
+                    let _ = std::fs::create_dir_all(&app_data_dir);
+                    inner.workspace_path = app_data_dir.clone();
+                }
             } else {
                 let _ = std::fs::create_dir_all(&app_data_dir);
                 inner.workspace_path = app_data_dir.clone();

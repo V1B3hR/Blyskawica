@@ -15,7 +15,7 @@ if hasattr(sys.stdout, "reconfigure"):
 if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
-def create_standalone_bundle():
+def create_standalone_bundle() -> bool:
     print("=" * 70)
     print("⚡ TWORZENIE PACZKI BŁYSKAWICA STANDALONE (OFFLINE PORTABLE)")
     print("=" * 70)
@@ -57,7 +57,7 @@ def create_standalone_bundle():
         preferred = next((f for f in gguf_files if "7b" in f.name.lower()), gguf_files[0])
         print(f"  ✓ Wykryto model GGUF: {preferred.name} ({preferred.stat().st_size / (1024*1024):.2f} MB)")
         dest_gguf = dest_model_dir / preferred.name
-        
+
         # Opcjonalne tworzenie hardlinku na tym samym dysku dla błyskawicznego tworzenia paczki
         use_copy = "--copy" in sys.argv
         if use_copy:

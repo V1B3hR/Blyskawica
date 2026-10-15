@@ -4,7 +4,7 @@
 
 import { SparkleStore } from './modules/store.js';
 import { initNeurochemistryHUD, updateNeurochemistryUI, setWolfTeethVisuals, updateRegimeBadge } from './modules/neurochemistry.js';
-import { initChatModule, appendChatMessage, handleIncomingToken, handleResponseFinished } from './modules/chat.js';
+import { initChatModule, appendChatMessage, handleIncomingToken, handleResponseFinished, exportSession, startBlyskawicaEngine } from './modules/chat.js';
 import { initEditorModule, addLog, refreshWorkspaceFiles } from './modules/editor.js';
 import { initAegisModule, addAnomaly } from './modules/aegis.js';
 import { initQuantumModule } from './modules/quantum.js';
@@ -69,6 +69,70 @@ function initTabs() {
   });
 }
 
+// Obsługa okna Opcji, Akceleratora Sprzętowego i Eksportu
+function initOptionsModule() {
+  const btnOpenOptions = document.getElementById("btn-open-options");
+  const btnCloseOptions = document.getElementById("btn-close-options");
+  const btnSaveOptionsClose = document.getElementById("btn-save-options-close");
+  const optionsModal = document.getElementById("options-modal");
+  const chkEnableTts = document.getElementById("chk-enable-tts");
+  const optDeviceGpu = document.getElementById("opt-device-gpu");
+  const optDeviceCpu = document.getElementById("opt-device-cpu");
+  const btnQuickExport = document.getElementById("btn-quick-export");
+  const btnDoExportSession = document.getElementById("btn-do-export-session");
+  const exportFilenameInput = document.getElementById("export-filename");
+
+  // Otwieranie / zamykanie modalu opcji
+  if (btnOpenOptions && optionsModal) {
+    btnOpenOptions.addEventListener("click", () => {
+      optionsModal.classList.remove("hidden");
+    });
+  }
+
+  const closeModal = () => {
+    if (optionsModal) optionsModal.classList.add("hidden");
+  };
+
+  if (btnCloseOptions) btnCloseOptions.addEventListener("click", closeModal);
+  if (btnSaveOptionsClose) btnSaveOptionsClose.addEventListener("click", closeModal);
+
+  // Zmiana jednostki obliczeniowej (GPU vs CPU)
+  const updateDevice = (device) => {
+    SparkleStore.update("computeDevice", device);
+    addLog(`[Sprzęt]: Wybrano jednostkę obliczeniową: ${device === 'gpu' ? 'Karta Graficzna RTX 4070 (CUDA)' : 'Procesor CPU (AVX2 Multi-core)'}`);
+  };
+
+  if (optDeviceGpu) optDeviceGpu.addEventListener("change", () => updateDevice("gpu"));
+  if (optDeviceCpu) optDeviceCpu.addEventListener("change", () => updateDevice("cpu"));
+
+  // Przełącznik TTS (Domyślnie wyłączony)
+  if (chkEnableTts) {
+    chkEnableTts.checked = SparkleStore.state.ttsEnabled;
+    chkEnableTts.addEventListener("change", (e) => {
+      SparkleStore.update("ttsEnabled", e.target.checked);
+      addLog(`[Dźwięk]: Synteza mowy ${e.target.checked ? 'włączona' : 'wyłączona (wyciszona)'}`);
+    });
+  }
+
+  // Szybki eksport (Markdown - domyślny)
+  if (btnQuickExport) {
+    btnQuickExport.addEventListener("click", () => {
+      exportSession("md", "", addLog);
+    });
+  }
+
+  // Eksport z poziomu okna opcji
+  if (btnDoExportSession) {
+    btnDoExportSession.addEventListener("click", () => {
+      const selectedFormatEl = document.querySelector('input[name="export-format"]:checked');
+      const format = selectedFormatEl ? selectedFormatEl.value : "md";
+      const customName = exportFilenameInput ? exportFilenameInput.value.trim() : "";
+      exportSession(format, customName, addLog);
+      closeModal();
+    });
+  }
+}
+
 // Cykliczne odpytywanie silnika Tauri o status
 async function pollEngineStatus() {
   if (!window.__TAURI__) return;
@@ -87,12 +151,12 @@ async function pollEngineStatus() {
     if (status.running) {
       if (engineStatusIndicator) engineStatusIndicator.className = "status-indicator active";
       if (engineStatusText && !document.body.classList.contains("wolf-teeth-active")) {
-        engineStatusText.textContent = "Rdzeń aktywny";
+        engineStatusText.textContent = "Światło: Rdzeń aktywny";
       }
     } else {
       if (engineStatusIndicator) engineStatusIndicator.className = "status-indicator idle";
       if (engineStatusText && !document.body.classList.contains("wolf-teeth-active")) {
-        engineStatusText.textContent = "Rdzeń nieaktywny";
+        engineStatusText.textContent = "Światło: Rdzeń uśpiony";
       }
     }
 
@@ -127,7 +191,7 @@ async function initStartupSequence(addLogFn, refreshFilesFn) {
     stepModel.textContent = "✓ Natywny silnik Candle / Qwen 2.5 Coder 7B: Gotowy";
   }
 
-  // Krok 3: Rzeczywisty start rdzenia Błyskawicy (Aegis + HNSW + Candle)
+  // Krok 3: Rzeczywisty start rdzenia Światła (Aegis + HNSW + Candle)
   if (window.__TAURI__) {
     try {
       await startBlyskawicaEngine(addLogFn, refreshFilesFn);
@@ -169,6 +233,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   initAegisModule(addLog);
   initQuantumModule(addLog);
   initTabs();
+  initOptionsModule();
 
   // 2. Inicjalizacja zdarzeń Tauri
   await initEventListeners();
@@ -181,5 +246,5 @@ document.addEventListener("DOMContentLoaded", async () => {
   setInterval(pollEngineStatus, 3000);
   pollEngineStatus();
 
-  addLog("⚡ [SPARKLE V10]: Środowisko gotowe do pracy.");
+  addLog("⚡ [ŚWIATŁO]: Środowisko kognitywne gotowe do współpracy.");
 });
