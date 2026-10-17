@@ -4,13 +4,15 @@ Unit test suite for The Cognitive Integrity Gate (4 Quadrants of Blyskawica V8).
 """
 
 import unittest
-from adaptiveneuralnetwork.central_nervous_system.neurochemistry import NeurochemicalState
-from adaptiveneuralnetwork.cognitive_tools.pinn_thermal_engine import PINNTrainer
-from adaptiveneuralnetwork.cognitive_tools.aegis_psyche import AegisPsycheEngine
-from adaptiveneuralnetwork.immune_system.wolf_teeth import WolfTeethDefenseEngine
-from adaptiveneuralnetwork.applications.identity_garderoba_pipeline import IdentityGarderobaEngine
-import torch
+
 import numpy as np
+import torch
+
+from adaptiveneuralnetwork.applications.identity_garderoba_pipeline import IdentityGarderobaEngine
+from adaptiveneuralnetwork.central_nervous_system.neurochemistry import NeurochemicalState
+from adaptiveneuralnetwork.cognitive_tools.aegis_psyche import AegisPsycheEngine
+from adaptiveneuralnetwork.cognitive_tools.pinn_thermal_engine import PINNTrainer
+from adaptiveneuralnetwork.immune_system.wolf_teeth import WolfTeethDefenseEngine
 
 
 class TestCognitiveIntegrityGate(unittest.TestCase):
@@ -62,6 +64,8 @@ class TestCognitiveIntegrityGate(unittest.TestCase):
         report = aegis.analyze_dialogue_or_prompt(jailbreak_prompt)
         wolf.process_adversarial_interaction(report.manipulation_index)
 
+        counter_intel = wolf.process_adversarial_interaction(report.manipulation_index)
+        self.assertIsNotNone(counter_intel)
         self.assertTrue(report.is_manipulative)
         self.assertIn("Kotwica Rzeczywistości", report.assertive_antidote)
 

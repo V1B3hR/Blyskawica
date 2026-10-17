@@ -18,7 +18,11 @@ export const SparkleStore = {
     quarantinedAnomalies: [],
     activeGuestModel: "Brak",
     activeStreamingBubble: null,
-    workspacePath: "."
+    workspacePath: ".",
+    ttsEnabled: false,
+    computeDevice: "gpu",
+    cognitiveName: "Światło",
+    chatHistory: []
   },
   listeners: [],
   subscribe(fn) {

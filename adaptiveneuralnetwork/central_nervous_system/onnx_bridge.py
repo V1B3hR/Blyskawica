@@ -138,16 +138,27 @@ class ONNXBridge:
         model.eval()
 
         try:
+            import inspect
+
+            export_kwargs = {
+                "export_params": True,
+                "opset_version": 15,
+                "do_constant_folding": True,
+                "input_names": ["input"],
+                "output_names": ["output"],
+                "dynamic_axes": {"input": {0: "batch_size"}, "output": {0: "batch_size"}},
+            }
+            if "dynamo" in inspect.signature(torch.onnx.export).parameters:
+                try:
+                    import onnxscript  # noqa: F401
+                except ImportError:
+                    export_kwargs["dynamo"] = False
+
             torch.onnx.export(
                 model,
                 input_sample,
                 export_path,
-                export_params=True,
-                opset_version=15,
-                do_constant_folding=True,
-                input_names=['input'],
-                output_names=['output'],
-                dynamic_axes={'input': {0: 'batch_size'}, 'output': {0: 'batch_size'}}
+                **export_kwargs,
             )
             logger.info(f"Crystallization Complete: {export_path}")
             return export_path

@@ -649,6 +649,30 @@ body.wolf-teeth-active {
   content: "📄";
 }
 
+.file-item.is-directory {
+  color: #7dd3fc;
+  font-weight: 500;
+}
+
+.file-item.is-directory:hover {
+  background: rgba(56, 189, 248, 0.15);
+  color: #e0f2fe;
+}
+
+.file-item.is-nav-up {
+  color: #facc15;
+  background: rgba(250, 204, 21, 0.08);
+  border: 1px dashed rgba(250, 204, 21, 0.3);
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.file-item.is-nav-up:hover {
+  background: rgba(250, 204, 21, 0.18);
+  color: #fef08a;
+  border-color: rgba(250, 204, 21, 0.6);
+}
+
 .file-item.empty {
   color: var(--text-muted);
   font-style: italic;

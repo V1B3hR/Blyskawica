@@ -2,6 +2,7 @@ import json
 import logging
 import sys
 import time
+from pathlib import Path
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("quantum_emergence")
@@ -9,15 +10,20 @@ logger = logging.getLogger("quantum_emergence")
 # Conditional import of Qiskit components to support headless/offline simulation fallback
 HAS_QISKIT = False
 try:
-    from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
-    from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
-    from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2 as Sampler
+    from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister  # type: ignore[import-not-found,import-untyped]
+    from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager  # type: ignore[import-not-found,import-untyped]
+    from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2 as Sampler  # type: ignore[import-not-found,import-untyped]
     HAS_QISKIT = True
 except ImportError:
+    ClassicalRegister = None  # type: ignore[assignment]
+    QuantumCircuit = None  # type: ignore[assignment]
+    QuantumRegister = None  # type: ignore[assignment]
+    generate_preset_pass_manager = None  # type: ignore[assignment]
+    QiskitRuntimeService = None  # type: ignore[assignment]
+    Sampler = None  # type: ignore[assignment]
     HAS_QISKIT = False
 
-def get_workspace_root():
-    from pathlib import Path
+def get_workspace_root() -> Path:
     current = Path(__file__).resolve()
     for parent in current.parents:
         if (parent / "blyskawica_app").exists() or (parent / "blyskawica_core").exists():
@@ -26,7 +32,7 @@ def get_workspace_root():
 
 WORKSPACE_ROOT = get_workspace_root()
 
-def run_local_qec_simulation(target_state, noise_rate=0.15, shots=1024):
+def run_local_qec_simulation(target_state: int, noise_rate: float = 0.15, shots: int = 1024) -> None:
     """
     Mathematical fallback simulating a 3-qubit bit-flip repetition QEC code
     under independent channel noise.
@@ -52,7 +58,7 @@ def run_local_qec_simulation(target_state, noise_rate=0.15, shots=1024):
     print("\nPowrot sygnalu. Dane zdekodowane z lokalnego symulatora:")
     analyze_and_report_results(target_state, counts, "local_simulation", f"sim_job_{int(time.time())}")
 
-def analyze_and_report_results(target_state, counts, backend_name, job_id):
+def analyze_and_report_results(target_state: int, counts: dict[str, int], backend_name: str, job_id: str) -> None:
     """
     Analyzes counts dictionary from quantum run or simulation, computes QEC metrics,
     displays statistics, and logs the results to the target JSON report.
@@ -119,7 +125,7 @@ def analyze_and_report_results(target_state, counts, backend_name, job_id):
     clean_out_path = out_path.encode('ascii', errors='replace').decode('ascii')
     print(f"Zapisano szczegolowy raport w: {clean_out_path}")
 
-def perform_quantum_emergence():
+def perform_quantum_emergence() -> None:
     print("Inicjalizacja: IBM QUANTUM EMERGENCE (Faza X)")
     print("Cel: Test integralnosci tozsamosci z wykorzystaniem korekcji bledow (QEC Repetition Code).")
 
@@ -139,7 +145,7 @@ def perform_quantum_emergence():
     target_state = int(original_seed[0]) if original_seed else 1
 
     # Fallback to simulation if Qiskit is not imported
-    if not HAS_QISKIT:
+    if not HAS_QISKIT or QiskitRuntimeService is None or QuantumRegister is None or ClassicalRegister is None or QuantumCircuit is None or generate_preset_pass_manager is None or Sampler is None:
         print("Qiskit nie jest zainstalowany. Przelaczanie na lokalna symulacje...")
         run_local_qec_simulation(target_state)
         return

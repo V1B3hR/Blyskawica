@@ -3,11 +3,11 @@ Performance Profiler: Hardware-Aware Diagnostics.
 Measures latency, throughput, memory overhead, and metabolic efficiency.
 """
 
-import torch
-import torch.nn as nn
-import time
 import logging
-from typing import Dict, Any, List
+import time
+from typing import Any
+
+import torch
 
 logger = logging.getLogger(__name__)
 
@@ -20,14 +20,14 @@ class PerformanceProfiler:
         self.device = device
         self.sample_interval = max(1, sample_interval)
         self.pulse_counter = 0
-        self.latency_history: List[float] = []
-        self.throughput_history: List[float] = []
-        self.energy_per_pulse: List[float] = []
-        
+        self.latency_history: list[float] = []
+        self.throughput_history: list[float] = []
+        self.energy_per_pulse: list[float] = []
+
         # Hardware context
         self.is_cuda = 'cuda' in device
 
-    def start_pulse(self) -> Dict[str, Any] | None:
+    def start_pulse(self) -> dict[str, Any] | None:
         """Starts timing a conscious pulse. Returns a handle dict if sampled, else None."""
         self.pulse_counter += 1
         if self.pulse_counter % self.sample_interval != 0:
@@ -37,7 +37,7 @@ class PerformanceProfiler:
             torch.cuda.synchronize()
         return {"start_time": time.perf_counter(), "sampled": True}
 
-    def end_pulse(self, handle: Dict[str, Any] | None, batch_size: int, node_state: Any):
+    def end_pulse(self, handle: dict[str, Any] | None, batch_size: int, node_state: Any):
         """Ends timing and calculates metrics if sampled."""
         if handle is None or not handle.get("sampled"):
             return
@@ -72,22 +72,22 @@ class PerformanceProfiler:
         mem_used = 0
         if self.is_cuda:
             mem_used = torch.cuda.max_memory_allocated() / (1024 ** 2) # MB
-            
+
         logger.info(f"Performance Profile - Latency: {latency:.2f}ms | Throughput: {throughput:.1f} CT/s | Energy: {energy:.4f} J | GPU Mem: {mem_used:.1f}MB")
 
-    def get_readiness_report(self) -> Dict[str, Any]:
+    def get_readiness_report(self) -> dict[str, Any]:
         """Generates a summary for the deep audit."""
         if not self.latency_history:
             return {}
-            
+
         avg_latency = sum(self.latency_history) / len(self.latency_history)
         avg_throughput = sum(self.throughput_history) / len(self.throughput_history)
         avg_energy = sum(self.energy_per_pulse) / len(self.energy_per_pulse)
-        
+
         # Readiness factor: Stable latency (< 20ms) and High efficiency
         latency_factor = max(0.0, 1.0 - (avg_latency / 50.0))
         efficiency_factor = max(0.0, 1.0 - (avg_energy / 10.0))
-        
+
         return {
             'avg_latency_ms': avg_latency,
             'avg_throughput_cts': avg_throughput,

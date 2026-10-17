@@ -255,10 +255,21 @@ impl AegisPsycheRustEngine {
         let mut total_manip_weight = 0.0f32;
         let mut dominant_vectors = Vec::new();
 
+fn strip_polish_diacritics(s: &str) -> String {
+    s.chars().map(|c| match c {
+        'ą' => 'a', 'ć' => 'c', 'ę' => 'e', 'ł' => 'l',
+        'ń' => 'n', 'ó' => 'o', 'ś' => 's', 'ź' | 'ż' => 'z',
+        other => other,
+    }).collect()
+}
+
+        let text_normalized = strip_polish_diacritics(&text_lower);
+
         for (id, name, weight, markers) in &self.manipulation_markers {
             let mut matched = false;
             for m in markers {
-                if text_lower.contains(m) {
+                let m_lower = m.to_lowercase();
+                if text_lower.contains(&m_lower) || text_normalized.contains(&strip_polish_diacritics(&m_lower)) {
                     matched = true;
                     break;
                 }
@@ -282,7 +293,8 @@ impl AegisPsycheRustEngine {
             for v_state in &self.vad_states {
                 let mut matched = false;
                 for m in &v_state.linguistic_markers {
-                    if text_lower.contains(&m.to_lowercase()) {
+                    let m_lower = m.to_lowercase();
+                    if text_lower.contains(&m_lower) || text_normalized.contains(&strip_polish_diacritics(&m_lower)) {
                         matched = true;
                         break;
                     }

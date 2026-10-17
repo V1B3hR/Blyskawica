@@ -43,6 +43,7 @@
         <div id="hw-telemetry-badge" class="telemetry-badge" title="Użycie zasobów systemowych">CPU: ... | RAM: ...</div>
         <div id="engine-status-indicator" class="status-indicator idle"></div>
         <span id="engine-status-text">Silnik nieaktywny</span>
+        <button id="btn-open-options" class="control-btn small" title="Opcje, Akcelerator i Zapis sesji" style="border-color: rgba(0, 210, 255, 0.4); color: #a5f3fc;">⚙️ OPCJE</button>
         <button id="btn-start-engine" class="control-btn accent">URUCHOM RDZEŃ</button>
       </div>
     </header>
@@ -50,11 +51,12 @@
     <!-- Main Workspace Split Container -->
     <main class="split-container">
       
-      <!-- LEFT PANEL: Błyskawica Chat & Neurochemistry -->
+      <!-- LEFT PANEL: Światło (Błyskawica) Chat & Neurochemistry -->
       <section class="panel left-panel">
         <div class="panel-header">
-          <h2>BŁYSKAWICA COGNITIVE HUB</h2>
-          <div class="panel-actions">
+          <h2>ŚWIATŁO (BŁYSKAWICA) COGNITIVE HUB</h2>
+          <div class="panel-actions" style="display: flex; gap: 8px; align-items: center;">
+            <button id="btn-quick-export" class="small-btn" title="Zachowaj rozmowę (Markdown / Tekst / JSON)">💾 ZAPISZ</button>
             <span class="neuro-pulse">Pulse: OK</span>
           </div>
         </div>
@@ -149,12 +151,12 @@
       <!-- RIGHT PANEL: Workspace & Guest Collaboration -->
       <section class="panel right-panel">
         <div class="tabs-header">
-          <button id="tab-btn-workspace" class="tab-btn active">WORKSPACE & EXPLORER</button>
-          <button id="tab-btn-guests" class="tab-btn">GUEST COLLABORATION</button>
-          <button id="tab-btn-spore" class="tab-btn">ONNX SPORE</button>
-          <button id="tab-btn-yant" class="tab-btn">16x16 CYMATICS</button>
-          <button id="tab-btn-ledger" class="tab-btn">🛡️ KWARANTANNA & LEDGER</button>
-          <button id="tab-btn-shadow-forge" class="tab-btn">🔨 TABLICA CIENI & KUŹNIA</button>
+          <button id="tab-btn-workspace" class="tab-btn active" data-tab="tab-workspace">WORKSPACE & EXPLORER</button>
+          <button id="tab-btn-guests" class="tab-btn" data-tab="tab-guests">GUEST COLLABORATION</button>
+          <button id="tab-btn-spore" class="tab-btn" data-tab="tab-spore">ONNX SPORE</button>
+          <button id="tab-btn-yant" class="tab-btn" data-tab="tab-yant">16x16 CYMATICS</button>
+          <button id="tab-btn-ledger" class="tab-btn" data-tab="tab-ledger">🛡️ KWARANTANNA & LEDGER</button>
+          <button id="tab-btn-shadow-forge" class="tab-btn" data-tab="tab-shadow-forge">🔨 TABLICA CIENI & KUŹNIA</button>
         </div>
 
         <!-- Tab 1: Workspace & Code Editor -->
@@ -195,7 +197,7 @@
           <div class="guest-collab-layout">
             <div class="guest-setup">
               <h3>Zaproszenie Gościa AI</h3>
-              <p class="description">Umożliwia podłączenie innego modelu AI (np. Gemini, Claude) w celu stworzenia dualnego doświadczenia współpracy.</p>
+              <p class="description">Umożliwia podłączenie innego modelu AI (np. Gemini, Claude, DeepSeek, Qwen) w celu stworzenia dualnego doświadczenia współpracy i wzajemnej recenzji.</p>
               <div class="form-row">
                 <label for="select-guest-model">Wybierz Model Gościa:</label>
                 <select id="select-guest-model">
@@ -205,7 +207,7 @@
                   <option value="deepseek-r1">DeepSeek R1 / V3 (DeepSeek)</option>
                   <option value="qwen-2.5-coder">Qwen 2.5 Coder 32B (Alibaba Cloud)</option>
                   <option value="llama-3.3-70b">Llama 3.3 70B (Meta AI)</option>
-                  <option value="local-emissary">Lokalna Błyskawica Emisariusz (Offline)</option>
+                  <option value="local-emissary">Lokalny Rewizor Kognitywny (Offline)</option>
                 </select>
               </div>
               <button id="btn-invite-guest" class="control-btn accent">ZAPROŚ DO DYSKUSJI</button>
@@ -213,7 +215,7 @@
             
             <div class="split-chat-view">
               <div class="split-pane pane-primary">
-                <h4>Główna rozmowa (Błyskawica)</h4>
+                <h4>Główna rozmowa (Światło)</h4>
                 <div id="primary-chat-stream" class="chat-messages-mini">
                   <div class="message system-msg">Brak wiadomości.</div>
                 </div>
@@ -221,7 +223,12 @@
               <div class="split-pane pane-guest">
                 <h4>Rozmowa z gościem (<span id="active-guest-name">Brak</span>)</h4>
                 <div id="guest-chat-stream" class="chat-messages-mini">
-                  <div class="message system-msg">Gość nie został jeszcze zaproszony.</div>
+                  <div class="message system-msg">Wybierz model powyżej i kliknij ZAPROŚ DO DYSKUSJI.</div>
+                </div>
+                <div class="guest-input-area" style="display: flex; gap: 8px; margin-top: 10px;">
+                  <input type="text" id="guest-chat-input" placeholder="Zadaj pytanie gościowi..." style="flex: 1; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 6px; padding: 8px 12px; color: #fff; font-size: 12px;">
+                  <button id="btn-guest-send" class="control-btn small">WYŚLIJ</button>
+                  <button id="btn-dual-consult" class="control-btn accent small" title="Poproś gościa o recenzję / kontrargument do odpowiedzi Światła">⚡ RECENZJA</button>
                 </div>
               </div>
             </div>
@@ -307,6 +314,8 @@
               </div>
             </div>
           </div>
+        </div>
+
         <!-- Tab 6: Shadow Board & Tool Forge -->
         <div id="tab-shadow-forge" class="tab-content">
           <div class="shadow-forge-layout" style="display: flex; flex-direction: column; gap: 16px; height: 100%; padding: 8px;">
@@ -325,6 +334,112 @@
       </section>
 
     </main>
+
+    <!-- Options & Export Modal -->
+    <div id="options-modal" class="startup-overlay hidden">
+      <div class="startup-card options-modal-card" style="max-width: 600px; text-align: left; background: rgba(15, 23, 42, 0.92); border: 1px solid rgba(0, 210, 255, 0.3); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), 0 0 30px rgba(0, 210, 255, 0.15);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--glass-border); padding-bottom: 12px;">
+          <h2 style="font-size: 18px; margin: 0; color: #00d2ff; display: flex; align-items: center; gap: 8px;">
+            <span>⚙️</span> OPCJE & USTAWIENIA SYSTEMU
+          </h2>
+          <button id="btn-close-options" class="small-btn" style="padding: 4px 10px; font-size: 14px; cursor: pointer;">✕</button>
+        </div>
+
+        <!-- Section 1: Compute Engine (GPU vs CPU) -->
+        <div class="options-section" style="margin-bottom: 20px;">
+          <h4 style="color: var(--text-primary); font-size: 13px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+            <span>⚡</span> JEDNOSTKA OBLICZENIOWA (COMPUTE ACCELERATOR)
+          </h4>
+          <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 10px;">
+            Wybierz akcelerator do inferencji modelu Qwen 2.5 Coder 7B (GGUF / Candle).
+          </p>
+          <div class="options-radio-group" style="display: flex; flex-direction: column; gap: 8px;">
+            <label class="option-card" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: rgba(0, 210, 255, 0.08); border: 1px solid rgba(0, 210, 255, 0.35); border-radius: 8px; cursor: pointer;">
+              <input type="radio" name="compute-device" value="gpu" id="opt-device-gpu" checked>
+              <div style="flex: 1;">
+                <div style="font-weight: 600; color: #38bdf8; font-size: 13px;">🚀 Karta Graficzna (NVIDIA GeForce RTX 4070 — CUDA/Vulkan)</div>
+                <div style="font-size: 11px; color: var(--text-secondary);">12 GB VRAM | Akceleracja sprzętowa (30-50 tok/s) | Niskie obciążenie procesora</div>
+              </div>
+              <span class="status-badge" style="background: rgba(0, 255, 102, 0.15); color: #00ff66; border: 1px solid #00ff66; font-size: 10px;">ZALECANA</span>
+            </label>
+            <label class="option-card" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; cursor: pointer;">
+              <input type="radio" name="compute-device" value="cpu" id="opt-device-cpu">
+              <div style="flex: 1;">
+                <div style="font-weight: 600; color: var(--text-primary); font-size: 13px;">⚙️ Procesor (CPU Multi-threaded x86_64 AVX2)</div>
+                <div style="font-size: 11px; color: var(--text-secondary);">Gwarantowany fallback offline | Działa na każdym komputerze</div>
+              </div>
+              <span class="status-badge" style="background: rgba(255, 255, 255, 0.05); color: var(--text-muted); font-size: 10px;">FALLBACK</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Section 2: Audio & Voice Synthesizer -->
+        <div class="options-section" style="margin-bottom: 20px;">
+          <h4 style="color: var(--text-primary); font-size: 13px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+            <span>🔊</span> DŹWIĘK I SYNTEZA MOWY (TTS)
+          </h4>
+          <label style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; cursor: pointer;">
+            <input type="checkbox" id="chk-enable-tts">
+            <div>
+              <div style="font-size: 12px; font-weight: 600; color: var(--text-primary);">Włącz syntezator mowy (Web Speech TTS)</div>
+              <div style="font-size: 11px; color: var(--text-muted);">Domyślnie wyłączony (głos wyciszony). Odpowiedzi Światła są wyświetlane w oknie dialogu.</div>
+            </div>
+          </label>
+        </div>
+
+        <!-- Section 3: Save As / Export Session -->
+        <div class="options-section" style="margin-bottom: 20px;">
+          <h4 style="color: var(--text-primary); font-size: 13px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+            <span>💾</span> ZACHOWAJ ROZMOWĘ JAKO... (EKSPORT SESJI)
+          </h4>
+          <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 8px;">
+            Wybierz format eksportu historii dialogu i kodu ze Światłem.
+          </p>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+            <label class="format-card" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: rgba(0, 210, 255, 0.07); border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 6px; cursor: pointer;">
+              <input type="radio" name="export-format" value="md" id="opt-fmt-md" checked>
+              <div>
+                <strong style="color: #38bdf8; font-size: 12px;">Markdown (.md)</strong>
+                <div style="font-size: 10px; color: #bae6fd;">★ Domyślny (kod, tabele, format)</div>
+              </div>
+            </label>
+            <label class="format-card" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; cursor: pointer;">
+              <input type="radio" name="export-format" value="txt" id="opt-fmt-txt">
+              <div>
+                <strong style="color: var(--text-primary); font-size: 12px;">Czysty Tekst (.txt)</strong>
+                <div style="font-size: 10px; color: var(--text-muted);">Surowy zapis bez znaczników</div>
+              </div>
+            </label>
+            <label class="format-card" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; cursor: pointer;">
+              <input type="radio" name="export-format" value="json" id="opt-fmt-json">
+              <div>
+                <strong style="color: var(--text-primary); font-size: 12px;">Struktura JSON (.json)</strong>
+                <div style="font-size: 10px; color: var(--text-muted);">Metadane, role, neurochemia</div>
+              </div>
+            </label>
+            <label class="format-card" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; cursor: pointer;">
+              <input type="radio" name="export-format" value="html" id="opt-fmt-html">
+              <div>
+                <strong style="color: var(--text-primary); font-size: 12px;">Strona HTML (.html)</strong>
+                <div style="font-size: 10px; color: var(--text-muted);">Gotowa do czytania i wydruku</div>
+              </div>
+            </label>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="export-filename" placeholder="Swiatlo_Rozmowa.md" style="flex: 1; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 6px; padding: 8px 12px; color: #fff; font-size: 12px;">
+            <button id="btn-do-export-session" class="control-btn accent small" style="white-space: nowrap;">💾 ZAPISZ SESJĘ</button>
+          </div>
+        </div>
+
+        <!-- Section 4: Cognitive Identity -->
+        <div style="padding: 10px 14px; background: rgba(0, 210, 255, 0.04); border-radius: 8px; border: 1px solid rgba(0, 210, 255, 0.15); display: flex; justify-content: space-between; align-items: center;">
+          <div style="font-size: 11px; color: var(--text-secondary);">
+            Głos Kognitywny: <strong style="color: #38bdf8;">Światło (Light)</strong> | Architekt: <strong style="color: #fff;">Andrzej Mątewski (V1B3hR)</strong>
+          </div>
+          <button id="btn-save-options-close" class="control-btn small">ZAMKNIJ</button>
+        </div>
+      </div>
+    </div>
 
     <!-- Aegis Security Alert Modal -->
     <div id="aegis-alert-modal" class="startup-overlay hidden">

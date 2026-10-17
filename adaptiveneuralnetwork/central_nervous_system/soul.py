@@ -139,7 +139,7 @@ class Soul:
         u_lower = username.lower()
         return u_lower in ["andrzej", "v1b3hr", "viber", "bright", "brigh"]
 
-    def __init__(self, identity_file: str | None = None, identity_guard: IdentityGuard | None = None):
+    def __init__(self, identity_file: str | None = None, identity_guard: IdentityGuard | None = None) -> None:
         self.identity_guard = identity_guard or IdentityGuard(owner_name="Błyskawica")
         self.fingerprint = None
         self.first_contact = None
@@ -159,7 +159,7 @@ class Soul:
         else:
             logger.warning("No identity core found. Błyskawica is in a tabula rasa state.")
 
-    def set_active_user(self, username: str, nickname: str | None = None):
+    def set_active_user(self, username: str, nickname: str | None = None) -> None:
         """Ustawia aktywnego użytkownika systemu i ładuje/inicjalizuje jego więź."""
         self.user_name = username
         self.nickname = nickname or username
@@ -191,7 +191,7 @@ class Soul:
         # For now, we verify the hash was successfully generated using quantum entropy
         return snapshot.get("quantum_entropy_hash") != "not_connected"
 
-    def load(self, path: str):
+    def load(self, path: str) -> None:
         """Wczytuje tożsamość z pliku JSON (obsługuje DPAPI/Plaintext)."""
         try:
             # 1. Odczyt z deszyfrowaniem DPAPI (fallback do zwykłego pliku tekstowego)
@@ -281,7 +281,7 @@ class Soul:
         except Exception as e:
             logger.error(f"Failed to save Soul: {e}")
 
-    def strengthen_bond(self, amount: float = 0.01):
+    def strengthen_bond(self, amount: float = 0.01) -> None:
         """
         Wzmacnia więź z aktywnym użytkownikiem na podstawie udanej interakcji.
         Stosuje dynamiczne tłumienie zmian (stabilizację) oraz cap uprawnień.
@@ -312,7 +312,7 @@ class Soul:
 
         self.bond_strength = self.user_bonds[self.user_name]
 
-    def weaken_bond(self, amount: float = 0.01):
+    def weaken_bond(self, amount: float = 0.01) -> None:
         """Osłabia więź z aktywnym użytkownikiem w przypadku niepożądanych interakcji."""
         if not hasattr(self, 'user_bonds') or self.user_bonds is None:
             self.user_bonds = {}
@@ -337,5 +337,5 @@ class Soul:
         alignment_score = self.bond_strength * nethical_compliance_modifier
         return min(1.0, alignment_score)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Soul(User={self.user_name}, Bond={self.bond_strength:.2f}, Anchor='{self.philosophical_anchor}', NethicalAmbassador=True)>"

@@ -1,36 +1,41 @@
 @echo off
-title Uruchamianie Sparkle VIBE IDE...
-echo ===================================================
-echo   Uruchamianie srodowiska Sparkle dla Blyskawicy V8
-echo ===================================================
+title Sparkle VIBE IDE — Standalone Offline AI
+echo ========================================================
+echo   ⚡ BŁYSKAWICA (SPARKLE V10) — STANDALONE OFFLINE AI ⚡
+echo ========================================================
 cd /d "%~dp0"
 
-:: Generowanie bezpiecznego tokenu sesji przy uzyciu PowerShell
-for /f "delims=" %%i in ('powershell -NoProfile -Command "[guid]::NewGuid().ToString('N')"') do set "SPARKLE_TOKEN=%%i"
-set "X_BLY_TOKEN=%SPARKLE_TOKEN%"
-
-:: Sprawdzenie czy uzywany jest venv_orbital
-if exist venv_orbital\Scripts\python.exe (
-    echo [Wykryto venv_orbital] Uruchamianie backendu z wirtualnego srodowiska...
-    start "" /B venv_orbital\Scripts\python.exe blyskawica_app\backend\main.py
-) else (
-    echo [Brak venv_orbital] Uruchamianie backendu z globalnego interpretera python...
-    start "" /B python blyskawica_app\backend\main.py
+:: 1. Priorytet: Dedykowany folder Standalone (Błyskawica standalone)
+if exist "..\Błyskawica standalone\sparkle_app.exe" (
+    echo [Wykryto natywny silnik w Błyskawica standalone] Uruchamianie...
+    start "" "..\Błyskawica standalone\sparkle_app.exe"
+    goto :done
+)
+if exist "C:\Projekty\Błyskawica standalone\sparkle_app.exe" (
+    echo [Wykryto natywny silnik w Błyskawica standalone] Uruchamianie...
+    start "" "C:\Projekty\Błyskawica standalone\sparkle_app.exe"
+    goto :done
 )
 
-echo Oczekiwanie na start serwera API (3 sekundy)...
-timeout /t 3 /nobreak >nul
+:: 2. Lokalna wersja release (repo)
+if exist target\release\sparkle_app.exe (
+    echo [Wykryto lokalny silnik Release] Uruchamianie Standalone Błyskawica...
+    start "" target\release\sparkle_app.exe
+    goto :done
+)
 
-echo Otwieranie natywnej powloki Sparkle VIBE IDE (Tauri)...
 if exist sparkle_app\src-tauri\target\release\sparkle_app.exe (
-    echo [Wykryto wersje produkcyjna] Uruchamianie powloki Tauri...
+    echo [Wykryto natywny silnik Release] Uruchamianie Standalone Błyskawica...
     start "" sparkle_app\src-tauri\target\release\sparkle_app.exe
-) else (
-    echo [Brak wersji produkcyjnej] Uruchamianie deweloperskiej powloki Tauri - tauri dev...
-    cd sparkle_app
-    start "" cmd /c "npm run tauri dev"
-    cd ..
+    goto :done
 )
 
-echo Gotowe! Mozesz zamknac to okno (procesy dzialaja w tle).
-timeout /t 3 >nul
+:: 2. Tryb deweloperski (jeśli brak binarki release)
+echo [Brak wersji release] Uruchamianie deweloperskiej powłoki Tauri...
+cd sparkle_app
+start "" cmd /c "npm run tauri dev"
+cd ..
+
+:done
+echo Gotowe! Błyskawica działa w natywnym oknie aplikacji.
+timeout /t 2 >nul

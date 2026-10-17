@@ -10,7 +10,17 @@ from typing import Any
 
 # Optional database dependencies
 try:
-    from sqlalchemy import Column, DateTime, Float, Index, Integer, JSON, String, Text, create_engine
+    from sqlalchemy import (
+        JSON,
+        Column,
+        DateTime,
+        Float,
+        Index,
+        Integer,
+        String,
+        Text,
+        create_engine,
+    )
     from sqlalchemy.orm import declarative_base, sessionmaker
     SQLALCHEMY_AVAILABLE = True
     Base = declarative_base()

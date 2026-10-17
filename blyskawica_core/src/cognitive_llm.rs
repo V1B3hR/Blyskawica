@@ -70,6 +70,22 @@ impl CognitiveLlmEngine {
             }
         }
 
+        // Weryfikacja nagłówka GGUF (magic bytes: "GGUF" = [0x47, 0x47, 0x55, 0x46])
+        {
+            use std::io::Read;
+            let mut magic = [0u8; 4];
+            let mut test_f = File::open(model_path)
+                .map_err(|e| format!("Błąd otwierania pliku modelu: {}", e))?;
+            test_f.read_exact(&mut magic)
+                .map_err(|e| format!("Błąd odczytu nagłówka pliku GGUF: {}", e))?;
+            if &magic != b"GGUF" {
+                return Err(format!(
+                    "Nieprawidłowy format pliku modelu (oczekiwano nagłówka 'GGUF', odczytano: {:?}). Plik może być uszkodzony.",
+                    magic
+                ));
+            }
+        }
+
         // Ładowanie tokenizatora
         let tokenizer = Tokenizer::from_file(tokenizer_path)
             .map_err(|e| format!("Błąd ładowania tokenizatora: {}", e))?;
@@ -93,6 +109,19 @@ impl CognitiveLlmEngine {
 
     pub fn load(model_path: &Path, tokenizer_path: &Path) -> Result<Self, String> {
         Self::new(model_path, tokenizer_path)
+    }
+
+    /// Szybki benchmark operacji tensorowych CPU do oceny przepustowości obliczeniowej
+    pub fn benchmark_cpu_tensor_ops(iterations: usize) -> Result<f64, String> {
+        let device = Device::Cpu;
+        let start = std::time::Instant::now();
+        for _ in 0..iterations {
+            let a = Tensor::new(&[1.0f32, 2.0, 3.0, 4.0], &device).map_err(|e| e.to_string())?;
+            let _ = (a.clone() * 2.0).map_err(|e| e.to_string())?;
+        }
+        let elapsed = start.elapsed().as_secs_f64();
+        let ops_per_sec = (iterations as f64) / elapsed.max(1e-6);
+        Ok(ops_per_sec)
     }
 
     /// Generuje odpowiedź na zadany prompt z uwzględnieniem neurochemicznych modyfikatorów i strumieniowaniem tokenów.
@@ -174,47 +203,64 @@ impl CognitiveLlmEngine {
             }
 
             // Próbkowanie z temperaturą i top-p
-            let next_token = if params.temperature > 0.0 {
+            let next_token = if params.temperature > 0.05 {
                 // Skalowanie przez temperaturę
-                for logit in logits.iter_mut() {
-                    *logit /= params.temperature as f32;
+                let temp = params.temperature as f32;
+                
+                // Optymalizacja CPU: Selekcja Top-K (K=50) zamiast pełnego sortowania 152 064 elementów
+                const TOP_K: usize = 50;
+                let mut top_k: Vec<(usize, f32)> = Vec::with_capacity(TOP_K + 1);
+                
+                for (idx, &val) in logits.iter().enumerate() {
+                    let scaled_val = val / temp;
+                    if top_k.len() < TOP_K {
+                        top_k.push((idx, scaled_val));
+                        if top_k.len() == TOP_K {
+                            top_k.sort_unstable_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+                        }
+                    } else if scaled_val > top_k[TOP_K - 1].1 {
+                        top_k[TOP_K - 1] = (idx, scaled_val);
+                        let mut j = TOP_K - 1;
+                        while j > 0 && top_k[j].1 > top_k[j - 1].1 {
+                            top_k.swap(j, j - 1);
+                            j -= 1;
+                        }
+                    }
                 }
 
-                // Softmax
-                let max_logit = logits.iter().cloned().fold(f32::NEG_INFINITY, f32::max);
+                // Softmax wyłącznie na wybranych 50 najwyższych logitach
+                let max_logit = top_k[0].1;
                 let mut sum_exp = 0.0f32;
-                for logit in logits.iter_mut() {
-                    *logit = (*logit - max_logit).exp();
-                    sum_exp += *logit;
+                for item in top_k.iter_mut() {
+                    item.1 = (item.1 - max_logit).exp();
+                    sum_exp += item.1;
                 }
-                for logit in logits.iter_mut() {
-                    *logit /= sum_exp;
+                for item in top_k.iter_mut() {
+                    item.1 /= sum_exp;
                 }
 
-                // Top-P Nucleus Filtering
-                let mut indexed_probs: Vec<(usize, f64)> = logits.iter().enumerate().map(|(i, &p)| (i, p as f64)).collect();
-                indexed_probs.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
-
-                let mut cum_prob = 0.0;
-                let mut cutoff_index = indexed_probs.len();
-                for (i, (_idx, prob)) in indexed_probs.iter().enumerate() {
-                    cum_prob += prob;
-                    if cum_prob >= params.top_p {
+                // Top-P Nucleus Filtering na wybranych kandydatach
+                let mut cum_prob = 0.0f32;
+                let mut cutoff_index = top_k.len();
+                let top_p_f32 = params.top_p as f32;
+                for (i, item) in top_k.iter().enumerate() {
+                    cum_prob += item.1;
+                    if cum_prob >= top_p_f32 {
                         cutoff_index = i + 1;
                         break;
                     }
                 }
-                indexed_probs.truncate(cutoff_index);
-                
-                let norm_sum: f64 = indexed_probs.iter().map(|x| x.1).sum();
-                let r: f64 = rand::random::<f64>() * norm_sum;
-                
-                let mut running_sum = 0.0;
-                let mut selected = indexed_probs[0].0;
-                for (idx, prob) in indexed_probs {
-                    running_sum += prob;
+                top_k.truncate(cutoff_index);
+
+                let norm_sum: f32 = top_k.iter().map(|x| x.1).sum();
+                let r: f32 = rand::random::<f32>() * norm_sum;
+
+                let mut running_sum = 0.0f32;
+                let mut selected = top_k[0].0;
+                for item in top_k {
+                    running_sum += item.1;
                     if r <= running_sum {
-                        selected = idx;
+                        selected = item.0;
                         break;
                     }
                 }

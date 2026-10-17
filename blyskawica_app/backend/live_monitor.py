@@ -13,7 +13,7 @@ from blyskawica_app.backend.win11_controller import Win11Controller
 logger = logging.getLogger("LiveMonitor")
 
 class LiveMonitor:
-    def __init__(self, check_interval: float = 2.0):
+    def __init__(self, check_interval: float = 2.0) -> None:
         self.controller = Win11Controller()
         self.check_interval = check_interval
         self.active_context = {

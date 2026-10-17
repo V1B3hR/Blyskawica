@@ -39,6 +39,9 @@ dependencies = [
     "pandas>=1.5.0,<3.0.0",
     "python-multipart>=0.0.6,<1.0.0",
     "requests>=2.31.0,<3.0.0",
+    "scikit-learn>=1.2.0",
+    "cryptography>=41.0.0",
+    "onnxscript>=0.1.0",
 ]
 
 [project.optional-dependencies]
@@ -101,10 +104,12 @@ testpaths = ["tests", "adaptiveneuralnetwork/tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
 pythonpath = ["."]
+norecursedirs = [".git", ".tox", "dist", "build", "tests/legacy"]
 addopts = [
     "-v",
     "--tb=short",
     "--strict-markers",
+    "--ignore=tests/legacy",
 ]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
@@ -177,6 +182,37 @@ module = [
     "scipy.*",
 ]
 ignore_missing_imports = true
+
+[tool.pyright]
+include = ["adaptiveneuralnetwork", "blyskawica_app", "scripts"]
+exclude = [
+    "**/node_modules",
+    "**/__pycache__",
+    ".git",
+    "tests",
+    "tests/legacy"
+]
+typeCheckingMode = "standard"
+
+[tool.basedpyright]
+include = ["adaptiveneuralnetwork", "blyskawica_app", "scripts"]
+exclude = [
+    "**/node_modules",
+    "**/__pycache__",
+    ".git",
+    "tests",
+    "tests/legacy"
+]
+typeCheckingMode = "standard"
+reportMissingTypeAnnotations = false
+reportAny = false
+reportExplicitAny = false
+reportUnknownVariableType = false
+reportUnknownMemberType = false
+reportUnknownArgumentType = false
+reportMissingParameterType = false
+
+
 
 [tool.black]
 line-length = 100

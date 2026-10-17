@@ -1,11 +1,9 @@
 import os
-import shutil
+import tempfile
 import unittest
 
 from adaptiveneuralnetwork.immune_system import AgenticHoneypot, MemoryLedger
 
-
-import tempfile
 
 class TestNewImmuneFeatures(unittest.TestCase):
     def setUp(self):

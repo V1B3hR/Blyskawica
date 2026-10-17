@@ -8,11 +8,10 @@ Models the enterprise signal processing pipeline:
 
 import json
 import os
+from pathlib import Path
 
 import numpy as np
 import torch
-
-from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = str(BASE_DIR / "data")

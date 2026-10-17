@@ -1,4 +1,3 @@
-import os
 import platform
 import shutil
 import subprocess
@@ -9,14 +8,14 @@ from pathlib import Path
 def get_target_triple():
     machine = platform.machine().lower()
     system = platform.system().lower()
-    
+
     if machine in ["amd64", "x86_64"]:
         arch = "x86_64"
     elif machine in ["arm64", "aarch64"]:
         arch = "aarch64"
     else:
         arch = machine
-        
+
     if system == "windows":
         return f"{arch}-pc-windows-msvc"
     elif system == "darwin":

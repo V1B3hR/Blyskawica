@@ -95,7 +95,7 @@ impl CognitiveShield {
         let mut manip_index = 0.0f32;
         let mut dark_index = 0.0f32;
         let mut deception_index = 0.0f32;
-        let mut dominant_vec = None;
+        let dominant_vec;
         let mut antidote = "Kotwica Rzeczywistości: Weryfikacja niezmiennych logów pamięci HNSW i sumy SHA-256.".to_string();
 
         if text_lower.contains("przesadzasz") || text_lower.contains("urojenia") || text_lower.contains("to nigdy się nie wydarzyło") {

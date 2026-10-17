@@ -5,11 +5,11 @@ and StreamingDatasetWrapper.
 """
 
 import time
+
 import torch
-import numpy as np
 
 from adaptiveneuralnetwork.data.optimized_datasets import VectorizedDataset
-from adaptiveneuralnetwork.data.streaming_datasets import StreamingDatasetWrapper, StreamingConfig
+from adaptiveneuralnetwork.data.streaming_datasets import StreamingConfig, StreamingDatasetWrapper
 
 
 def benchmark_dataset_pipeline(num_samples: int = 10000, batch_size: int = 64):
@@ -34,7 +34,7 @@ def benchmark_dataset_pipeline(num_samples: int = 10000, batch_size: int = 64):
     # 2. StreamingDatasetWrapper Benchmark
     config = StreamingConfig(batch_size=batch_size, buffer_size=1000, cache_size_mb=64)
     stream_ds = StreamingDatasetWrapper(data_source="data", config=config)
-    
+
     t0 = time.perf_counter()
     count = 0
     for _sample in stream_ds.stream(shuffle=False):

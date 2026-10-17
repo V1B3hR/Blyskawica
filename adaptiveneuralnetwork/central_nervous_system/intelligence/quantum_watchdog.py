@@ -35,16 +35,16 @@ from adaptiveneuralnetwork.cognitive_tools.ground_loop_isolator import GroundLoo
 logger = logging.getLogger(__name__)
 
 try:
-    from qiskit import QuantumCircuit
-    from qiskit.quantum_info import SparsePauliOp
-    from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
-    from qiskit_ibm_runtime import EstimatorV2 as IBMEstimator, QiskitRuntimeService
+    from qiskit import QuantumCircuit  # type: ignore[import-not-found,import-untyped]
+    from qiskit.quantum_info import SparsePauliOp  # type: ignore[import-not-found,import-untyped]
+    from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager  # type: ignore[import-not-found,import-untyped]
+    from qiskit_ibm_runtime import EstimatorV2 as IBMEstimator, QiskitRuntimeService  # type: ignore[import-not-found,import-untyped]
     _QUANTUM_AVAILABLE = True
 except ImportError:
     _QUANTUM_AVAILABLE = False
 
 try:
-    from qiskit_aer.primitives import EstimatorV2 as AerEstimator
+    from qiskit_aer.primitives import EstimatorV2 as AerEstimator  # type: ignore[import-not-found,import-untyped]
     _AER_AVAILABLE = True
 except ImportError:
     _AER_AVAILABLE = False
@@ -132,24 +132,59 @@ class QuantumIntegrityWatchdog:
             logger.warning(f"[Watchdog] Brak połączenia IBM: {e}. Tryb offline.")
 
     def _load_vault(self) -> None:
-        """Ładuje historię pomiarów z dysku."""
+        """Ładuje historię pomiarów z dysku z obsługą awaryjnej kopii zapasowej."""
         vault_path = Path(self.config.vault_path)
-        if vault_path.exists():
+        bak_path = Path(f"{self.config.vault_path}.bak")
+
+        loaded = False
+        if vault_path.exists() and vault_path.stat().st_size > 0:
             try:
                 with open(vault_path, encoding='utf-8') as f:
                     data = json.load(f)
                 self.history = [IntegritySnapshot(**s) for s in data]
                 logger.info(f"[Watchdog] Załadowano {len(self.history)} snapshotów z vault.")
+                loaded = True
             except Exception as e:
-                logger.warning(f"[Watchdog] Błąd ładowania vault: {e}")
+                logger.warning(f"[Watchdog] Błąd ładowania głównego vault ({e}). Próba przywrócenia z .bak...")
+
+        if not loaded and bak_path.exists() and bak_path.stat().st_size > 0:
+            try:
+                with open(bak_path, encoding='utf-8') as f:
+                    data = json.load(f)
+                self.history = [IntegritySnapshot(**s) for s in data]
+                import shutil
+                shutil.copy2(bak_path, vault_path)
+                logger.warning(f"[Watchdog RECOVERY] Pomyślnie odzyskano {len(self.history)} snapshotów z .bak!")
+            except Exception as e:
+                logger.error(f"[Watchdog] Błąd ładowania kopii zapasowej vault: {e}")
 
     def _save_vault(self) -> None:
-        """Zapisuje historię na dysk."""
+        """Zapisuje historię na dysk w sposób w pełni atomowy."""
+        tmp_path = f"{self.config.vault_path}.tmp"
+        bak_path = f"{self.config.vault_path}.bak"
+        target_path = self.config.vault_path
+
         try:
-            with open(self.config.vault_path, 'w', encoding='utf-8') as f:
+            with open(tmp_path, 'w', encoding='utf-8') as f:
                 json.dump([asdict(s) for s in self.history], f, indent=2, ensure_ascii=False)
+                f.flush()
+                os.fsync(f.fileno())
+
+            if os.path.exists(target_path) and os.path.getsize(target_path) > 0:
+                try:
+                    import shutil
+                    shutil.copy2(target_path, bak_path)
+                except Exception:
+                    pass
+
+            os.replace(tmp_path, target_path)
         except Exception as e:
-            logger.error(f"[Watchdog] Błąd zapisu vault: {e}")
+            logger.error(f"[Watchdog] Błąd atomowego zapisu vault: {e}")
+            if os.path.exists(tmp_path):
+                try:
+                    os.remove(tmp_path)
+                except Exception:
+                    pass
 
     def _build_integrity_circuit(self) -> "QuantumCircuit":
         """

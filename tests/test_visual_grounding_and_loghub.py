@@ -7,14 +7,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from adaptiveneuralnetwork.central_nervous_system.deep_sleep_loghub_parser import (
+    DeepSleepLogHubParser,
+)
 from adaptiveneuralnetwork.cognitive_tools.visual_grounding_validator import (
     UIBoundingBox,
     UILayoutSnapshot,
     VisualGroundingValidator,
-)
-from adaptiveneuralnetwork.central_nervous_system.deep_sleep_loghub_parser import (
-    DeepSleepLogHubParser,
-    LogCategory,
 )
 
 

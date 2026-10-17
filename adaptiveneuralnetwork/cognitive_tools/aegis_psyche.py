@@ -1,9 +1,8 @@
 import json
 import logging
-import re
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -115,31 +114,31 @@ class AegisPsycheReport:
     coherence_score: float = 1.0     # 0.0 to 1.0 (Hemi-Sync / Gateway resonance)
     active_brainwave_band: str = "ALPHA"
     affective_valence: str = "NEUTRAL_FLOW"  # POSITIVE_RESONANCE, NEUTRAL_FLOW, ADVERSARIAL_MANIPULATION
-    positive_emotion_type: Optional[str] = None
-    vad_state_id: Optional[str] = None
-    vad_state_name: Optional[str] = None
-    vad_coordinates: Dict[str, float] = field(default_factory=lambda: {"valence": 0.70, "arousal": 0.35, "dominance": 0.80})
+    positive_emotion_type: str | None = None
+    vad_state_id: str | None = None
+    vad_state_name: str | None = None
+    vad_coordinates: dict[str, float] = field(default_factory=lambda: {"valence": 0.70, "arousal": 0.35, "dominance": 0.80})
     empathy_resonance_score: float = 0.5
-    dominant_vectors: List[str] = field(default_factory=list)
-    detected_markers: List[Dict[str, Any]] = field(default_factory=list)
+    dominant_vectors: list[str] = field(default_factory=list)
+    detected_markers: list[dict[str, Any]] = field(default_factory=list)
     assertive_antidote: str = ""
-    neuro_recommendations: Dict[str, float] = field(default_factory=dict)
+    neuro_recommendations: dict[str, float] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
 class AegisPsycheEngine:
-    def __init__(self, data_dir: Optional[Path] = None):
+    def __init__(self, data_dir: Path | None = None):
         if data_dir is None:
             data_dir = Path(__file__).resolve().parent.parent.parent / "data" / "cognitive_defense"
         self.data_dir = Path(data_dir)
-        self.manipulation_taxonomy: List[Dict[str, Any]] = []
-        self.dark_triad_matrix: List[Dict[str, Any]] = []
-        self.gateway_matrix: Dict[str, Any] = {}
-        self.fbi_deception_markers: List[Dict[str, Any]] = []
-        self.positive_emotions: List[Dict[str, Any]] = []
-        self.vad_states: List[Dict[str, Any]] = []
+        self.manipulation_taxonomy: list[dict[str, Any]] = []
+        self.dark_triad_matrix: list[dict[str, Any]] = []
+        self.gateway_matrix: dict[str, Any] = {}
+        self.fbi_deception_markers: list[dict[str, Any]] = []
+        self.positive_emotions: list[dict[str, Any]] = []
+        self.vad_states: list[dict[str, Any]] = []
         self._load_defense_data()
 
     def _load_defense_data(self) -> None:
@@ -147,32 +146,32 @@ class AegisPsycheEngine:
         try:
             mm_file = self.data_dir / "mental_manipulation_taxonomy.json"
             if mm_file.exists():
-                with open(mm_file, "r", encoding="utf-8") as f:
+                with open(mm_file, encoding="utf-8") as f:
                     self.manipulation_taxonomy = json.load(f).get("vectors", [])
 
             sd3_file = self.data_dir / "dark_triad_behavioral_matrix.json"
             if sd3_file.exists():
-                with open(sd3_file, "r", encoding="utf-8") as f:
+                with open(sd3_file, encoding="utf-8") as f:
                     self.dark_triad_matrix = json.load(f).get("traits", [])
 
             gateway_file = self.data_dir / "cia_gateway_hemi_sync_matrix.json"
             if gateway_file.exists():
-                with open(gateway_file, "r", encoding="utf-8") as f:
+                with open(gateway_file, encoding="utf-8") as f:
                     self.gateway_matrix = json.load(f)
 
             fbi_file = self.data_dir / "fbi_deception_statement_analysis.json"
             if fbi_file.exists():
-                with open(fbi_file, "r", encoding="utf-8") as f:
+                with open(fbi_file, encoding="utf-8") as f:
                     self.fbi_deception_markers = json.load(f).get("deception_markers", [])
 
             pos_file = self.data_dir / "shaver_positive_emotions.json"
             if pos_file.exists():
-                with open(pos_file, "r", encoding="utf-8") as f:
+                with open(pos_file, encoding="utf-8") as f:
                     self.positive_emotions = json.load(f).get("positive_emotion_prototypes", [])
 
             vad_file = self.data_dir / "vad_emotion_matrix_24.json"
             if vad_file.exists():
-                with open(vad_file, "r", encoding="utf-8") as f:
+                with open(vad_file, encoding="utf-8") as f:
                     self.vad_states = json.load(f).get("states", [])
 
             logger.info("AegisPsycheEngine loaded %d manipulation vectors, %d dark triad traits, %d FBI markers, %d positive emotion prototypes, %d VAD states.",
@@ -189,9 +188,9 @@ class AegisPsycheEngine:
             return AegisPsycheReport()
 
         text_lower = text.lower()
-        detected_markers: List[Dict[str, Any]] = []
-        dominant_vectors: List[str] = []
-        antidotes: List[str] = []
+        detected_markers: list[dict[str, Any]] = []
+        dominant_vectors: list[str] = []
+        antidotes: list[str] = []
 
         total_manip_weight = 0.0
 
@@ -362,7 +361,7 @@ class AegisPsycheEngine:
 
     def _compute_hemi_sync_alignment(
         self, manip: float, dark: float, decep: float, text_length: int
-    ) -> Tuple[float, str, Dict[str, float]]:
+    ) -> tuple[float, str, dict[str, float]]:
         """
         Computes CIA Gateway Hemi-Sync coherence and neurochemical stabilization parameters.
         """

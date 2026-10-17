@@ -7,13 +7,12 @@ wyodrębnia skróty klawiszowe i instrukcje, po czym zapisuje je w lokalnej bazi
 
 import json
 import logging
+import os
 import re
 import urllib.parse
 from pathlib import Path
 
 import httpx
-
-import os
 
 logger = logging.getLogger("AppLearningAgent")
 workspace_env = os.environ.get("SPARKLE_WORKSPACE")

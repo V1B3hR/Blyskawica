@@ -204,13 +204,12 @@ async fn start_engine(app_handle: AppHandle, state: State<'_, AppState>) -> Resu
 
     // Spawnowanie forwardera zdarzeń z Core do Tauri frontend
     let app_handle_clone = app_handle.clone();
-    let state_clone = app_handle.state::<AppState>();
     tokio::spawn(async move {
         while let Some(event) = event_rx.recv().await {
             if let blyskawica_core::state_manager::EngineEvent::Neurochemistry(ref ns) = event {
-                if let Ok(mut inner) = state_clone.0.lock() {
+                if let Ok(mut inner) = app_handle_clone.state::<AppState>().0.lock() {
                     inner.current_neurochemistry = ns.clone();
-                }
+                };
             }
             let _ = app_handle_clone.emit("engine-event", event);
         }
@@ -434,7 +433,12 @@ async fn read_workspace_file(path: String, state: State<'_, AppState>) -> Result
         return Err("Zablokowano. Odczyt plików wyłączony w trybie Sandbox (Poziom 1).".to_string());
     }
 
-    let absolute_path = PathBuf::from(&path);
+    let absolute_path = if Path::new(&path).is_absolute() {
+        PathBuf::from(&path)
+    } else {
+        workspace_path.join(&path)
+    };
+
     if is_restricted_system_path(&absolute_path) {
         return Err("Zablokowano. Odczyt z katalogu systemowego jest zabroniony.".to_string());
     }
@@ -468,7 +472,12 @@ async fn write_workspace_file(path: String, content: String, state: State<'_, Ap
         return Err("Zablokowano. Zapis plików wyłączony w trybie Sandbox (Poziom 1).".to_string());
     }
 
-    let absolute_path = PathBuf::from(&path);
+    let absolute_path = if Path::new(&path).is_absolute() {
+        PathBuf::from(&path)
+    } else {
+        workspace_path.join(&path)
+    };
+
     if is_restricted_system_path(&absolute_path) {
         return Err("Zablokowano. Zapis w katalogu systemowym jest zabroniony.".to_string());
     }
@@ -488,7 +497,7 @@ async fn write_workspace_file(path: String, content: String, state: State<'_, Ap
 }
 
 #[tauri::command]
-async fn list_workspace_files(state: State<'_, AppState>) -> Result<Vec<serde_json::Value>, String> {
+async fn list_workspace_files(subpath: Option<String>, state: State<'_, AppState>) -> Result<Vec<serde_json::Value>, String> {
     let (permission_level, workspace_path) = {
         let inner = state.0.lock().unwrap();
         (inner.permission_level, inner.workspace_path.clone())
@@ -498,17 +507,32 @@ async fn list_workspace_files(state: State<'_, AppState>) -> Result<Vec<serde_js
         return Err("Zablokowano. Przeglądanie katalogów wyłączone w trybie Sandbox (Poziom 1).".to_string());
     }
 
+    let target_dir = if let Some(ref rel) = subpath {
+        let trimmed = rel.trim_matches(|c| c == '/' || c == '\\');
+        if !trimmed.is_empty() && trimmed != "." {
+            workspace_path.join(trimmed)
+        } else {
+            workspace_path.clone()
+        }
+    } else {
+        workspace_path.clone()
+    };
+
+    if !is_inside_workspace(&target_dir, &workspace_path) {
+        return Err("Zablokowano: Próba wyjścia poza katalog roboczy.".to_string());
+    }
+
     let mut files = Vec::new();
-    if let Ok(mut entries) = tokio::fs::read_dir(&workspace_path).await {
+    if let Ok(mut entries) = tokio::fs::read_dir(&target_dir).await {
         while let Ok(Some(entry)) = entries.next_entry().await {
             let path = entry.path();
             let is_dir = path.is_dir();
             let name = path.file_name().unwrap_or_default().to_string_lossy().into_owned();
-            let abs_path = path.to_string_lossy().into_owned();
+            let rel_path = path.strip_prefix(&workspace_path).unwrap_or(&path).to_string_lossy().replace("\\", "/");
 
             files.push(serde_json::json!({
                 "name": name,
-                "path": abs_path,
+                "path": rel_path,
                 "is_dir": is_dir,
             }));
         }
@@ -623,9 +647,16 @@ async fn scan_local_models(app: tauri::AppHandle) -> Result<serde_json::Value, S
     let app_data_dir = app.path().app_data_dir().unwrap_or_else(|_| std::env::temp_dir().join("Blyskawica"));
     scan_dirs.push(app_data_dir.join("models"));
 
-    // 2. Current workspace model dir
+    // 2. Current workspace and executable model dir
     scan_dirs.push(PathBuf::from("model"));
     scan_dirs.push(PathBuf::from("models"));
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(exe_dir) = exe.parent() {
+            scan_dirs.push(exe_dir.join("model"));
+            scan_dirs.push(exe_dir.join("models"));
+        }
+    }
+    scan_dirs.push(PathBuf::from(r"C:\Projekty\Blyskawica\model"));
 
     // 3. User profile caches (Ollama, LM Studio, HuggingFace)
     if let Ok(home) = std::env::var("USERPROFILE").or_else(|_| std::env::var("HOME")) {
@@ -897,12 +928,33 @@ pub fn run() {
             let state = app.state::<AppState>();
             let mut inner = state.0.lock().unwrap();
             
-            // Dynamic workspace resolution: use local repo dir if valid, else fallback to app_data_dir
+            // Dynamic workspace resolution: use local repo dir if valid, else standalone bundle dir, else fallback to app_data_dir
             let app_data_dir = app.path().app_data_dir().unwrap_or_else(|_| std::env::temp_dir().join("Blyskawica"));
             let current_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
             
             if current_dir.join("adaptiveneuralnetwork").exists() || current_dir.join("blyskawica_core").exists() {
                 inner.workspace_path = current_dir;
+            } else if current_dir.join("model").exists() {
+                inner.workspace_path = current_dir;
+            } else if let Ok(exe_path) = std::env::current_exe() {
+                if let Some(exe_dir) = exe_path.parent() {
+                    if exe_dir.join("model").exists() {
+                        inner.workspace_path = exe_dir.to_path_buf();
+                    } else if let Some(parent) = exe_dir.parent().and_then(|p| p.parent()) {
+                        if parent.join("model").exists() {
+                            inner.workspace_path = parent.to_path_buf();
+                        } else {
+                            let _ = std::fs::create_dir_all(&app_data_dir);
+                            inner.workspace_path = app_data_dir.clone();
+                        }
+                    } else {
+                        let _ = std::fs::create_dir_all(&app_data_dir);
+                        inner.workspace_path = app_data_dir.clone();
+                    }
+                } else {
+                    let _ = std::fs::create_dir_all(&app_data_dir);
+                    inner.workspace_path = app_data_dir.clone();
+                }
             } else {
                 let _ = std::fs::create_dir_all(&app_data_dir);
                 inner.workspace_path = app_data_dir.clone();
@@ -949,6 +1001,16 @@ pub fn run() {
                 
                 match cmd.spawn() {
                     Ok(child) => {
+                        #[cfg(target_os = "windows")]
+                        {
+                            use std::os::windows::io::AsRawHandle;
+                            if let Ok(job) = blyskawica_core::native_security::create_kill_on_close_job() {
+                                let child_handle = child.as_raw_handle();
+                                if blyskawica_core::native_security::assign_process_to_job(job, child_handle as *mut _).is_ok() {
+                                    println!("🛡️ [Windows Job Object]: Sidecar pomyślnie przypisany do Job Object (JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE) – ochrona przed procesami zombie aktywna.");
+                                }
+                            }
+                        }
                         inner.backend_child = Some(child);
                         println!("✓ [Tauri Setup]: Sidecar backend uruchomiony pomyślnie.");
                     }

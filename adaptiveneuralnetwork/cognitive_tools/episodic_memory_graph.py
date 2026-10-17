@@ -11,7 +11,7 @@ import logging
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import torch
 
@@ -25,15 +25,15 @@ logger = logging.getLogger("episodic_graph")
 class EpisodicMemoryNode:
     id: str
     content: str
-    embedding: List[float]
-    vad_coordinates: Dict[str, float] = field(default_factory=lambda: {"valence": 0.70, "arousal": 0.35, "dominance": 0.80})
-    vad_state_id: Optional[str] = None
+    embedding: list[float]
+    vad_coordinates: dict[str, float] = field(default_factory=lambda: {"valence": 0.70, "arousal": 0.35, "dominance": 0.80})
+    vad_state_id: str | None = None
     brainwave_band: str = "ALPHA"
     synaptic_weight: float = 1.0  # Synaptic strength (Long-Term Potentiation)
     access_count: int = 0
     created_at: float = field(default_factory=time.time)
     last_accessed: float = field(default_factory=time.time)
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
     sha256_checksum: str = ""
 
     def __post_init__(self):
@@ -46,11 +46,11 @@ class EpisodicMemoryNode:
         computed = hashlib.sha256(raw.encode("utf-8")).hexdigest()
         return computed == self.sha256_checksum
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "EpisodicMemoryNode":
+    def from_dict(cls, data: dict[str, Any]) -> "EpisodicMemoryNode":
         return cls(**data)
 
 
@@ -62,11 +62,11 @@ class EpisodicMemoryEdge:
     weight: float = 1.0
     created_at: float = field(default_factory=time.time)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "EpisodicMemoryEdge":
+    def from_dict(cls, data: dict[str, Any]) -> "EpisodicMemoryEdge":
         return cls(**data)
 
 
@@ -75,23 +75,23 @@ class EpisodicGraphRAG:
     Long-Term Relational Memory Engine with Graph Traversal, Vector Retrieval,
     and Sleep Synaptic Consolidation.
     """
-    def __init__(self, vault_path: Optional[Path] = None):
+    def __init__(self, vault_path: Path | None = None):
         if vault_path is None:
             vault_path = Path(__file__).resolve().parent.parent.parent / "data" / "cognitive_defense" / "episodic_memory_vault.json"
         self.vault_path = Path(vault_path)
-        self.nodes: Dict[str, EpisodicMemoryNode] = {}
-        self.edges: List[EpisodicMemoryEdge] = []
-        self._adjacency: Dict[str, List[EpisodicMemoryEdge]] = {}
+        self.nodes: dict[str, EpisodicMemoryNode] = {}
+        self.edges: list[EpisodicMemoryEdge] = []
+        self._adjacency: dict[str, list[EpisodicMemoryEdge]] = {}
         self.load_vault()
 
     def add_memory(
         self,
         content: str,
-        vad_coordinates: Optional[Dict[str, float]] = None,
-        vad_state_id: Optional[str] = None,
+        vad_coordinates: dict[str, float] | None = None,
+        vad_state_id: str | None = None,
         brainwave_band: str = "ALPHA",
-        tags: Optional[List[str]] = None,
-        relations: Optional[List[Tuple[str, str, float]]] = None  # (target_id, relation_type, weight)
+        tags: list[str] | None = None,
+        relations: list[tuple[str, str, float]] | None = None  # (target_id, relation_type, weight)
     ) -> EpisodicMemoryNode:
         """
         Stores an episodic experience into the memory graph with deterministic semantic vector embedding.
@@ -102,7 +102,7 @@ class EpisodicGraphRAG:
             tags = []
 
         # Deterministic node ID from content hash + timestamp
-        h_str = hashlib.sha256(f"{content}:{time.time()}".encode("utf-8")).hexdigest()[:12]
+        h_str = hashlib.sha256(f"{content}:{time.time()}".encode()).hexdigest()[:12]
         node_id = f"mem_{h_str}"
 
         # Generate 128-dim continuous latent embedding
@@ -153,7 +153,7 @@ class EpisodicGraphRAG:
         top_k: int = 3,
         graph_depth: int = 1,
         min_similarity: float = 0.30
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Hybrid Vector + Graph Traversal Retrieval:
         1. Finds top-k vector-similar memories using Cosine Similarity on 128D embeddings.
@@ -167,7 +167,7 @@ class EpisodicGraphRAG:
         results = []
 
         # 1. Vector cosine similarity computation
-        scored_nodes: List[Tuple[float, EpisodicMemoryNode]] = []
+        scored_nodes: list[tuple[float, EpisodicMemoryNode]] = []
         for node in self.nodes.values():
             node_tensor = torch.tensor(node.embedding, dtype=torch.float32)
             sim = float(torch.dot(query_tensor, node_tensor).item())
@@ -224,7 +224,7 @@ class EpisodicGraphRAG:
 
         return results
 
-    def consolidate_synaptic_sleep(self, decay_rate: float = 0.05, prune_threshold: float = 0.15) -> Dict[str, Any]:
+    def consolidate_synaptic_sleep(self, decay_rate: float = 0.05, prune_threshold: float = 0.15) -> dict[str, Any]:
         """
         Sleep Synaptic Consolidation & Pruning:
         Applies gentle decay to unused memories while preserving reinforced (LTP) core knowledge.
@@ -263,7 +263,7 @@ class EpisodicGraphRAG:
             if edge.source_id in self._adjacency:
                 self._adjacency[edge.source_id].append(edge)
 
-    def save_vault(self, custom_path: Optional[Path] = None) -> bool:
+    def save_vault(self, custom_path: Path | None = None) -> bool:
         """Persists the memory graph to JSON vault."""
         target_path = Path(custom_path) if custom_path else self.vault_path
         target_path.parent.mkdir(parents=True, exist_ok=True)
@@ -289,7 +289,7 @@ class EpisodicGraphRAG:
             logger.error("Błąd zapisu skarbca pamięci: %s", e)
             return False
 
-    def load_vault(self, custom_path: Optional[Path] = None) -> bool:
+    def load_vault(self, custom_path: Path | None = None) -> bool:
         """Loads memory graph from JSON vault."""
         target_path = Path(custom_path) if custom_path else self.vault_path
         if not target_path.exists():
@@ -299,7 +299,7 @@ class EpisodicGraphRAG:
             return True
 
         try:
-            with open(target_path, "r", encoding="utf-8") as f:
+            with open(target_path, encoding="utf-8") as f:
                 data = json.load(f)
 
             self.nodes.clear()

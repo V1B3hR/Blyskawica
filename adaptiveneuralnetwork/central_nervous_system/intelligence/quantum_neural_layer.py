@@ -36,23 +36,23 @@ def _calculate_num_params(n_qubits: int, n_layers: int) -> int:
 # Sprawdzenie dostępności Qiskit
 # ---------------------------------------------------------------------------
 try:
-    from qiskit import QuantumCircuit
-    from qiskit.circuit import ParameterVector
-    from qiskit.quantum_info import SparsePauliOp
+    from qiskit import QuantumCircuit  # type: ignore[import-not-found,import-untyped]
+    from qiskit.circuit import ParameterVector  # type: ignore[import-not-found,import-untyped]
+    from qiskit.quantum_info import SparsePauliOp  # type: ignore[import-not-found,import-untyped]
     _QISKIT_AVAILABLE = True
 except ImportError:
     _QISKIT_AVAILABLE = False
     logger.warning("[QuantumLayer] Qiskit niedostępny — tryb klasyczny (liniowy).")
 
 try:
-    from qiskit_aer.primitives import EstimatorV2 as AerEstimator
+    from qiskit_aer.primitives import EstimatorV2 as AerEstimator  # type: ignore[import-not-found,import-untyped]
     _AER_AVAILABLE = True
 except ImportError:
     _AER_AVAILABLE = False
 
 try:
-    from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
-    from qiskit_ibm_runtime import EstimatorV2 as IBMEstimator, QiskitRuntimeService  # noqa: F401
+    from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager  # type: ignore[import-not-found,import-untyped]
+    from qiskit_ibm_runtime import EstimatorV2 as IBMEstimator, QiskitRuntimeService  # noqa: F401  # type: ignore[import-not-found,import-untyped]
     _IBM_AVAILABLE = True
 except ImportError:
     _IBM_AVAILABLE = False
@@ -65,6 +65,11 @@ def get_workspace_root() -> Path:
     return current.parents[3]
 
 WORKSPACE_ROOT: Path = get_workspace_root()
+
+
+def _calculate_num_params(n_qubits: int, n_layers: int) -> int:
+    """Oblicza liczbę parametrów obwodu PQC: 2 parametry (RY, RZ) na kubit na warstwę."""
+    return n_qubits * n_layers * 2
 
 
 # ---------------------------------------------------------------------------
@@ -165,7 +170,7 @@ class QuantumNeuralLayer(nn.Module):
 
         # Inicjalizacja Asynchronicznej Izolacji Galwanicznej (Ground Loop Isolator)
         if self.use_gli_stabilization:
-            self.gli = GroundLoopIsolator(isolation_ratio=0.08)
+            self.gli = GroundLoopIsolator(isolation_ratio=0.05)
         else:
             self.gli = None
 
@@ -198,7 +203,7 @@ class QuantumNeuralLayer(nn.Module):
             self._estimator = AerEstimator()
             logger.info("[QuantumLayer] Backend: Qiskit Aer (lokalny symulator)")
         elif self.backend_mode == "ibm" and _IBM_AVAILABLE and self.ibm_service:
-            hw_backend = getattr(self.ibm_service, "least_busy")(simulator=False, operational=True)
+            hw_backend = self.ibm_service.least_busy(simulator=False, operational=True)
             pm = generate_preset_pass_manager(optimization_level=1, backend=hw_backend)
             self._pqc_template = pm.run(self._pqc_template)
             self._estimator = IBMEstimator(mode=hw_backend)

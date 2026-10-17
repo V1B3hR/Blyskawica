@@ -2,8 +2,8 @@
 Testy bezpieczeństwa: weryfikacja rate limitingu (InMemoryRateLimiter i RateLimitMiddleware).
 """
 
-import time
 import unittest
+
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 

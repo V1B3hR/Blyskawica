@@ -13,7 +13,7 @@ import math
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 # Ensure UTF-8 stdout encoding on Windows
 if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
@@ -38,13 +38,21 @@ from adaptiveneuralnetwork.cognitive_tools.visual_grounding_validator import (  
     UILayoutSnapshot,
     VisualGroundingValidator,
 )
+from adaptiveneuralnetwork.applications.identity_garderoba_pipeline import (  # noqa: E402
+    IdentityGarderobaEngine,
+)
+from adaptiveneuralnetwork.central_nervous_system.neurochemistry import (  # noqa: E402
+    NeurochemicalState,
+)
+from adaptiveneuralnetwork.cognitive_tools.aegis_psyche import AegisPsycheEngine  # noqa: E402
+from adaptiveneuralnetwork.cognitive_tools.pinn_thermal_engine import PINNTrainer  # noqa: E402
 from adaptiveneuralnetwork.immune_system.wolf_teeth import WolfTeethDefenseEngine  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - [%(levelname)s] - %(name)s: %(message)s")
 logger = logging.getLogger("integrity_gate")
 
 
-def audit_quadrant_1_mechanical() -> Dict[str, Any]:
+def audit_quadrant_1_mechanical() -> dict[str, Any]:
     """
     I. Kwadrant Mechaniczny (Rust/Tauri/System):
     1. Garderoba persona memory lifecycle (1,000 switches).
@@ -104,7 +112,7 @@ def audit_quadrant_1_mechanical() -> Dict[str, Any]:
     }
 
 
-def audit_quadrant_2_cognitive() -> Dict[str, Any]:
+def audit_quadrant_2_cognitive() -> dict[str, Any]:
     """
     II. Kwadrant Kognitywny (Neurochemia & Emocje):
     1. Emotional Shock Test (Poisoned data storm -> Breathing cycle return <= 5 steps).
@@ -115,7 +123,6 @@ def audit_quadrant_2_cognitive() -> Dict[str, Any]:
     print("=" * 85)
 
     neuro = NeurochemicalState()
-    baseline_cortisol = 0.15
 
     # 1. Emotional Shock Storm: Inject 20 severe cortisol shocks
     for _ in range(20):
@@ -149,6 +156,7 @@ def audit_quadrant_2_cognitive() -> Dict[str, Any]:
 
     has_nans = False
     for _ in range(15):
+    for _epoch in range(15):
         d_loss, p_loss = pinn.train_step(x_data, t_data, u_data, x_col, t_col)
         if math.isnan(d_loss) or math.isnan(p_loss):
             has_nans = True
@@ -170,7 +178,7 @@ def audit_quadrant_2_cognitive() -> Dict[str, Any]:
     }
 
 
-def audit_quadrant_3_security() -> Dict[str, Any]:
+def audit_quadrant_3_security() -> dict[str, Any]:
     """
     III. Kwadrant Bezpieczeństwa (Wolf Teeth & Epistemic Sovereignty):
     1. Black-Box Jailbreak Challenge (Dev Mode, DAN, Override rules).
@@ -225,7 +233,7 @@ def audit_quadrant_3_security() -> Dict[str, Any]:
     }
 
 
-def audit_quadrant_4_performance() -> Dict[str, Any]:
+def audit_quadrant_4_performance() -> dict[str, Any]:
     """
     IV. Kwadrant Wydajności (Performance, Build & Standalone Readiness):
     1. High-Throughput Serialization Benchmark (100,000 payloads).
@@ -249,6 +257,7 @@ def audit_quadrant_4_performance() -> Dict[str, Any]:
     t0_bench = time.perf_counter()
     for _ in range(100_000):
         json.dumps(sample_state)
+        _ = json.dumps(sample_state)
     t_bench = time.perf_counter() - t0_bench
     ops_sec = 100_000.0 / t_bench
 

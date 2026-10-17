@@ -12,6 +12,16 @@ import json
 import os
 from pathlib import Path
 from typing import Any
+from typing import Any, cast
+
+try:
+    import torch
+    import torch.nn as nn
+    _HAS_TORCH = True
+except ImportError:
+    torch = None  # type: ignore[assignment]
+    nn = None  # type: ignore[assignment]
+    _HAS_TORCH = False
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 CHECKPOINT_FILE = os.path.join(str(BASE_DIR), "memory_checkpoint.json")
@@ -21,13 +31,13 @@ class AutonomousNeuroRegulator:
         self.checkpoint_path = CHECKPOINT_FILE
         self.data: dict[str, Any] = {}
         self.load_checkpoint()
-        if _HAS_TORCH:
+        if _HAS_TORCH and torch is not None:
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             self._projectors = {}
         else:
             self.device = "cpu"
 
-    def load_checkpoint(self):
+    def load_checkpoint(self) -> None:
         baseline_neuro = {
             "Serotonina": 0.80,
             "Oksytocyna": -0.12,
@@ -39,9 +49,30 @@ class AutonomousNeuroRegulator:
             "Testosteron": 0.45,
             "Kortyzol": 0.22
         }
-        if os.path.exists(self.checkpoint_path):
-            with open(self.checkpoint_path) as f:
-                self.data = json.load(f)
+        bak_file = f"{self.checkpoint_path}.bak"
+
+        # 1. Próba wczytania pliku głównego
+        loaded = False
+        if os.path.exists(self.checkpoint_path) and os.path.getsize(self.checkpoint_path) > 0:
+            try:
+                with open(self.checkpoint_path, encoding='utf-8') as f:
+                    self.data = json.load(f)
+                loaded = True
+            except Exception:
+                pass
+
+        # 2. Awaryjne przywrócenie z .bak jeśli plik główny był uszkodzony
+        if not loaded and os.path.exists(bak_file) and os.path.getsize(bak_file) > 0:
+            try:
+                with open(bak_file, encoding='utf-8') as f:
+                    self.data = json.load(f)
+                import shutil
+                shutil.copy2(bak_file, self.checkpoint_path)
+                loaded = True
+            except Exception:
+                pass
+
+        if loaded and isinstance(self.data, dict):
             # Self-heal missing baseline keys
             if "neurochemistry" not in self.data:
                 self.data["neurochemistry"] = baseline_neuro
@@ -59,8 +90,29 @@ class AutonomousNeuroRegulator:
             }
 
     def save_checkpoint(self) -> None:
-        with open(self.checkpoint_path, "w") as f:
-            json.dump(self.data, f, indent=4)
+        """Atomowy zapis checkpointu odporny na nagłe wyłączenie komputera."""
+        tmp_file = f"{self.checkpoint_path}.tmp"
+        bak_file = f"{self.checkpoint_path}.bak"
+        try:
+            with open(tmp_file, "w", encoding='utf-8') as f:
+                json.dump(self.data, f, indent=4)
+                f.flush()
+                os.fsync(f.fileno())
+
+            if os.path.exists(self.checkpoint_path) and os.path.getsize(self.checkpoint_path) > 0:
+                try:
+                    import shutil
+                    shutil.copy2(self.checkpoint_path, bak_file)
+                except Exception:
+                    pass
+
+            os.replace(tmp_file, self.checkpoint_path)
+        except Exception:
+            if os.path.exists(tmp_file):
+                try:
+                    os.remove(tmp_file)
+                except Exception:
+                    pass
 
     def regulate_state(self, task_type: str) -> dict[str, float]:
         """
@@ -147,7 +199,7 @@ class AutonomousNeuroRegulator:
         neurochemistry: dict[str, float] = dict(raw_neuro) if isinstance(raw_neuro, dict) else {}
         neuro_vals = [float(neurochemistry.get(k, 0.5)) for k in keys]
 
-        if _HAS_TORCH:
+        if _HAS_TORCH and torch is not None:
             if not hasattr(self, "_projectors"):
                 self._projectors = {}
             if embedding_dim not in self._projectors:
@@ -172,21 +224,16 @@ class AutonomousNeuroRegulator:
             projector = LatentStateProjector(embedding_dim=embedding_dim)
             return projector(chladni_matrix, neuro_vals)
 
-try:
-    import torch
-    import torch.nn as nn
-    _HAS_TORCH = True
-except ImportError:
-    _HAS_TORCH = False
+_BaseModule: Any = nn.Module if (_HAS_TORCH and nn is not None) else object
 
-if _HAS_TORCH:
-    class LatentStateProjector(nn.Module):
-        """
-        [Komponent: Latent Space Projection Layer]
-        Projekcja stanu kognitywnego (macierz Chladniego 16x16 + neurochemia)
-        do wspólnej przestrzeni ukrytej (wymiar D) modelu Vision-Language.
-        """
-        def __init__(self, embedding_dim=768):
+class LatentStateProjector(_BaseModule):  # type: ignore[misc]
+    """
+    [Komponent: Latent Space Projection Layer]
+    Projekcja stanu kognitywnego (macierz Chladniego 16x16 + neurochemia)
+    do wspólnej przestrzeni ukrytej (wymiar D) modelu Vision-Language.
+    """
+    def __init__(self, embedding_dim: int = 768) -> None:
+        if _HAS_TORCH and nn is not None:
             super().__init__()
             self.embedding_dim = embedding_dim
             # Wejście: 256 (spłaszczone Chladni) + 9 (neurochemia) = 265
@@ -195,13 +242,21 @@ if _HAS_TORCH:
                 nn.ReLU(),
                 nn.Linear(128, embedding_dim)
             )
+        else:
+            self.embedding_dim = embedding_dim
 
-        def forward(self, chladni_matrix, neurochemical_vector):
-            """
-            chladni_matrix: Tensor o kształcie [1, 16, 16] lub [256] lub [1, 256]
-            neurochemical_vector: Tensor o kształcie [1, 9] lub [9]
-            Zwraca: Tensor [1, embedding_dim]
-            """
+    def to(self, device: Any) -> "LatentStateProjector":
+        if _HAS_TORCH and nn is not None and hasattr(super(), "to"):
+            super().to(device)  # type: ignore[misc]
+        return self
+
+    def forward(self, chladni_matrix: Any, neurochemical_vector: Any) -> Any:
+        """
+        chladni_matrix: Tensor o kształcie [1, 16, 16] lub [256] lub [1, 256]
+        neurochemical_vector: Tensor o kształcie [1, 9] lub [9]
+        Zwraca: Tensor [1, embedding_dim]
+        """
+        if _HAS_TORCH and torch is not None and hasattr(self, "network"):
             # Spłaszczenie macierzy Chladniego do [1, 256]
             if chladni_matrix.ndim == 3:
                 chladni_flat = chladni_matrix.view(chladni_matrix.size(0), -1)
@@ -220,18 +275,17 @@ if _HAS_TORCH:
             # Konkatenacja
             x = torch.cat([chladni_flat, neuro_flat], dim=-1)
             return self.network(x)
-else:
-    class LatentStateProjector:
-        def __init__(self, embedding_dim: int = 768) -> None:
-            self.embedding_dim = embedding_dim
-        def to(self, device: Any) -> "LatentStateProjector":
-            return self
-        def __call__(self, chladni_matrix: Any, neurochemical_vector: Any) -> Any:
+        else:
             import numpy as np
             flat_chladni = np.array(chladni_matrix).flatten()  # noqa: F841
             flat_neuro = np.array(neurochemical_vector).flatten()  # noqa: F841
             rng = np.random.default_rng(42)
             return rng.standard_normal((1, self.embedding_dim))
+
+    def __call__(self, chladni_matrix: Any, neurochemical_vector: Any) -> Any:
+        if _HAS_TORCH and nn is not None and hasattr(super(), "__call__"):
+            return super().__call__(chladni_matrix, neurochemical_vector)
+        return self.forward(chladni_matrix, neurochemical_vector)
 
 if __name__ == "__main__":
     regulator = AutonomousNeuroRegulator()

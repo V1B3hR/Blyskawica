@@ -1,8 +1,8 @@
 {
-    "alpha_intensity": 18.599271774291992,
-    "beta_gamma_intensity": 21.107479095458984,
-    "coherence_factor": 0.8413112908071188,
-    "original_drift_rate": 0.095,
-    "stabilized_drift_rate": 0.09100377136866619,
-    "drift_attenuation_percent": 4.206556454035594
+    "alpha_intensity": 1.8464984893798828,
+    "beta_gamma_intensity": 1.78815495967865,
+    "coherence_factor": 0.6622653748028058,
+    "original_drift_rate": 0.05,
+    "stabilized_drift_rate": 0.04834433656299299,
+    "drift_attenuation_percent": 3.311326874014029
 }

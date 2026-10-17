@@ -5,9 +5,9 @@ Enables cross-platform Rust native inference in blyskawica_core without requirin
 """
 
 import logging
-import os
 import sys
 from pathlib import Path
+
 import torch
 
 # Ensure project root is in sys.path
@@ -17,7 +17,6 @@ if str(root_dir) not in sys.path:
 
 from adaptiveneuralnetwork.cognitive_tools.aegis_psyche import (  # noqa: E402
     AegisPsycheNeuralClassifier,
-    text_to_embedding,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - [%(levelname)s] - %(name)s: %(message)s")

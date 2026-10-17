@@ -3,10 +3,11 @@ Testy bezpieczeństwa: weryfikacja polityki CORS i zaostrzonych nagłówków HTT
 """
 
 import unittest
+
 from fastapi.testclient import TestClient
 
 from blyskawica_app.backend.main import app
-from blyskawica_app.backend.security import ALLOWED_CORS_ORIGINS, ALLOWED_CORS_HEADERS
+from blyskawica_app.backend.security import ALLOWED_CORS_ORIGINS
 
 
 class TestCORSAndHeadersSecurity(unittest.TestCase):

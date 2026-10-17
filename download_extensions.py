@@ -17,6 +17,7 @@ BASE_DIR = Path(__file__).resolve().parent
 EXT_DIR = BASE_DIR / "extensions"
 EXT_DIR.mkdir(exist_ok=True)
 
+
 def is_safe_zip_path(target_dir: Path, path: Path) -> bool:
     try:
         resolved_target = target_dir.resolve()
@@ -36,6 +37,7 @@ def safe_extract_zip(zip_file: zipfile.ZipFile, extract_to: Path) -> None:
         getattr(zip_file, "extractall")(extract_to, filter="data")
     else:
         zip_file.extractall(extract_to)
+    zip_file.extractall(extract_to)
 
 
 def download_and_extract() -> None:

@@ -14,9 +14,9 @@ import os
 import secrets
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
-from fastapi import Header, HTTPException, Request, Response
+from fastapi import HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
@@ -26,7 +26,7 @@ logger = logging.getLogger("BlyskawicaSecurity")
 STARTUP_TOKEN: str = os.environ.get("X_BLY_TOKEN", secrets.token_hex(32))
 
 # Zaostrzone reguły CORS - autoryzowane domeny aplikacji Sparkle / Tauri
-ALLOWED_CORS_ORIGINS: List[str] = [
+ALLOWED_CORS_ORIGINS: list[str] = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
     "tauri://localhost",
@@ -35,7 +35,7 @@ ALLOWED_CORS_ORIGINS: List[str] = [
 ]
 
 # Ściśle określone nagłówki HTTP (ochrona przed arbitrary headers)
-ALLOWED_CORS_HEADERS: List[str] = [
+ALLOWED_CORS_HEADERS: list[str] = [
     "X-Blyskawica-Token",
     "X-Token",
     "X-Internal-Request",
@@ -46,7 +46,7 @@ ALLOWED_CORS_HEADERS: List[str] = [
 ]
 
 # Chronione pliki i katalogi zawierające tożsamość i silnik
-PROTECTED_CORE_PATTERNS: List[str] = [
+PROTECTED_CORE_PATTERNS: list[str] = [
     "/welcome_v9.py",
     "/blyskawica_start.py",
     "/uruchom_sparkle.bat",
@@ -59,7 +59,7 @@ PROTECTED_CORE_PATTERNS: List[str] = [
 ]
 
 # Wrażliwe katalogi systemowe Windows oraz Unix / Linux / macOS
-RESTRICTED_SYSTEM_DIRECTORIES: List[str] = [
+RESTRICTED_SYSTEM_DIRECTORIES: list[str] = [
     # Windows
     "c:/windows",
     "c:/program files",
@@ -77,7 +77,7 @@ RESTRICTED_SYSTEM_DIRECTORIES: List[str] = [
     "/var",
 ]
 
-RESTRICTED_USER_SUBDIRECTORIES: List[str] = [
+RESTRICTED_USER_SUBDIRECTORIES: list[str] = [
     ".ssh",
     ".aws",
     ".gnupg",
@@ -85,7 +85,7 @@ RESTRICTED_USER_SUBDIRECTORIES: List[str] = [
 ]
 
 
-def is_inside_workspace(target_path: Union[str, Path], base_dir: Optional[Union[str, Path]] = None) -> bool:
+def is_inside_workspace(target_path: str | Path, base_dir: str | Path | None = None) -> bool:
     """
     Weryfikuje, czy zadana ścieżka znajduje się wewnątrz dozwolonego katalogu roboczego.
     Wykorzystuje Path.resolve() oraz Path.is_relative_to() do odporności na Directory Traversal.
@@ -101,13 +101,17 @@ def is_inside_workspace(target_path: Union[str, Path], base_dir: Optional[Union[
         else:
             resolved_base = Path(base_dir).resolve()
 
-        resolved_target = Path(target_path).resolve()
+        target_str = str(target_path).replace("\\", "/")
+        if not Path(target_str).is_absolute():
+            resolved_target = (resolved_base / target_str).resolve()
+        else:
+            resolved_target = Path(target_str).resolve()
         return resolved_target.is_relative_to(resolved_base)
     except (ValueError, Exception):
         return False
 
 
-def is_protected_core_file(filepath: Union[str, Path]) -> bool:
+def is_protected_core_file(filepath: str | Path) -> bool:
     """Sprawdza, czy ścieżka odnosi się do chronionych plików tożsamości i rdzenia Błyskawicy."""
     try:
         resolved = Path(filepath).resolve()
@@ -117,7 +121,7 @@ def is_protected_core_file(filepath: Union[str, Path]) -> bool:
         return False
 
 
-def is_restricted_system_path(filepath: Union[str, Path]) -> bool:
+def is_restricted_system_path(filepath: str | Path) -> bool:
     """Sprawdza, czy ścieżka wskazuje na wrażliwe katalogi systemowe Windows, Unix lub klucze użytkownika."""
     try:
         expanded = os.path.expanduser(str(filepath))
@@ -145,8 +149,8 @@ def is_restricted_system_path(filepath: Union[str, Path]) -> bool:
 
 
 def verify_startup_token(
-    x_token: Optional[Any] = None,
-    x_fallback_token: Optional[Any] = None
+    x_token: Any | None = None,
+    x_fallback_token: Any | None = None
 ) -> None:
     """Weryfikuje, czy dostarczony nagłówek odpowiada wygenerowanemu tokenowi sesji (odporny na timing attack)."""
     token_candidate = None
@@ -172,7 +176,7 @@ class InMemoryRateLimiter:
         self.max_requests: int = max_requests
         self.window_seconds: float = window_seconds
         self.max_clients: int = max_clients
-        self._history: Dict[str, collections.deque] = collections.defaultdict(collections.deque)
+        self._history: dict[str, collections.deque] = collections.defaultdict(collections.deque)
         self._last_cleanup: float = time.time()
 
     def _cleanup_stale_entries(self, now: float) -> None:
@@ -187,7 +191,7 @@ class InMemoryRateLimiter:
             for k in list(self._history.keys())[:excess]:
                 del self._history[k]
 
-    def is_allowed(self, client_key: str) -> Tuple[bool, int, int]:
+    def is_allowed(self, client_key: str) -> tuple[bool, int, int]:
         """
         Sprawdza dopuszczalność zapytania.
         Zwraca: (dopuszczone: bool, pozostały_limit: int, czas_do_odblokowania: int)

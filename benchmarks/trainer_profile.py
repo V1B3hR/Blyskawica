@@ -5,6 +5,7 @@ disabled (standard PyTorch training) vs enabled.
 """
 
 import time
+
 import torch
 import torch.nn as nn
 import torch.optim as optim

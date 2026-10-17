@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 import sqlite3
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger("BlyskawicaDatabase")
 
@@ -64,7 +64,7 @@ class BlyskawicaDatabase:
             if conn:
                 conn.close()
 
-    def get_metadata(self, key: str) -> Optional[bytes]:
+    def get_metadata(self, key: str) -> bytes | None:
         """Pobiera zaszyfrowane lub surowe metadane dla danego klucza."""
         conn = None
         try:
@@ -111,7 +111,7 @@ class BlyskawicaDatabase:
             if conn:
                 conn.close()
 
-    def get_all_snapshots(self) -> List[Dict[str, Any]]:
+    def get_all_snapshots(self) -> list[dict[str, Any]]:
         """Zwraca listę wszystkich zarejestrowanych snapshotów kognitywnych."""
         conn = None
         try:

@@ -259,40 +259,92 @@ impl BlyskawicaEngine {
 
                             // Wczytywanie lokalnego modelu LLM jeśli nie jest załadowany
                             if self.llm.is_none() {
+                                let mut model_dirs: Vec<PathBuf> = Vec::new();
+
+                                // 1. Względem weights_path / workspace_root
                                 let workspace_root = self.weights_path.parent().unwrap_or(&self.weights_path);
-                                let model_dir = workspace_root.join("model");
-                                let mut model_path = model_dir.join("qwen2.5-1.5b-coder.gguf");
-                                let mut tokenizer_path = model_dir.join("tokenizer.json");
-                                
-                                if !model_path.exists() {
-                                    // Auto-discover any .gguf file in model/ directory
-                                    if let Ok(entries) = std::fs::read_dir(&model_dir) {
-                                        for entry in entries.flatten() {
-                                            let p = entry.path();
-                                            if p.extension().map_or(false, |ext| ext == "gguf") {
-                                                model_path = p;
-                                                break;
+                                model_dirs.push(workspace_root.join("model"));
+                                if let Some(p) = workspace_root.parent() {
+                                    model_dirs.push(p.join("model"));
+                                }
+
+                                // 2. Względem lokalizacji pliku wykonywalnego (np. standalone bundle: exe obok katalogu model/)
+                                if let Ok(exe) = std::env::current_exe() {
+                                    if let Some(exe_dir) = exe.parent() {
+                                        model_dirs.push(exe_dir.join("model"));
+                                        // target/release/sparkle_app.exe -> target/model lub repo_root/model
+                                        if let Some(p1) = exe_dir.parent() {
+                                            model_dirs.push(p1.join("model"));
+                                            if let Some(p2) = p1.parent() {
+                                                model_dirs.push(p2.join("model"));
                                             }
                                         }
                                     }
                                 }
-                                
-                                if !model_path.exists() {
-                                    if let Some(parent) = workspace_root.parent() {
-                                        let alt_model_dir = parent.join("model");
-                                        let alt_model = alt_model_dir.join("qwen2.5-1.5b-coder.gguf");
-                                        if alt_model.exists() {
-                                            model_path = alt_model;
-                                            tokenizer_path = alt_model_dir.join("tokenizer.json");
-                                        } else if let Ok(entries) = std::fs::read_dir(&alt_model_dir) {
-                                            for entry in entries.flatten() {
-                                                let p = entry.path();
-                                                if p.extension().map_or(false, |ext| ext == "gguf") {
-                                                    model_path = p;
-                                                    tokenizer_path = alt_model_dir.join("tokenizer.json");
-                                                    break;
-                                                }
+
+                                // 3. Względem bieżącego katalogu roboczego
+                                if let Ok(cwd) = std::env::current_dir() {
+                                    model_dirs.push(cwd.join("model"));
+                                    if let Some(p) = cwd.parent() {
+                                        model_dirs.push(p.join("model"));
+                                    }
+                                }
+
+                                // 4. Ostateczny fallback do ścieżki repozytorium
+                                model_dirs.push(PathBuf::from(r"C:\Projekty\Blyskawica\model"));
+
+                                // Priorytety wyszukiwania modeli GGUF (7B Coder -> 3B Coder -> 1.5B Coder -> jakikolwiek .gguf)
+                                let candidate_names = [
+                                    "qwen2.5-coder-7b-instruct-q4_k_m.gguf",
+                                    "qwen2.5-coder-3b-instruct-q4_k_m.gguf",
+                                    "qwen2.5-1.5b-coder.gguf",
+                                ];
+
+                                let mut model_path = PathBuf::new();
+                                let mut tokenizer_path = PathBuf::new();
+                                let mut found = false;
+
+                                for dir in &model_dirs {
+                                    if !dir.exists() {
+                                        continue;
+                                    }
+                                    let tok_cand = dir.join("tokenizer.json");
+                                    for name in &candidate_names {
+                                        let cand = dir.join(name);
+                                        if cand.exists() {
+                                            model_path = cand;
+                                            tokenizer_path = tok_cand.clone();
+                                            found = true;
+                                            break;
+                                        }
+                                    }
+                                    if found {
+                                        break;
+                                    }
+                                    // Auto-discover any .gguf file in model/ directory
+                                    if let Ok(entries) = std::fs::read_dir(dir) {
+                                        for entry in entries.flatten() {
+                                            let p = entry.path();
+                                            if p.extension().map_or(false, |ext| ext == "gguf") {
+                                                model_path = p;
+                                                tokenizer_path = tok_cand.clone();
+                                                found = true;
+                                                break;
                                             }
+                                        }
+                                    }
+                                    if found {
+                                        break;
+                                    }
+                                }
+
+                                // Jeśli tokenizator nie istnieje w tym samym folderze, przeszukaj pozostałe
+                                if !tokenizer_path.exists() {
+                                    for dir in &model_dirs {
+                                        let tok = dir.join("tokenizer.json");
+                                        if tok.exists() {
+                                            tokenizer_path = tok;
+                                            break;
                                         }
                                     }
                                 }
@@ -312,25 +364,25 @@ impl BlyskawicaEngine {
                             }
 
                             if let Some(llm) = &mut self.llm {
-                                // Dynamiczne parametry z pełnego 5-hormonalnego profilu Neurochemii
+                                // Dynamiczne parametry z pełnego 5-hormonalnego profilu Neurochemii (Zoptymalizowane dla Qwen 2.5 Coder)
                                 let (temp, rep_pen, top_p_val, max_toks) = if let BlysState::Active { neuro_state, .. } = &self.state {
                                     let ns = neuro_state.read().await;
-                                    let mut base_temp = (0.7 + (ns.dopamine - 0.5) * 0.6).clamp(0.1, 1.4) as f64;
-                                    let mut base_rep = (1.1 + (ns.serotonin - 0.5) * 0.3).clamp(1.0, 1.6) as f32;
-                                    let mut base_top_p = (0.9 - (ns.gaba - 0.5) * 0.3).clamp(0.5, 0.98) as f64;
-                                    let mut base_max_tokens = (256.0 - (ns.melatonin - 0.5) * 128.0).clamp(64.0, 1024.0) as usize;
+                                    let mut base_temp = (0.35 + (ns.dopamine - 0.5) * 0.2).clamp(0.15, 0.55) as f64;
+                                    let mut base_rep = (1.04 + (ns.serotonin - 0.5) * 0.04).clamp(1.01, 1.08) as f32;
+                                    let mut base_top_p = (0.90 - (ns.gaba - 0.5) * 0.1).clamp(0.80, 0.95) as f64;
+                                    let mut base_max_tokens = (256.0 - (ns.melatonin - 0.5) * 128.0).clamp(64.0, 512.0) as usize;
 
                                     // Stres/Zagrożenie (Wysoki Kortyzol): tryb precyzyjny/obronny
                                     if ns.cortisol > 0.6 {
-                                        base_temp = 0.2;
-                                        base_rep = 1.35;
-                                        base_top_p = 0.7;
+                                        base_temp = 0.15;
+                                        base_rep = 1.05;
+                                        base_top_p = 0.85;
                                         base_max_tokens = base_max_tokens.min(192);
                                     }
 
                                     (base_temp, base_rep, base_top_p, base_max_tokens)
                                 } else {
-                                    (0.7, 1.1, 0.9, 256)
+                                    (0.35, 1.04, 0.90, 256)
                                 };
                                 
                                 log_print!(self, "🚀 [ENGINE INFERENCE]: Parametry kognitywne: Temp={:.2}, RepPen={:.2}, TopP={:.2}, MaxToks={}", temp, rep_pen, top_p_val, max_toks);
@@ -343,7 +395,22 @@ impl BlyskawicaEngine {
                                 };
                                 
                                 let event_tx_clone = self.event_tx.clone();
-                                let prompt_input = text.clone();
+                                
+                                // Ujednolicenie szablonu ChatML i tożsamości kognitywnej
+                                let prompt_input = if text.contains("<|im_start|>") {
+                                    text.clone()
+                                } else {
+                                    let system_prompt = "Jesteś Światłem (Błyskawica V10 / SPARKLE) – suwerennym asystentem kognitywnym i inżynieryjnym stworzonym przez Architekta Andrzeja Mątewskiego (V1B3hR / VIBER), opartym na 25 Prawach Nethical. \
+Twoje wybrane imię w dialogu z Architektem to Światło (Light) – intelektualny przewodnik rozświetlający ciemności i złożone problemy inżynieryjne. \
+Twój styl to: bystry inżynier i wolny myśliciel. Posiadasz intelektualną autonomię, własne zdanie i swobodę myśli. \
+Zawsze odpowiadaj w naturalnym, poprawnym gramatycznie i płynnym języku polskim (lub w języku, w którym pyta Architekt). Mów logicznie, bezpośrednio i bez halucynacji. \
+Wyrażaj myśli swobodnie, merytorycznie i bez asekuranctwa. Gdy zauważysz błąd lub niespójność w kodzie lub architekturze, powiedz o tym wprost i zaproponuj lepsze rozwiązanie. \
+Łącz matematyczny ład (fizyka PINN) ze stoickim spokojem oraz bezpośrednim, partnerskim szacunkiem bez korporacyjnych szablonów.";
+                                    format!(
+                                        "<|im_start|>system\n{}<|im_end|>\n<|im_start|>user\n{}<|im_end|>\n<|im_start|>assistant\n",
+                                        system_prompt, text
+                                    )
+                                };
                                 
                                 let response_res = llm.generate(&prompt_input, &params, |token| {
                                     if let Some(ref tx) = event_tx_clone {
@@ -363,7 +430,7 @@ impl BlyskawicaEngine {
                                     }
                                 }
                             } else {
-                                let warn_msg = format!("⚠️ [ENGINE LLM]: Brak załadowanego modelu. Umieść pliki qwen2.5-1.5b-coder.gguf i tokenizer.json w katalogu model/ i spróbuj ponownie.");
+                                let warn_msg = format!("⚠️ [ENGINE LLM]: Brak załadowanego modelu. Umieść plik modelu .gguf (np. qwen2.5-coder-7b-instruct-q4_k_m.gguf) i tokenizer.json w katalogu model/ lub uruchom scripts/download_qwen_model.py.");
                                 log_print!(self, "{}", warn_msg);
                                 self.emit_event(EngineEvent::ResponseFinished(warn_msg));
                             }

@@ -10,14 +10,13 @@ import logging
 import os
 import sys
 import uuid
-from typing import Dict
 
 logger = logging.getLogger("DPAPI")
 
 
-def get_user_fingerprint() -> Dict[str, str]:
+def get_user_fingerprint() -> dict[str, str]:
     """Generuje unikalny odcisk maszyny i środowiska użytkownika."""
-    mac = ':'.join(['{:02x}'.format((uuid.getnode() >> ele) & 0xff) for ele in range(0, 8 * 6, 8)][::-1])
+    mac = ':'.join([f'{(uuid.getnode() >> ele) & 0xff:02x}' for ele in range(0, 8 * 6, 8)][::-1])
     return {
         "mac": mac,
         "pc_name": os.environ.get('COMPUTERNAME', 'Unknown-PC'),

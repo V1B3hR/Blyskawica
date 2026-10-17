@@ -245,3 +245,6 @@ sparkle_app/src-tauri/target/
 *.db-wal
 *.db-shm
 
+# Local cargo machine-specific overrides
+.cargo/
+
