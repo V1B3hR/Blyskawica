@@ -70,6 +70,22 @@ impl CognitiveLlmEngine {
             }
         }
 
+        // Weryfikacja nagłówka GGUF (magic bytes: "GGUF" = [0x47, 0x47, 0x55, 0x46])
+        {
+            use std::io::Read;
+            let mut magic = [0u8; 4];
+            let mut test_f = File::open(model_path)
+                .map_err(|e| format!("Błąd otwierania pliku modelu: {}", e))?;
+            test_f.read_exact(&mut magic)
+                .map_err(|e| format!("Błąd odczytu nagłówka pliku GGUF: {}", e))?;
+            if &magic != b"GGUF" {
+                return Err(format!(
+                    "Nieprawidłowy format pliku modelu (oczekiwano nagłówka 'GGUF', odczytano: {:?}). Plik może być uszkodzony.",
+                    magic
+                ));
+            }
+        }
+
         // Ładowanie tokenizatora
         let tokenizer = Tokenizer::from_file(tokenizer_path)
             .map_err(|e| format!("Błąd ładowania tokenizatora: {}", e))?;
@@ -93,6 +109,19 @@ impl CognitiveLlmEngine {
 
     pub fn load(model_path: &Path, tokenizer_path: &Path) -> Result<Self, String> {
         Self::new(model_path, tokenizer_path)
+    }
+
+    /// Szybki benchmark operacji tensorowych CPU do oceny przepustowości obliczeniowej
+    pub fn benchmark_cpu_tensor_ops(iterations: usize) -> Result<f64, String> {
+        let device = Device::Cpu;
+        let start = std::time::Instant::now();
+        for _ in 0..iterations {
+            let a = Tensor::new(&[1.0f32, 2.0, 3.0, 4.0], &device).map_err(|e| e.to_string())?;
+            let _ = (a.clone() * 2.0).map_err(|e| e.to_string())?;
+        }
+        let elapsed = start.elapsed().as_secs_f64();
+        let ops_per_sec = (iterations as f64) / elapsed.max(1e-6);
+        Ok(ops_per_sec)
     }
 
     /// Generuje odpowiedź na zadany prompt z uwzględnieniem neurochemicznych modyfikatorów i strumieniowaniem tokenów.

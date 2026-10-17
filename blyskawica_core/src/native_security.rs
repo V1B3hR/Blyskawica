@@ -30,6 +30,12 @@ mod win32 {
         fn GetCurrentProcess() -> *mut std::ffi::c_void;
         fn CreateJobObjectW(lpJobAttributes: *mut std::ffi::c_void, lpName: *const u16) -> *mut std::ffi::c_void;
         fn AssignProcessToJobObject(hJob: *mut std::ffi::c_void, hProcess: *mut std::ffi::c_void) -> i32;
+        fn SetInformationJobObject(
+            hJob: *mut std::ffi::c_void,
+            JobObjectInformationClass: u32,
+            lpJobObjectInformation: *const std::ffi::c_void,
+            cbJobObjectInformationLength: u32,
+        ) -> i32;
         fn CloseHandle(hObject: *mut std::ffi::c_void) -> i32;
     }
 
@@ -41,6 +47,81 @@ mod win32 {
             bOrder: i32,
         ) -> u32;
         fn SetTcpEntry(pTcprow: *const MIB_TCPROW) -> u32;
+    }
+
+    #[repr(C)]
+    #[allow(non_snake_case)]
+    struct JOBOBJECT_BASIC_LIMIT_INFORMATION {
+        PerProcessUserTimeLimit: i64,
+        PerJobUserTimeLimit: i64,
+        LimitFlags: u32,
+        MinimumWorkingSetSize: usize,
+        MaximumWorkingSetSize: usize,
+        ActiveProcessLimit: u32,
+        Affinity: usize,
+        PriorityClass: u32,
+        SchedulingClass: u32,
+    }
+
+    #[repr(C)]
+    #[allow(non_snake_case)]
+    struct IO_COUNTERS {
+        ReadOperationCount: u64,
+        WriteOperationCount: u64,
+        OtherOperationCount: u64,
+        ReadTransferCount: u64,
+        WriteTransferCount: u64,
+        OtherTransferCount: u64,
+    }
+
+    #[repr(C)]
+    #[allow(non_snake_case)]
+    struct JOBOBJECT_EXTENDED_LIMIT_INFORMATION {
+        BasicLimitInformation: JOBOBJECT_BASIC_LIMIT_INFORMATION,
+        IoInfo: IO_COUNTERS,
+        ProcessMemoryLimit: usize,
+        JobMemoryLimit: usize,
+        PeakProcessMemoryLimit: usize,
+        PeakJobMemoryLimit: usize,
+    }
+
+    const JOB_OBJECT_EXTENDED_LIMIT_INFORMATION: u32 = 9;
+    const JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE: u32 = 0x00002000;
+
+    pub fn create_kill_on_close_job() -> Result<*mut std::ffi::c_void, String> {
+        unsafe {
+            let job = CreateJobObjectW(ptr::null_mut(), ptr::null());
+            if job.is_null() {
+                let err = std::io::Error::last_os_error();
+                return Err(format!("CreateJobObjectW failed: {}", err));
+            }
+            let mut info: JOBOBJECT_EXTENDED_LIMIT_INFORMATION = std::mem::zeroed();
+            info.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+            let set_res = SetInformationJobObject(
+                job,
+                JOB_OBJECT_EXTENDED_LIMIT_INFORMATION,
+                &info as *const _ as *const std::ffi::c_void,
+                std::mem::size_of::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>() as u32,
+            );
+            if set_res == 0 {
+                let err = std::io::Error::last_os_error();
+                CloseHandle(job);
+                return Err(format!("SetInformationJobObject failed: {}", err));
+            }
+            Ok(job)
+        }
+    }
+
+    pub fn assign_process_to_job(job: *mut std::ffi::c_void, process: *mut std::ffi::c_void) -> Result<(), String> {
+        unsafe {
+            let res = AssignProcessToJobObject(job, process);
+            if res != 0 {
+                Ok(())
+            } else {
+                let err = std::io::Error::last_os_error();
+                Err(format!("AssignProcessToJobObject failed: {}", err))
+            }
+        }
     }
 
     pub fn create_sandboxed_job() -> Result<usize, String> {
@@ -247,7 +328,17 @@ mod win32 {
 }
 
 #[cfg(target_os = "windows")]
-pub use win32::{drop_thread_privileges, restore_thread_privileges, terminate_external_tcp_connections, protect_secret, unprotect_secret, create_sandboxed_job};
+pub use win32::{drop_thread_privileges, restore_thread_privileges, terminate_external_tcp_connections, protect_secret, unprotect_secret, create_sandboxed_job, create_kill_on_close_job, assign_process_to_job};
+
+#[cfg(not(target_os = "windows"))]
+pub fn create_kill_on_close_job() -> Result<*mut std::ffi::c_void, String> {
+    Ok(std::ptr::null_mut())
+}
+
+#[cfg(not(target_os = "windows"))]
+pub fn assign_process_to_job(_job: *mut std::ffi::c_void, _process: *mut std::ffi::c_void) -> Result<(), String> {
+    Ok(())
+}
 
 #[cfg(not(target_os = "windows"))]
 pub fn create_sandboxed_job() -> Result<usize, String> {

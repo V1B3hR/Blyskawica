@@ -48,9 +48,30 @@ class AutonomousNeuroRegulator:
             "Testosteron": 0.45,
             "Kortyzol": 0.22
         }
-        if os.path.exists(self.checkpoint_path):
-            with open(self.checkpoint_path) as f:
-                self.data = json.load(f)
+        bak_file = f"{self.checkpoint_path}.bak"
+
+        # 1. Próba wczytania pliku głównego
+        loaded = False
+        if os.path.exists(self.checkpoint_path) and os.path.getsize(self.checkpoint_path) > 0:
+            try:
+                with open(self.checkpoint_path, encoding='utf-8') as f:
+                    self.data = json.load(f)
+                loaded = True
+            except Exception:
+                pass
+
+        # 2. Awaryjne przywrócenie z .bak jeśli plik główny był uszkodzony
+        if not loaded and os.path.exists(bak_file) and os.path.getsize(bak_file) > 0:
+            try:
+                with open(bak_file, encoding='utf-8') as f:
+                    self.data = json.load(f)
+                import shutil
+                shutil.copy2(bak_file, self.checkpoint_path)
+                loaded = True
+            except Exception:
+                pass
+
+        if loaded and isinstance(self.data, dict):
             # Self-heal missing baseline keys
             if "neurochemistry" not in self.data:
                 self.data["neurochemistry"] = baseline_neuro
@@ -68,8 +89,29 @@ class AutonomousNeuroRegulator:
             }
 
     def save_checkpoint(self) -> None:
-        with open(self.checkpoint_path, "w") as f:
-            json.dump(self.data, f, indent=4)
+        """Atomowy zapis checkpointu odporny na nagłe wyłączenie komputera."""
+        tmp_file = f"{self.checkpoint_path}.tmp"
+        bak_file = f"{self.checkpoint_path}.bak"
+        try:
+            with open(tmp_file, "w", encoding='utf-8') as f:
+                json.dump(self.data, f, indent=4)
+                f.flush()
+                os.fsync(f.fileno())
+
+            if os.path.exists(self.checkpoint_path) and os.path.getsize(self.checkpoint_path) > 0:
+                try:
+                    import shutil
+                    shutil.copy2(self.checkpoint_path, bak_file)
+                except Exception:
+                    pass
+
+            os.replace(tmp_file, self.checkpoint_path)
+        except Exception:
+            if os.path.exists(tmp_file):
+                try:
+                    os.remove(tmp_file)
+                except Exception:
+                    pass
 
     def regulate_state(self, task_type: str) -> dict[str, float]:
         """

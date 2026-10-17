@@ -240,6 +240,8 @@ Mów logicznie, jasno, merytorycznie i bez halucynacji. Posiadasz intelektualną
   }
 }
 
+let scrollRafId = null;
+
 export function handleIncomingToken(token) {
   if (activeStreamingBubble) {
     if (activeStreamingBubble.classList.contains("generating")) {
@@ -250,11 +252,22 @@ export function handleIncomingToken(token) {
       activeStreamingBubble.appendChild(senderStrong);
     }
     activeStreamingBubble.appendChild(document.createTextNode(token));
-    if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    // Płynne przewijanie zsynchronizowane z odświeżaniem ekranu (60 FPS, brak rwania animacji)
+    if (!scrollRafId) {
+      scrollRafId = requestAnimationFrame(() => {
+        if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
+        scrollRafId = null;
+      });
+    }
   }
 }
 
 export function handleResponseFinished(fullResponse) {
+  if (scrollRafId) {
+    cancelAnimationFrame(scrollRafId);
+    scrollRafId = null;
+  }
   if (activeStreamingBubble) {
     activeStreamingBubble.classList.remove("generating");
     activeStreamingBubble.replaceChildren();

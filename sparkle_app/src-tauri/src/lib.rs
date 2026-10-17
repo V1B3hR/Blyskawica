@@ -1001,6 +1001,16 @@ pub fn run() {
                 
                 match cmd.spawn() {
                     Ok(child) => {
+                        #[cfg(target_os = "windows")]
+                        {
+                            use std::os::windows::io::AsRawHandle;
+                            if let Ok(job) = blyskawica_core::native_security::create_kill_on_close_job() {
+                                let child_handle = child.as_raw_handle();
+                                if blyskawica_core::native_security::assign_process_to_job(job, child_handle as *mut _).is_ok() {
+                                    println!("🛡️ [Windows Job Object]: Sidecar pomyślnie przypisany do Job Object (JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE) – ochrona przed procesami zombie aktywna.");
+                                }
+                            }
+                        }
                         inner.backend_child = Some(child);
                         println!("✓ [Tauri Setup]: Sidecar backend uruchomiony pomyślnie.");
                     }
