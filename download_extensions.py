@@ -1,5 +1,6 @@
 import os
 import shutil
+import sys
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -32,6 +33,10 @@ def safe_extract_zip(zip_file: zipfile.ZipFile, extract_to: Path) -> None:
         member_path = extract_to_resolved / member.filename
         if not is_safe_zip_path(extract_to_resolved, member_path):
             raise RuntimeError(f"Zip Slip detected! Malicious path inside archive: {member.filename}")
+    if sys.version_info >= (3, 12):  # noqa: UP036
+        getattr(zip_file, "extractall")(extract_to, filter="data")
+    else:
+        zip_file.extractall(extract_to)
     zip_file.extractall(extract_to)
 
 

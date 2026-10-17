@@ -27,6 +27,11 @@ from adaptiveneuralnetwork.cognitive_tools.ground_loop_isolator import GroundLoo
 
 logger = logging.getLogger(__name__)
 
+
+def _calculate_num_params(n_qubits: int, n_layers: int) -> int:
+    return n_qubits * n_layers * 2
+
+
 # ---------------------------------------------------------------------------
 # Sprawdzenie dostępności Qiskit
 # ---------------------------------------------------------------------------

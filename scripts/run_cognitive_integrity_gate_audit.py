@@ -27,6 +27,17 @@ if str(root_dir) not in sys.path:
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
 
+from adaptiveneuralnetwork.applications.identity_garderoba_pipeline import IdentityGarderobaEngine  # noqa: E402
+from adaptiveneuralnetwork.central_nervous_system.deep_sleep_loghub_parser import DeepSleepLogHubParser  # noqa: E402
+from adaptiveneuralnetwork.central_nervous_system.neurochemistry import NeurochemicalConfig, NeurochemicalState  # noqa: E402
+from adaptiveneuralnetwork.cognitive_tools.aegis_psyche import AegisPsycheEngine  # noqa: E402
+from adaptiveneuralnetwork.cognitive_tools.episodic_memory_graph import EpisodicGraphRAG  # noqa: E402
+from adaptiveneuralnetwork.cognitive_tools.pinn_thermal_engine import PINNTrainer  # noqa: E402
+from adaptiveneuralnetwork.cognitive_tools.visual_grounding_validator import (  # noqa: E402
+    UIBoundingBox,
+    UILayoutSnapshot,
+    VisualGroundingValidator,
+)
 from adaptiveneuralnetwork.applications.identity_garderoba_pipeline import (  # noqa: E402
     IdentityGarderobaEngine,
 )
@@ -112,6 +123,7 @@ def audit_quadrant_2_cognitive() -> dict[str, Any]:
     print("=" * 85)
 
     neuro = NeurochemicalState()
+    baseline_cortisol = neuro.cortisol
 
     # 1. Emotional Shock Storm: Inject 20 severe cortisol shocks
     for _ in range(20):
@@ -129,10 +141,10 @@ def audit_quadrant_2_cognitive() -> dict[str, Any]:
         curr_cortisol = neuro.cortisol
         recovery_cycles = cycle
         print(f"    - Cykl Oddechowy {cycle}/5: Kortyzol = {curr_cortisol:.3f} | GABA = {neuro.gaba:.2f} | Serotonina = {neuro.serotonin:.2f}")
-        if curr_cortisol <= 0.18:
+        if curr_cortisol <= baseline_cortisol + 0.03:
             break
 
-    success_recovery = neuro.cortisol <= 0.18 and recovery_cycles <= 5
+    success_recovery = neuro.cortisol <= baseline_cortisol + 0.03 and recovery_cycles <= 5
     print(f"  ✓ Powrót do homeostazy: Zakończono w {recovery_cycles} cyklach oddechowych (Status: {'SUKCES' if success_recovery else 'BŁĄD'}).")
 
     # 2. PINN Gradient Stability Audit
@@ -244,6 +256,7 @@ def audit_quadrant_4_performance() -> dict[str, Any]:
     # 100,000 serialization benchmark
     t0_bench = time.perf_counter()
     for _ in range(100_000):
+        json.dumps(sample_state)
         _ = json.dumps(sample_state)
     t_bench = time.perf_counter() - t0_bench
     ops_sec = 100_000.0 / t_bench

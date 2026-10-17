@@ -142,6 +142,9 @@ class DeepSleepLogHubParser:
         """
         Processes a batch of logs and compiles an unvarnished Hard Anomaly Report.
         """
+        parsed_events = [
+            self.parse_line(line, default_source=source) for line in log_lines if line.strip()
+        ]
         parsed_events = [self.parse_line(log_line, default_source=source) for log_line in log_lines if log_line.strip()]
 
         hard_anomalies = [e for e in parsed_events if e.is_hard_anomaly]
