@@ -21,62 +21,66 @@ def create_standalone_bundle() -> bool:
     print("=" * 70)
 
     repo_root = Path(__file__).resolve().parent.parent
-    dist_dir = repo_root / "dist" / "Blyskawica_Standalone"
     release_exe = repo_root / "target" / "release" / "sparkle_app.exe"
     model_dir = repo_root / "model"
+
+    # Domyślny docelowy folder Standalone wskazany przez Architekta:
+    custom_target = Path(r"C:\Projekty\Błyskawica standalone")
+    if custom_target.parent.exists():
+        dist_dir = custom_target
+    else:
+        dist_dir = repo_root.parent / "Błyskawica standalone"
 
     if not release_exe.exists():
         print(f"❌ BŁĄD: Nie znaleziono pliku wykonywalnego release: {release_exe}")
         print("Najpierw uruchom: cargo build --release --bin sparkle_app")
         return False
 
-    print(f"\n[1/4] Czyszczenie i przygotowanie katalogu docelowego: {dist_dir}...")
-    if dist_dir.exists():
-        shutil.rmtree(dist_dir)
+    print(f"\n[1/4] Przygotowanie katalogu docelowego: {dist_dir}...")
     dist_dir.mkdir(parents=True, exist_ok=True)
+    # Zgodnie z wolą Architekta: W folderze znajdują się pliki użytkownika - NIGDY ich nie czyścimy (bez rmtree)!
 
-    print(f"\n[2/4] Kopiowanie natywnej aplikacji sparkle_app.exe ({release_exe.stat().st_size / (1024*1024):.2f} MB)...")
-    shutil.copy2(release_exe, dist_dir / "sparkle_app.exe")
+    print(f"\n[2/4] Aktualizacja natywnej aplikacji sparkle_app.exe ({release_exe.stat().st_size / (1024*1024):.2f} MB)...")
+    dest_exe = dist_dir / "sparkle_app.exe"
+    shutil.copy2(release_exe, dest_exe)
+    print(f"  ✓ Zapisano najnowszą skompilowaną aplikację: {dest_exe}")
 
-    print("\n[3/4] Przygotowywanie wag modelu i tokenizatora...")
+    print("\n[3/4] Weryfikacja wag modelu i tokenizatora (ochrona istniejących plików)...")
     dest_model_dir = dist_dir / "model"
     dest_model_dir.mkdir(exist_ok=True)
 
-    # Tokenizer
+    # Tokenizer - zachowaj jeśli już istnieje
+    dest_tokenizer = dest_model_dir / "tokenizer.json"
     tokenizer_src = model_dir / "tokenizer.json"
-    if tokenizer_src.exists():
+    if dest_tokenizer.exists() and dest_tokenizer.stat().st_size > 0:
+        print(f"  ✓ Istniejący tokenizator zachowany: {dest_tokenizer.name} ({dest_tokenizer.stat().st_size / 1024:.1f} KB)")
+    elif tokenizer_src.exists():
         print(f"  ✓ Kopiowanie tokenizatora: {tokenizer_src.name}")
-        shutil.copy2(tokenizer_src, dest_model_dir / "tokenizer.json")
+        shutil.copy2(tokenizer_src, dest_tokenizer)
     else:
-        print("  ⚠️ OSTRZEŻENIE: Brak tokenizer.json w katalogu model/")
+        print("  ⚠️ OSTRZEŻENIE: Brak tokenizer.json")
 
-    # Szukanie modelu GGUF
-    gguf_files = list(model_dir.glob("*.gguf"))
-    if gguf_files:
-        # Preferencja dla Qwen 2.5 Coder 7B
-        preferred = next((f for f in gguf_files if "7b" in f.name.lower()), gguf_files[0])
-        print(f"  ✓ Wykryto model GGUF: {preferred.name} ({preferred.stat().st_size / (1024*1024):.2f} MB)")
-        dest_gguf = dest_model_dir / preferred.name
-
-        # Opcjonalne tworzenie hardlinku na tym samym dysku dla błyskawicznego tworzenia paczki
-        use_copy = "--copy" in sys.argv
-        if use_copy:
-            print("    Kopiowanie pliku (flaga --copy)...")
-            shutil.copy2(preferred, dest_gguf)
-        else:
+    # Szukanie modelu GGUF - zachowaj istniejące modele w dest_model_dir
+    existing_dest_gguf = list(dest_model_dir.glob("*.gguf"))
+    if existing_dest_gguf:
+        for f in existing_dest_gguf:
+            print(f"  ✓ Istniejący model GGUF zachowany: {f.name} ({f.stat().st_size / (1024*1024):.2f} MB)")
+    else:
+        gguf_files = list(model_dir.glob("*.gguf"))
+        if gguf_files:
+            preferred = next((f for f in gguf_files if "7b" in f.name.lower()), gguf_files[0])
+            print(f"  ✓ Wykryto model GGUF: {preferred.name} ({preferred.stat().st_size / (1024*1024):.2f} MB)")
+            dest_gguf = dest_model_dir / preferred.name
             try:
-                if dest_gguf.exists():
-                    dest_gguf.unlink()
                 os.link(preferred, dest_gguf)
-                print("    ✓ Błyskawiczny NTFS Hardlink utworzony (oszczędność 4.7 GB SSD).")
+                print("    ✓ Błyskawiczny NTFS Hardlink utworzony.")
             except Exception:
                 print("    Kopiowanie pliku...")
                 shutil.copy2(preferred, dest_gguf)
-    else:
-        print("  ⚠️ OSTRZEŻENIE: Brak plików .gguf w katalogu model/!")
-        print("  Uruchom scripts/download_qwen_model.py przed finalną dystrybucją.")
+        else:
+            print("  ⚠️ OSTRZEŻENIE: Brak plików .gguf w katalogu model/!")
 
-    print("\n[4/4] Tworzenie plików startowych i manifestu...")
+    print("\n[4/4] Weryfikacja plików startowych i manifestu...")
     # Launcher BAT
     launcher_bat = dist_dir / "Uruchom_Blyskawica.bat"
     launcher_bat.write_text(
