@@ -123,6 +123,7 @@ def audit_quadrant_2_cognitive() -> dict[str, Any]:
     print("=" * 85)
 
     neuro = NeurochemicalState()
+    baseline_cortisol = neuro.cortisol
 
     # 1. Emotional Shock Storm: Inject 20 severe cortisol shocks
     for _ in range(20):
@@ -155,7 +156,6 @@ def audit_quadrant_2_cognitive() -> dict[str, Any]:
     t_col = torch.rand(50, 1)
 
     has_nans = False
-    for _ in range(15):
     for _epoch in range(15):
         d_loss, p_loss = pinn.train_step(x_data, t_data, u_data, x_col, t_col)
         if math.isnan(d_loss) or math.isnan(p_loss):

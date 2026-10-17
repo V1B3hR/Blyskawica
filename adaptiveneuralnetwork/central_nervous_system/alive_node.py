@@ -206,7 +206,6 @@ class AliveLoopNode:
 
     def step_phase(self, current_time: int | None = None) -> None:
         """Advance the circadian and cognitive phase cycle."""
-        get_time_manager()
         self._time = current_time if current_time is not None else (self._time + 1)
 
         # Transition Rules

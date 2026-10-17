@@ -19,7 +19,6 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - [%(levelname)s] - 
 logger = logging.getLogger("loghub_parser")
 
 
-class LogCategory(str, Enum):  # noqa: UP042
 class LogCategory(StrEnum):
     SHADER_ERROR = "SHADER_COMPILATION_ERROR"
     TAURI_IPC_ANOMALY = "TAURI_IPC_ANOMALY"
