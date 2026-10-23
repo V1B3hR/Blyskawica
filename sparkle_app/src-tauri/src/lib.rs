@@ -500,6 +500,23 @@ async fn send_user_message(message: String, state: State<'_, AppState>) -> Resul
 }
 
 #[tauri::command]
+async fn cancel_generation(state: State<'_, AppState>) -> Result<String, String> {
+    let tx = {
+        let inner = state.0.lock().unwrap();
+        inner
+            .tx
+            .clone()
+            .ok_or_else(|| "Silnik nie jest uruchomiony.".to_string())?
+    };
+
+    tx.send(StateCommand::Cancel)
+        .await
+        .map_err(|e| format!("Błąd wysyłania komendy anulowania: {}", e))?;
+
+    Ok("Wysłano żądanie anulowania generowania.".to_string())
+}
+
+#[tauri::command]
 async fn send_human_feedback(feedback: f32, state: State<'_, AppState>) -> Result<String, String> {
     let tx = {
         let inner = state.0.lock().unwrap();
@@ -1676,6 +1693,7 @@ pub fn run() {
             start_engine,
             stop_engine,
             send_user_message,
+            cancel_generation,
             set_permission_level,
             get_permission_report,
             get_engine_status,

@@ -136,6 +136,7 @@ pub struct BlyskawicaEngine {
     pub event_tx: Option<mpsc::Sender<EngineEvent>>,
     db_path: Option<(PathBuf, String)>,
     pub llm: Option<crate::cognitive_llm::LocalCognitiveLLM>,
+    pub cancel_flag: std::sync::Arc<std::sync::atomic::AtomicBool>,
 }
 
 impl BlyskawicaEngine {
@@ -166,12 +167,60 @@ impl BlyskawicaEngine {
             event_tx: None,
             db_path: None,
             llm: None,
+            cancel_flag: std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
         }
     }
 
     pub fn with_db(mut self, path: PathBuf, basename: String) -> Self {
         self.db_path = Some((path, basename));
         self
+    }
+
+    pub fn get_cancel_flag(&self) -> std::sync::Arc<std::sync::atomic::AtomicBool> {
+        self.cancel_flag.clone()
+    }
+
+    pub fn synthesize_fallback_response(
+        &self,
+        text: &str,
+        neuro_state: &crate::neurochemistry::NeurochemicalState,
+    ) -> String {
+        let input_embed = crate::aegis_psyche_onnx::text_to_embedding_rust(text, 128);
+        let search_results = self.index.search(&input_embed, 3);
+        let memory_count = self.index.len();
+
+        let top_memory_info = if let Some(first) = search_results.first() {
+            format!(
+                "najbliższy wektor pamięci ID: {} (dystans: {:.4})",
+                first.d_id, first.distance
+            )
+        } else {
+            "brak wcześniejszych skojarzeń".to_string()
+        };
+
+        let learning_status = if neuro_state.learning_window_open() {
+            "Aktywne (optymalna homeostaza)"
+        } else {
+            "Ograniczone (podwyższone zmęczenie lub czujność)"
+        };
+
+        format!(
+            "⚡ [Światło / Tryb Rezonansu Latentnego]: Otrzymałem Twoją wiadomość: \"{}\".\n\n\
+            Stan kognitywny:\n\
+            • Wirtualna neurochemia: Dopamina={:.2}, Serotonina={:.2}, GABA={:.2}, ACh={:.2}, Kortyzol={:.2}\n\
+            • Okno plastyczności uczenia: {}\n\
+            • Rezonans pamięci HNSW (z {} pojęć): {}\n\n\
+            Przetwarzanie zrealizowano przez natywną warstwę kognitywną offline. Pełna generacja autorska Qwen 2.5 uaktywni się po załadowaniu pliku wag GGUF.",
+            text,
+            neuro_state.dopamine,
+            neuro_state.serotonin,
+            neuro_state.gaba,
+            neuro_state.acetylcholine,
+            neuro_state.cortisol,
+            learning_status,
+            memory_count,
+            top_memory_info
+        )
     }
 
     pub fn set_event_sender(&mut self, tx: mpsc::Sender<EngineEvent>) {
@@ -519,19 +568,40 @@ Wyrażaj myśli swobodnie, merytorycznie i bez asekuranctwa. Gdy zauważysz bł�
                                     )
                                 };
 
-                                let response_res = llm.generate(&prompt_input, &params, |token| {
-                                    if let Some(ref tx) = event_tx_clone {
-                                        let _ = tx.try_send(EngineEvent::Token(token.to_string()));
-                                    }
-                                });
+                                self.cancel_flag
+                                    .store(false, std::sync::atomic::Ordering::SeqCst);
+                                let cancel_ref = self.cancel_flag.clone();
+                                let response_res = llm.generate_with_cancel(
+                                    &prompt_input,
+                                    &params,
+                                    Some(&cancel_ref),
+                                    |token| {
+                                        if let Some(ref tx) = event_tx_clone {
+                                            let _ =
+                                                tx.try_send(EngineEvent::Token(token.to_string()));
+                                        }
+                                    },
+                                );
 
                                 match response_res {
                                     Ok(final_reply) => {
-                                        log_print!(
-                                            self,
-                                            "✓ [ENGINE INFERENCE]: Odpowiedź wygenerowana."
-                                        );
-                                        self.emit_event(EngineEvent::ResponseFinished(final_reply));
+                                        if cancel_ref.load(std::sync::atomic::Ordering::SeqCst) {
+                                            log_print!(
+                                                self,
+                                                "🛑 [ENGINE INFERENCE]: Generowanie zostało anulowane."
+                                            );
+                                            self.emit_event(EngineEvent::ResponseFinished(
+                                                format!("{} [Przerwano]", final_reply),
+                                            ));
+                                        } else {
+                                            log_print!(
+                                                self,
+                                                "✓ [ENGINE INFERENCE]: Odpowiedź wygenerowana."
+                                            );
+                                            self.emit_event(EngineEvent::ResponseFinished(
+                                                final_reply,
+                                            ));
+                                        }
                                     }
                                     Err(e) => {
                                         let err_msg = format!("❌ [ENGINE INFERENCE ERROR]: {}", e);
@@ -540,11 +610,18 @@ Wyrażaj myśli swobodnie, merytorycznie i bez asekuranctwa. Gdy zauważysz bł�
                                     }
                                 }
                             } else {
-                                let warn_msg = format!(
-                                    "⚠️ [ENGINE LLM]: Brak załadowanego modelu. Umieść plik modelu .gguf (np. qwen2.5-coder-7b-instruct-q4_k_m.gguf) i tokenizer.json w katalogu model/ lub uruchom scripts/download_qwen_model.py."
+                                log_print!(
+                                    self,
+                                    "ℹ️ [ENGINE LLM]: Model GGUF nie jest aktywny. Uruchamianie natywnej syntezy latentnej offline..."
                                 );
-                                log_print!(self, "{}", warn_msg);
-                                self.emit_event(EngineEvent::ResponseFinished(warn_msg));
+                                let ns = if let BlysState::Active { neuro_state, .. } = &self.state
+                                {
+                                    neuro_state.read().await.clone()
+                                } else {
+                                    crate::neurochemistry::NeurochemicalState::default()
+                                };
+                                let fallback_reply = self.synthesize_fallback_response(&text, &ns);
+                                self.emit_event(EngineEvent::ResponseFinished(fallback_reply));
                             }
                         }
                         StateCommand::QueryWithVector { id, vector, text } => {
@@ -883,8 +960,8 @@ Wyrażaj myśli swobodnie, merytorycznie i bez asekuranctwa. Gdy zauważysz bł�
                                 self,
                                 "🛑 [ENGINE CANCEL]: Otrzymano żądanie anulowania bieżącej operacji."
                             );
-                            // Currently cancels by draining the remainder of queued prompts
-                            // Future: pass CancellationToken into cognitive_llm::generate
+                            self.cancel_flag
+                                .store(true, std::sync::atomic::Ordering::SeqCst);
                         }
                         StateCommand::Shutdown => {
                             log_print!(
