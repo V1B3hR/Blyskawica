@@ -11,7 +11,7 @@ within a safe, healthy bounds of +/- 7% depending on the active cognitive task:
 import json
 import os
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 try:
     import torch
@@ -282,7 +282,7 @@ class LatentStateProjector(_BaseModule):  # type: ignore[misc]
             return rng.standard_normal((1, self.embedding_dim))
 
     def __call__(self, chladni_matrix: Any, neurochemical_vector: Any) -> Any:
-        if _HAS_TORCH and nn is not None and hasattr(super(), "__call__"):
+        if _HAS_TORCH and nn is not None and callable(super()):
             return super().__call__(chladni_matrix, neurochemical_vector)
         return self.forward(chladni_matrix, neurochemical_vector)
 

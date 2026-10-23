@@ -1,0 +1,124 @@
+{
+  "schema_version": "cra-stabilization-v1",
+  "purpose": "Synthetic regression contract for the Python C.R.A. stabilization reference; contains no user data.",
+  "tolerance": 0.00001,
+  "baseline": {
+    "dopamine": 1.0,
+    "acetylcholine": 1.0,
+    "serotonin": 1.0,
+    "oxytocin": 1.0,
+    "testosterone": 1.0,
+    "gaba": 0.5,
+    "cortisol": 0.2,
+    "adrenaline": 0.1,
+    "estrogen": 0.5,
+    "melatonin": 0.1
+  },
+  "sleep_cycle": {
+    "duration_hours": 8.0,
+    "expected": {
+      "dopamine": 0.8,
+      "acetylcholine": 0.9,
+      "serotonin": 1.25,
+      "oxytocin": 1.0,
+      "testosterone": 1.0,
+      "gaba": 0.7,
+      "cortisol": 0.05,
+      "adrenaline": 0.02,
+      "estrogen": 0.5,
+      "melatonin": 0.4
+    }
+  },
+  "operator_trust": {
+    "score": 0.5,
+    "expected": {
+      "dopamine": 1.0,
+      "acetylcholine": 1.0,
+      "serotonin": 1.0,
+      "oxytocin": 1.25,
+      "testosterone": 1.0,
+      "gaba": 0.675,
+      "cortisol": 0.0,
+      "adrenaline": 0.1,
+      "estrogen": 0.5,
+      "melatonin": 0.1
+    }
+  },
+  "stabilization": {
+    "initial": {
+      "dopamine": 2.5,
+      "acetylcholine": 0.05,
+      "serotonin": 3.5,
+      "oxytocin": 2.2,
+      "testosterone": 3.0,
+      "gaba": 0.05,
+      "cortisol": 3.0,
+      "adrenaline": 3.0,
+      "estrogen": 0.05,
+      "melatonin": 3.0
+    },
+    "expected": {
+      "dopamine": 2.0,
+      "acetylcholine": 0.1,
+      "serotonin": 3.0,
+      "oxytocin": 1.996504,
+      "testosterone": 2.5,
+      "gaba": 0.1,
+      "cortisol": 2.0,
+      "adrenaline": 2.0,
+      "estrogen": 0.1,
+      "melatonin": 2.0
+    },
+    "ground_potential": 0.000414
+  },
+  "reality_anchor": {
+    "minor": {
+      "change_magnitude": 0.5,
+      "explanation": "minor synthetic adjustment",
+      "expected": {
+        "acetylcholine": 1.05,
+        "testosterone": 1.05
+      }
+    },
+    "rejected_major": {
+      "change_magnitude": 0.9,
+      "explanation": "short",
+      "expected_oxytocin": 0.7
+    },
+    "accepted_major": {
+      "change_magnitude": 0.9,
+      "explanation": "Synthetic explanation containing enough detail to satisfy the contract threshold.",
+      "expected": {
+        "serotonin": 1.1,
+        "oxytocin": 1.2
+      },
+      "approved_modifications": 1
+    }
+  },
+  "existential_pause": {
+    "summary": "synthetic contract transition",
+    "expected": {
+      "dopamine": 1.0,
+      "acetylcholine": 1.0,
+      "serotonin": 1.44,
+      "oxytocin": 1.0,
+      "testosterone": 1.0,
+      "gaba": 0.5,
+      "cortisol": 0.2,
+      "adrenaline": 0.1,
+      "estrogen": 0.5,
+      "melatonin": 0.1
+    }
+  },
+  "symbiosis": {
+    "oxytocin": 0.5,
+    "raw_loss": 1.0,
+    "expected_entropy": 3.481689,
+    "expected_loss": 1.348169
+  },
+  "ethics": {
+    "action_vector": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+    "historical_context": [0.0],
+    "expected_alignment": 0.85
+  }
+}
