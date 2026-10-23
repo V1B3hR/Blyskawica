@@ -5,6 +5,7 @@
 import { SparkleStore } from './store.js';
 import { updateNeurochemistryUI, setWolfTeethVisuals } from './neurochemistry.js';
 import { refreshWorkspaceFiles } from './editor.js';
+import { escapeHtml } from './html.js';
 
 const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: async () => {} };
 
@@ -426,9 +427,12 @@ export async function exportSession(format = "md", customFilename = "", addLogFn
     </style>\n</head>\n<body>\n`;
     content += `<h1>⚡ Sesja: Światło (Błyskawica) & Andrzej Mątewski (V1B3hR)</h1>\n`;
     content += `<div class="meta">Data sesji: ${new Date().toLocaleString()} | Etyka: 25 Praw Nethical | Silnik: Candle GGUF</div>\n`;
-    history.forEach(m => {
-      const cls = (m.sender === "Użytkownik" ? "user" : (m.sender.includes("Światło") || m.sender.includes("Błyskawica") ? "bot" : "system"));
-      content += `<div class="msg ${cls}"><strong>${m.sender}</strong> <span style="font-size:11px;color:#64748b;">[${m.timestamp}]</span><p style="margin-top:6px;white-space:pre-wrap;">${m.text}</p></div>\n`;
+    history.forEach((message) => {
+      const cssClass = (message.sender === "Użytkownik" ? "user" : (message.sender.includes("Światło") || message.sender.includes("Błyskawica") ? "bot" : "system"));
+      const escapedSender = escapeHtml(message.sender);
+      const escapedTimestamp = escapeHtml(message.timestamp);
+      const escapedText = escapeHtml(message.text);
+      content += `<div class="msg ${cssClass}"><strong>${escapedSender}</strong> <span style="font-size:11px;color:#64748b;">[${escapedTimestamp}]</span><p style="margin-top:6px;white-space:pre-wrap;">${escapedText}</p></div>\n`;
     });
     content += `</body>\n</html>`;
   } else {

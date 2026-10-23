@@ -2,7 +2,7 @@
 
 // State variables
 let currentFileOpen = null;
-let permissionLevel = 2; // Default: Workspace
+let permissionLevel = 1; // Default: Sandbox
 let quarantineActive = false;
 let lastLogCount = 0;
 let apiAuthToken = "";
@@ -40,13 +40,25 @@ function addLocalLog(text) {
 }
 
 // Render message in chat
+function createChatMessageElement(sender, text, className) {
+  const message = document.createElement("div");
+  message.className = className;
+
+  const senderLabel = document.createElement("strong");
+  senderLabel.textContent = `${sender}:`;
+  message.append(senderLabel, document.createTextNode(" "), document.createTextNode(String(text)));
+  return message;
+}
+
 function appendChatMessage(sender, text, customClass = "") {
   const chatMessages = document.getElementById("chat-messages");
   if (!chatMessages) return;
 
-  const msgEl = document.createElement("div");
-  msgEl.className = `message ${customClass || (sender === "Użytkownik" ? "user-msg" : "blysk-msg")}`;
-  msgEl.innerHTML = `<strong>${sender}:</strong> ${text}`;
+  const msgEl = createChatMessageElement(
+    sender,
+    text,
+    `message ${customClass || (sender === "Użytkownik" ? "user-msg" : "blysk-msg")}`
+  );
   chatMessages.appendChild(msgEl);
   chatMessages.scrollTop = chatMessages.scrollHeight;
 
@@ -58,6 +70,13 @@ function appendChatMessage(sender, text, customClass = "") {
     primaryChatStream.appendChild(miniMsg);
     primaryChatStream.scrollTop = primaryChatStream.scrollHeight;
   }
+}
+
+function renderFileListStatus(fileList, message) {
+  const status = document.createElement("div");
+  status.className = "file-item empty";
+  status.textContent = message;
+  fileList.replaceChildren(status);
 }
 
 // Load System Status
@@ -394,23 +413,23 @@ async function refreshWorkspaceFiles() {
   if (!fileList) return;
 
   if (permissionLevel < 2) {
-    fileList.innerHTML = `<div class="file-item empty">Odczyt plików zablokowany w Sandboxie (Poziom 1).</div>`;
+    renderFileListStatus(fileList, "Odczyt plików zablokowany w Sandboxie (Poziom 1).");
     return;
   }
 
-  fileList.innerHTML = `<div class="file-item empty">Ładowanie plików...</div>`;
+  renderFileListStatus(fileList, "Ładowanie plików...");
 
   try {
     const res = await fetch("/api/ide/files");
     if (!res.ok) {
-      fileList.innerHTML = `<div class="file-item empty">Błąd odczytu repozytorium.</div>`;
+      renderFileListStatus(fileList, "Błąd odczytu repozytorium.");
       return;
     }
     const data = await res.json();
-    fileList.innerHTML = "";
+    fileList.replaceChildren();
 
     if (!data.files || data.files.length === 0) {
-      fileList.innerHTML = `<div class="file-item empty">Workspace jest pusty.</div>`;
+      renderFileListStatus(fileList, "Workspace jest pusty.");
       return;
     }
 
@@ -430,7 +449,7 @@ async function refreshWorkspaceFiles() {
     });
   } catch (err) {
     console.error("Error loading workspace files:", err);
-    fileList.innerHTML = `<div class="file-item empty">Błąd połączenia z API.</div>`;
+    renderFileListStatus(fileList, "Błąd połączenia z API.");
   }
 }
 
@@ -580,18 +599,22 @@ function inviteGuestModel() {
   activeGuestName.textContent = modelName;
   addLocalLog(`Wysyłanie zaproszenia do instancji: ${modelName}...`);
   
-  guestChatStream.innerHTML = "";
+  guestChatStream.replaceChildren();
   
-  const welcomeMsg = document.createElement("div");
-  welcomeMsg.className = "message system-msg";
-  welcomeMsg.innerHTML = `<strong>System:</strong> Zaproszono model <strong>${modelName}</strong> do wspólnej dyskusji. Kanał dual-human-AI aktywny.`;
+  const welcomeMsg = createChatMessageElement(
+    "System",
+    `Zaproszono model ${modelName} do wspólnej dyskusji. Kanał dual-human-AI aktywny.`,
+    "message system-msg"
+  );
   guestChatStream.appendChild(welcomeMsg);
   
   setTimeout(() => {
-    const guestReply = document.createElement("div");
-    guestReply.className = "message blysk-msg";
+    const guestReply = createChatMessageElement(
+      modelName,
+      "Witaj Architekcie. Jestem połączony. Błyskawico, czy udostępnisz mi swój wektor kontekstowy?",
+      "message blysk-msg"
+    );
     guestReply.style.borderColor = "var(--accent)";
-    guestReply.innerHTML = `<strong>${modelName}:</strong> Witaj Architekcie. Jestem połączony. Błyskawico, czy udostępnisz mi swój wektor kontekstowy?`;
     guestChatStream.appendChild(guestReply);
     guestChatStream.scrollTop = guestChatStream.scrollHeight;
     addLocalLog(`Połączono z modelem ${modelName}.`);

@@ -15,7 +15,7 @@
       <h2>INICJALIZACJA SPARKLE V10</h2>
       <p class="startup-subtitle">Zogniskowana przestrzeń robocza AI do myślenia, kodowania i kolaboracji — zasilana żywym rdzeniem kognitywnym</p>
       <div class="startup-steps">
-        <div id="step-backend" class="step pending">Połączenie z serwerem kognitywnym (FastAPI)...</div>
+        <div id="step-backend" class="step pending">Połączenie z natywną powłoką SPARKLE (Rust/Tauri)...</div>
         <div id="step-model-engine" class="step pending">Weryfikacja natywnego silnika Candle / modeli GGUF...</div>
         <div id="step-engine" class="step pending">Wybudzanie rdzenia systemowego (Rust Core)...</div>
       </div>
@@ -431,7 +431,53 @@
           </div>
         </div>
 
-        <!-- Section 4: Cognitive Identity -->
+        <!-- Section 4: Local Data Inventory -->
+        <div class="options-section" style="margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 6px;">
+            <h4 style="color: var(--text-primary); font-size: 13px; margin: 0; display: flex; align-items: center; gap: 6px;">
+              <span>🔐</span> LOKALNE DANE I RETENCJA
+            </h4>
+            <div style="display: flex; gap: 8px;">
+              <button id="btn-refresh-data-inventory" class="control-btn small">ODŚWIEŻ</button>
+              <button id="btn-clear-recreatable-artifacts" class="control-btn small">WYCZYŚĆ R0</button>
+            </div>
+          </div>
+          <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 8px;">
+            Metadane lokalnych magazynów — bez odczytu treści plików. Inwentaryzacja wymaga poziomu Workspace (L2), a szczegóły sejfu poziomu 3. Czyszczenie R0 wymaga osobnego natywnego potwierdzenia.
+          </p>
+          <div id="data-inventory" style="display: grid; gap: 6px; max-height: 190px; overflow-y: auto;"></div>
+        </div>
+
+        <!-- Section 5: Online Connectors -->
+        <div class="options-section" style="margin-bottom: 20px;">
+          <h4 style="color: var(--text-primary); font-size: 13px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+            <span>🌐</span> ŁĄCZNIKI ONLINE
+          </h4>
+          <label style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; cursor: pointer;">
+            <input type="checkbox" id="chk-online-mode">
+            <div>
+              <div style="font-size: 12px; font-weight: 600; color: var(--text-primary);">Włącz tryb online</div>
+              <div style="font-size: 11px; color: var(--text-muted);">Domyślnie wyłączony. Włączenie wymaga L2 i osobnego potwierdzenia; każdy łącznik wymaga własnej zgody.</div>
+            </div>
+          </label>
+          <div id="connector-registry" style="display: grid; gap: 6px; max-height: 230px; overflow-y: auto; margin-top: 8px;"></div>
+        </div>
+
+        <!-- Section 6: Permission Report -->
+        <div class="options-section" style="margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 6px;">
+            <h4 style="color: var(--text-primary); font-size: 13px; margin: 0; display: flex; align-items: center; gap: 6px;">
+              <span>🛡️</span> RAPORT UPRAWNIEŃ
+            </h4>
+            <button id="btn-refresh-permission-report" class="control-btn small">ODŚWIEŻ</button>
+          </div>
+          <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 8px;">
+            Aktualny poziom i jego granice. Raport nie rozszerza uprawnień.
+          </p>
+          <div id="permission-report" style="display: grid; gap: 6px; max-height: 220px; overflow-y: auto;"></div>
+        </div>
+
+        <!-- Section 7: Cognitive Identity -->
         <div style="padding: 10px 14px; background: rgba(0, 210, 255, 0.04); border-radius: 8px; border: 1px solid rgba(0, 210, 255, 0.15); display: flex; justify-content: space-between; align-items: center;">
           <div style="font-size: 11px; color: var(--text-secondary);">
             Głos Kognitywny: <strong style="color: #38bdf8;">Światło (Light)</strong> | Architekt: <strong style="color: #fff;">Andrzej Mątewski (V1B3hR)</strong>
@@ -462,13 +508,13 @@
         <label for="security-slider">POZIOM BEZPIECZEŃSTWA SYSTEMOWEGO (REGIME):</label>
         <div class="slider-wrapper">
           <span class="slider-label">SANDBOX (1)</span>
-          <input type="range" id="security-slider" min="1" max="3" value="2" class="slider">
+          <input type="range" id="security-slider" min="1" max="3" value="1" class="slider">
           <span class="slider-label">WORKSPACE (2)</span>
           <span class="slider-label">FULL OS CONTROL (3)</span>
         </div>
       </div>
       <div class="regime-status">
-        STATUS REŻIMU: <span id="txt-regime-status" class="status-badge level-2-badge">Standard Workspace</span>
+        STATUS REŻIMU: <span id="txt-regime-status" class="status-badge level-1-badge">Tryb Sandbox (Poziom 1)</span>
       </div>
     </footer>
   </div>

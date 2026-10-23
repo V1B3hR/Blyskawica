@@ -4,7 +4,7 @@
 export const SparkleStore = {
   state: {
     currentFileOpen: null,
-    permissionLevel: 2,
+    permissionLevel: 1,
     isEngineRunning: false,
     neurochemistry: { 
       dopamine: 0.69, 

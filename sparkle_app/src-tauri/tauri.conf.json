@@ -19,7 +19,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; connect-src 'self' http://localhost:11434 http://127.0.0.1:8000 http://localhost:8000; style-src 'self' 'unsafe-inline'; script-src 'self';"
+      "csp": "default-src 'self'; connect-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self';"
     }
   },
   "bundle": {
