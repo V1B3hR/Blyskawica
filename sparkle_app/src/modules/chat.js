@@ -9,7 +9,7 @@ import { escapeHtml } from './html.js';
 
 const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: async () => {} };
 
-let chatMessages, chatInput, btnSendMessage, btnStartEngine;
+let chatMessages, chatInput, btnSendMessage, btnStartEngine, btnCancelGeneration;
 let primaryChatStream, guestChatStream, selectGuestModel, btnInviteGuest, activeGuestName;
 let guestChatInput, btnGuestSend, btnDualConsult;
 let activeStreamingBubble = null;
@@ -44,6 +44,18 @@ export function initChatModule(addLogFn, refreshFilesFn) {
   if (btnStartEngine) {
     btnStartEngine.addEventListener("click", () => startBlyskawicaEngine(addLogFn, refreshFilesFn));
   }
+
+  btnCancelGeneration = document.getElementById("btn-cancel-generation");
+  if (btnCancelGeneration) {
+    btnCancelGeneration.addEventListener("click", () => cancelGeneration(addLogFn));
+  }
+
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && btnCancelGeneration && btnCancelGeneration.style.display !== "none") {
+      e.preventDefault();
+      cancelGeneration(addLogFn);
+    }
+  });
   
   // Zapraszanie Gościa Kognitywnego
   if (btnInviteGuest && selectGuestModel && activeGuestName) {
@@ -204,6 +216,9 @@ export async function sendMessage(addLogFn) {
     }
     chatMessages.appendChild(generatingMsgEl);
     chatMessages.scrollTop = chatMessages.scrollHeight;
+    activeStreamingBubble = generatingMsgEl;
+    if (btnCancelGeneration) btnCancelGeneration.style.display = "inline-flex";
+    if (btnSendMessage) btnSendMessage.disabled = true;
     
     // Budowanie wieloturowego kontekstu ChatML z historii dialogu (ostatnie tury)
     const history = SparkleStore.state.chatHistory || [];
@@ -236,8 +251,22 @@ Mów logicznie, jasno, merytorycznie i bez halucynacji. Posiadasz intelektualną
       activeStreamingBubble.remove();
       activeStreamingBubble = null;
     }
+    if (btnCancelGeneration) btnCancelGeneration.style.display = "none";
+    if (btnSendMessage) btnSendMessage.disabled = false;
     if (addLogFn) addLogFn(`[Tauri Błąd]: ${error}`);
     appendChatMessage("Światło", "Wystąpił błąd komunikacji z silnikiem kognitywnym.");
+  }
+}
+
+export async function cancelGeneration(addLogFn) {
+  try {
+    const res = await invoke("cancel_generation");
+    if (addLogFn) addLogFn(`[Tauri]: ${res}`);
+  } catch (err) {
+    if (addLogFn) addLogFn(`[Tauri Błąd anulowania]: ${err}`);
+  } finally {
+    if (btnCancelGeneration) btnCancelGeneration.style.display = "none";
+    if (btnSendMessage) btnSendMessage.disabled = false;
   }
 }
 
@@ -292,6 +321,8 @@ export function handleResponseFinished(fullResponse) {
     if (SparkleStore.state.ttsEnabled) {
       synthesizeTTS(fullResponse);
     }
+    if (btnCancelGeneration) btnCancelGeneration.style.display = "none";
+    if (btnSendMessage) btnSendMessage.disabled = false;
     activeStreamingBubble = null;
   }
 }

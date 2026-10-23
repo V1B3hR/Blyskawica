@@ -446,6 +446,21 @@ body.wolf-teeth-active {
   opacity: 0.3;
 }
 
+.chat-input-area .btn-cancel {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-input-area .btn-cancel:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.3);
+  border-color: #ef4444;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+}
+
 /* Panel Neurochemiczny */
 .neurochemistry-panel {
   padding: 15px;
