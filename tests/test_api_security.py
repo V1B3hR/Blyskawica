@@ -13,6 +13,7 @@ from fastapi.testclient import TestClient
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import blyskawica_app.backend.main as main
 from blyskawica_app.backend.main import STARTUP_TOKEN, app
 
 
@@ -248,6 +249,18 @@ class TestAPISecurity(unittest.TestCase):
         self.assertEqual(reset_res.status_code, 200)
         status_res = self.client.get("/api/permission_level")
         self.assertFalse(status_res.json()["quarantine_active"])
+
+        # Regression test: Reset from L1 preserves L1 without privilege elevation
+        main.permission_level = 1
+        main.quarantine_active = True
+        reset_l1 = self.client.post(
+            "/api/quarantine/reset",
+            headers={"X-Blyskawica-Token": STARTUP_TOKEN, "X-Quarantine-Admin-Key": STARTUP_TOKEN}
+        )
+        self.assertEqual(reset_l1.status_code, 200)
+        self.assertEqual(reset_l1.json()["permission_level"], 1)
+        self.assertFalse(reset_l1.json()["quarantine_active"])
+        self.assertEqual(self.client.get("/api/permission_level").json()["permission_level"], 1)
 
     def test_file_content_security(self):
         """Test GET /api/ide/file_content requires auth and restricts system files (Issue 5)"""

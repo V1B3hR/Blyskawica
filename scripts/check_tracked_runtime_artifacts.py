@@ -11,6 +11,8 @@ EXACT_RUNTIME_ARTIFACTS = {
     "data/cognitive_defense/episodic_memory_vault.json",
     "integrity_vault.json",
     "memory_checkpoint.json",
+    "memory_checkpoint.json.bak",
+    "memory_checkpoint.json.tmp",
     "blyskawica_app/memory/offline_search_cache.db",
 }
 RUNTIME_PREFIXES = (

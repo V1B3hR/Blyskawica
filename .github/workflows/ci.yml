@@ -92,8 +92,10 @@ jobs:
 
       - name: Verify frontend syntax (Unix)
         if: matrix.os != 'windows-latest'
-        shell: bash
-        run: find sparkle_app/src -type f -name '*.js' -exec node --check {} \;
+        run: |
+          for file in $(find sparkle_app/src -type f -name '*.js'); do
+            node --check "$file" || exit 1
+          done
 
       - name: Run frontend security regression tests
         run: node --test sparkle_app/tests/frontend-security.test.mjs

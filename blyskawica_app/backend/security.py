@@ -286,3 +286,72 @@ class RateLimitMiddleware:
             await send(message)
 
         await self.app(scope, receive, send_with_rate_limit_headers)
+
+
+class UploadPayloadGuardMiddleware:
+    """Ochrona przed wyczerpaniem dysku i pamięci przy nieautoryzowanym lub zbyt dużym uploadzie.
+
+    Weryfikuje nagłówek Content-Length oraz zlicza odebrane bajty w strumieniu ASGI
+    przed rozpoczęciem parsowania multipart/form-data przez FastAPI/Starlette.
+    Dla endpointu /api/upload/ weryfikuje również wczesny token autoryzacyjny
+    X-Blyskawica-Token w nagłówkach HTTP przed konsumpcją ciała zapytania.
+    """
+
+    def __init__(self, app: ASGIApp, max_upload_bytes: int = 25 * 1024 * 1024) -> None:
+        self.app = app
+        self.max_upload_bytes = max_upload_bytes
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        path = scope.get("path", "")
+        if path.startswith("/api/upload/"):
+            headers = dict(scope.get("headers", []))
+            auth_header = headers.get(b"x-blyskawica-token") or headers.get(b"x-token")
+            token_val = auth_header.decode("utf-8", errors="replace") if auth_header else None
+
+            if not token_val or not STARTUP_TOKEN or not hmac.compare_digest(token_val, STARTUP_TOKEN):
+                response = JSONResponse(
+                    status_code=401,
+                    content={"status": "error", "message": "Brak lub nieprawidłowy token sesyjny (odmowa przed przyjęciem danych)."},
+                )
+                await response(scope, receive, send)
+                return
+
+            content_length_bytes = headers.get(b"content-length")
+            if content_length_bytes:
+                try:
+                    content_length = int(content_length_bytes.decode("ascii"))
+                    if content_length > self.max_upload_bytes:
+                        response = JSONResponse(
+                            status_code=413,
+                            content={"status": "error", "message": "Plik przekracza limit 25 MiB."},
+                        )
+                        await response(scope, receive, send)
+                        return
+                except ValueError:
+                    pass
+
+            received_bytes = 0
+
+            async def bounded_receive() -> Message:
+                nonlocal received_bytes
+                message = await receive()
+                if message["type"] == "http.request":
+                    body = message.get("body", b"")
+                    received_bytes += len(body)
+                    if received_bytes > self.max_upload_bytes:
+                        raise HTTPException(status_code=413, detail="Plik przekracza limit 25 MiB.")
+                return message
+
+            try:
+                await self.app(scope, bounded_receive, send)
+            except HTTPException as e:
+                response = JSONResponse(status_code=e.status_code, content={"status": "error", "message": e.detail})
+                await response(scope, receive, send)
+            return
+
+        await self.app(scope, receive, send)
+

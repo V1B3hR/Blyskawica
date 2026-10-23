@@ -282,7 +282,7 @@ class LatentStateProjector(_BaseModule):  # type: ignore[misc]
             return rng.standard_normal((1, self.embedding_dim))
 
     def __call__(self, chladni_matrix: Any, neurochemical_vector: Any) -> Any:
-        if _HAS_TORCH and nn is not None and callable(super()):
+        if _HAS_TORCH and nn is not None and isinstance(self, nn.Module):
             return super().__call__(chladni_matrix, neurochemical_vector)
         return self.forward(chladni_matrix, neurochemical_vector)
 

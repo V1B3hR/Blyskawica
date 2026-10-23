@@ -202,6 +202,7 @@ from blyskawica_app.backend.security import (
     ALLOWED_CORS_ORIGINS,
     STARTUP_TOKEN,
     RateLimitMiddleware,
+    UploadPayloadGuardMiddleware,
     is_inside_workspace,
     is_protected_core_file,
     is_restricted_system_path,
@@ -220,6 +221,12 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=ALLOWED_CORS_HEADERS,
+)
+
+# Security: Ochrona przed nieautoryzowanym lub zbyt dużym uploadem (25 MiB)
+app.add_middleware(
+    UploadPayloadGuardMiddleware,
+    max_upload_bytes=25 * 1024 * 1024,
 )
 
 # Security: Ograniczenie częstotliwości zapytań (Sliding Window Rate Limiter)
@@ -1108,8 +1115,7 @@ async def reset_quarantine_endpoint(
         from fastapi import HTTPException
         raise HTTPException(status_code=403, detail="Nieprawidłowy klucz administracyjny do deaktywacji kwarantanny.")
     quarantine_active = False
-    permission_level = 2
-    log_system("Autoryzowany reset kwarantanny Wolf Teeth. Przywrócono Poziom Uprawnień 2.")
+    log_system(f"Autoryzowany reset kwarantanny Wolf Teeth. Zachowano Poziom Uprawnień {permission_level}.")
     return {"status": "success", "quarantine_active": False, "permission_level": permission_level}
 
 @app.post("/api/anomalies/queue")
@@ -1590,12 +1596,17 @@ async def upload_media(
     # SEC-05: Sanityzacja nazwy pliku — ochrona przed Path Traversal
     safe_filename = re.sub(r'[^\w\-.]', '_', Path(file.filename).name) if file.filename else "uploaded_file"
     target_dir = (MEDIA_DIR / media_type).resolve()
-    file_path = (target_dir / safe_filename).resolve()
+    destination_path = target_dir / safe_filename
 
+    # Sprawdzenie linku symbolicznego na nierozwiązanej ścieżce (w tym dangling links)
+    if destination_path.is_symlink():
+        return JSONResponse(status_code=403, content={"status": "error", "message": "Zablokowano: docelowa ścieżka jest linkiem symbolicznym."})
+
+    file_path = destination_path.resolve()
     if not file_path.is_relative_to(target_dir):
         return JSONResponse(status_code=403, content={"status": "error", "message": "Zablokowano: nieprawidłowa lub niebezpieczna ścieżka pliku."})
 
-    if file_path.exists() and file_path.is_symlink():
+    if file_path.is_symlink():
         return JSONResponse(status_code=403, content={"status": "error", "message": "Zablokowano: docelowa ścieżka jest linkiem symbolicznym."})
 
     if file.size is not None and file.size > MAX_MEDIA_UPLOAD_BYTES:
