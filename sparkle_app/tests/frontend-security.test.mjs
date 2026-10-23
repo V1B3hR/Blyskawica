@@ -73,7 +73,7 @@ test("CSP keeps network connections local to the application", async () => {
   assert.doesNotMatch(csp, /\b(?:https?|wss?):|localhost/i);
 });
 
-test("non-Windows privilege prompts fail closed", async () => {
+test("non-Windows privilege prompts fail closed in headless or unsupported environments", async () => {
   const rustSource = await readFile(
     join(repositoryDirectory, "sparkle_app", "src-tauri", "src", "lib.rs"),
     "utf8",
@@ -81,8 +81,10 @@ test("non-Windows privilege prompts fail closed", async () => {
 
   assert.match(
     rustSource,
-    /#\[cfg\(not\(target_os = "windows"\)\)\]\s*fn show_confirm_dialog\([^)]*\) -> bool\s*\{\s*false\s*\}/s,
+    /#\[cfg\(not\(any\(target_os = "windows", target_os = "macos", target_os = "linux"\)\)\)\]\s*fn show_confirm_dialog\([^)]*\) -> bool\s*\{\s*false\s*\}/s,
   );
+  assert.match(rustSource, /target_os = "macos"/);
+  assert.match(rustSource, /target_os = "linux"/);
 });
 
 test("recreatable artifact cleanup remains permission-gated and confirmed", async () => {
