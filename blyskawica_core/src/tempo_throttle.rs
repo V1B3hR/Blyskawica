@@ -1,4 +1,4 @@
-use std::time::{Instant, Duration};
+use std::time::{Duration, Instant};
 use tokio::time::sleep;
 
 pub struct TempoThrottle {
@@ -50,7 +50,7 @@ impl TempoThrottle {
                 rng.gen_range(0..300) * (self.cortisol_multiplier as u64)
             };
             let total_delay = Duration::from_millis(raw_delay + jitter);
-            
+
             println!(
                 "🛡️ [TEMPO THROTTLE]: Wykryto prędkość maszynową! Opóźnienie: {} ms",
                 raw_delay + jitter

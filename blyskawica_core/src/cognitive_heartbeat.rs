@@ -1,6 +1,6 @@
+use crate::neurochemistry::NeurochemicalState;
 use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
-use crate::neurochemistry::NeurochemicalState;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IntentSeed {
@@ -118,11 +118,7 @@ impl CognitiveHeartbeat {
     }
 
     pub fn get_tree_state(&self) -> CognitiveTreeState {
-        let ripe_count = self
-            .branches
-            .iter()
-            .filter(|b| b.ripeness >= 0.90)
-            .count();
+        let ripe_count = self.branches.iter().filter(|b| b.ripeness >= 0.90).count();
 
         CognitiveTreeState {
             active_roots_count: self.seeds.len(),

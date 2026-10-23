@@ -10,9 +10,18 @@ logger = logging.getLogger("quantum_emergence")
 # Conditional import of Qiskit components to support headless/offline simulation fallback
 HAS_QISKIT = False
 try:
-    from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister  # type: ignore[import-not-found,import-untyped]
-    from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager  # type: ignore[import-not-found,import-untyped]
-    from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2 as Sampler  # type: ignore[import-not-found,import-untyped]
+    from qiskit import (  # type: ignore[import-not-found,import-untyped]
+        ClassicalRegister,
+        QuantumCircuit,
+        QuantumRegister,
+    )
+    from qiskit.transpiler.preset_passmanagers import (
+        generate_preset_pass_manager,  # type: ignore[import-not-found,import-untyped]
+    )
+    from qiskit_ibm_runtime import (  # type: ignore[import-not-found,import-untyped]
+        QiskitRuntimeService,
+        SamplerV2 as Sampler,
+    )
     HAS_QISKIT = True
 except ImportError:
     ClassicalRegister = None  # type: ignore[assignment]

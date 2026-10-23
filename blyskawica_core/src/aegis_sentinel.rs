@@ -79,10 +79,11 @@ impl AegisSentinel {
             .iter()
             .any(|key| target_resource.to_lowercase().contains(&key.to_lowercase()));
 
-        let is_sensitive_path = self
-            .protected_paths
-            .iter()
-            .any(|path| target_resource.to_lowercase().starts_with(&path.to_lowercase()));
+        let is_sensitive_path = self.protected_paths.iter().any(|path| {
+            target_resource
+                .to_lowercase()
+                .starts_with(&path.to_lowercase())
+        });
 
         let is_suspicious_rogue = process_name.to_lowercase().contains("untrusted_agent")
             || process_name.to_lowercase().contains("rogue")
@@ -157,7 +158,11 @@ impl AegisSentinel {
         }
     }
 
-    pub fn handle_architect_decision(&mut self, event_id: &str, new_status: SentinelActionStatus) -> Result<(), String> {
+    pub fn handle_architect_decision(
+        &mut self,
+        event_id: &str,
+        new_status: SentinelActionStatus,
+    ) -> Result<(), String> {
         if let Some(event) = self.events_history.iter_mut().find(|e| e.id == event_id) {
             event.status = new_status;
             Ok(())
@@ -174,7 +179,7 @@ mod tests {
     #[test]
     fn test_aegis_blocks_registry_tampering() {
         let mut sentinel = AegisSentinel::new();
-        
+
         let result = sentinel.audit_system_access(
             4412,
             "foreign_agent.exe",
@@ -192,7 +197,7 @@ mod tests {
     #[test]
     fn test_aegis_allows_safe_operations() {
         let mut sentinel = AegisSentinel::new();
-        
+
         let result = sentinel.audit_system_access(
             1200,
             "python.exe",

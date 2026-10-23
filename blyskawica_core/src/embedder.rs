@@ -2,8 +2,8 @@
 //! Generates L2-normalized dense vector representations for offline semantic search,
 //! anomaly detection, and HNSW vector indexing.
 
-use std::hash::{Hash, Hasher};
 use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 
 #[derive(Debug, Clone)]
 pub struct NativeEmbedder {
@@ -40,7 +40,11 @@ impl NativeEmbedder {
             for offset in 0..4 {
                 let idx = (base_idx + offset) % self.dimension;
                 let angle = (pos as f32) / (100.0f32.powf((offset as f32) / 4.0));
-                let harmonic = if offset % 2 == 0 { angle.sin() } else { angle.cos() };
+                let harmonic = if offset % 2 == 0 {
+                    angle.sin()
+                } else {
+                    angle.cos()
+                };
                 vector[idx] += weight * (1.0 + 0.5 * harmonic);
             }
 
@@ -95,7 +99,10 @@ mod tests {
 
         assert_eq!(vec.len(), 128);
         let norm_sq: f32 = vec.iter().map(|v| v * v).sum();
-        assert!((norm_sq - 1.0).abs() < 1e-4, "Wektor musi mieć długość 1.0 (L2-norm)");
+        assert!(
+            (norm_sq - 1.0).abs() < 1e-4,
+            "Wektor musi mieć długość 1.0 (L2-norm)"
+        );
     }
 
     #[test]

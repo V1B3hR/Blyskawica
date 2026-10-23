@@ -28,8 +28,14 @@ mod win32 {
     unsafe extern "system" {
         fn GetCurrentThread() -> *mut std::ffi::c_void;
         fn GetCurrentProcess() -> *mut std::ffi::c_void;
-        fn CreateJobObjectW(lpJobAttributes: *mut std::ffi::c_void, lpName: *const u16) -> *mut std::ffi::c_void;
-        fn AssignProcessToJobObject(hJob: *mut std::ffi::c_void, hProcess: *mut std::ffi::c_void) -> i32;
+        fn CreateJobObjectW(
+            lpJobAttributes: *mut std::ffi::c_void,
+            lpName: *const u16,
+        ) -> *mut std::ffi::c_void;
+        fn AssignProcessToJobObject(
+            hJob: *mut std::ffi::c_void,
+            hProcess: *mut std::ffi::c_void,
+        ) -> i32;
         fn SetInformationJobObject(
             hJob: *mut std::ffi::c_void,
             JobObjectInformationClass: u32,
@@ -41,11 +47,7 @@ mod win32 {
 
     #[link(name = "iphlpapi")]
     unsafe extern "system" {
-        fn GetTcpTable(
-            pTcpTable: *mut MIB_TCPTABLE,
-            pdwSize: *mut u32,
-            bOrder: i32,
-        ) -> u32;
+        fn GetTcpTable(pTcpTable: *mut MIB_TCPTABLE, pdwSize: *mut u32, bOrder: i32) -> u32;
         fn SetTcpEntry(pTcprow: *const MIB_TCPROW) -> u32;
     }
 
@@ -112,7 +114,10 @@ mod win32 {
         }
     }
 
-    pub fn assign_process_to_job(job: *mut std::ffi::c_void, process: *mut std::ffi::c_void) -> Result<(), String> {
+    pub fn assign_process_to_job(
+        job: *mut std::ffi::c_void,
+        process: *mut std::ffi::c_void,
+    ) -> Result<(), String> {
         unsafe {
             let res = AssignProcessToJobObject(job, process);
             if res != 0 {
@@ -147,7 +152,11 @@ mod win32 {
                 Ok(())
             } else {
                 let err = std::io::Error::last_os_error();
-                Err(format!("Error calling ImpersonateAnonymousToken: {} (code {})", err, err.raw_os_error().unwrap_or(0)))
+                Err(format!(
+                    "Error calling ImpersonateAnonymousToken: {} (code {})",
+                    err,
+                    err.raw_os_error().unwrap_or(0)
+                ))
             }
         }
     }
@@ -159,7 +168,11 @@ mod win32 {
                 Ok(())
             } else {
                 let err = std::io::Error::last_os_error();
-                Err(format!("Error calling RevertToSelf: {} (code {})", err, err.raw_os_error().unwrap_or(0)))
+                Err(format!(
+                    "Error calling RevertToSelf: {} (code {})",
+                    err,
+                    err.raw_os_error().unwrap_or(0)
+                ))
             }
         }
     }
@@ -185,14 +198,14 @@ mod win32 {
 
             let table_ref = &*p_table;
             let num_entries = table_ref.num_entries as usize;
-            
+
             // Pointer to table entries array
             let table_ptr = &table_ref.table as *const MIB_TCPROW;
             let mut closed_count = 0;
 
             for i in 0..num_entries {
                 let row = *table_ptr.add(i);
-                
+
                 // remote_addr = 0 means listening or not connected
                 if row.remote_addr == 0 {
                     continue;
@@ -285,7 +298,11 @@ mod win32 {
                 Ok(result)
             } else {
                 let err = std::io::Error::last_os_error();
-                Err(format!("DPAPI CryptProtectData failed: {} (code {})", err, err.raw_os_error().unwrap_or(0)))
+                Err(format!(
+                    "DPAPI CryptProtectData failed: {} (code {})",
+                    err,
+                    err.raw_os_error().unwrap_or(0)
+                ))
             }
         }
     }
@@ -321,14 +338,22 @@ mod win32 {
                 Ok(result)
             } else {
                 let err = std::io::Error::last_os_error();
-                Err(format!("DPAPI CryptUnprotectData failed: {} (code {})", err, err.raw_os_error().unwrap_or(0)))
+                Err(format!(
+                    "DPAPI CryptUnprotectData failed: {} (code {})",
+                    err,
+                    err.raw_os_error().unwrap_or(0)
+                ))
             }
         }
     }
 }
 
 #[cfg(target_os = "windows")]
-pub use win32::{drop_thread_privileges, restore_thread_privileges, terminate_external_tcp_connections, protect_secret, unprotect_secret, create_sandboxed_job, create_kill_on_close_job, assign_process_to_job};
+pub use win32::{
+    assign_process_to_job, create_kill_on_close_job, create_sandboxed_job, drop_thread_privileges,
+    protect_secret, restore_thread_privileges, terminate_external_tcp_connections,
+    unprotect_secret,
+};
 
 #[cfg(not(target_os = "windows"))]
 pub fn create_kill_on_close_job() -> Result<*mut std::ffi::c_void, String> {
@@ -336,7 +361,10 @@ pub fn create_kill_on_close_job() -> Result<*mut std::ffi::c_void, String> {
 }
 
 #[cfg(not(target_os = "windows"))]
-pub fn assign_process_to_job(_job: *mut std::ffi::c_void, _process: *mut std::ffi::c_void) -> Result<(), String> {
+pub fn assign_process_to_job(
+    _job: *mut std::ffi::c_void,
+    _process: *mut std::ffi::c_void,
+) -> Result<(), String> {
     Ok(())
 }
 
@@ -382,25 +410,37 @@ mod tests {
     fn test_privilege_flow() {
         // Test drop privilege flow
         let res = drop_thread_privileges();
-        assert!(res.is_ok(), "Zrzucenie uprawnień powinno się udać lub wywołać stub");
+        assert!(
+            res.is_ok(),
+            "Zrzucenie uprawnień powinno się udać lub wywołać stub"
+        );
 
         // Próba zapisu pliku powinna się nie udać na Windows w trybie Anonymous
         #[cfg(target_os = "windows")]
         {
             let test_path = std::env::current_dir().unwrap().join("test_anon_write.txt");
             let write_res = std::fs::write(&test_path, "test");
-            assert!(write_res.is_err(), "Zapis pliku w trybie Anonymous powinien zakończyć się błędem.");
+            assert!(
+                write_res.is_err(),
+                "Zapis pliku w trybie Anonymous powinien zakończyć się błędem."
+            );
         }
 
         let restore_res = restore_thread_privileges();
-        assert!(restore_res.is_ok(), "Przywrócenie uprawnień powinno się udać lub wywołać stub");
+        assert!(
+            restore_res.is_ok(),
+            "Przywrócenie uprawnień powinno się udać lub wywołać stub"
+        );
 
         // Po przywróceniu, zapis powinien zadziałać
         #[cfg(target_os = "windows")]
         {
             let test_path = std::env::current_dir().unwrap().join("test_anon_write.txt");
             let write_res = std::fs::write(&test_path, "test");
-            assert!(write_res.is_ok(), "Zapis pliku po przywróceniu uprawnień powinien zadziałać.");
+            assert!(
+                write_res.is_ok(),
+                "Zapis pliku po przywróceniu uprawnień powinien zadziałać."
+            );
             let _ = std::fs::remove_file(test_path);
         }
     }
@@ -418,15 +458,21 @@ mod tests {
             let secret = b"blyskawica_vault_test_secret_12345";
             let encrypted = protect_secret(secret).expect("DPAPI protect should succeed");
             assert_ne!(encrypted, secret, "Ciphertext should differ from plaintext");
-            
+
             let decrypted = unprotect_secret(&encrypted).expect("DPAPI unprotect should succeed");
-            assert_eq!(decrypted, secret, "Decrypted secret must match original plaintext");
+            assert_eq!(
+                decrypted, secret,
+                "Decrypted secret must match original plaintext"
+            );
         }
     }
 
     #[test]
     fn test_sandboxed_job_object() {
         let res = create_sandboxed_job();
-        assert!(res.is_ok(), "Utworzenie i przypisanie Job Object sandboxu powinno się powieść");
+        assert!(
+            res.is_ok(),
+            "Utworzenie i przypisanie Job Object sandboxu powinno się powieść"
+        );
     }
 }

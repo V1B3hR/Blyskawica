@@ -21,12 +21,15 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install ruff pytest pip-audit
+          pip install ruff pytest pip-audit httpx2
           pip install -e .
 
       - name: Code Formatting & Linting (Ruff)
         run: |
-          ruff check .
+          ruff check . --no-fix
+
+      - name: Block tracked runtime artifacts
+        run: python scripts/check_tracked_runtime_artifacts.py
 
       - name: Dependency Vulnerability Audit
         run: |
@@ -35,3 +38,67 @@ jobs:
       - name: Run Test Suite
         run: |
           pytest -v tests/ --ignore=tests/legacy
+
+  rust-core:
+    name: Rust core (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify Rust toolchain
+        run: rustc --version
+
+      - name: Verify core Rust formatting
+        run: cargo fmt --check --manifest-path blyskawica_core/Cargo.toml
+
+      - name: Run core tests
+        run: cargo test --locked --manifest-path blyskawica_core/Cargo.toml
+
+  sparkle-tauri:
+    name: SPARKLE Tauri (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux Tauri dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes \
+            build-essential \
+            libgtk-3-dev \
+            libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+
+      - name: Verify Tauri Rust formatting
+        run: cargo fmt --check --manifest-path sparkle_app/src-tauri/Cargo.toml
+
+      - name: Verify frontend syntax (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          Get-ChildItem -LiteralPath sparkle_app/src -Recurse -File -Filter '*.js' | ForEach-Object {
+            node --check $_.FullName
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+
+      - name: Verify frontend syntax (Unix)
+        if: matrix.os != 'windows-latest'
+        run: |
+          for file in $(find sparkle_app/src -type f -name '*.js'); do
+            node --check "$file" || exit 1
+          done
+
+      - name: Run frontend security regression tests
+        run: node --test sparkle_app/tests/frontend-security.test.mjs
+
+      - name: Build and test Tauri runtime
+        run: cargo test --locked --manifest-path sparkle_app/src-tauri/Cargo.toml

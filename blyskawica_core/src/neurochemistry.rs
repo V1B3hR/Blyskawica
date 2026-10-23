@@ -1,6 +1,5 @@
-use serde::{Serialize, Deserialize};
 use rand::Rng;
-
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NeurochemicalState {
@@ -132,7 +131,13 @@ impl NeurochemicalState {
     pub fn get_status_report(&self) -> String {
         format!(
             "Dopamine: {:.2}, Serotonin: {:.2}, Oxytocin: {:.2}, GABA: {:.2}, Melatonin: {:.2}, Cortisol: {:.2}, Temp: {:.1}°C",
-            self.dopamine, self.serotonin, self.oxytocin, self.gaba, self.melatonin, self.cortisol, self.temperature
+            self.dopamine,
+            self.serotonin,
+            self.oxytocin,
+            self.gaba,
+            self.melatonin,
+            self.cortisol,
+            self.temperature
         )
     }
 }

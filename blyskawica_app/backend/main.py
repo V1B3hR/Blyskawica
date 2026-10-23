@@ -14,6 +14,7 @@ import asyncio
 import json
 import logging
 import random
+import tempfile
 import time
 from datetime import datetime
 from pathlib import Path
@@ -25,6 +26,30 @@ from fastapi import FastAPI, File, Form, Header, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+
+try:
+    from blyskawica_app.backend.online_policy import (
+        NETHICAL_AUTO_DOCK_ENV,
+        nethical_auto_dock_enabled,
+    )
+except ImportError:
+    from .online_policy import (  # type: ignore[relative-beyond-top-level]
+        NETHICAL_AUTO_DOCK_ENV,
+        nethical_auto_dock_enabled,
+    )
+
+try:
+    from blyskawica_app.backend.upload_policy import (
+        MAX_MEDIA_UPLOAD_BYTES,
+        MEDIA_UPLOAD_CHUNK_BYTES,
+        exceeds_media_upload_limit,
+    )
+except ImportError:
+    from .upload_policy import (  # type: ignore[relative-beyond-top-level]
+        MAX_MEDIA_UPLOAD_BYTES,
+        MEDIA_UPLOAD_CHUNK_BYTES,
+        exceeds_media_upload_limit,
+    )
 
 # Setup paths and environment
 ROOT_ENV = os.environ.get("SPARKLE_WORKSPACE")
@@ -120,7 +145,7 @@ except ImportError as e:
 time_manager = get_time_manager() if (CORE_AVAILABLE and get_time_manager is not None) else None
 
 # ---- Sparkle Security & Logs State ----
-permission_level = 2  # Default to Workspace (2)
+permission_level = 1  # Default to Sandbox (1); workspace access requires consent
 quarantine_active = False
 SYSTEM_LOGS = []
 
@@ -168,11 +193,16 @@ def log_system(msg: str, level: str = "info") -> None:
         logging.info(msg)
 
 # Import modułów bezpieczeństwa, kontroli ścieżek, CORS i Rate Limitingu
+from blyskawica_app.backend.permission_policy import (
+    permission_change_requires_consent,
+    permission_elevation_message,
+)
 from blyskawica_app.backend.security import (
     ALLOWED_CORS_HEADERS,
     ALLOWED_CORS_ORIGINS,
     STARTUP_TOKEN,
     RateLimitMiddleware,
+    UploadPayloadGuardMiddleware,
     is_inside_workspace,
     is_protected_core_file,
     is_restricted_system_path,
@@ -191,6 +221,12 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=ALLOWED_CORS_HEADERS,
+)
+
+# Security: Ochrona przed nieautoryzowanym lub zbyt dużym uploadem (25 MiB)
+app.add_middleware(
+    UploadPayloadGuardMiddleware,
+    max_upload_bytes=25 * 1024 * 1024,
 )
 
 # Security: Ograniczenie częstotliwości zapytań (Sliding Window Rate Limiter)
@@ -1044,6 +1080,22 @@ async def set_permission_level_endpoint(
         )
     target_level = level if level is not None else level_form
     if target_level in [1, 2, 3]:
+        if permission_change_requires_consent(permission_level, target_level) and not await ask_system_consent(
+            permission_elevation_message(target_level),
+            "Ostrzeżenie bezpieczeństwa Błyskawica",
+        ):
+            log_system(
+                f"Zablokowano podniesienie uprawnień do Poziomu {target_level} - brak zgody użytkownika.",
+                "warning",
+            )
+            return JSONResponse(
+                status_code=403,
+                content={
+                    "status": "error",
+                    "message": "Podniesienie uprawnień wymaga zgody użytkownika.",
+                },
+            )
+
         permission_level = target_level
         log_system(f"Zmieniono Poziom Uprawnień: {permission_level}")
         return {"status": "success", "permission_level": permission_level, "quarantine_active": quarantine_active}
@@ -1063,8 +1115,7 @@ async def reset_quarantine_endpoint(
         from fastapi import HTTPException
         raise HTTPException(status_code=403, detail="Nieprawidłowy klucz administracyjny do deaktywacji kwarantanny.")
     quarantine_active = False
-    permission_level = 2
-    log_system("Autoryzowany reset kwarantanny Wolf Teeth. Przywrócono Poziom Uprawnień 2.")
+    log_system(f"Autoryzowany reset kwarantanny Wolf Teeth. Zachowano Poziom Uprawnień {permission_level}.")
     return {"status": "success", "quarantine_active": False, "permission_level": permission_level}
 
 @app.post("/api/anomalies/queue")
@@ -1533,21 +1584,57 @@ async def crystallize_soul() -> Any:
         return JSONResponse(status_code=500, content={"status": "error", "message": "Błąd podczas krystalizacji modelu."})
 
 @app.post("/api/upload/{media_type}")
-async def upload_media(media_type: str, file: UploadFile = File(...)) -> Any:
+async def upload_media(
+    media_type: str,
+    file: UploadFile = File(...),
+    x_token: str | None = Header(default=None, alias="X-Blyskawica-Token"),
+) -> Any:
+    verify_startup_token(x_token)
     if media_type not in ["zdjecia", "muzyka", "filmy"]:
         media_type = "dokumenty"
 
     # SEC-05: Sanityzacja nazwy pliku — ochrona przed Path Traversal
     safe_filename = re.sub(r'[^\w\-.]', '_', Path(file.filename).name) if file.filename else "uploaded_file"
     target_dir = (MEDIA_DIR / media_type).resolve()
-    file_path = (target_dir / safe_filename).resolve()
+    destination_path = target_dir / safe_filename
 
+    # Sprawdzenie linku symbolicznego na nierozwiązanej ścieżce (w tym dangling links)
+    if destination_path.is_symlink():
+        return JSONResponse(status_code=403, content={"status": "error", "message": "Zablokowano: docelowa ścieżka jest linkiem symbolicznym."})
+
+    file_path = destination_path.resolve()
     if not file_path.is_relative_to(target_dir):
         return JSONResponse(status_code=403, content={"status": "error", "message": "Zablokowano: nieprawidłowa lub niebezpieczna ścieżka pliku."})
 
-    content = await file.read()
-    with open(file_path, "wb") as f:
-        f.write(content)
+    if file_path.is_symlink():
+        return JSONResponse(status_code=403, content={"status": "error", "message": "Zablokowano: docelowa ścieżka jest linkiem symbolicznym."})
+
+    if file.size is not None and file.size > MAX_MEDIA_UPLOAD_BYTES:
+        return JSONResponse(status_code=413, content={"status": "error", "message": "Plik przekracza limit 25 MiB."})
+
+    temporary_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="xb",
+            dir=target_dir,
+            prefix=".upload-",
+            suffix=".tmp",
+            delete=False,
+        ) as temporary_file:
+            temporary_path = Path(temporary_file.name)
+            total_bytes = 0
+            while chunk := await file.read(MEDIA_UPLOAD_CHUNK_BYTES):
+                total_bytes += len(chunk)
+                if exceeds_media_upload_limit(total_bytes):
+                    return JSONResponse(status_code=413, content={"status": "error", "message": "Plik przekracza limit 25 MiB."})
+                temporary_file.write(chunk)
+
+        os.replace(temporary_path, file_path)
+        temporary_path = None
+    finally:
+        await file.close()
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
 
     # Symulacja przetwarzania percepcyjnego przez Błyskawicę
     reply = ""
@@ -1567,7 +1654,14 @@ app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="fronte
 
 @app.on_event("startup")  # type: ignore[deprecated]
 async def startup_docking() -> None:
-    """Attempt to auto-register and dock Blyskawica in the Nethical Hub."""
+    """Optionally auto-register and dock Blyskawica in the Nethical Hub."""
+
+    if not nethical_auto_dock_enabled(os.environ):
+        print(
+            "[Błyskawica Auto-Dock] Wyłączone. "
+            f"Ustaw {NETHICAL_AUTO_DOCK_ENV}=1 lub true, aby jawnie włączyć integrację."
+        )
+        return
 
     async def run_dock_sequence() -> None:
         # Wait 3 seconds to let Nethical server startup

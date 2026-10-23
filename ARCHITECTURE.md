@@ -2,13 +2,13 @@
 
 > **Wersja**: Błyskawica / SPARKLE V10 (Full Standalone Offline AI)  
 > **Data aktualizacji**: 2026-08-15  
-> **Status ewolucji**: Zunifikowana architektura kognitywno-desktopowa ([Pełna Matryca Faz](docs/phases/README.md))
+> **Status ewolucji**: Referencyjny opis architektury V10. Bieżący kontrakt produktu i migracji znajduje się w [kontrakcie samodzielnego runtime SPARKLE](docs/technical/SPARKLE_RUNTIME_CONTRACT.md).
 
 ---
 
 ## 1. Przegląd Architektoniczny
 
-Błyskawica / SPARKLE V10 to zintegrowany system kognitywno-symulacyjny połączony z natywną powłoką desktopową **Rust / Tauri v2**. W wersji V10 inferencja językowa została przeniesiona bezpośrednio do rdzenia Rust przy użyciu biblioteki **Candle**, co gwarantuje pełną suwerenność danych i działanie 100% offline bez konieczności uruchamiania zewnętrznych demonów:
+Błyskawica / SPARKLE V10 to zintegrowany system kognitywno-symulacyjny połączony z natywną powłoką desktopową **Rust / Tauri v2**. V10 established a Rust Candle inference path; the current standalone/offline guarantee remains subject to the [runtime contract](docs/technical/SPARKLE_RUNTIME_CONTRACT.md) and its release gates:
 
 ```mermaid
 graph TB

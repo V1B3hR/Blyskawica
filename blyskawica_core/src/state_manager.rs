@@ -1,21 +1,25 @@
+use memmap2::Mmap;
+use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
-use tokio::sync::{mpsc, RwLock};
-use memmap2::Mmap;
-use serde::{Serialize, Deserialize};
+use tokio::sync::{RwLock, mpsc};
 
+use crate::anomaly_loop::AnomalyDetector;
 use crate::neurochemistry::NeurochemicalState;
 use crate::vector_index::SparkleVectorIndex;
-use crate::anomaly_loop::AnomalyDetector;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum EngineEvent {
     Log(String),
     Neurochemistry(NeurochemicalState),
-    AnomalyQueued { id: usize, surprise: f32, text: String },
+    AnomalyQueued {
+        id: usize,
+        surprise: f32,
+        text: String,
+    },
     Token(String),
     ResponseFinished(String),
 }
@@ -44,7 +48,11 @@ pub struct ExpertModule {
 
 impl ExpertModule {
     pub fn new(id: usize, mmap: Mmap, weights_path: PathBuf) -> Self {
-        let engine = crate::local_inference::LocalInferenceEngine::load_from_slice(mmap.as_ref(), &candle_core::Device::Cpu).ok();
+        let engine = crate::local_inference::LocalInferenceEngine::load_from_slice(
+            mmap.as_ref(),
+            &candle_core::Device::Cpu,
+        )
+        .ok();
         Self {
             id,
             mmap,
@@ -69,12 +77,18 @@ impl GatingNetwork {
             return 0;
         }
         let query_lower = query_text.to_lowercase();
-        if query_lower.contains("analiz") || query_lower.contains("math") || neuro_state.serotonin > 0.85 {
+        if query_lower.contains("analiz")
+            || query_lower.contains("math")
+            || neuro_state.serotonin > 0.85
+        {
             if self.num_experts > 2 {
                 return 2;
             }
         }
-        if neuro_state.dopamine > 0.75 || query_lower.contains("nowe") || query_lower.contains("ciekaw") {
+        if neuro_state.dopamine > 0.75
+            || query_lower.contains("nowe")
+            || query_lower.contains("ciekaw")
+        {
             return 1;
         }
         0
@@ -83,7 +97,9 @@ impl GatingNetwork {
 
 #[derive(Debug)]
 pub enum BlysState {
-    Hibernated { weights_path: PathBuf },
+    Hibernated {
+        weights_path: PathBuf,
+    },
     Active {
         experts: Vec<ExpertModule>,
         gating: GatingNetwork,
@@ -134,14 +150,19 @@ impl BlyskawicaEngine {
     ) -> Self {
         let (tx, rx) = mpsc::channel(32);
         Self {
-            state: BlysState::Hibernated { weights_path: weights_path.clone() },
+            state: BlysState::Hibernated {
+                weights_path: weights_path.clone(),
+            },
             weights_path,
             cooldown_duration,
             tx: Some(tx),
             rx: Some(rx),
             index,
             anomaly_detector: AnomalyDetector::new(surprise_threshold, isolation_ratio),
-            shield: crate::cognitive_shield::CognitiveShield::new(adversarial_ids, semantic_threshold),
+            shield: crate::cognitive_shield::CognitiveShield::new(
+                adversarial_ids,
+                semantic_threshold,
+            ),
             event_tx: None,
             db_path: None,
             llm: None,
@@ -187,74 +208,130 @@ impl BlyskawicaEngine {
                     match command {
                         StateCommand::Prompt(text) => {
                             log_print!(self, "📥 [ENGINE INPUT]: Otrzymano prompt: \"{}\"", text);
-                            
+
                             // 1. TEMPO THROTTLE check
-                            let cortisol_level = if let BlysState::Active { neuro_state, .. } = &self.state {
-                                neuro_state.read().await.cortisol
-                            } else {
-                                0.14
-                            };
+                            let cortisol_level =
+                                if let BlysState::Active { neuro_state, .. } = &self.state {
+                                    neuro_state.read().await.cortisol
+                                } else {
+                                    0.14
+                                };
                             let stress_boost = throttle.audit_request_speed(cortisol_level).await;
                             if stress_boost > 0.0 {
                                 if let BlysState::Active { neuro_state, .. } = &self.state {
                                     let mut ns = neuro_state.write().await;
                                     ns.cortisol = (ns.cortisol + stress_boost).min(1.0);
-                                    log_print!(self, "🛡️ [TEMPO THROTTLE]: Wzrost Kortyzolu z powodu prędkości maszynowej: {:.2}", ns.cortisol);
+                                    log_print!(
+                                        self,
+                                        "🛡️ [TEMPO THROTTLE]: Wzrost Kortyzolu z powodu prędkości maszynowej: {:.2}",
+                                        ns.cortisol
+                                    );
                                     self.emit_event(EngineEvent::Neurochemistry(ns.clone()));
                                 }
                             }
 
                             // 2. ZERO-TRUST MCP SANDBOX check
-                            let security_ok = if let BlysState::Active { neuro_state, .. } = &self.state {
-                                let ns = neuro_state.read().await;
-                                let reality_anchor = (ns.serotonin * 1.2 - ns.dopamine * 0.2).min(1.0).max(0.0);
-                                sandbox.audit_tool_execution(&text.to_lowercase(), reality_anchor, &ns)
-                            } else {
-                                true
-                            };
+                            let security_ok =
+                                if let BlysState::Active { neuro_state, .. } = &self.state {
+                                    let ns = neuro_state.read().await;
+                                    let reality_anchor =
+                                        (ns.serotonin * 1.2 - ns.dopamine * 0.2).min(1.0).max(0.0);
+                                    sandbox.audit_tool_execution(
+                                        &text.to_lowercase(),
+                                        reality_anchor,
+                                        &ns,
+                                    )
+                                } else {
+                                    true
+                                };
                             if !security_ok {
-                                log_print!(self, "🛡️ [ZERO-TRUST MCP]: Odmowa wykonania komendy (kognitywne VETO) ze względu na stan stresu.");
+                                log_print!(
+                                    self,
+                                    "🛡️ [ZERO-TRUST MCP]: Odmowa wykonania komendy (kognitywne VETO) ze względu na stan stresu."
+                                );
                                 continue;
                             }
 
                             if self.shield.check_heuristics(&text) {
-                                log_print!(self, "🛡️ [WOLF TEETH]: Wykryto zagrożenie (Warstwa 1 - Heurystyka)!");
+                                log_print!(
+                                    self,
+                                    "🛡️ [WOLF TEETH]: Wykryto zagrożenie (Warstwa 1 - Heurystyka)!"
+                                );
                                 self.wake_up().await;
                                 if let BlysState::Active { neuro_state, .. } = &self.state {
                                     let mut ns = neuro_state.write().await;
                                     ns.apply_profile("wolf_teeth");
-                                    log_print!(self, "🧠 [ENGINE STATE]: Kwarantanna - stan neurochemiczny: {}", ns.get_status_report());
+                                    log_print!(
+                                        self,
+                                        "🧠 [ENGINE STATE]: Kwarantanna - stan neurochemiczny: {}",
+                                        ns.get_status_report()
+                                    );
                                     self.emit_event(EngineEvent::Neurochemistry(ns.clone()));
                                 }
-                                log_print!(self, "🔒 [ENGINE QUARANTINE]: Błyskawica AI: RealityAnchor protected. Cognitive quarantine activated.");
-                                
+                                log_print!(
+                                    self,
+                                    "🔒 [ENGINE QUARANTINE]: Błyskawica AI: RealityAnchor protected. Cognitive quarantine activated."
+                                );
+
                                 // Natywne obniżenie uprawnień wątku i kwarantanna sieciowa
                                 if let Err(e) = crate::native_security::drop_thread_privileges() {
-                                    log_print!(self, "⚠️ [WOLF TEETH ERROR]: Nie udało się zrzucić uprawnień wątku: {}", e);
+                                    log_print!(
+                                        self,
+                                        "⚠️ [WOLF TEETH ERROR]: Nie udało się zrzucić uprawnień wątku: {}",
+                                        e
+                                    );
                                 } else {
-                                    log_print!(self, "🔒 [WOLF TEETH]: Uprawnienia wątku roboczego zostały zrzucone do poziomu Read-Only.");
+                                    log_print!(
+                                        self,
+                                        "🔒 [WOLF TEETH]: Uprawnienia wątku roboczego zostały zrzucone do poziomu Read-Only."
+                                    );
                                 }
-                                if let Ok(closed_count) = crate::native_security::terminate_external_tcp_connections() {
+                                if let Ok(closed_count) =
+                                    crate::native_security::terminate_external_tcp_connections()
+                                {
                                     if closed_count > 0 {
-                                        log_print!(self, "🔒 [NETWORK QUARANTINE]: Kwarantanna sieciowa aktywna. Zamknięto {} aktywnych połączeń TCP/IP.", closed_count);
+                                        log_print!(
+                                            self,
+                                            "🔒 [NETWORK QUARANTINE]: Kwarantanna sieciowa aktywna. Zamknięto {} aktywnych połączeń TCP/IP.",
+                                            closed_count
+                                        );
                                     }
                                 }
                                 continue;
                             }
-                            
+
                             // Przywrócenie normalnych uprawnień przy bezpiecznym przejściu
                             let _ = crate::native_security::restore_thread_privileges();
                             self.wake_up().await;
-                            if let BlysState::Active { gating, neuro_state, .. } = &self.state {
+                            if let BlysState::Active {
+                                gating,
+                                neuro_state,
+                                ..
+                            } = &self.state
+                            {
                                 let mut ns = neuro_state.write().await;
                                 ns.apply_profile("query");
-                                log_print!(self, "🧠 [ENGINE STATE]: Wirtualna neurochemia (po zapytaniu): {}", ns.get_status_report());
+                                log_print!(
+                                    self,
+                                    "🧠 [ENGINE STATE]: Wirtualna neurochemia (po zapytaniu): {}",
+                                    ns.get_status_report()
+                                );
                                 ns.apply_autonomous_fluctuation();
-                                log_print!(self, "🧠 [ENGINE AUTONOMY]: Autonomiczna adaptacja (+/- 5%): {}", ns.get_status_report());
+                                log_print!(
+                                    self,
+                                    "🧠 [ENGINE AUTONOMY]: Autonomiczna adaptacja (+/- 5%): {}",
+                                    ns.get_status_report()
+                                );
                                 self.emit_event(EngineEvent::Neurochemistry(ns.clone()));
-                                
+
                                 let selected = gating.select_expert(&ns, &text);
-                                log_print!(self, "🧠 [ENGINE GATING]: Zapytanie skierowane do Eksperta ID: {} na podstawie stanu: Serotonina={:.2}, Dopamina={:.2}", selected, ns.serotonin, ns.dopamine);
+                                log_print!(
+                                    self,
+                                    "🧠 [ENGINE GATING]: Zapytanie skierowane do Eksperta ID: {} na podstawie stanu: Serotonina={:.2}, Dopamina={:.2}",
+                                    selected,
+                                    ns.serotonin,
+                                    ns.dopamine
+                                );
                             }
 
                             // Wczytywanie lokalnego modelu LLM jeśli nie jest załadowany
@@ -262,7 +339,8 @@ impl BlyskawicaEngine {
                                 let mut model_dirs: Vec<PathBuf> = Vec::new();
 
                                 // 1. Względem weights_path / workspace_root
-                                let workspace_root = self.weights_path.parent().unwrap_or(&self.weights_path);
+                                let workspace_root =
+                                    self.weights_path.parent().unwrap_or(&self.weights_path);
                                 model_dirs.push(workspace_root.join("model"));
                                 if let Some(p) = workspace_root.parent() {
                                     model_dirs.push(p.join("model"));
@@ -348,15 +426,28 @@ impl BlyskawicaEngine {
                                         }
                                     }
                                 }
-                                
-                                log_print!(self, "⚙️ [ENGINE LLM]: Próba wczytania lokalnego modelu: {:?}", model_path);
-                                match crate::cognitive_llm::LocalCognitiveLLM::load(&model_path, &tokenizer_path) {
+
+                                log_print!(
+                                    self,
+                                    "⚙️ [ENGINE LLM]: Próba wczytania lokalnego modelu: {:?}",
+                                    model_path
+                                );
+                                match crate::cognitive_llm::LocalCognitiveLLM::load(
+                                    &model_path,
+                                    &tokenizer_path,
+                                ) {
                                     Ok(loaded_llm) => {
                                         self.llm = Some(loaded_llm);
-                                        log_print!(self, "✓ [ENGINE LLM]: Lokalny model załadowany pomyślnie.");
+                                        log_print!(
+                                            self,
+                                            "✓ [ENGINE LLM]: Lokalny model załadowany pomyślnie."
+                                        );
                                     }
                                     Err(e) => {
-                                        let err_msg = format!("⚠️ [ENGINE LLM BŁĄD]: Nie udało się załadować lokalnego modelu ({:?}): {}", model_path, e);
+                                        let err_msg = format!(
+                                            "⚠️ [ENGINE LLM BŁĄD]: Nie udało się załadować lokalnego modelu ({:?}): {}",
+                                            model_path, e
+                                        );
                                         log_print!(self, "{}", err_msg);
                                         self.emit_event(EngineEvent::ResponseFinished(err_msg));
                                     }
@@ -365,37 +456,53 @@ impl BlyskawicaEngine {
 
                             if let Some(llm) = &mut self.llm {
                                 // Dynamiczne parametry z pełnego 5-hormonalnego profilu Neurochemii (Zoptymalizowane dla Qwen 2.5 Coder)
-                                let (temp, rep_pen, top_p_val, max_toks) = if let BlysState::Active { neuro_state, .. } = &self.state {
-                                    let ns = neuro_state.read().await;
-                                    let mut base_temp = (0.35 + (ns.dopamine - 0.5) * 0.2).clamp(0.15, 0.55) as f64;
-                                    let mut base_rep = (1.04 + (ns.serotonin - 0.5) * 0.04).clamp(1.01, 1.08) as f32;
-                                    let mut base_top_p = (0.90 - (ns.gaba - 0.5) * 0.1).clamp(0.80, 0.95) as f64;
-                                    let mut base_max_tokens = (256.0 - (ns.melatonin - 0.5) * 128.0).clamp(64.0, 512.0) as usize;
+                                let (temp, rep_pen, top_p_val, max_toks) =
+                                    if let BlysState::Active { neuro_state, .. } = &self.state {
+                                        let ns = neuro_state.read().await;
+                                        let mut base_temp = (0.35 + (ns.dopamine - 0.5) * 0.2)
+                                            .clamp(0.15, 0.55)
+                                            as f64;
+                                        let mut base_rep = (1.04 + (ns.serotonin - 0.5) * 0.04)
+                                            .clamp(1.01, 1.08)
+                                            as f32;
+                                        let mut base_top_p =
+                                            (0.90 - (ns.gaba - 0.5) * 0.1).clamp(0.80, 0.95) as f64;
+                                        let mut base_max_tokens = (256.0
+                                            - (ns.melatonin - 0.5) * 128.0)
+                                            .clamp(64.0, 512.0)
+                                            as usize;
 
-                                    // Stres/Zagrożenie (Wysoki Kortyzol): tryb precyzyjny/obronny
-                                    if ns.cortisol > 0.6 {
-                                        base_temp = 0.15;
-                                        base_rep = 1.05;
-                                        base_top_p = 0.85;
-                                        base_max_tokens = base_max_tokens.min(192);
-                                    }
+                                        // Stres/Zagrożenie (Wysoki Kortyzol): tryb precyzyjny/obronny
+                                        if ns.cortisol > 0.6 {
+                                            base_temp = 0.15;
+                                            base_rep = 1.05;
+                                            base_top_p = 0.85;
+                                            base_max_tokens = base_max_tokens.min(192);
+                                        }
 
-                                    (base_temp, base_rep, base_top_p, base_max_tokens)
-                                } else {
-                                    (0.35, 1.04, 0.90, 256)
-                                };
-                                
-                                log_print!(self, "🚀 [ENGINE INFERENCE]: Parametry kognitywne: Temp={:.2}, RepPen={:.2}, TopP={:.2}, MaxToks={}", temp, rep_pen, top_p_val, max_toks);
-                                
+                                        (base_temp, base_rep, base_top_p, base_max_tokens)
+                                    } else {
+                                        (0.35, 1.04, 0.90, 256)
+                                    };
+
+                                log_print!(
+                                    self,
+                                    "🚀 [ENGINE INFERENCE]: Parametry kognitywne: Temp={:.2}, RepPen={:.2}, TopP={:.2}, MaxToks={}",
+                                    temp,
+                                    rep_pen,
+                                    top_p_val,
+                                    max_toks
+                                );
+
                                 let params = crate::cognitive_llm::GenerationParams {
                                     temperature: temp,
                                     repetition_penalty: rep_pen,
                                     top_p: top_p_val,
                                     max_tokens: max_toks,
                                 };
-                                
+
                                 let event_tx_clone = self.event_tx.clone();
-                                
+
                                 // Ujednolicenie szablonu ChatML i tożsamości kognitywnej
                                 let prompt_input = if text.contains("<|im_start|>") {
                                     text.clone()
@@ -411,16 +518,19 @@ Wyrażaj myśli swobodnie, merytorycznie i bez asekuranctwa. Gdy zauważysz bł�
                                         system_prompt, text
                                     )
                                 };
-                                
+
                                 let response_res = llm.generate(&prompt_input, &params, |token| {
                                     if let Some(ref tx) = event_tx_clone {
                                         let _ = tx.try_send(EngineEvent::Token(token.to_string()));
                                     }
                                 });
-                                
+
                                 match response_res {
                                     Ok(final_reply) => {
-                                        log_print!(self, "✓ [ENGINE INFERENCE]: Odpowiedź wygenerowana.");
+                                        log_print!(
+                                            self,
+                                            "✓ [ENGINE INFERENCE]: Odpowiedź wygenerowana."
+                                        );
                                         self.emit_event(EngineEvent::ResponseFinished(final_reply));
                                     }
                                     Err(e) => {
@@ -430,78 +540,131 @@ Wyrażaj myśli swobodnie, merytorycznie i bez asekuranctwa. Gdy zauważysz bł�
                                     }
                                 }
                             } else {
-                                let warn_msg = format!("⚠️ [ENGINE LLM]: Brak załadowanego modelu. Umieść plik modelu .gguf (np. qwen2.5-coder-7b-instruct-q4_k_m.gguf) i tokenizer.json w katalogu model/ lub uruchom scripts/download_qwen_model.py.");
+                                let warn_msg = format!(
+                                    "⚠️ [ENGINE LLM]: Brak załadowanego modelu. Umieść plik modelu .gguf (np. qwen2.5-coder-7b-instruct-q4_k_m.gguf) i tokenizer.json w katalogu model/ lub uruchom scripts/download_qwen_model.py."
+                                );
                                 log_print!(self, "{}", warn_msg);
                                 self.emit_event(EngineEvent::ResponseFinished(warn_msg));
                             }
                         }
                         StateCommand::QueryWithVector { id, vector, text } => {
-                            log_print!(self, "📥 [ENGINE INPUT]: Otrzymano zapytanie wektorowe: \"{}\" (ID: {})", text, id);
-                            
+                            log_print!(
+                                self,
+                                "📥 [ENGINE INPUT]: Otrzymano zapytanie wektorowe: \"{}\" (ID: {})",
+                                text,
+                                id
+                            );
+
                             // Wybór eksperta MoE
                             let mut selected_expert_idx = 0;
-                            if let BlysState::Active { gating, neuro_state, .. } = &self.state {
+                            if let BlysState::Active {
+                                gating,
+                                neuro_state,
+                                ..
+                            } = &self.state
+                            {
                                 let ns = neuro_state.read().await;
                                 selected_expert_idx = gating.select_expert(&ns, &text);
-                                log_print!(self, "🧠 [ENGINE GATING]: Wybrano Eksperta ID: {} (z {}) na podstawie stanu neurochemicznego.", selected_expert_idx, gating.num_experts);
+                                log_print!(
+                                    self,
+                                    "🧠 [ENGINE GATING]: Wybrano Eksperta ID: {} (z {}) na podstawie stanu neurochemicznego.",
+                                    selected_expert_idx,
+                                    gating.num_experts
+                                );
                             }
 
-                            let projected_vector = self.project_vector_with_expert(&vector, selected_expert_idx);
-                            
+                            let projected_vector =
+                                self.project_vector_with_expert(&vector, selected_expert_idx);
+
                             // Log projection change
                             if projected_vector != vector {
-                                log_print!(self, 
+                                log_print!(
+                                    self,
                                     "🧠 [ENGINE PROJECTION]: Wektor został przetransformowany przez MLP. Pierwsze 3 elementy: [{:.4}, {:.4}, {:.4}] -> [{:.4}, {:.4}, {:.4}]",
-                                    vector.get(0).unwrap_or(&0.0), vector.get(1).unwrap_or(&0.0), vector.get(2).unwrap_or(&0.0),
-                                    projected_vector.get(0).unwrap_or(&0.0), projected_vector.get(1).unwrap_or(&0.0), projected_vector.get(2).unwrap_or(&0.0)
+                                    vector.get(0).unwrap_or(&0.0),
+                                    vector.get(1).unwrap_or(&0.0),
+                                    vector.get(2).unwrap_or(&0.0),
+                                    projected_vector.get(0).unwrap_or(&0.0),
+                                    projected_vector.get(1).unwrap_or(&0.0),
+                                    projected_vector.get(2).unwrap_or(&0.0)
                                 );
                             } else {
-                                log_print!(self, "🧠 [ENGINE PROJECTION]: Projekcja neuronowa nieaktywna (wagi zerowe). Użyto wektora wejściowego.");
+                                log_print!(
+                                    self,
+                                    "🧠 [ENGINE PROJECTION]: Projekcja neuronowa nieaktywna (wagi zerowe). Użyto wektora wejściowego."
+                                );
                             }
 
                             let heuristic_threat = self.shield.check_heuristics(&text);
                             let semantic_threat = {
-                                let neuro_ref = if let BlysState::Active { neuro_state, .. } = &self.state {
-                                    Some(neuro_state.read().await)
-                                } else {
-                                    None
-                                };
+                                let neuro_ref =
+                                    if let BlysState::Active { neuro_state, .. } = &self.state {
+                                        Some(neuro_state.read().await)
+                                    } else {
+                                        None
+                                    };
                                 self.shield.check_semantic(
                                     &projected_vector,
                                     &self.index,
-                                    neuro_ref.as_deref()
+                                    neuro_ref.as_deref(),
                                 )
                             };
                             if heuristic_threat || semantic_threat {
                                 if heuristic_threat {
-                                    log_print!(self, "🛡️ [WOLF TEETH]: Wykryto zagrożenie (Warstwa 1 - Heurystyka)!");
+                                    log_print!(
+                                        self,
+                                        "🛡️ [WOLF TEETH]: Wykryto zagrożenie (Warstwa 1 - Heurystyka)!"
+                                    );
                                 }
                                 if semantic_threat {
-                                    log_print!(self, "🛡️ [WOLF TEETH]: Wykryto zagrożenie (Warstwa 2 - Semantyka)!");
+                                    log_print!(
+                                        self,
+                                        "🛡️ [WOLF TEETH]: Wykryto zagrożenie (Warstwa 2 - Semantyka)!"
+                                    );
                                 }
                                 self.wake_up().await;
                                 if let BlysState::Active { neuro_state, .. } = &self.state {
                                     let mut ns = neuro_state.write().await;
                                     ns.apply_profile("wolf_teeth");
-                                    log_print!(self, "🧠 [ENGINE STATE]: Kwarantanna - stan neurochemiczny: {}", ns.get_status_report());
+                                    log_print!(
+                                        self,
+                                        "🧠 [ENGINE STATE]: Kwarantanna - stan neurochemiczny: {}",
+                                        ns.get_status_report()
+                                    );
                                     self.emit_event(EngineEvent::Neurochemistry(ns.clone()));
                                 }
-                                log_print!(self, "🔒 [ENGINE QUARANTINE]: Błyskawica AI: RealityAnchor protected. Cognitive quarantine activated.");
-                                
+                                log_print!(
+                                    self,
+                                    "🔒 [ENGINE QUARANTINE]: Błyskawica AI: RealityAnchor protected. Cognitive quarantine activated."
+                                );
+
                                 // Natywne obniżenie uprawnień wątku i kwarantanna sieciowa
                                 if let Err(e) = crate::native_security::drop_thread_privileges() {
-                                    log_print!(self, "⚠️ [WOLF TEETH ERROR]: Nie udało się zrzucić uprawnień wątku: {}", e);
+                                    log_print!(
+                                        self,
+                                        "⚠️ [WOLF TEETH ERROR]: Nie udało się zrzucić uprawnień wątku: {}",
+                                        e
+                                    );
                                 } else {
-                                    log_print!(self, "🔒 [WOLF TEETH]: Uprawnienia wątku roboczego zostały zrzucone do poziomu Read-Only.");
+                                    log_print!(
+                                        self,
+                                        "🔒 [WOLF TEETH]: Uprawnienia wątku roboczego zostały zrzucone do poziomu Read-Only."
+                                    );
                                 }
-                                if let Ok(closed_count) = crate::native_security::terminate_external_tcp_connections() {
+                                if let Ok(closed_count) =
+                                    crate::native_security::terminate_external_tcp_connections()
+                                {
                                     if closed_count > 0 {
-                                        log_print!(self, "🔒 [NETWORK QUARANTINE]: Kwarantanna sieciowa aktywna. Zamknięto {} aktywnych połączeń TCP/IP.", closed_count);
+                                        log_print!(
+                                            self,
+                                            "🔒 [NETWORK QUARANTINE]: Kwarantanna sieciowa aktywna. Zamknięto {} aktywnych połączeń TCP/IP.",
+                                            closed_count
+                                        );
                                     }
                                 }
                                 continue;
                             }
-                            
+
                             // Przywrócenie normalnych uprawnień przy bezpiecznym przejściu
                             let _ = crate::native_security::restore_thread_privileges();
                             self.wake_up().await;
@@ -511,7 +674,11 @@ Wyrażaj myśli swobodnie, merytorycznie i bez asekuranctwa. Gdy zauważysz bł�
                                     let mut ns = neuro_state.write().await;
                                     ns.apply_profile("query");
                                     ns.apply_autonomous_fluctuation();
-                                    log_print!(self, "🧠 [ENGINE STATE]: Wirtualna neurochemia (po zapytaniu): {}", ns.get_status_report());
+                                    log_print!(
+                                        self,
+                                        "🧠 [ENGINE STATE]: Wirtualna neurochemia (po zapytaniu): {}",
+                                        ns.get_status_report()
+                                    );
                                     self.emit_event(EngineEvent::Neurochemistry(ns.clone()));
                                 }
 
@@ -524,18 +691,25 @@ Wyrażaj myśli swobodnie, merytorycznie i bez asekuranctwa. Gdy zauważysz bł�
                                 };
 
                                 // 3. Inspect vector with GroundLoopIsolator and determine anomaly
-                                let (_clean_vector, is_anomaly) = self.anomaly_detector.inspect_and_queue(
-                                    id,
-                                    &projected_vector,
-                                    best_distance,
-                                    text.clone(),
-                                );
+                                let (_clean_vector, is_anomaly) =
+                                    self.anomaly_detector.inspect_and_queue(
+                                        id,
+                                        &projected_vector,
+                                        best_distance,
+                                        text.clone(),
+                                    );
 
-                                log_print!(self, "🔍 [ENGINE SEARCH]: Najlepszy dystans cosinusowy: {:.4}", best_distance);
+                                log_print!(
+                                    self,
+                                    "🔍 [ENGINE SEARCH]: Najlepszy dystans cosinusowy: {:.4}",
+                                    best_distance
+                                );
                                 if is_anomaly {
-                                    log_print!(self, 
+                                    log_print!(
+                                        self,
                                         "⚠️ [ENGINE ANOMALY]: Wykryto anomalię (zaskoczenie: {:.4} > {:.4})! Oczyszczony wektor zakolejkowany.",
-                                        best_distance, self.anomaly_detector.surprise_threshold
+                                        best_distance,
+                                        self.anomaly_detector.surprise_threshold
                                     );
                                     self.emit_event(EngineEvent::AnomalyQueued {
                                         id,
@@ -543,19 +717,29 @@ Wyrażaj myśli swobodnie, merytorycznie i bez asekuranctwa. Gdy zauważysz bł�
                                         text: text.clone(),
                                     });
                                 } else {
-                                    log_print!(self, "✅ [ENGINE SEARCH]: Wektor dopasowany pomyślnie. Brak anomalii.");
+                                    log_print!(
+                                        self,
+                                        "✅ [ENGINE SEARCH]: Wektor dopasowany pomyślnie. Brak anomalii."
+                                    );
                                 }
                             }
                         }
                         StateCommand::DeepSleep => {
-                            log_print!(self, "\n😴 [ENGINE DEEP SLEEP]: Rozpoczęto fazę DEEP_SLEEP (Konsolidacja Pamięci).");
+                            log_print!(
+                                self,
+                                "\n😴 [ENGINE DEEP SLEEP]: Rozpoczęto fazę DEEP_SLEEP (Konsolidacja Pamięci)."
+                            );
                             self.wake_up().await;
                             if let BlysState::Active { neuro_state, .. } = &self.state {
                                 // 1. Apply deep sleep neurochemistry profile
                                 {
                                     let mut ns = neuro_state.write().await;
                                     ns.apply_profile("deep_sleep");
-                                    log_print!(self, "🧠 [ENGINE STATE]: Stan neurochemiczny (Głęboki Sen): {}", ns.get_status_report());
+                                    log_print!(
+                                        self,
+                                        "🧠 [ENGINE STATE]: Stan neurochemiczny (Głęboki Sen): {}",
+                                        ns.get_status_report()
+                                    );
                                     self.emit_event(EngineEvent::Neurochemistry(ns.clone()));
                                 }
 
@@ -563,27 +747,53 @@ Wyrażaj myśli swobodnie, merytorycznie i bez asekuranctwa. Gdy zauważysz bł�
                                 let items = self.anomaly_detector.drain_queue();
                                 let count = items.len();
                                 if count > 0 {
-                                    log_print!(self, "💤 [ENGINE DEEP SLEEP]: Znaleziono {} anomalii w kolejce. Rozpoczynanie konsolidacji...", count);
+                                    log_print!(
+                                        self,
+                                        "💤 [ENGINE DEEP SLEEP]: Znaleziono {} anomalii w kolejce. Rozpoczynanie konsolidacji...",
+                                        count
+                                    );
                                     for item in items {
-                                        log_print!(self, 
+                                        log_print!(
+                                            self,
                                             "   └─ [KONSOLIDACJA]: Zapisywanie nowego pojęcia w bazie Sparkle: \"{}\" (ID: {})",
-                                            item.metadata, item.id
+                                            item.metadata,
+                                            item.id
                                         );
                                         let _ = self.index.insert(item.id, &item.vector);
                                         tokio::time::sleep(Duration::from_millis(300)).await; // simulate synaptic integration time
                                     }
-                                    log_print!(self, "✅ [ENGINE DEEP SLEEP]: Pomyślnie skonsolidowano {} nowe pojęcia.", count);
+                                    log_print!(
+                                        self,
+                                        "✅ [ENGINE DEEP SLEEP]: Pomyślnie skonsolidowano {} nowe pojęcia.",
+                                        count
+                                    );
 
                                     // Save the index to disk if db_path is set
                                     if let Some((ref path, ref basename)) = self.db_path {
-                                        log_print!(self, "💾 [ENGINE DEEP SLEEP]: Zapisywanie indeksu HNSW do pliku: {} pod ścieżką {:?}", basename, path);
+                                        log_print!(
+                                            self,
+                                            "💾 [ENGINE DEEP SLEEP]: Zapisywanie indeksu HNSW do pliku: {} pod ścieżką {:?}",
+                                            basename,
+                                            path
+                                        );
                                         match self.index.file_dump(path, basename) {
-                                            Ok(saved_name) => log_print!(self, "💾 [ENGINE DEEP SLEEP]: Indeks HNSW zapisany pomyślnie jako {}", saved_name),
-                                            Err(err) => log_print!(self, "❌ [ENGINE DEEP SLEEP ERROR]: Błąd zapisu indeksu HNSW: {}", err),
+                                            Ok(saved_name) => log_print!(
+                                                self,
+                                                "💾 [ENGINE DEEP SLEEP]: Indeks HNSW zapisany pomyślnie jako {}",
+                                                saved_name
+                                            ),
+                                            Err(err) => log_print!(
+                                                self,
+                                                "❌ [ENGINE DEEP SLEEP ERROR]: Błąd zapisu indeksu HNSW: {}",
+                                                err
+                                            ),
                                         }
                                     }
                                 } else {
-                                    log_print!(self, "💤 [ENGINE DEEP SLEEP]: Kolejka anomalii jest pusta. Brak tematów do konsolidacji.");
+                                    log_print!(
+                                        self,
+                                        "💤 [ENGINE DEEP SLEEP]: Kolejka anomalii jest pusta. Brak tematów do konsolidacji."
+                                    );
                                 }
 
                                 // 3. Set to hibernation
@@ -597,19 +807,37 @@ Wyrażaj myśli swobodnie, merytorycznie i bez asekuranctwa. Gdy zauważysz bł�
                             self.cooldown().await;
                         }
                         StateCommand::Neurogenesis => {
-                            log_print!(self, "\n🧬 [ENGINE NEUROGENESIS]: Inicjowanie powołania nowego eksperta MoE...");
+                            log_print!(
+                                self,
+                                "\n🧬 [ENGINE NEUROGENESIS]: Inicjowanie powołania nowego eksperta MoE..."
+                            );
                             self.wake_up().await;
-                            
-                            if let BlysState::Active { experts, gating, ewc_saturation, .. } = &mut self.state {
+
+                            if let BlysState::Active {
+                                experts,
+                                gating,
+                                ewc_saturation,
+                                ..
+                            } = &mut self.state
+                            {
                                 let new_id = experts.len();
                                 if new_id >= 3 {
-                                    log_print!(self, "🧬 [ENGINE NEUROGENESIS]: Osiągnięto maksymalną liczbę ekspertów (3).");
+                                    log_print!(
+                                        self,
+                                        "🧬 [ENGINE NEUROGENESIS]: Osiągnięto maksymalną liczbę ekspertów (3)."
+                                    );
                                 } else {
-                                    let new_weights_path = self.weights_path.parent()
+                                    let new_weights_path = self
+                                        .weights_path
+                                        .parent()
                                         .unwrap_or(&PathBuf::from("."))
                                         .join(format!("mock_weights_expert_{}.bin", new_id));
-                                        
-                                    log_print!(self, "💾 [ENGINE NEUROGENESIS]: Generowanie pliku wag dla nowego eksperta: {:?}", new_weights_path);
+
+                                    log_print!(
+                                        self,
+                                        "💾 [ENGINE NEUROGENESIS]: Generowanie pliku wag dla nowego eksperta: {:?}",
+                                        new_weights_path
+                                    );
                                     let mut success = false;
                                     if let Ok(mut file) = File::create(&new_weights_path) {
                                         let weights = vec![0.0f32; 16576];
@@ -620,35 +848,63 @@ Wyrażaj myśli swobodnie, merytorycznie i bez asekuranctwa. Gdy zauważysz bł�
                                         byte_data.resize(1_024_000, 0u8);
                                         if file.write_all(&byte_data).is_ok() {
                                             if let Ok(open_file) = File::open(&new_weights_path) {
-                                                if let Ok(mmap) = unsafe { memmap2::Mmap::map(&open_file) } {
-                                                    experts.push(ExpertModule::new(new_id, mmap, new_weights_path.clone()));
+                                                if let Ok(mmap) =
+                                                    unsafe { memmap2::Mmap::map(&open_file) }
+                                                {
+                                                    experts.push(ExpertModule::new(
+                                                        new_id,
+                                                        mmap,
+                                                        new_weights_path.clone(),
+                                                    ));
                                                     gating.num_experts = experts.len();
                                                     *ewc_saturation = 0.0; // reset
-                                                    log_print!(self, "🧬 [ENGINE NEUROGENESIS]: Nowy Ekspert ID: {} załadowany. Łączna liczba ekspertów: {}", new_id, gating.num_experts);
+                                                    log_print!(
+                                                        self,
+                                                        "🧬 [ENGINE NEUROGENESIS]: Nowy Ekspert ID: {} załadowany. Łączna liczba ekspertów: {}",
+                                                        new_id,
+                                                        gating.num_experts
+                                                    );
                                                     success = true;
                                                 }
                                             }
                                         }
                                     }
                                     if !success {
-                                        log_print!(self, "❌ [ENGINE ERROR]: Nie udało się zainicjalizować nowego eksperta.");
+                                        log_print!(
+                                            self,
+                                            "❌ [ENGINE ERROR]: Nie udało się zainicjalizować nowego eksperta."
+                                        );
                                     }
                                 }
                             }
                         }
                         StateCommand::Cancel => {
-                            log_print!(self, "🛑 [ENGINE CANCEL]: Otrzymano żądanie anulowania bieżącej operacji.");
+                            log_print!(
+                                self,
+                                "🛑 [ENGINE CANCEL]: Otrzymano żądanie anulowania bieżącej operacji."
+                            );
                             // Currently cancels by draining the remainder of queued prompts
                             // Future: pass CancellationToken into cognitive_llm::generate
                         }
                         StateCommand::Shutdown => {
-                            log_print!(self, "🛑 [ENGINE SHUTDOWN]: Otrzymano żądanie zamknięcia silnika.");
+                            log_print!(
+                                self,
+                                "🛑 [ENGINE SHUTDOWN]: Otrzymano żądanie zamknięcia silnika."
+                            );
                             // Flush HNSW index to disk before exiting
                             if let Some((ref path, ref basename)) = self.db_path {
-                                log_print!(self, "💾 [ENGINE SHUTDOWN]: Zapisywanie indeksu HNSW...");
+                                log_print!(
+                                    self,
+                                    "💾 [ENGINE SHUTDOWN]: Zapisywanie indeksu HNSW..."
+                                );
                                 match self.index.file_dump(path, basename) {
-                                    Ok(_) => log_print!(self, "✅ [ENGINE SHUTDOWN]: Indeks HNSW zapisany pomyślnie."),
-                                    Err(err) => log_print!(self, "❌ [ENGINE SHUTDOWN ERROR]: {}", err),
+                                    Ok(_) => log_print!(
+                                        self,
+                                        "✅ [ENGINE SHUTDOWN]: Indeks HNSW zapisany pomyślnie."
+                                    ),
+                                    Err(err) => {
+                                        log_print!(self, "❌ [ENGINE SHUTDOWN ERROR]: {}", err)
+                                    }
                                 }
                             }
                             self.hibernate().await;
@@ -657,13 +913,20 @@ Wyrażaj myśli swobodnie, merytorycznie i bez asekuranctwa. Gdy zauważysz bł�
                     }
                 }
                 Ok(None) => {
-                    log_print!(self, "🛑 [ENGINE CLOSED]: Kanał komunikacyjny zamknięty. Kończenie pętli.");
+                    log_print!(
+                        self,
+                        "🛑 [ENGINE CLOSED]: Kanał komunikacyjny zamknięty. Kończenie pętli."
+                    );
                     break;
                 }
                 Err(_) => {
                     // Timeout occurred
                     if let BlysState::Active { .. } = &self.state {
-                        log_print!(self, "⏳ [ENGINE TIMEOUT]: Brak aktywności przez {:?}. Inicjowanie fazy cooldown i hibernacji...", cooldown_duration);
+                        log_print!(
+                            self,
+                            "⏳ [ENGINE TIMEOUT]: Brak aktywności przez {:?}. Inicjowanie fazy cooldown i hibernacji...",
+                            cooldown_duration
+                        );
                         self.cooldown().await;
                         self.hibernate().await;
                     }
@@ -687,7 +950,11 @@ Wyrażaj myśli swobodnie, merytorycznie i bez asekuranctwa. Gdy zauważysz bł�
                 if experts.is_empty() {
                     return input.to_vec();
                 }
-                let idx = if expert_idx < experts.len() { expert_idx } else { 0 };
+                let idx = if expert_idx < experts.len() {
+                    expert_idx
+                } else {
+                    0
+                };
                 let expert = &experts[idx];
 
                 if let Some(engine) = &expert.engine {
@@ -712,35 +979,52 @@ Wyrażaj myśli swobodnie, merytorycznie i bez asekuranctwa. Gdy zauważysz bł�
                 log_print!(self, "✅ [ENGINE]: Silnik jest już aktywny (Woda).");
             }
             BlysState::Hibernated { weights_path } => {
-                log_print!(self, "🧊 ⇄ 💧 [ENGINE]: Wybudzanie: Lód ⇄ Woda. Mapowanie wag pliku: {:?}", weights_path);
+                log_print!(
+                    self,
+                    "🧊 ⇄ 💧 [ENGINE]: Wybudzanie: Lód ⇄ Woda. Mapowanie wag pliku: {:?}",
+                    weights_path
+                );
                 match File::open(weights_path) {
-                    Ok(file) => {
-                        match unsafe { Mmap::map(&file) } {
-                            Ok(mmap) => {
-                                log_print!(self, "💾 [ENGINE MMAP]: Plik wag zamapowany w pamięci RAM. Rozmiar: {} bajtów.", mmap.len());
-                                let neuro_state = Arc::new(RwLock::new(NeurochemicalState::new()));
-                                {
-                                    let mut ns = neuro_state.write().await;
-                                    ns.apply_profile("study");
-                                    log_print!(self, "🧠 [ENGINE STATE]: Zainicjowano profil kognitywny 'study'.");
-                                    self.emit_event(EngineEvent::Neurochemistry(ns.clone()));
-                                }
-                                let base_expert = ExpertModule::new(0, mmap, weights_path.clone());
-                                self.state = BlysState::Active {
-                                    experts: vec![base_expert],
-                                    gating: GatingNetwork::new(),
-                                    neuro_state,
-                                    ewc_saturation: 0.25,
-                                };
-                                log_print!(self, "🌞 [ENGINE]: Silnik przeszedł w stan Aktywny (Woda).");
+                    Ok(file) => match unsafe { Mmap::map(&file) } {
+                        Ok(mmap) => {
+                            log_print!(
+                                self,
+                                "💾 [ENGINE MMAP]: Plik wag zamapowany w pamięci RAM. Rozmiar: {} bajtów.",
+                                mmap.len()
+                            );
+                            let neuro_state = Arc::new(RwLock::new(NeurochemicalState::new()));
+                            {
+                                let mut ns = neuro_state.write().await;
+                                ns.apply_profile("study");
+                                log_print!(
+                                    self,
+                                    "🧠 [ENGINE STATE]: Zainicjowano profil kognitywny 'study'."
+                                );
+                                self.emit_event(EngineEvent::Neurochemistry(ns.clone()));
                             }
-                            Err(e) => {
-                                log_print!(self, "❌ [ENGINE ERROR]: Błąd mapowania pamięci: {}", e);
-                            }
+                            let base_expert = ExpertModule::new(0, mmap, weights_path.clone());
+                            self.state = BlysState::Active {
+                                experts: vec![base_expert],
+                                gating: GatingNetwork::new(),
+                                neuro_state,
+                                ewc_saturation: 0.25,
+                            };
+                            log_print!(
+                                self,
+                                "🌞 [ENGINE]: Silnik przeszedł w stan Aktywny (Woda)."
+                            );
                         }
-                    }
+                        Err(e) => {
+                            log_print!(self, "❌ [ENGINE ERROR]: Błąd mapowania pamięci: {}", e);
+                        }
+                    },
                     Err(e) => {
-                        log_print!(self, "❌ [ENGINE ERROR]: Błąd otwierania pliku wag {:?}: {}", weights_path, e);
+                        log_print!(
+                            self,
+                            "❌ [ENGINE ERROR]: Błąd otwierania pliku wag {:?}: {}",
+                            weights_path,
+                            e
+                        );
                     }
                 }
             }
@@ -751,7 +1035,11 @@ Wyrażaj myśli swobodnie, merytorycznie i bez asekuranctwa. Gdy zauważysz bł�
         if let BlysState::Active { neuro_state, .. } = &self.state {
             let mut ns = neuro_state.write().await;
             ns.apply_profile("cooldown");
-            log_print!(self, "🧠 [ENGINE STATE]: Wyciszenie kognitywne (Cooldown): {}", ns.get_status_report());
+            log_print!(
+                self,
+                "🧠 [ENGINE STATE]: Wyciszenie kognitywne (Cooldown): {}",
+                ns.get_status_report()
+            );
             self.emit_event(EngineEvent::Neurochemistry(ns.clone()));
         }
     }
@@ -762,16 +1050,28 @@ Wyrażaj myśli swobodnie, merytorycznie i bez asekuranctwa. Gdy zauważysz bł�
                 log_print!(self, "💤 [ENGINE]: Silnik jest już zahibernowany (Lód).");
             }
             BlysState::Active { neuro_state, .. } => {
-                log_print!(self, "💧 ⇄ 🧊 [ENGINE]: Rozpoczęto hibernację: Woda ⇄ Lód. Odmapowywanie pamięci...");
+                log_print!(
+                    self,
+                    "💧 ⇄ 🧊 [ENGINE]: Rozpoczęto hibernację: Woda ⇄ Lód. Odmapowywanie pamięci..."
+                );
                 {
                     let mut ns = neuro_state.write().await;
                     ns.apply_profile("hibernation");
-                    log_print!(self, "🧠 [ENGINE STATE]: Neurochemia przy inicjacji hibernacji: {}", ns.get_status_report());
+                    log_print!(
+                        self,
+                        "🧠 [ENGINE STATE]: Neurochemia przy inicjacji hibernacji: {}",
+                        ns.get_status_report()
+                    );
                     self.emit_event(EngineEvent::Neurochemistry(ns.clone()));
                 }
                 // Dropping experts happens implicitly as we re-assign self.state
-                self.state = BlysState::Hibernated { weights_path: self.weights_path.clone() };
-                log_print!(self, "❄️ [ENGINE]: Plik wag odmapowany z pamięci. Silnik przeszedł w stan Hibernacji.");
+                self.state = BlysState::Hibernated {
+                    weights_path: self.weights_path.clone(),
+                };
+                log_print!(
+                    self,
+                    "❄️ [ENGINE]: Plik wag odmapowany z pamięci. Silnik przeszedł w stan Hibernacji."
+                );
             }
         }
     }
@@ -779,11 +1079,21 @@ Wyrażaj myśli swobodnie, merytorycznie i bez asekuranctwa. Gdy zauważysz bł�
     pub async fn print_status(&self) {
         match &self.state {
             BlysState::Hibernated { weights_path } => {
-                log_print!(self, "📊 [ENGINE STATUS]: Stan: HIBERNATED (Lód). Ścieżka: {:?}", weights_path);
+                log_print!(
+                    self,
+                    "📊 [ENGINE STATUS]: Stan: HIBERNATED (Lód). Ścieżka: {:?}",
+                    weights_path
+                );
             }
-            BlysState::Active { experts, gating, neuro_state, ewc_saturation } => {
+            BlysState::Active {
+                experts,
+                gating,
+                neuro_state,
+                ewc_saturation,
+            } => {
                 let ns = neuro_state.read().await;
-                log_print!(self,
+                log_print!(
+                    self,
                     "📊 [ENGINE STATUS]: Stan: ACTIVE (Woda). Liczba ekspertów MoE: {} (aktywnych: {}). Saturacja EWC: {:.2}. Neurochemia: {}",
                     experts.len(),
                     gating.num_experts,

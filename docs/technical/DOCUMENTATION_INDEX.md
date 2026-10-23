@@ -35,7 +35,7 @@ This document provides a comprehensive, verified catalogue of all documentation 
 | **Phase 7** | Deep Cognition | PINN thermal engine, Diamond Yant cymatics, neurochemistry, CRA engine | ✅ Complete | [Phase 7 Deep Cognition](../phases/phase7_deep_cognition/README.md) |
 | **Phase 8** | System Hardening & Defense | Wolf Teeth immune shield, single-shell Tauri ADR, Nethical 25 laws | ✅ Complete | [Phase 8 Hardening & Security](../phases/phase8_hardening_security/README.md) |
 | **Phase 9** | Hyper-Synthesis v4.0 | 625-node matrix, GR geodesic solver, EBM climate, Lava compiler, KEGG | ✅ Complete | [Phase 9 Hyper-Synthesis](../phases/phase9_hyper_synthesis/README.md) |
-| **Phase V10** | SPARKLE Desktop Shell | Full standalone offline AI (Rust Candle SLM in Tauri v2, SQLite vault) | ✅ Complete | [Phase V10 Standalone Shell](../phases/v10_standalone_shell/README.md) |
+| **Phase V10** | SPARKLE Desktop Shell | Historical Rust/Tauri phase; standalone-runtime remediation and release gates remain active | 🧭 Remediation active | [Phase V10 Standalone Shell](../phases/v10_standalone_shell/README.md) |
 
 ---
 
@@ -86,6 +86,8 @@ This document provides a comprehensive, verified catalogue of all documentation 
 - **[Nethical Extension](../../extensions/nethical-recon/docs/FUNDAMENTAL_LAWS.md)** — Formal mathematical proofs, OpenAPI v1 schema, and ethical audit gates.
 - **[ADR 0001: Single Shell Decision](../adr/0001-single-shell-decision.md)** — Architectural decision record establishing Rust Tauri v2 as the canonical desktop shell.
 - **[Data Governance Policy](../DATA_GOVERNANCE.md)** — Offline data sovereignty and local retention standards.
+- **[SPARKLE Data Model & Retention Contract](DATA_MODEL_RETENTION_CONTRACT.md)** — Runtime storage classes, current protection limits, and PRIV-01 gates.
+- **[Online Connector Contract](ONLINE_CONNECTOR_CONTRACT.md)** — Offline-by-default connector registry, session consent, and ONL-01 limits.
 - **[SQL Security Summary](../summaries/SQL_SECURITY_SUMMARY.md)** — Database query parameterization and data protection.
 
 ---
@@ -99,8 +101,9 @@ This document provides a comprehensive, verified catalogue of all documentation 
 
 ## 🗺️ Roadmaps, Strategy & Next-Gen Evolution (`docs/roadmaps/`)
 
-- **[ROADMAP V11 NEXT-GEN (Official Roadmap)](../roadmaps/ROADMAP_V11_NEXTGEN.md)** — The active development path: WebGPU dynamic spores, BCI alpha-wave cymatics loop, sleep EWC consolidation, and Z3 formal Nethical gateway.
-- **[Roadmap Status Audit (V10 Update)](../roadmaps/roadmapstatus.md)** — Verified status audit across all roadmap milestones.
+- **[Active remediation plan](../planning/2026-10-development-plan.md)** — Source of truth for P0/P1 closure, release criteria, and the V11 gate.
+- **[ROADMAP V11 NEXT-GEN](../roadmaps/ROADMAP_V11_NEXTGEN.md)** — Historical direction for WebGPU, BCI, EWC, and Z3; not active before the remediation plan closes P0 and P1.
+- **[Roadmap Status Audit (V10 Update)](../roadmaps/roadmapstatus.md)** — Historical milestone snapshot; not release evidence.
 - **[Roadmap V9 Hybrid Core](../roadmaps/roadmap_V9.md)** — Development plan for hybrid core and offline autonomy.
 - **[Advanced Roadmap](../roadmaps/advanced_roadmap.md)** — Long-term research horizons.
 - **[Conscious Roadmap](../roadmaps/roadmap_conscious.md)** — Philosophical and psychological architecture trajectory.
@@ -113,5 +116,5 @@ This document provides a comprehensive, verified catalogue of all documentation 
 
 - **Getting Started as a User**: [README.md](../../README.md) → [QUICKSTART.md](../../QUICKSTART.md) → [Master Hub](../README.md)
 - **Developer / Contributor**: [CONTRIBUTING.md](../../CONTRIBUTING.md) → [ARCHITECTURE.md](../../ARCHITECTURE.md) → [Testing Guide](../testing/TESTING_GUIDE.md)
-- **ML Researcher**: [Training Guide](../training/TRAINING_GUIDE.md) → [Phase 6 Evaluation](../phases/phase6_evaluation/README.md) → [Roadmap V11](../roadmaps/ROADMAP_V11_NEXTGEN.md)
+- **ML Researcher**: [Training Guide](../training/TRAINING_GUIDE.md) → [Phase 6 Evaluation](../phases/phase6_evaluation/README.md) → [Active Remediation Plan](../planning/2026-10-development-plan.md)
 - **Security Auditor**: [SECURITY.md](../../SECURITY.md) → [Ethics Framework](../ethics/ethicsframework.md) → [Phase 8 Hardening](../phases/phase8_hardening_security/README.md)

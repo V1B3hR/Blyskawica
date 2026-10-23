@@ -59,7 +59,8 @@ impl ShadowBoard {
             permission_level: 1,
             semantic_category: "memory".to_string(),
             status: ShadowStatus::Hanging {
-                checksum_sha256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855".to_string(),
+                checksum_sha256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                    .to_string(),
                 file_path: "builtin://vector_search".to_string(),
                 execution_count: 0,
             },
@@ -91,7 +92,9 @@ impl ShadowBoard {
         self.register_shadow(ToolShadow {
             id: "pdf_deep_extractor".to_string(),
             name: "Ekstraktor Dokumentów PDF".to_string(),
-            description: "Pusty Cień: Narzędzie do parsowania i ekstrakcji układu dokumentów technicznych".to_string(),
+            description:
+                "Pusty Cień: Narzędzie do parsowania i ekstrakcji układu dokumentów technicznych"
+                    .to_string(),
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": { "path": { "type": "string" } },
@@ -105,14 +108,18 @@ impl ShadowBoard {
             semantic_category: "documents".to_string(),
             status: ShadowStatus::EmptySilhouette {
                 requested_times: 0,
-                missing_capabilities: vec!["pdf_page_parser".to_string(), "layout_analyzer".to_string()],
+                missing_capabilities: vec![
+                    "pdf_page_parser".to_string(),
+                    "layout_analyzer".to_string(),
+                ],
             },
         });
 
         self.register_shadow(ToolShadow {
             id: "web_graph_crawler".to_string(),
             name: "Asynchroniczny Pająk Grafów Wiedzy".to_string(),
-            description: "Pusty Cień: Narzędzie do badania topologii odnośników w sandboxie".to_string(),
+            description: "Pusty Cień: Narzędzie do badania topologii odnośników w sandboxie"
+                .to_string(),
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": { "url": { "type": "string" }, "max_depth": { "type": "integer" } },
@@ -143,7 +150,12 @@ impl ShadowBoard {
         self.tools.values().cloned().collect()
     }
 
-    pub fn hang_forged_tool(&mut self, id: &str, file_path: &str, checksum_sha256: &str) -> Result<(), String> {
+    pub fn hang_forged_tool(
+        &mut self,
+        id: &str,
+        file_path: &str,
+        checksum_sha256: &str,
+    ) -> Result<(), String> {
         if let Some(tool) = self.tools.get_mut(id) {
             tool.status = ShadowStatus::Hanging {
                 checksum_sha256: checksum_sha256.to_string(),
@@ -158,7 +170,11 @@ impl ShadowBoard {
 
     pub fn request_silhouette(&mut self, id: &str) {
         if let Some(tool) = self.tools.get_mut(id) {
-            if let ShadowStatus::EmptySilhouette { ref mut requested_times, .. } = tool.status {
+            if let ShadowStatus::EmptySilhouette {
+                ref mut requested_times,
+                ..
+            } = tool.status
+            {
                 *requested_times += 1;
             }
         }
@@ -187,11 +203,13 @@ impl TheAnvil {
 
         // Test podstawowych reguł bezpieczeństwa kodu (Statyczna analiza kowadła)
         if code.contains("format C:") || code.contains("Remove-Item -Recurse C:\\Windows") {
-            return Err("KOWADŁO ODRZUCIŁO KOD: Wykryto destrukcyjne instrukcje systemowe.".to_string());
+            return Err(
+                "KOWADŁO ODRZUCIŁO KOD: Wykryto destrukcyjne instrukcje systemowe.".to_string(),
+            );
         }
 
         let checksum = Self::compute_tool_hash(code);
-        
+
         // Zapis do bezpiecznego bufora w kuźni
         println!(
             "🔨 [Kowadło Kuźni]: Narzędzie '{}' pomyślnie zahartowane! Pieczęć SHA-256: {}",
@@ -211,10 +229,12 @@ mod tests {
         let board = ShadowBoard::new();
         assert!(board.tools.contains_key("vector_search"));
         assert!(board.tools.contains_key("pdf_deep_extractor"));
-        
+
         let pdf_shadow = board.get_tool("pdf_deep_extractor").unwrap();
         match &pdf_shadow.status {
-            ShadowStatus::EmptySilhouette { requested_times, .. } => {
+            ShadowStatus::EmptySilhouette {
+                requested_times, ..
+            } => {
                 assert_eq!(*requested_times, 0);
             }
             _ => panic!("Oczekiwano pustego cienia dla pdf_deep_extractor"),
@@ -228,21 +248,27 @@ mod tests {
             def extract_pdf_layout(path):
                 return {"pages": [1, 2], "metadata": {"status": "ok"}}
         "#;
-        
+
         let checksum = TheAnvil::temper_tool(
             "pdf_deep_extractor",
             code,
             &serde_json::json!({"path": "test.pdf"}),
-        ).expect("Hartowanie powinno się udać");
+        )
+        .expect("Hartowanie powinno się udać");
 
         assert_eq!(checksum.len(), 64);
 
-        board.hang_forged_tool("pdf_deep_extractor", "tools/pdf_extractor.py", &checksum)
+        board
+            .hang_forged_tool("pdf_deep_extractor", "tools/pdf_extractor.py", &checksum)
             .expect("Zawieszenie na cieniu powinno się udać");
 
         let tool = board.get_tool("pdf_deep_extractor").unwrap();
         match &tool.status {
-            ShadowStatus::Hanging { checksum_sha256, file_path, .. } => {
+            ShadowStatus::Hanging {
+                checksum_sha256,
+                file_path,
+                ..
+            } => {
                 assert_eq!(checksum_sha256, &checksum);
                 assert_eq!(file_path, "tools/pdf_extractor.py");
             }

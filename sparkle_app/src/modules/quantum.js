@@ -104,18 +104,29 @@ export async function refreshShadowBoard(addLogFn) {
   if (!shadowGrid) return;
   try {
     const board = await invoke("get_shadow_board");
-    if (!board || !board.tools) return;
+    if (!Array.isArray(board)) {
+      throw new Error("Nieprawidłowy format Tablicy Cieni.");
+    }
 
     shadowGrid.replaceChildren();
 
-    Object.entries(board.tools).forEach(([toolId, tool]) => {
+    board.forEach((tool) => {
+      const toolId = tool.id;
+      if (typeof toolId !== "string" || toolId.length === 0) return;
+
       const card = document.createElement("div");
       const isHanging = tool.status && tool.status.Hanging;
       card.style = `background: rgba(15, 23, 42, 0.8); border: 1px solid ${isHanging ? '#10b981' : '#b82eff'}; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 6px;`;
 
       const header = document.createElement("div");
       header.style = "display: flex; justify-content: space-between; align-items: center;";
-      header.innerHTML = `<strong style="color: #00f0ff; font-size: 13px;">${toolId}</strong> <span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: ${isHanging ? 'rgba(16, 185, 129, 0.2)' : 'rgba(184, 46, 255, 0.2)'}; color: ${isHanging ? '#6ee7b7' : '#f0abfc'};">${isHanging ? 'WISZĄCE (WYKUTE)' : 'PUSTY CIEŃ'}</span>`;
+      const toolName = document.createElement("strong");
+      toolName.style = "color: #00f0ff; font-size: 13px;";
+      toolName.textContent = toolId;
+      const toolStatus = document.createElement("span");
+      toolStatus.style = `font-size: 11px; padding: 2px 6px; border-radius: 4px; background: ${isHanging ? 'rgba(16, 185, 129, 0.2)' : 'rgba(184, 46, 255, 0.2)'}; color: ${isHanging ? '#6ee7b7' : '#f0abfc'};`;
+      toolStatus.textContent = isHanging ? "WISZĄCE (WYKUTE)" : "PUSTY CIEŃ";
+      header.append(toolName, toolStatus);
 
       const desc = document.createElement("p");
       desc.style = "font-size: 11px; color: var(--text-secondary); margin: 0;";
@@ -129,6 +140,10 @@ export async function refreshShadowBoard(addLogFn) {
       btnForge.textContent = isHanging ? "Przekuj na Kowadle" : "Wykuj na Kowadle";
       btnForge.style = "font-size: 11px; padding: 4px 8px;";
       btnForge.onclick = async () => {
+        if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(toolId)) {
+          if (addLogFn) addLogFn("❌ [Kowadło]: Odrzucono nieprawidłowy identyfikator narzędzia.");
+          return;
+        }
         if (addLogFn) addLogFn(`🔨 [Kowadło Kognitywne]: Rozpoczęcie hartowania narzędzia '${toolId}'...`);
         try {
           const sampleCode = `def ${toolId}_execute(params):\n    return {"status": "ok", "result": "Natywne wykonanie narzędzia na kowadle cieni"}`;

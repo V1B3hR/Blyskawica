@@ -1,7 +1,7 @@
+use blyskawica_core::cognitive_llm::{CognitiveLlmEngine, GenerationParams};
 use std::fs::File;
 use std::io::{self, Write};
 use std::path::PathBuf;
-use blyskawica_core::cognitive_llm::{CognitiveLlmEngine, GenerationParams};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("================================================================================");
@@ -57,7 +57,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         std::process::exit(1);
     }
 
-    println!("\n[1/3] Ładowanie silnika Candle i wag modelu Qwen GGUF ({:?})...", model_path.file_name().unwrap_or_default());
+    println!(
+        "\n[1/3] Ładowanie silnika Candle i wag modelu Qwen GGUF ({:?})...",
+        model_path.file_name().unwrap_or_default()
+    );
     let mut engine = match CognitiveLlmEngine::new(&model_path, &tokenizer_path) {
         Ok(e) => {
             println!("✅ Model GGUF i tokenizator załadowane pomyślnie.");
@@ -95,7 +98,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         full_response.push_str(token);
     });
 
-    println!("\n\n--------------------------------------------------------------------------------");
+    println!(
+        "\n\n--------------------------------------------------------------------------------"
+    );
     match res {
         Ok(_) => {
             let out_file = std::env::var("BLYSKAWICA_VERDICT_PATH")

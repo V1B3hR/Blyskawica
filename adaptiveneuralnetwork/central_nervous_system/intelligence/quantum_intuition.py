@@ -33,15 +33,22 @@ logger = logging.getLogger(__name__)
 # Importy kwantowe z graceful fallback
 try:
     from qiskit import QuantumCircuit  # type: ignore[import-not-found,import-untyped]
-    from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager  # type: ignore[import-not-found,import-untyped]
-    from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2 as Sampler  # type: ignore[import-not-found,import-untyped]
+    from qiskit.transpiler.preset_passmanagers import (
+        generate_preset_pass_manager,  # type: ignore[import-not-found,import-untyped]
+    )
+    from qiskit_ibm_runtime import (  # type: ignore[import-not-found,import-untyped]
+        QiskitRuntimeService,
+        SamplerV2 as Sampler,
+    )
     _QUANTUM_AVAILABLE = True
 except ImportError:
     _QUANTUM_AVAILABLE = False
     logger.warning("[QuantumIntuition] Qiskit niedostępny — tryb klasyczny.")
 
 try:
-    from qiskit_aer.primitives import SamplerV2 as AerSampler  # type: ignore[import-not-found,import-untyped]
+    from qiskit_aer.primitives import (
+        SamplerV2 as AerSampler,  # type: ignore[import-not-found,import-untyped]
+    )
     _AER_AVAILABLE = True
 except ImportError:
     _AER_AVAILABLE = False

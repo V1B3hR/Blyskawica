@@ -1,7 +1,7 @@
-use std::fs::File;
-use std::path::Path;
 use candle_core::{Device, Tensor};
 use candle_transformers::models::quantized_qwen2::ModelWeights;
+use std::fs::File;
+use std::path::Path;
 use tokenizers::Tokenizer;
 
 #[derive(Debug, Clone)]
@@ -39,7 +39,10 @@ impl CognitiveLlmEngine {
             return Err(format!("Plik modelu GGUF nie istnieje: {:?}", model_path));
         }
         if !tokenizer_path.exists() {
-            return Err(format!("Plik tokenizatora nie istnieje: {:?}", tokenizer_path));
+            return Err(format!(
+                "Plik tokenizatora nie istnieje: {:?}",
+                tokenizer_path
+            ));
         }
 
         // Weryfikacja spójności pliku GGUF z plikiem .sha256 jeśli istnieje (kryptograficzne SHA-256)
@@ -48,14 +51,16 @@ impl CognitiveLlmEngine {
             if let Ok(raw_hash) = std::fs::read_to_string(&sha256_sidecar) {
                 let expected_hash = raw_hash.trim();
                 if !expected_hash.is_empty() {
+                    use sha2::{Digest, Sha256};
                     use std::io::Read;
-                    use sha2::{Sha256, Digest};
-                    
+
                     let mut hasher = Sha256::new();
                     if let Ok(mut f) = File::open(model_path) {
                         let mut buf = [0u8; 65536];
                         while let Ok(bytes) = f.read(&mut buf) {
-                            if bytes == 0 { break; }
+                            if bytes == 0 {
+                                break;
+                            }
                             hasher.update(&buf[..bytes]);
                         }
                         let actual_hash = format!("{:x}", hasher.finalize());
@@ -76,7 +81,8 @@ impl CognitiveLlmEngine {
             let mut magic = [0u8; 4];
             let mut test_f = File::open(model_path)
                 .map_err(|e| format!("Błąd otwierania pliku modelu: {}", e))?;
-            test_f.read_exact(&mut magic)
+            test_f
+                .read_exact(&mut magic)
                 .map_err(|e| format!("Błąd odczytu nagłówka pliku GGUF: {}", e))?;
             if &magic != b"GGUF" {
                 return Err(format!(
@@ -91,9 +97,9 @@ impl CognitiveLlmEngine {
             .map_err(|e| format!("Błąd ładowania tokenizatora: {}", e))?;
 
         // Ładowanie pliku GGUF
-        let mut file = File::open(model_path)
-            .map_err(|e| format!("Błąd otwierania pliku modelu: {}", e))?;
-        
+        let mut file =
+            File::open(model_path).map_err(|e| format!("Błąd otwierania pliku modelu: {}", e))?;
+
         let reader = candle_core::quantized::gguf_file::Content::read(&mut file)
             .map_err(|e| format!("Błąd odczytu GGUF: {}", e))?;
 
@@ -125,7 +131,12 @@ impl CognitiveLlmEngine {
     }
 
     /// Generuje odpowiedź na zadany prompt z uwzględnieniem neurochemicznych modyfikatorów i strumieniowaniem tokenów.
-    pub fn generate<F>(&mut self, prompt: &str, params: &GenerationParams, callback: F) -> Result<String, String>
+    pub fn generate<F>(
+        &mut self,
+        prompt: &str,
+        params: &GenerationParams,
+        callback: F,
+    ) -> Result<String, String>
     where
         F: FnMut(&str),
     {
@@ -143,12 +154,16 @@ impl CognitiveLlmEngine {
     where
         F: FnMut(&str),
     {
-        let tokens = self.tokenizer.encode(prompt, true)
+        let tokens = self
+            .tokenizer
+            .encode(prompt, true)
             .map_err(|e| format!("Błąd tokenizacji: {}", e))?;
         let mut tokens = tokens.get_ids().to_vec();
 
         let mut generated_text = String::new();
-        let eos_token_id = self.tokenizer.token_to_id("<|im_end|>")
+        let eos_token_id = self
+            .tokenizer
+            .token_to_id("<|im_end|>")
             .or_else(|| self.tokenizer.token_to_id("<eot_id>"))
             .or_else(|| self.tokenizer.token_to_id("</s>"))
             .unwrap_or(2); // Domyślnie id 2
@@ -158,23 +173,28 @@ impl CognitiveLlmEngine {
             // Weryfikacja flagi anulowania generowania
             if let Some(flag) = cancel_flag {
                 if flag.load(std::sync::atomic::Ordering::Relaxed) {
-                    println!("🛑 [Cognitive LLM]: Generowanie tokenów zostało anulowane przez użytkownika.");
+                    println!(
+                        "🛑 [Cognitive LLM]: Generowanie tokenów zostało anulowane przez użytkownika."
+                    );
                     break;
                 }
             }
 
             let context_size = if index_pos > 0 { 1 } else { tokens.len() };
             let context = &tokens[tokens.len() - context_size..];
-            
+
             let input_tensor = Tensor::new(context, &self.device)
                 .map_err(|e| format!("Błąd tensora wejściowego: {}", e))?
                 .unsqueeze(0)
                 .map_err(|e| format!("Błąd unsqueeze: {}", e))?;
-            
-            let logits = self.model.forward(&input_tensor, index_pos)
+
+            let logits = self
+                .model
+                .forward(&input_tensor, index_pos)
                 .map_err(|e| format!("Błąd inferencji w modelu: {}", e))?;
-            
-            let logits = logits.squeeze(0)
+
+            let logits = logits
+                .squeeze(0)
                 .map_err(|e| format!("Błąd dopasowania wymiarowości: {}", e))?;
             let logits = if logits.rank() == 2 {
                 let seq_len = logits.dim(0).map_err(|e| format!("{}", e))?;
@@ -182,7 +202,8 @@ impl CognitiveLlmEngine {
             } else {
                 logits
             };
-            let mut logits = logits.to_vec1::<f32>()
+            let mut logits = logits
+                .to_vec1::<f32>()
                 .map_err(|e| format!("Błąd odczytu logits: {}", e))?;
 
             // Aplikacja kary za powtórzenia (repetition penalty)
@@ -206,17 +227,19 @@ impl CognitiveLlmEngine {
             let next_token = if params.temperature > 0.05 {
                 // Skalowanie przez temperaturę
                 let temp = params.temperature as f32;
-                
+
                 // Optymalizacja CPU: Selekcja Top-K (K=50) zamiast pełnego sortowania 152 064 elementów
                 const TOP_K: usize = 50;
                 let mut top_k: Vec<(usize, f32)> = Vec::with_capacity(TOP_K + 1);
-                
+
                 for (idx, &val) in logits.iter().enumerate() {
                     let scaled_val = val / temp;
                     if top_k.len() < TOP_K {
                         top_k.push((idx, scaled_val));
                         if top_k.len() == TOP_K {
-                            top_k.sort_unstable_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+                            top_k.sort_unstable_by(|a, b| {
+                                b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal)
+                            });
                         }
                     } else if scaled_val > top_k[TOP_K - 1].1 {
                         top_k[TOP_K - 1] = (idx, scaled_val);
@@ -286,7 +309,9 @@ impl CognitiveLlmEngine {
             }
 
             // Dekodowanie wygenerowanego tokenu na tekst
-            let chunk = self.tokenizer.decode(&[next_token], true)
+            let chunk = self
+                .tokenizer
+                .decode(&[next_token], true)
                 .map_err(|e| format!("Błąd dekodowania tokenu: {}", e))?;
             callback(&chunk);
             generated_text.push_str(&chunk);

@@ -222,6 +222,17 @@ blyskawica_app/memory/mycreds.txt
 blyskawica_app/memory/client_secrets.json
 blyskawica_app/memory/client_secret.json
 
+# Runtime identity, memory and development-secret artifacts (SEC-02)
+decoy_workspace/dev_secrets.json
+blyskawica_app/memory/user_identity*.json*
+blyskawica_app/memory/snapshots/
+data/cognitive_defense/episodic_memory_vault.json
+integrity_vault.json
+memory_checkpoint.json
+memory_checkpoint.json.bak
+memory_checkpoint.json.tmp
+memory_checkpoint.json.*
+
 # Quantum keys
 quantum_key.json
 

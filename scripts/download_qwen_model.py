@@ -12,8 +12,6 @@ Features:
 """
 
 import argparse
-import os
-import shutil
 import sys
 import time
 from pathlib import Path
@@ -58,7 +56,7 @@ MODEL_CONFIGS = {
 def download_via_hf_hub(repo_id: str, filename: str, dest_dir: Path) -> bool:
     try:
         from huggingface_hub import hf_hub_download
-        print(f"🚀 Pobieranie przez huggingface_hub (wspiera automatyczne wznawianie)...")
+        print("🚀 Pobieranie przez huggingface_hub (wspiera automatyczne wznawianie)...")
         hf_hub_download(
             repo_id=repo_id,
             filename=filename,

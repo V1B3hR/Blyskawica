@@ -12,10 +12,11 @@ import platform
 import random
 import sys
 import warnings
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Callable, Generator
+from typing import Any
 
 import numpy as np
 import torch
