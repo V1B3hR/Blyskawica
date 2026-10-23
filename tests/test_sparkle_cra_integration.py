@@ -75,6 +75,12 @@ class TestSparkleBackend(unittest.TestCase):
 
     def setUp(self):
         self.client = TestClient(app)
+        self.original_permission_level = bly_main.permission_level
+        self.original_quarantine = bly_main.quarantine_active
+
+    def tearDown(self):
+        bly_main.permission_level = self.original_permission_level
+        bly_main.quarantine_active = self.original_quarantine
 
     def test_api_status(self):
         response = self.client.get("/api/system_status")
@@ -105,7 +111,8 @@ class TestSparkleBackend(unittest.TestCase):
         file = io.BytesIO(file_content)
         response = self.client.post(
             "/api/upload/zdjecia",
-            files={"file": ("snapshot_test.jpg", file, "image/jpeg")}
+            files={"file": ("snapshot_test.jpg", file, "image/jpeg")},
+            headers={"X-Blyskawica-Token": bly_main.STARTUP_TOKEN},
         )
         self.assertEqual(response.status_code, 200)
         data = response.json()
@@ -164,10 +171,11 @@ class TestSparkleBackend(unittest.TestCase):
         self.assertIn("katzeblitz", data2["reply"])
 
     def test_synaptic_veto_file_guard(self):
-        # Ensure quarantine is clear so the veto path is reachable.
-        # Prior tests (e.g. wolf_teeth, synaptic_veto_chat_guard) may leave
-        # quarantine_active=True, which would short-circuit with status='error'.
+        # Ensure quarantine is clear and permission level allows workspace writes
+        # so that the request reaches the synaptic veto (Wolf Teeth) layer rather than
+        # being rejected early by sandbox or active quarantine.
         bly_main.quarantine_active = False
+        bly_main.permission_level = 2
 
         # Retrieve startup token for authentication
         token_response = self.client.get(

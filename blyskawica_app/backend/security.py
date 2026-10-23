@@ -16,9 +16,9 @@ import time
 from pathlib import Path
 from typing import Any
 
-from fastapi import HTTPException, Request, Response
+from fastapi import HTTPException
 from fastapi.responses import JSONResponse
-from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 logger = logging.getLogger("BlyskawicaSecurity")
 
@@ -224,25 +224,37 @@ class InMemoryRateLimiter:
         self._history.clear()
 
 
-class RateLimitMiddleware(BaseHTTPMiddleware):
-    """Middleware FastAPI nakładający limity zapytań na endpointy API."""
+class RateLimitMiddleware:
+    """ASGI middleware nakładający limity zapytań na endpointy API.
 
-    def __init__(self, app: Any, max_requests: int = 120, window_seconds: float = 60.0) -> None:
-        super().__init__(app)
+    Nie dziedziczy po ``BaseHTTPMiddleware``. Ta warstwa Starlette tworzy
+    dodatkowy kanał zadań, który w bieżącym zestawie FastAPI/Starlette może
+    zablokować synchronicznego ``TestClient``. Natywny middleware ASGI nie ma
+    tego ograniczenia i zachowuje streaming odpowiedzi aplikacji.
+    """
+
+    def __init__(self, app: ASGIApp, max_requests: int = 120, window_seconds: float = 60.0) -> None:
+        self.app = app
         self.limiter = InMemoryRateLimiter(max_requests=max_requests, window_seconds=window_seconds)
 
-    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
-        # Pomijaj sprawdzanie zasobów statycznych, aby nie blokować UI
-        path = request.url.path
-        if not path.startswith("/api/"):
-            return await call_next(request)
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
 
-        client_host = request.client.host if request.client else "unknown_client"
+        # Pomijaj sprawdzanie zasobów statycznych, aby nie blokować UI
+        path = scope["path"]
+        if not path.startswith("/api/"):
+            await self.app(scope, receive, send)
+            return
+
+        client = scope.get("client")
+        client_host = client[0] if client else "unknown_client"
         allowed, remaining, retry_after = self.limiter.is_allowed(client_host)
 
         if not allowed:
             logger.warning(f"Rate limit przekroczony dla {client_host} na {path}. Retry-After: {retry_after}s")
-            return JSONResponse(
+            response = JSONResponse(
                 status_code=429,
                 content={
                     "status": "error",
@@ -255,8 +267,22 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                     "X-RateLimit-Remaining": "0"
                 }
             )
+            await response(scope, receive, send)
+            return
 
-        response = await call_next(request)
-        response.headers["X-RateLimit-Limit"] = str(self.limiter.max_requests)
-        response.headers["X-RateLimit-Remaining"] = str(remaining)
-        return response
+        async def send_with_rate_limit_headers(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                message["headers"] = [
+                    (key, value)
+                    for key, value in message.get("headers", [])
+                    if key.lower() not in {b"x-ratelimit-limit", b"x-ratelimit-remaining"}
+                ]
+                message["headers"].extend(
+                    [
+                        (b"x-ratelimit-limit", str(self.limiter.max_requests).encode("ascii")),
+                        (b"x-ratelimit-remaining", str(remaining).encode("ascii")),
+                    ]
+                )
+            await send(message)
+
+        await self.app(scope, receive, send_with_rate_limit_headers)
