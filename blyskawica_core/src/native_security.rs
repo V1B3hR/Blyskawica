@@ -393,14 +393,180 @@ pub fn terminate_external_tcp_connections() -> Result<usize, String> {
 }
 
 #[cfg(not(target_os = "windows"))]
-pub fn protect_secret(_plaintext: &[u8]) -> Result<Vec<u8>, String> {
-    Err("Platform keychain protection is only supported on Windows (DPAPI). Plaintext storage is prohibited.".to_string())
+mod unix_vault {
+    use sha2::{Digest, Sha256};
+    use std::fs;
+    use std::path::PathBuf;
+
+    const MAGIC: &[u8; 4] = b"BLY1";
+
+    fn hmac_sha256(key: &[u8], data: &[u8]) -> [u8; 32] {
+        let mut k_pad = [0u8; 64];
+        if key.len() > 64 {
+            let mut hasher = Sha256::new();
+            hasher.update(key);
+            let h = hasher.finalize();
+            k_pad[..32].copy_from_slice(&h);
+        } else {
+            k_pad[..key.len()].copy_from_slice(key);
+        }
+
+        let mut ipad = [0x36u8; 64];
+        let mut opad = [0x5cu8; 64];
+        for i in 0..64 {
+            ipad[i] ^= k_pad[i];
+            opad[i] ^= k_pad[i];
+        }
+
+        let mut inner = Sha256::new();
+        inner.update(ipad);
+        inner.update(data);
+        let inner_hash = inner.finalize();
+
+        let mut outer = Sha256::new();
+        outer.update(opad);
+        outer.update(inner_hash);
+        outer.finalize().into()
+    }
+
+    fn get_or_create_vault_master_key() -> Result<[u8; 32], String> {
+        let config_dir = std::env::var_os("HOME")
+            .map(PathBuf::from)
+            .map(|h| h.join(".config").join("blyskawica"))
+            .unwrap_or_else(|| std::env::temp_dir().join(".blyskawica"));
+        let _ = fs::create_dir_all(&config_dir);
+        let key_file = config_dir.join(".vault_master.key");
+
+        if key_file.exists() {
+            if let Ok(bytes) = fs::read(&key_file) {
+                if bytes.len() == 32 {
+                    let mut key = [0u8; 32];
+                    key.copy_from_slice(&bytes);
+                    return Ok(key);
+                }
+            }
+        }
+
+        let mut raw_key = [0u8; 32];
+        rand::Rng::fill(&mut rand::thread_rng(), &mut raw_key);
+        if let Err(e) = fs::write(&key_file, raw_key) {
+            return Err(format!("Nie udało się zapisać klucza sejfu: {}", e));
+        }
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let _ = fs::set_permissions(&key_file, fs::Permissions::from_mode(0o600));
+        }
+
+        Ok(raw_key)
+    }
+
+    fn derive_subkeys() -> Result<([u8; 32], [u8; 32]), String> {
+        let master = get_or_create_vault_master_key()?;
+        let mut machine_binding = Vec::new();
+        if let Ok(id) = fs::read_to_string("/etc/machine-id") {
+            machine_binding.extend_from_slice(id.trim().as_bytes());
+        } else if let Ok(id) = fs::read_to_string("/var/lib/dbus/machine-id") {
+            machine_binding.extend_from_slice(id.trim().as_bytes());
+        }
+        if let Ok(user) = std::env::var("USER") {
+            machine_binding.extend_from_slice(user.as_bytes());
+        }
+
+        let mut enc_ctx = b"BLY_VAULT_ENC_V1_".to_vec();
+        enc_ctx.extend_from_slice(&machine_binding);
+        let k_enc = hmac_sha256(&master, &enc_ctx);
+
+        let mut mac_ctx = b"BLY_VAULT_MAC_V1_".to_vec();
+        mac_ctx.extend_from_slice(&machine_binding);
+        let k_mac = hmac_sha256(&master, &mac_ctx);
+
+        Ok((k_enc, k_mac))
+    }
+
+    fn keystream_xor(k_enc: &[u8; 32], nonce: &[u8; 16], data: &mut [u8]) {
+        for (i, chunk) in data.chunks_mut(32).enumerate() {
+            let mut counter_buf = [0u8; 24];
+            counter_buf[..16].copy_from_slice(nonce);
+            counter_buf[16..24].copy_from_slice(&(i as u64).to_le_bytes());
+            let stream_block = hmac_sha256(k_enc, &counter_buf);
+            for (byte, s) in chunk.iter_mut().zip(stream_block.iter()) {
+                *byte ^= *s;
+            }
+        }
+    }
+
+    pub fn protect_secret(plaintext: &[u8]) -> Result<Vec<u8>, String> {
+        if plaintext.is_empty() {
+            return Ok(Vec::new());
+        }
+        let (k_enc, k_mac) = derive_subkeys()?;
+
+        let mut nonce = [0u8; 16];
+        rand::Rng::fill(&mut rand::thread_rng(), &mut nonce);
+
+        let mut ciphertext = plaintext.to_vec();
+        keystream_xor(&k_enc, &nonce, &mut ciphertext);
+
+        let mut mac_input = Vec::with_capacity(4 + 16 + ciphertext.len());
+        mac_input.extend_from_slice(MAGIC);
+        mac_input.extend_from_slice(&nonce);
+        mac_input.extend_from_slice(&ciphertext);
+        let tag = hmac_sha256(&k_mac, &mac_input);
+
+        let mut result = Vec::with_capacity(4 + 16 + 32 + ciphertext.len());
+        result.extend_from_slice(MAGIC);
+        result.extend_from_slice(&nonce);
+        result.extend_from_slice(&tag);
+        result.extend_from_slice(&ciphertext);
+        Ok(result)
+    }
+
+    pub fn unprotect_secret(ciphertext: &[u8]) -> Result<Vec<u8>, String> {
+        if ciphertext.is_empty() {
+            return Ok(Vec::new());
+        }
+        if ciphertext.len() < 4 + 16 + 32 {
+            return Err("Nieprawidłowy format zaszyfrowanego sekretu (zbyt krótki).".to_string());
+        }
+        if &ciphertext[..4] != MAGIC {
+            return Err("Nieprawidłowy nagłówek sejfu (nieznany format BLY).".to_string());
+        }
+
+        let (k_enc, k_mac) = derive_subkeys()?;
+
+        let mut nonce = [0u8; 16];
+        nonce.copy_from_slice(&ciphertext[4..20]);
+
+        let expected_tag = &ciphertext[20..52];
+        let encrypted_body = &ciphertext[52..];
+
+        let mut mac_input = Vec::with_capacity(4 + 16 + encrypted_body.len());
+        mac_input.extend_from_slice(MAGIC);
+        mac_input.extend_from_slice(&nonce);
+        mac_input.extend_from_slice(encrypted_body);
+        let computed_tag = hmac_sha256(&k_mac, &mac_input);
+
+        let mut diff = 0u8;
+        for (a, b) in expected_tag.iter().zip(computed_tag.iter()) {
+            diff |= *a ^ *b;
+        }
+        if diff != 0 {
+            return Err(
+                "Błąd weryfikacji HMAC: naruszona integralność sejfu lub nieprawidłowy klucz."
+                    .to_string(),
+            );
+        }
+
+        let mut plaintext = encrypted_body.to_vec();
+        keystream_xor(&k_enc, &nonce, &mut plaintext);
+        Ok(plaintext)
+    }
 }
 
 #[cfg(not(target_os = "windows"))]
-pub fn unprotect_secret(_ciphertext: &[u8]) -> Result<Vec<u8>, String> {
-    Err("Platform keychain protection is only supported on Windows (DPAPI). Plaintext storage is prohibited.".to_string())
-}
+pub use unix_vault::{protect_secret, unprotect_secret};
 
 #[cfg(test)]
 mod tests {
@@ -452,19 +618,24 @@ mod tests {
     }
 
     #[test]
-    fn test_dpapi_protect_unprotect() {
-        #[cfg(target_os = "windows")]
-        {
-            let secret = b"blyskawica_vault_test_secret_12345";
-            let encrypted = protect_secret(secret).expect("DPAPI protect should succeed");
-            assert_ne!(encrypted, secret, "Ciphertext should differ from plaintext");
+    fn test_vault_protect_unprotect() {
+        let secret = b"blyskawica_vault_test_secret_12345";
+        let encrypted = protect_secret(secret).expect("Vault protect should succeed");
+        assert_ne!(encrypted, secret, "Ciphertext should differ from plaintext");
 
-            let decrypted = unprotect_secret(&encrypted).expect("DPAPI unprotect should succeed");
-            assert_eq!(
-                decrypted, secret,
-                "Decrypted secret must match original plaintext"
-            );
-        }
+        let decrypted = unprotect_secret(&encrypted).expect("Vault unprotect should succeed");
+        assert_eq!(
+            decrypted, secret,
+            "Decrypted secret must match original plaintext"
+        );
+
+        let mut tampered = encrypted.clone();
+        let last = tampered.len() - 1;
+        tampered[last] ^= 0x01;
+        assert!(
+            unprotect_secret(&tampered).is_err(),
+            "Tampered vault payload must fail decryption/validation"
+        );
     }
 
     #[test]
