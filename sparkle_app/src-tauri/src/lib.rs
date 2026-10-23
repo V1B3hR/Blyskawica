@@ -305,7 +305,7 @@ fn show_confirm_dialog(message: &str, title: &str) -> bool {
 
 #[cfg(target_os = "macos")]
 fn show_confirm_dialog(message: &str, title: &str) -> bool {
-    if std::env::var_os("CI").is_some()
+    if (std::env::var_os("CI").is_some() || std::env::var_os("BLY_HEADLESS").is_some())
         && std::env::var_os("BLY_FORCE_INTERACTIVE_DIALOG").is_none()
     {
         return false;
@@ -334,7 +334,7 @@ fn show_confirm_dialog(message: &str, title: &str) -> bool {
     if std::env::var_os("DISPLAY").is_none() && std::env::var_os("WAYLAND_DISPLAY").is_none() {
         return false;
     }
-    if std::env::var_os("CI").is_some()
+    if (std::env::var_os("CI").is_some() || std::env::var_os("BLY_HEADLESS").is_some())
         && std::env::var_os("BLY_FORCE_INTERACTIVE_DIALOG").is_none()
     {
         return false;
@@ -887,6 +887,28 @@ fn clear_recreatable_runtime_artifacts(
     }
 }
 
+#[cfg(target_os = "linux")]
+fn path_to_file_uri(path: &Path) -> Result<String, String> {
+    let canonical = path
+        .canonicalize()
+        .map_err(|e| format!("Błąd kanonikalizacji ścieżki tapety: {}", e))?;
+    let path_str = canonical
+        .to_str()
+        .ok_or_else(|| "Ścieżka zawiera nieprawidłowe znaki UTF-8.".to_string())?;
+    let mut encoded = String::from("file://");
+    for byte in path_str.bytes() {
+        match byte {
+            b'a'..=b'z' | b'A'..=b'Z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' | b'/' => {
+                encoded.push(byte as char);
+            }
+            _ => {
+                encoded.push_str(&format!("%{:02X}", byte));
+            }
+        }
+    }
+    Ok(encoded)
+}
+
 #[tauri::command]
 fn execute_system_action(
     action: String,
@@ -956,9 +978,13 @@ fn execute_system_action(
             }
             #[cfg(target_os = "macos")]
             {
+                let escaped_path = path
+                    .to_string_lossy()
+                    .replace('\\', "\\\\")
+                    .replace('"', "\\\"");
                 let script = format!(
                     "tell application \"Finder\" to set desktop picture to POSIX file \"{}\"",
-                    path.to_string_lossy().replace('"', "\\\"")
+                    escaped_path
                 );
                 match std::process::Command::new("osascript")
                     .arg("-e")
@@ -976,7 +1002,25 @@ fn execute_system_action(
             }
             #[cfg(target_os = "linux")]
             {
-                let uri = format!("file://{}", path.to_string_lossy());
+                let uri = path_to_file_uri(&path)?;
+                let desktop = std::env::var("XDG_CURRENT_DESKTOP")
+                    .unwrap_or_default()
+                    .to_uppercase();
+
+                if desktop.contains("KDE") {
+                    if let Ok(status) = std::process::Command::new("plasma-apply-wallpaperimage")
+                        .arg(&path)
+                        .status()
+                    {
+                        if status.success() {
+                            return Ok(
+                                "Tapeta systemowa została pomyślnie zmieniona (KDE Plasma)."
+                                    .to_string(),
+                            );
+                        }
+                    }
+                }
+
                 if let Ok(status) = std::process::Command::new("gsettings")
                     .args(["set", "org.gnome.desktop.background", "picture-uri", &uri])
                     .status()
@@ -1005,7 +1049,7 @@ fn execute_system_action(
                         );
                     }
                 }
-                Err("Nie znaleziono obsługiwanego menedżera pulpitu do zmiany tapety (sprawdź gsettings lub feh).".to_string())
+                Err("Nie znaleziono obsługiwanego menedżera pulpitu do zmiany tapety (sprawdź gsettings, plasma-apply-wallpaperimage lub feh).".to_string())
             }
             #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
             {
@@ -1872,10 +1916,21 @@ mod tests {
     #[cfg(not(target_os = "windows"))]
     #[test]
     fn non_windows_confirmation_fails_closed() {
+        let orig_headless = std::env::var_os("BLY_HEADLESS");
+        unsafe {
+            std::env::set_var("BLY_HEADLESS", "1");
+        }
         assert!(!show_confirm_dialog(
             "Podniesienie uprawnien",
             "Blyskawica Security"
         ));
+        unsafe {
+            if let Some(val) = orig_headless {
+                std::env::set_var("BLY_HEADLESS", val);
+            } else {
+                std::env::remove_var("BLY_HEADLESS");
+            }
+        }
     }
 
     #[test]
