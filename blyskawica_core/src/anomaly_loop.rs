@@ -1,4 +1,3 @@
-
 pub struct VirtualGround {
     pub ground_potential: f32,
 }
@@ -11,7 +10,9 @@ impl Default for VirtualGround {
 
 impl VirtualGround {
     pub fn new() -> Self {
-        Self { ground_potential: 0.0 }
+        Self {
+            ground_potential: 0.0,
+        }
     }
 
     /// Odprowadza szum poznawczy do wirtualnej ziemi.
@@ -22,7 +23,7 @@ impl VirtualGround {
         // Obliczamy energię (średnią kwadratową szumu)
         let sum_sq: f32 = noise.iter().map(|&x| x * x).sum();
         let energy = sum_sq / (noise.len() as f32);
-        
+
         // Zmniejszamy potencjał asynchronicznie, rozpraszając energię do zera
         self.ground_potential = 0.99 * self.ground_potential + 0.01 * energy;
         self.ground_potential

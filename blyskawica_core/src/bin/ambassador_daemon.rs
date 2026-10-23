@@ -1,12 +1,12 @@
+use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
-use serde::{Deserialize, Serialize};
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader, AsyncRead, AsyncWrite};
+use tokio::io::{AsyncBufReadExt, AsyncRead, AsyncWrite, AsyncWriteExt, BufReader};
 use tokio::sync::Mutex;
 
 #[cfg(windows)]
-use tokio::net::windows::named_pipe::{NamedPipeServer, ServerOptions};
+use tokio::net::windows::named_pipe::ServerOptions;
 
 #[cfg(unix)]
 use tokio::net::{UnixListener, UnixStream};
@@ -95,7 +95,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[cfg(windows)]
-async fn run_windows_named_pipe(pipe_name: &str, state: Arc<AmbassadorState>) -> Result<(), Box<dyn std::error::Error>> {
+async fn run_windows_named_pipe(
+    pipe_name: &str,
+    state: Arc<AmbassadorState>,
+) -> Result<(), Box<dyn std::error::Error>> {
     let mut server = ServerOptions::new().create(pipe_name)?;
     loop {
         server.connect().await?;
@@ -112,7 +115,10 @@ async fn run_windows_named_pipe(pipe_name: &str, state: Arc<AmbassadorState>) ->
 }
 
 #[cfg(unix)]
-async fn run_unix_socket(socket_path: &str, state: Arc<AmbassadorState>) -> Result<(), Box<dyn std::error::Error>> {
+async fn run_unix_socket(
+    socket_path: &str,
+    state: Arc<AmbassadorState>,
+) -> Result<(), Box<dyn std::error::Error>> {
     let _ = std::fs::remove_file(socket_path);
     let listener = UnixListener::bind(socket_path)?;
     println!("✅ Gniazdo UNIX zbindowane pomyślnie w: {}", socket_path);
@@ -128,7 +134,10 @@ async fn run_unix_socket(socket_path: &str, state: Arc<AmbassadorState>) -> Resu
     }
 }
 
-async fn handle_stream<S>(stream: S, state: Arc<AmbassadorState>) -> Result<(), Box<dyn std::error::Error + Send + Sync>>
+async fn handle_stream<S>(
+    stream: S,
+    state: Arc<AmbassadorState>,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>>
 where
     S: AsyncRead + AsyncWrite + Unpin + Send + 'static,
 {
@@ -197,7 +206,11 @@ async fn process_command(
             ("ok".to_string(), Some(data), None)
         }
         "evaluate_shield" => {
-            let text = req.payload.get("text").and_then(|v| v.as_str()).unwrap_or("");
+            let text = req
+                .payload
+                .get("text")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
             let verdict: CognitiveShieldVerdict = state.shield.evaluate_psyche(text);
             match serde_json::to_value(verdict) {
                 Ok(val) => ("ok".to_string(), Some(val), None),
@@ -212,11 +225,19 @@ async fn process_command(
             }
         }
         "consult" => {
-            let dilemma = req.payload.get("dilemma").and_then(|v| v.as_str()).unwrap_or("");
-            let context = req.payload.get("context").and_then(|v| v.as_str()).unwrap_or("");
+            let dilemma = req
+                .payload
+                .get("dilemma")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
+            let context = req
+                .payload
+                .get("context")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
 
             let shield_verdict = state.shield.evaluate_psyche(dilemma);
-            
+
             let mut neuro = state.neuro.lock().await;
             if shield_verdict.is_manipulative {
                 neuro.cortisol = (neuro.cortisol + 0.15).min(1.0);
@@ -243,10 +264,22 @@ async fn process_command(
             ("ok".to_string(), Some(response_data), None)
         }
         "update_memory" => {
-            let tag = req.payload.get("tag").and_then(|v| v.as_str()).unwrap_or("general");
-            let content = req.payload.get("content").and_then(|v| v.as_str()).unwrap_or("");
-            
-            println!("⚡ [Episodic Memory Ingestion] Tag: {}, Długość: {} znaków", tag, content.len());
+            let tag = req
+                .payload
+                .get("tag")
+                .and_then(|v| v.as_str())
+                .unwrap_or("general");
+            let content = req
+                .payload
+                .get("content")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
+
+            println!(
+                "⚡ [Episodic Memory Ingestion] Tag: {}, Długość: {} znaków",
+                tag,
+                content.len()
+            );
             let data = serde_json::json!({
                 "stored": true,
                 "tag": tag,
@@ -254,8 +287,10 @@ async fn process_command(
             });
             ("ok".to_string(), Some(data), None)
         }
-        other => {
-            ("error".to_string(), None, Some(format!("Nieznana komenda: {}", other)))
-        }
+        other => (
+            "error".to_string(),
+            None,
+            Some(format!("Nieznana komenda: {}", other)),
+        ),
     }
 }

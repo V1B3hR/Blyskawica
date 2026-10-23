@@ -1,5 +1,5 @@
-use hnsw_rs::prelude::*;
 use hnsw_rs::hnswio::HnswIo;
+use hnsw_rs::prelude::*;
 use std::path::Path;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -12,9 +12,9 @@ pub struct SparkleVectorIndex {
 }
 
 fn compute_file_checksum(file_path: &Path) -> Result<String, String> {
+    use sha2::{Digest, Sha256};
     use std::fs::File;
     use std::io::Read;
-    use sha2::{Sha256, Digest};
 
     let mut file = File::open(file_path).map_err(|e| e.to_string())?;
     let mut hasher = Sha256::new();
@@ -61,13 +61,7 @@ impl SparkleVectorIndex {
         let nb_layer = 16;
         let ef_c = 200;
 
-        let hnsw = Hnsw::new(
-            max_nb_connection,
-            100_000,
-            nb_layer,
-            ef_c,
-            DistCosine {},
-        );
+        let hnsw = Hnsw::new(max_nb_connection, 100_000, nb_layer, ef_c, DistCosine {});
 
         Self {
             hnsw,
@@ -103,7 +97,11 @@ impl SparkleVectorIndex {
     }
 
     pub fn search(&self, query: &[f32], k: usize) -> Vec<Neighbour> {
-        assert_eq!(query.len(), self.dimension, "Wektor zapytania musi mieć wymiar równy wymiarowi indeksu.");
+        assert_eq!(
+            query.len(),
+            self.dimension,
+            "Wektor zapytania musi mieć wymiar równy wymiarowi indeksu."
+        );
         let ef_search = 50;
         self.hnsw.search(query, k, ef_search)
     }
@@ -121,9 +119,15 @@ impl SparkleVectorIndex {
     }
 
     /// Zapisuje wektor do dziennika Write-Ahead Log (WAL) z wymuszoną synchronizacją dyskową (fsync).
-    pub fn append_wal(&self, path: &Path, file_basename: &str, id: usize, vector: &[f32]) -> Result<(), String> {
-        use std::io::Write;
+    pub fn append_wal(
+        &self,
+        path: &Path,
+        file_basename: &str,
+        id: usize,
+        vector: &[f32],
+    ) -> Result<(), String> {
         use std::fs::OpenOptions;
+        use std::io::Write;
 
         if !path.exists() {
             std::fs::create_dir_all(path).map_err(|e| e.to_string())?;
@@ -140,14 +144,22 @@ impl SparkleVectorIndex {
         let vec_str: Vec<String> = vector.iter().map(|v| v.to_string()).collect();
         let record = format!("{}:{}\n", id, vec_str.join(","));
 
-        file.write_all(record.as_bytes()).map_err(|e| format!("Błąd zapisu do WAL: {}", e))?;
-        file.sync_all().map_err(|e| format!("Błąd fsync dla WAL: {}", e))?;
+        file.write_all(record.as_bytes())
+            .map_err(|e| format!("Błąd zapisu do WAL: {}", e))?;
+        file.sync_all()
+            .map_err(|e| format!("Błąd fsync dla WAL: {}", e))?;
 
         Ok(())
     }
 
     /// Bezpieczne wstawienie wektora z synchronicznym wpisem do WAL.
-    pub fn insert_with_wal(&self, path: &Path, file_basename: &str, id: usize, vector: &[f32]) -> Result<(), String> {
+    pub fn insert_with_wal(
+        &self,
+        path: &Path,
+        file_basename: &str,
+        id: usize,
+        vector: &[f32],
+    ) -> Result<(), String> {
         self.append_wal(path, file_basename, id, vector)?;
         self.insert(id, vector)
     }
@@ -161,7 +173,10 @@ impl SparkleVectorIndex {
         let tmp_basename = format!("{}_tmp", file_basename);
 
         // 1. Zapis do plików tymczasowych
-        let dump_res = self.hnsw.file_dump(path, &tmp_basename).map_err(|e| e.to_string())?;
+        let dump_res = self
+            .hnsw
+            .file_dump(path, &tmp_basename)
+            .map_err(|e| e.to_string())?;
 
         let tmp_graph = path.join(format!("{}.hnsw.graph", tmp_basename));
         let tmp_data = path.join(format!("{}.hnsw.data", tmp_basename));
@@ -214,7 +229,10 @@ impl SparkleVectorIndex {
         let index = match Self::try_load_single(path, file_basename, dimension) {
             Ok(idx) => idx,
             Err(primary_err) => {
-                println!("⚠️ [HNSW LOAD]: Błąd wczytywania głównego indeksu: {}. Próba przywrócenia z generacji .prev...", primary_err);
+                println!(
+                    "⚠️ [HNSW LOAD]: Błąd wczytywania głównego indeksu: {}. Próba przywrócenia z generacji .prev...",
+                    primary_err
+                );
                 let prev_basename = format!("{}.prev", file_basename);
                 Self::try_load_single(path, &prev_basename, dimension).map_err(|prev_err| {
                     format!("Wszystkie generacje indeksu uszkodzone/niedostępne. Główny: {}; Fallback: {}", primary_err, prev_err)
@@ -234,7 +252,8 @@ impl SparkleVectorIndex {
                     }
                     if let Some((id_str, vec_str)) = trimmed.split_once(':') {
                         if let Ok(id) = id_str.parse::<usize>() {
-                            let floats: Result<Vec<f32>, _> = vec_str.split(',').map(|s| s.parse::<f32>()).collect();
+                            let floats: Result<Vec<f32>, _> =
+                                vec_str.split(',').map(|s| s.parse::<f32>()).collect();
                             if let Ok(vec) = floats {
                                 if vec.len() == dimension {
                                     let _ = index.insert(id, &vec);
@@ -245,7 +264,10 @@ impl SparkleVectorIndex {
                     }
                 }
                 if replayed_count > 0 {
-                    println!("✓ [HNSW WAL REPLAY]: Odtworzono {} wektorów z dziennika WAL.", replayed_count);
+                    println!(
+                        "✓ [HNSW WAL REPLAY]: Odtworzono {} wektorów z dziennika WAL.",
+                        replayed_count
+                    );
                 }
             }
         }
@@ -274,7 +296,10 @@ impl SparkleVectorIndex {
                     let actual_data = compute_file_checksum(&data_path)?;
 
                     if expected_graph != actual_graph || expected_data != actual_data {
-                        return Err(format!("Suma kontrolna SHA-256 plików HNSW nie zgadza się dla {}", file_basename));
+                        return Err(format!(
+                            "Suma kontrolna SHA-256 plików HNSW nie zgadza się dla {}",
+                            file_basename
+                        ));
                     }
                 }
             }
@@ -283,7 +308,9 @@ impl SparkleVectorIndex {
         let mut reloader = Box::new(HnswIo::new(path, file_basename));
         let reloader_ptr: *mut HnswIo = &mut *reloader;
         let hnsw: Hnsw<'static, f32, DistCosine> = unsafe {
-            (*reloader_ptr).load_hnsw::<f32, DistCosine>().map_err(|e| e.to_string())?
+            (*reloader_ptr)
+                .load_hnsw::<f32, DistCosine>()
+                .map_err(|e| e.to_string())?
         };
 
         let loaded_count = hnsw.get_nb_point();
@@ -301,6 +328,20 @@ impl SparkleVectorIndex {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn fresh_temp_dir(test_name: &str) -> std::path::PathBuf {
+        let unique_suffix = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system clock should be after the Unix epoch")
+            .as_nanos();
+        let directory = std::env::temp_dir().join(format!(
+            "blyskawica-{test_name}-{}-{unique_suffix}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&directory).expect("test directory should be created");
+        directory
+    }
 
     #[test]
     fn test_vector_insert_and_search() {
@@ -320,16 +361,19 @@ mod tests {
 
         assert!(index.insert(1, &v).is_ok());
         assert!(index.insert(2, &v).is_ok());
-        
+
         let overflow = index.insert(3, &v);
         assert!(overflow.is_err());
-        assert!(overflow.unwrap_err().contains("Przekroczono maksymalną pojemność"));
+        assert!(
+            overflow
+                .unwrap_err()
+                .contains("Przekroczono maksymalną pojemność")
+        );
     }
 
     #[test]
     fn test_vector_dump_and_load_with_checksum() {
-        let temp_dir = std::env::temp_dir().join("sparkle_test_dump_checksum");
-        let _ = std::fs::create_dir_all(&temp_dir);
+        let temp_dir = fresh_temp_dir("vector-dump-checksum");
         let basename = "test_dump_cs";
 
         let index = SparkleVectorIndex::new(4, 100);
@@ -365,16 +409,19 @@ mod tests {
 
         // 4. Próba załadowania uszkodzonego indeksu powinna wykryć błąd sumy kontrolnej
         let corrupted_load = SparkleVectorIndex::load_hnsw(&temp_dir, basename, 4);
-        assert!(corrupted_load.is_err(), "Wczytanie uszkodzonego pliku bez kopii .prev musi zwrócić błąd");
+        assert!(
+            corrupted_load.is_err(),
+            "Wczytanie uszkodzonego pliku bez kopii .prev musi zwrócić błąd"
+        );
 
-        // Sprzątanie
-        let _ = std::fs::remove_dir_all(&temp_dir);
+        drop(loaded_index);
+        drop(index);
+        std::fs::remove_dir_all(&temp_dir).expect("test directory should be removed");
     }
 
     #[test]
     fn test_hnsw_wal_crash_recovery() {
-        let temp_dir = std::env::temp_dir().join("sparkle_test_wal_recovery");
-        let _ = std::fs::create_dir_all(&temp_dir);
+        let temp_dir = fresh_temp_dir("vector-wal-recovery");
         let basename = "test_wal_rec";
         let dimension = 4;
 
@@ -387,21 +434,30 @@ mod tests {
 
         // 2. Symulacja niespodziewanego zapisu do WAL bez pełnego zrzutu grafu
         let uncommitted_vec = vec![0.0, 1.0, 0.0, 0.0];
-        assert!(index.append_wal(&temp_dir, basename, 200, &uncommitted_vec).is_ok());
+        assert!(
+            index
+                .append_wal(&temp_dir, basename, 200, &uncommitted_vec)
+                .is_ok()
+        );
 
         // 3. Załadowanie indeksu z dysku — musi odtworzyć wektor 200 z WAL
         let loaded = SparkleVectorIndex::load_hnsw(&temp_dir, basename, dimension)
             .expect("Ładowanie z WAL powinno się udać");
 
-        assert_eq!(loaded.len(), 2, "Indeks po odtworzeniu WAL powinien zawierać 2 wektory");
+        assert_eq!(
+            loaded.len(),
+            2,
+            "Indeks po odtworzeniu WAL powinien zawierać 2 wektory"
+        );
 
         let search_res = loaded.search(&[0.0, 0.9, 0.0, 0.0], 1);
-        assert_eq!(search_res[0].d_id, 200, "Wektor z WAL powinien być poprawnie odnaleziony");
+        assert_eq!(
+            search_res[0].d_id, 200,
+            "Wektor z WAL powinien być poprawnie odnaleziony"
+        );
 
-        // Sprzątanie
-        let _ = std::fs::remove_file(temp_dir.join(format!("{}.hnsw.graph", basename)));
-        let _ = std::fs::remove_file(temp_dir.join(format!("{}.hnsw.data", basename)));
-        let _ = std::fs::remove_file(temp_dir.join(format!("{}.checksum", basename)));
-        let _ = std::fs::remove_file(temp_dir.join(format!("{}.hnsw.wal", basename)));
+        drop(loaded);
+        drop(index);
+        std::fs::remove_dir_all(&temp_dir).expect("test directory should be removed");
     }
 }

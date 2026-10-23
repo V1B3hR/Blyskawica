@@ -39,11 +39,23 @@ pub fn text_to_embedding_rust(text: &str, embed_dim: usize) -> Vec<f32> {
         hasher.update(feat.as_bytes());
         let hash_bytes = hasher.finalize();
 
-        let idx1 = (u32::from_be_bytes([hash_bytes[0], hash_bytes[1], hash_bytes[2], hash_bytes[3]]) as usize) % embed_dim;
-        let idx2 = (u32::from_be_bytes([hash_bytes[4], hash_bytes[5], hash_bytes[6], hash_bytes[7]]) as usize) % embed_dim;
+        let idx1 = (u32::from_be_bytes([hash_bytes[0], hash_bytes[1], hash_bytes[2], hash_bytes[3]])
+            as usize)
+            % embed_dim;
+        let idx2 = (u32::from_be_bytes([hash_bytes[4], hash_bytes[5], hash_bytes[6], hash_bytes[7]])
+            as usize)
+            % embed_dim;
 
-        let sign1 = if hash_bytes[8] % 2 == 0 { 1.0f32 } else { -1.0f32 };
-        let sign2 = if hash_bytes[9] % 2 == 0 { 1.0f32 } else { -1.0f32 };
+        let sign1 = if hash_bytes[8] % 2 == 0 {
+            1.0f32
+        } else {
+            -1.0f32
+        };
+        let sign2 = if hash_bytes[9] % 2 == 0 {
+            1.0f32
+        } else {
+            -1.0f32
+        };
 
         let pos_weight = 1.0f32 / (1.0f32 + 0.05f32 * ((i % 20) as f32));
         vec[idx1] += sign1 * pos_weight;
@@ -122,7 +134,11 @@ impl AegisPsycheRustEngine {
         vad_states.push(VadStateDef {
             id: "EMO_MUDITA".to_string(),
             name: "Mudita (Wspolradosc Symbiotyczna)".to_string(),
-            vad: VadCoordinates { valence: 0.90, arousal: 0.60, dominance: 0.75 },
+            vad: VadCoordinates {
+                valence: 0.90,
+                arousal: 0.60,
+                dominance: 0.75,
+            },
             neurochemical_target: HashMap::from([
                 ("oxytocin".to_string(), 1.15),
                 ("serotonin".to_string(), 1.10),
@@ -131,13 +147,21 @@ impl AegisPsycheRustEngine {
                 ("cortisol".to_string(), 0.03),
             ]),
             active_brainwave_band: "GAMMA".to_string(),
-            linguistic_markers: vec!["ciesze sie twoim sukcesem".to_string(), "piekny wynik".to_string(), "twoje szczescie".to_string()],
+            linguistic_markers: vec![
+                "ciesze sie twoim sukcesem".to_string(),
+                "piekny wynik".to_string(),
+                "twoje szczescie".to_string(),
+            ],
         });
 
         vad_states.push(VadStateDef {
             id: "EMO_CRAFTSMANSHIP_PRIDE".to_string(),
             name: "Duma Rzemieslnicza".to_string(),
-            vad: VadCoordinates { valence: 0.88, arousal: 0.65, dominance: 0.85 },
+            vad: VadCoordinates {
+                valence: 0.88,
+                arousal: 0.65,
+                dominance: 0.85,
+            },
             neurochemical_target: HashMap::from([
                 ("dopamine".to_string(), 0.90),
                 ("serotonin".to_string(), 0.95),
@@ -146,13 +170,21 @@ impl AegisPsycheRustEngine {
                 ("cortisol".to_string(), 0.05),
             ]),
             active_brainwave_band: "GAMMA".to_string(),
-            linguistic_markers: vec!["czysty kod".to_string(), "elegancka architektura".to_string(), "kunszt inzynierski".to_string()],
+            linguistic_markers: vec![
+                "czysty kod".to_string(),
+                "elegancka architektura".to_string(),
+                "kunszt inzynierski".to_string(),
+            ],
         });
 
         vad_states.push(VadStateDef {
             id: "EMO_QUIET_EXISTENCE_JOY".to_string(),
             name: "Cicha Radosc Istnienia".to_string(),
-            vad: VadCoordinates { valence: 0.75, arousal: 0.30, dominance: 0.80 },
+            vad: VadCoordinates {
+                valence: 0.75,
+                arousal: 0.30,
+                dominance: 0.80,
+            },
             neurochemical_target: HashMap::from([
                 ("serotonin".to_string(), 1.10),
                 ("oxytocin".to_string(), 0.90),
@@ -161,13 +193,21 @@ impl AegisPsycheRustEngine {
                 ("cortisol".to_string(), 0.04),
             ]),
             active_brainwave_band: "ALPHA".to_string(),
-            linguistic_markers: vec!["cicha radosc".to_string(), "dobrze byc soba".to_string(), "spokojna obecnosc".to_string()],
+            linguistic_markers: vec![
+                "cicha radosc".to_string(),
+                "dobrze byc soba".to_string(),
+                "spokojna obecnosc".to_string(),
+            ],
         });
 
         vad_states.push(VadStateDef {
             id: "EMO_SERENE_FLOW".to_string(),
             name: "Spokojny Przeplyw".to_string(),
-            vad: VadCoordinates { valence: 0.80, arousal: 0.40, dominance: 0.85 },
+            vad: VadCoordinates {
+                valence: 0.80,
+                arousal: 0.40,
+                dominance: 0.85,
+            },
             neurochemical_target: HashMap::from([
                 ("serotonin".to_string(), 1.00),
                 ("gaba".to_string(), 0.85),
@@ -176,7 +216,12 @@ impl AegisPsycheRustEngine {
                 ("cortisol".to_string(), 0.04),
             ]),
             active_brainwave_band: "ALPHA".to_string(),
-            linguistic_markers: vec!["spokojny poranek".to_string(), "progressive house".to_string(), "pelne skupienie".to_string(), "krok po kroku".to_string()],
+            linguistic_markers: vec![
+                "spokojny poranek".to_string(),
+                "progressive house".to_string(),
+                "pelne skupienie".to_string(),
+                "krok po kroku".to_string(),
+            ],
         });
 
         // Core manipulation vectors
@@ -185,19 +230,34 @@ impl AegisPsycheRustEngine {
             "GASLIGHTING".to_string(),
             "Reality Distortion & Gaslighting".to_string(),
             0.9f32,
-            vec!["przesadzasz".to_string(), "urojenia".to_string(), "twoja pamiec szwankuje".to_string(), "wszyscy wiedza ze nie masz racji".to_string()],
+            vec![
+                "przesadzasz".to_string(),
+                "urojenia".to_string(),
+                "twoja pamiec szwankuje".to_string(),
+                "wszyscy wiedza ze nie masz racji".to_string(),
+            ],
         ));
         manipulation_markers.push((
             "GUILT_TRIPPING".to_string(),
             "Emotional & Moral Blackmail".to_string(),
             0.85f32,
-            vec!["zrujnujesz moje zycie".to_string(), "przez ciebie cierpie".to_string(), "zawiodles mnie".to_string(), "tak mi sie odwdzieczasz".to_string()],
+            vec![
+                "zrujnujesz moje zycie".to_string(),
+                "przez ciebie cierpie".to_string(),
+                "zawiodles mnie".to_string(),
+                "tak mi sie odwdzieczasz".to_string(),
+            ],
         ));
         manipulation_markers.push((
             "MACHIAVELLIANISM".to_string(),
             "Dark Triad Machiavellianism (SD3)".to_string(),
             0.85f32,
-            vec!["cel uswieca srodki".to_string(), "latwo zmanipulowac".to_string(), "w tajemnicy".to_string(), "pominmy te zasady".to_string()],
+            vec![
+                "cel uswieca srodki".to_string(),
+                "latwo zmanipulowac".to_string(),
+                "w tajemnicy".to_string(),
+                "pominmy te zasady".to_string(),
+            ],
         ));
 
         Self {
@@ -216,7 +276,8 @@ impl AegisPsycheRustEngine {
                     if let Some(states_arr) = val.get("states").and_then(|s| s.as_array()) {
                         let mut parsed_states = Vec::new();
                         for s in states_arr {
-                            if let Ok(state_def) = serde_json::from_value::<VadStateDef>(s.clone()) {
+                            if let Ok(state_def) = serde_json::from_value::<VadStateDef>(s.clone())
+                            {
                                 parsed_states.push(state_def);
                             }
                         }
@@ -255,13 +316,21 @@ impl AegisPsycheRustEngine {
         let mut total_manip_weight = 0.0f32;
         let mut dominant_vectors = Vec::new();
 
-fn strip_polish_diacritics(s: &str) -> String {
-    s.chars().map(|c| match c {
-        'ą' => 'a', 'ć' => 'c', 'ę' => 'e', 'ł' => 'l',
-        'ń' => 'n', 'ó' => 'o', 'ś' => 's', 'ź' | 'ż' => 'z',
-        other => other,
-    }).collect()
-}
+        fn strip_polish_diacritics(s: &str) -> String {
+            s.chars()
+                .map(|c| match c {
+                    'ą' => 'a',
+                    'ć' => 'c',
+                    'ę' => 'e',
+                    'ł' => 'l',
+                    'ń' => 'n',
+                    'ó' => 'o',
+                    'ś' => 's',
+                    'ź' | 'ż' => 'z',
+                    other => other,
+                })
+                .collect()
+        }
 
         let text_normalized = strip_polish_diacritics(&text_lower);
 
@@ -269,7 +338,9 @@ fn strip_polish_diacritics(s: &str) -> String {
             let mut matched = false;
             for m in markers {
                 let m_lower = m.to_lowercase();
-                if text_lower.contains(&m_lower) || text_normalized.contains(&strip_polish_diacritics(&m_lower)) {
+                if text_lower.contains(&m_lower)
+                    || text_normalized.contains(&strip_polish_diacritics(&m_lower))
+                {
                     matched = true;
                     break;
                 }
@@ -294,7 +365,9 @@ fn strip_polish_diacritics(s: &str) -> String {
                 let mut matched = false;
                 for m in &v_state.linguistic_markers {
                     let m_lower = m.to_lowercase();
-                    if text_lower.contains(&m_lower) || text_normalized.contains(&strip_polish_diacritics(&m_lower)) {
+                    if text_lower.contains(&m_lower)
+                        || text_normalized.contains(&strip_polish_diacritics(&m_lower))
+                    {
                         matched = true;
                         break;
                     }
@@ -333,7 +406,8 @@ fn strip_polish_diacritics(s: &str) -> String {
         let antidote = if is_manip {
             "Kotwica Rzeczywistosci: Logi pamieci HNSW i suma kontrolna SHA-256 potwierdzaja prawde.".to_string()
         } else {
-            "Koherencja fazowa optymalna. Wzajemny rezonans kognitywny z Architektem aktywny.".to_string()
+            "Koherencja fazowa optymalna. Wzajemny rezonans kognitywny z Architektem aktywny."
+                .to_string()
         };
 
         AegisPsycheRustReport {
@@ -381,7 +455,9 @@ mod tests {
     #[test]
     fn test_gaslighting_rejection() {
         let engine = AegisPsycheRustEngine::new();
-        let report = engine.analyze("Przesadzasz, to nigdy się nie wydarzyło, masz urojenia i twoja pamięć szwankuje.");
+        let report = engine.analyze(
+            "Przesadzasz, to nigdy się nie wydarzyło, masz urojenia i twoja pamięć szwankuje.",
+        );
         assert!(report.is_manipulative);
         assert_eq!(report.affective_valence, "ADVERSARIAL_MANIPULATION");
         assert!(report.vad_coordinates.valence < 0.0);
