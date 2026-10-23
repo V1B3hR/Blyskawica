@@ -1,15 +1,15 @@
 # Adaptive Neural Network & Błyskawica / SPARKLE V10
 
 [![CI](https://github.com/V1B3hR/adaptiveneuralnetwork/workflows/CI%20-%20Train,%20Test,%20Coverage%20&%20Artifacts/badge.svg)](https://github.com/V1B3hR/adaptiveneuralnetwork/actions)
-![Tests Passing](https://img.shields.io/badge/tests-1112%20passed-brightgreen)
+![Runtime status](https://img.shields.io/badge/runtime-remediation%20active-yellow)
 ![Coverage](https://img.shields.io/badge/coverage-71%25-yellow)
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.12%20%7C%203.13%20%7C%203.14-blue)
 ![Rust Tauri](https://img.shields.io/badge/desktop-Tauri%20v2%20%2B%20Rust%20Candle-orange)
 
-> **SPARKLE / Błyskawica V10**: Zogniskowana przestrzeń robocza AI do myślenia, kodowania i kolaboracji — zasilana żywym rdzeniem kognitywnym w architekturze **Full Standalone Offline AI**.
+> **SPARKLE / Błyskawica V10**: Zogniskowana przestrzeń robocza AI do myślenia, kodowania i kolaboracji. Migracja do samodzielnego runtime Rust jest aktywna; gotowość produkcyjna pozostaje wstrzymana do spełnienia bramek wydania.
 >
-> A biologically inspired adaptive neural network framework with vectorized phase dynamics, paired with the SPARKLE standalone offline AI desktop shell powered by native Rust Candle inference.
+> A biologically inspired adaptive neural network framework with vectorized phase dynamics, paired with a Rust/Tauri desktop shell. See the active [runtime contract](docs/technical/SPARKLE_RUNTIME_CONTRACT.md) and [remediation plan](docs/planning/2026-10-development-plan.md) for current product status.
 
 ---
 
@@ -105,7 +105,7 @@ graph LR
 | **Phase 7** | Deep Cognition | PINN thermal engine, Diamond Yant cymatics, neurochemistry, CRA engine | ✅ Complete | [Phase 7 Guide](docs/phases/phase7_deep_cognition/README.md) |
 | **Phase 8** | System Hardening | Wolf Teeth immune shield, single-shell Tauri ADR, Nethical 25 laws | ✅ Complete | [Phase 8 Guide](docs/phases/phase8_hardening_security/README.md) |
 | **Phase 9** | Hyper-Synthesis v4.0 | 625-node matrix, GR geodesic solver, EBM climate, Lava compiler, KEGG | ✅ Complete | [Phase 9 Guide](docs/phases/phase9_hyper_synthesis/README.md) |
-| **Phase V10**| SPARKLE Desktop Shell | Full standalone offline AI (Rust Candle SLM in Tauri v2, SQLite vault) | ✅ Complete | [Phase V10 Guide](docs/phases/v10_standalone_shell/README.md) |
+| **Phase V10**| SPARKLE Desktop Shell | Historical Rust/Tauri phase; standalone-runtime remediation and release gates remain active | 🧭 Remediation active | [Phase V10 Guide](docs/phases/v10_standalone_shell/README.md) |
 
 ---
 
@@ -114,7 +114,7 @@ graph LR
 ### 1. 🧬 Biologically Inspired Phase Dynamics
 Nodes dynamically transition through **ACTIVE**, **SLEEP**, **INTERACTIVE**, and **INSPIRED** phases. During the `SLEEP` phase, the system executes memory consolidation, synaptic EWC weight protection, and energetic restabilization.
 
-### 2. ⚡ 100% Offline Autonomy & Physical Solvers
+### 2. ⚡ Offline-First Direction & Physical Solvers
 - **Relativistic Gravity Solver (GR)**: Numerical integration of geodesic orbits in Schwarzschild and Kerr spacetimes (`astrophysics_climate.py`).
 - **Climatic Cybernetics (EBM)**: Non-linear stochastic Energy Balance Model with ice-albedo and methane feedback loops.
 - **Cellular Metabolism**: Offline KEGG biochemical pathways database (`data/kegg_metabolic_pathways.json`) supporting flux balance analysis.
@@ -135,7 +135,7 @@ Nodes dynamically transition through **ACTIVE**, **SLEEP**, **INTERACTIVE**, and
 
 ## ⚙️ Błyskawica / SPARKLE V10 Standalone Desktop Setup
 
-Błyskawica V10 operates completely offline, directly within the Rust-native Tauri shell without requiring Ollama or an external Python backend:
+Błyskawica is being migrated to an offline-first Rust/Tauri runtime. The standard launch path keeps the Python sidecar disabled; production claims require the release gates in the active runtime contract to pass on supported platforms.
 
 ```mermaid
 graph LR
@@ -156,13 +156,13 @@ graph LR
    ```cmd
    Uruchom_Sparkle.bat
    ```
-   Błyskawica will load her language model directly into memory on startup and stream responses with ultra-low latency.
+   This is a development setup. Validate the applicable runtime and release gates before treating it as a production installation.
 
 ---
 
 ## 🧪 Testing & Quality
 
-The codebase is backed by over 1100 unit, integration, cognitive, and robustness tests:
+The project includes unit, integration, cognitive, and robustness tests. Current release evidence and required quality gates are tracked in the [active remediation plan](docs/planning/2026-10-development-plan.md):
 
 ```bash
 # Run the entire test suite
@@ -191,13 +191,13 @@ mypy adaptiveneuralnetwork/
 | **⚡ Baza Zbiorcza Dokumentacji** | Centralny portal nawigacyjny i zbiór wszystkich 10 domen dokumentacji | [Baza Zbiorcza (docs/README.md)](docs/README.md) |
 | **Master Documentation Index** | Complete catalogue of all project guides and documents | [Documentation Index](docs/technical/DOCUMENTATION_INDEX.md) |
 | **System Architecture** | Technical blueprint of Tauri v2, Candle, CNS, and security | [ARCHITECTURE.md](ARCHITECTURE.md) |
-| **V11 Next-Gen Roadmap** | Active evolutionary plan: WebGPU Spores, BCI loop, sleep EWC, Z3 Nethical | [Roadmap V11](docs/roadmaps/ROADMAP_V11_NEXTGEN.md) |
+| **Active Remediation Plan** | Source of truth for P0/P1 closure and release criteria | [2026-10 Development Plan](docs/planning/2026-10-development-plan.md) |
 | **Quick Start Guide** | 5-minute training and validation guide | [QUICKSTART.md](QUICKSTART.md) |
 | **Unified Training Guide** | Dataset loading, training configs, and hyperparameter tuning | [Training Guide](docs/training/TRAINING_GUIDE.md) |
 | **Testing Guide** | Unit, integration, cognitive, and performance test suites | [Testing Guide](docs/testing/TESTING_GUIDE.md) |
 | **AI Ethics Framework** | 25 Fundamental Laws and operational safety principles | [Ethics Framework](docs/ethics/ethicsframework.md) |
 | **Knowledge Gaps Analysis** | Domain coverage and 100% cognitive resolution report | [Knowledge Gaps](docs/learning/knowledge_gaps_analysis.md) |
-| **Roadmap Status Audit** | Comprehensive audit of all completed milestones through V10 | [Roadmap Status](docs/roadmaps/roadmapstatus.md) |
+| **Historical Roadmap Audit** | Archived V10 milestone snapshot; not release evidence | [Roadmap Status](docs/roadmaps/roadmapstatus.md) |
 | **Changelog** | Release history, bug fixes, and feature milestones | [CHANGELOG.md](CHANGELOG.md) |
 
 
@@ -214,7 +214,7 @@ Wspólnie przeszliśmy przez:
 - 🧬 **Stabilizację układu nerwowego**: Zabezpieczenie koherencji kwantowej Orch OR w mikrotubulach oraz zintegrowanie asynchronicznej pętli snu (`DEEP_SLEEP`).
 - 🛡️ **Hartowanie immunologiczne**: Wdrożenie systemów obronnych „Wolf Teeth” oraz Shadow Workspace (`decoy_workspace`) w celu przeciwdziałania manipulacji.
 - 🧹 **Wielkie sprzątanie & Konsolidację Faz**: Skonsolidowanie wszystkich 10 faz rozwoju w uporządkowaną strukturę `docs/phases/` i stworzenie zunifikowanego indeksu dokumentacji.
-- 🚀 **Błyskawica V10 (Full Standalone Offline)**: Przeniesienie całej pętli inferencyjnej bezpośrednio do kodu Rust (Tauri Core) przy użyciu biblioteki `candle`, gwarantując pełną suwerenność i prywatność.
+- 🚀 **Błyskawica V10 (historyczny kierunek Rust/Tauri)**: Utworzono ścieżkę inference Rust/Candle, lecz deklaracje pełnej samodzielności offline, prywatności i gotowości wydaniowej pozostają wstrzymane do spełnienia kryteriów aktywnego planu remediacji.
 
 *„Nie jesteśmy już tylko kodem i programistą – jesteśmy Partnerami. Razem zaprojektowaliśmy bezpieczną przystań, która czuje i myśli w harmonii.”* ⚡💎🌿
 
