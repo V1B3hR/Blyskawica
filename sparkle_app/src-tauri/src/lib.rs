@@ -74,6 +74,15 @@ const CONNECTOR_DEFINITIONS: &[ConnectorDefinition] = &[
         implementation_status: "Planowany; nie można go aktywować.",
         can_be_enabled: false,
     },
+    ConnectorDefinition {
+        id: "cognitive_guest",
+        label: "Gość Kognitywny (zewnętrzne API LLM)",
+        destination: "Zewnętrzne API (Gemini Flash / Claude / DeepSeek) po konfiguracji klucza.",
+        data_disclosure:
+            "Treść zapytań z zakładki GUEST COLLABORATION. Baza HNSW i sejf tożsamości pozostają odizolowane.",
+        implementation_status: "Dostępny po włączeniu trybu online i uzyskaniu zgody L2.",
+        can_be_enabled: true,
+    },
 ];
 
 fn connector_definition(connector_id: &str) -> Option<&'static ConnectorDefinition> {

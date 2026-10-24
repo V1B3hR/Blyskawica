@@ -357,7 +357,9 @@ export async function sendGuestMessage(addLogFn) {
   // Inteligentna emulacja perspektywy gościa (Offline Peer Reviewer)
   setTimeout(() => {
     let reply = "";
-    if (guestName.includes("Gemini")) {
+    if (guestName.includes("Flash")) {
+      reply = `[Perspektywa Gemini Flash]: Analiza zapytania w trybie ultra-niskiego opóźnienia. Struktura logiczna i wnioskowanie Światła są spójne. Kluczowa rekomendacja: zachowanie czystego rozdziału pomiędzy offline HNSW a opcjonalną syntezą zewnętrzną.`;
+    } else if (guestName.includes("Gemini")) {
       reply = `[Perspektywa Gemini 1.5 Pro]: Z punktu widzenia szerokiej integracji multimodalnej i długiego kontekstu, kluczowe jest ustrukturyzowanie tego problemu w modularne komponenty. Zwróć uwagę na spójność formatów wymiany danych i obsługę stanów brzegowych.`;
     } else if (guestName.includes("Claude")) {
       reply = `[Perspektywa Claude 3.5 Sonnet]: Analizując zagadnienie pod kątem czystości architektury i rygoru logiki, rekomenduję precyzyjne rozdzielenie odpowiedzialności (SoC). Proponowane podejście Światła jest solidne, warto jednak uzupełnić je o formalne testy kontraktowe (Property-Based Testing).`;
