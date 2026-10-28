@@ -8,6 +8,7 @@ import { initChatModule, appendChatMessage, handleIncomingToken, handleResponseF
 import { initEditorModule, addLog, refreshWorkspaceFiles } from './modules/editor.js';
 import { initAegisModule, addAnomaly } from './modules/aegis.js';
 import { initQuantumModule } from './modules/quantum.js';
+import { initSporeModule } from './modules/spore.js';
 
 const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: async () => {} };
 const { listen } = window.__TAURI__ ? window.__TAURI__.event : { listen: async () => {} };
@@ -83,7 +84,12 @@ function initOptionsModule() {
   const exportFilenameInput = document.getElementById("export-filename");
   const btnRefreshDataInventory = document.getElementById("btn-refresh-data-inventory");
   const btnClearRecreatableArtifacts = document.getElementById("btn-clear-recreatable-artifacts");
+  const btnClearDerivedMemory = document.getElementById("btn-clear-derived-memory");
+  const btnExportDerivedMemory = document.getElementById("btn-export-derived-memory");
   const dataInventory = document.getElementById("data-inventory");
+  const vaultSecretKey = document.getElementById("vault-secret-key");
+  const btnDeleteVaultSecret = document.getElementById("btn-delete-vault-secret");
+  const btnExportVaultSecret = document.getElementById("btn-export-vault-secret");
   const chkOnlineMode = document.getElementById("chk-online-mode");
   const connectorRegistry = document.getElementById("connector-registry");
   const btnRefreshPermissionReport = document.getElementById("btn-refresh-permission-report");
@@ -279,6 +285,22 @@ function initOptionsModule() {
 
   if (btnCloseOptions) btnCloseOptions.addEventListener("click", closeModal);
   if (btnSaveOptionsClose) btnSaveOptionsClose.addEventListener("click", closeModal);
+
+  // Zamykanie przez kliknięcie w puste tło po bokach modalu
+  if (optionsModal) {
+    optionsModal.addEventListener("click", (e) => {
+      if (e.target === optionsModal) {
+        closeModal();
+      }
+    });
+  }
+
+  // Zamykanie klawiszem Escape
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && optionsModal && !optionsModal.classList.contains("hidden")) {
+      closeModal();
+    }
+  });
   if (btnRefreshDataInventory) btnRefreshDataInventory.addEventListener("click", refreshDataInventory);
   if (btnRefreshPermissionReport) btnRefreshPermissionReport.addEventListener("click", refreshPermissionReport);
   if (chkOnlineMode) {
@@ -299,6 +321,59 @@ function initOptionsModule() {
         const result = await invoke("clear_recreatable_runtime_artifacts");
         addLog(`[Dane lokalne]: ${result}`);
         refreshDataInventory();
+      } catch (error) {
+        addLog(`[Dane lokalne]: ${error}`);
+      }
+    });
+  }
+  if (btnClearDerivedMemory) {
+    btnClearDerivedMemory.addEventListener("click", async () => {
+      try {
+        const result = await invoke("clear_derived_runtime_memory");
+        addLog(`[Dane lokalne]: ${result}`);
+        refreshDataInventory();
+      } catch (error) {
+        addLog(`[Dane lokalne]: ${error}`);
+      }
+    });
+  }
+  if (btnExportDerivedMemory) {
+    btnExportDerivedMemory.addEventListener("click", async () => {
+      try {
+        const result = await invoke("export_derived_runtime_memory");
+        addLog(`[Dane lokalne]: ${result}`);
+      } catch (error) {
+        addLog(`[Dane lokalne]: ${error}`);
+      }
+    });
+  }
+  if (btnDeleteVaultSecret && vaultSecretKey) {
+    btnDeleteVaultSecret.addEventListener("click", async () => {
+      const key = vaultSecretKey.value.trim();
+      if (!key) {
+        addLog("[Dane lokalne]: Podaj nazwę sekretu R4 do usunięcia.");
+        return;
+      }
+      try {
+        const result = await invoke("vault_delete_secret", { key });
+        vaultSecretKey.value = "";
+        addLog(`[Dane lokalne]: ${result}`);
+        refreshDataInventory();
+      } catch (error) {
+        addLog(`[Dane lokalne]: ${error}`);
+      }
+    });
+  }
+  if (btnExportVaultSecret && vaultSecretKey) {
+    btnExportVaultSecret.addEventListener("click", async () => {
+      const key = vaultSecretKey.value.trim();
+      if (!key) {
+        addLog("[Dane lokalne]: Podaj nazwę sekretu R4 do eksportu.");
+        return;
+      }
+      try {
+        const result = await invoke("export_vault_secret", { key });
+        addLog(`[Dane lokalne]: ${result}`);
       } catch (error) {
         addLog(`[Dane lokalne]: ${error}`);
       }
@@ -360,12 +435,12 @@ async function pollEngineStatus() {
     if (status.running) {
       if (engineStatusIndicator) engineStatusIndicator.className = "status-indicator active";
       if (engineStatusText && !document.body.classList.contains("wolf-teeth-active")) {
-        engineStatusText.textContent = "Światło: Rdzeń aktywny";
+        engineStatusText.textContent = "Sparkle: Rdzeń aktywny";
       }
     } else {
       if (engineStatusIndicator) engineStatusIndicator.className = "status-indicator idle";
       if (engineStatusText && !document.body.classList.contains("wolf-teeth-active")) {
-        engineStatusText.textContent = "Światło: Rdzeń uśpiony";
+        engineStatusText.textContent = "Sparkle: Rdzeń uśpiony";
       }
     }
 
@@ -400,7 +475,7 @@ async function initStartupSequence(addLogFn, refreshFilesFn) {
     stepModel.textContent = "✓ Natywny silnik Candle / Qwen 2.5 Coder 7B: Gotowy";
   }
 
-  // Krok 3: Rzeczywisty start rdzenia Światła (Aegis + HNSW + Candle)
+  // Krok 3: Rzeczywisty start rdzenia Sparkle (Aegis + HNSW + Candle)
   if (window.__TAURI__) {
     try {
       await startBlyskawicaEngine(addLogFn, refreshFilesFn);
@@ -439,6 +514,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   initNeurochemistryHUD();
   initEditorModule();
   initChatModule(addLog, refreshWorkspaceFiles);
+  initSporeModule(addLog);
   initAegisModule(addLog);
   initQuantumModule(addLog);
   initTabs();
@@ -455,5 +531,5 @@ document.addEventListener("DOMContentLoaded", async () => {
   setInterval(pollEngineStatus, 3000);
   pollEngineStatus();
 
-  addLog("⚡ [ŚWIATŁO]: Środowisko kognitywne gotowe do współpracy.");
+  addLog("⚡ [SPARKLE]: Środowisko kognitywne gotowe do współpracy.");
 });

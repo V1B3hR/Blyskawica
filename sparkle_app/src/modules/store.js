@@ -21,7 +21,7 @@ export const SparkleStore = {
     workspacePath: ".",
     ttsEnabled: false,
     computeDevice: "gpu",
-    cognitiveName: "Światło",
+    cognitiveName: "Sparkle",
     chatHistory: []
   },
   listeners: [],

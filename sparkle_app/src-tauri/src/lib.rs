@@ -266,6 +266,170 @@ fn remove_regular_file(path: &Path) -> Result<bool, String> {
     Ok(true)
 }
 
+fn validate_removable_storage_tree(path: &Path, remaining: &mut usize) -> Result<(), String> {
+    let metadata = path
+        .symlink_metadata()
+        .map_err(|error| format!("Nie można odczytać magazynu danych: {error}"))?;
+    if metadata.file_type().is_symlink() {
+        return Err("Odmowa usunięcia: magazyn zawiera link symboliczny.".to_string());
+    }
+    if metadata.is_file() {
+        return Ok(());
+    }
+    if !metadata.is_dir() {
+        return Err("Odmowa usunięcia: magazyn zawiera nieobsługiwany typ pliku.".to_string());
+    }
+
+    let entries = std::fs::read_dir(path)
+        .map_err(|error| format!("Nie można odczytać zawartości magazynu danych: {error}"))?;
+    for entry in entries {
+        if *remaining == 0 {
+            return Err(format!(
+                "Odmowa usunięcia: magazyn przekracza limit {DATA_INVENTORY_ENTRY_LIMIT} wpisów."
+            ));
+        }
+        *remaining -= 1;
+        let entry =
+            entry.map_err(|error| format!("Nie można odczytać wpisu magazynu danych: {error}"))?;
+        validate_removable_storage_tree(&entry.path(), remaining)?;
+    }
+    Ok(())
+}
+
+fn remove_validated_storage_tree(path: &Path) -> Result<(), String> {
+    let entries = std::fs::read_dir(path)
+        .map_err(|error| format!("Nie można odczytać zawartości magazynu danych: {error}"))?;
+    for entry in entries {
+        let entry =
+            entry.map_err(|error| format!("Nie można odczytać wpisu magazynu danych: {error}"))?;
+        let entry_path = entry.path();
+        let metadata = entry_path
+            .symlink_metadata()
+            .map_err(|error| format!("Nie można odczytać wpisu magazynu danych: {error}"))?;
+        if metadata.file_type().is_symlink() {
+            return Err("Odmowa usunięcia: magazyn zawiera link symboliczny.".to_string());
+        }
+        if metadata.is_file() {
+            std::fs::remove_file(&entry_path)
+                .map_err(|error| format!("Nie można usunąć pliku magazynu danych: {error}"))?;
+        } else if metadata.is_dir() {
+            remove_validated_storage_tree(&entry_path)?;
+            std::fs::remove_dir(&entry_path)
+                .map_err(|error| format!("Nie można usunąć katalogu magazynu danych: {error}"))?;
+        } else {
+            return Err("Odmowa usunięcia: magazyn zawiera nieobsługiwany typ pliku.".to_string());
+        }
+    }
+    Ok(())
+}
+
+fn remove_storage_directory(path: &Path) -> Result<bool, String> {
+    let metadata = match path.symlink_metadata() {
+        Ok(metadata) => metadata,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(false),
+        Err(error) => return Err(format!("Nie można odczytać magazynu danych: {error}")),
+    };
+    if metadata.file_type().is_symlink() || !metadata.is_dir() {
+        return Err("Odmowa usunięcia: magazyn danych nie jest zwykłym katalogiem.".to_string());
+    }
+
+    let mut remaining = DATA_INVENTORY_ENTRY_LIMIT;
+    validate_removable_storage_tree(path, &mut remaining)?;
+    remove_validated_storage_tree(path)?;
+    std::fs::remove_dir(path)
+        .map_err(|error| format!("Nie można usunąć katalogu magazynu danych: {error}"))?;
+    Ok(true)
+}
+
+fn copy_validated_storage_tree(source: &Path, destination: &Path) -> Result<(), String> {
+    let entries = std::fs::read_dir(source)
+        .map_err(|error| format!("Nie można odczytać zawartości magazynu danych: {error}"))?;
+    for entry in entries {
+        let entry =
+            entry.map_err(|error| format!("Nie można odczytać wpisu magazynu danych: {error}"))?;
+        let source_path = entry.path();
+        let destination_path = destination.join(entry.file_name());
+        let metadata = source_path
+            .symlink_metadata()
+            .map_err(|error| format!("Nie można odczytać wpisu magazynu danych: {error}"))?;
+        if metadata.file_type().is_symlink() {
+            return Err("Odmowa eksportu: magazyn zawiera link symboliczny.".to_string());
+        }
+        if metadata.is_file() {
+            std::fs::copy(&source_path, &destination_path).map_err(|error| {
+                format!("Nie można wyeksportować pliku magazynu danych: {error}")
+            })?;
+        } else if metadata.is_dir() {
+            std::fs::create_dir(&destination_path)
+                .map_err(|error| format!("Nie można utworzyć katalogu eksportu: {error}"))?;
+            copy_validated_storage_tree(&source_path, &destination_path)?;
+        } else {
+            return Err("Odmowa eksportu: magazyn zawiera nieobsługiwany typ pliku.".to_string());
+        }
+    }
+    Ok(())
+}
+
+fn copy_storage_directory(source: &Path, destination: &Path) -> Result<bool, String> {
+    let metadata = match source.symlink_metadata() {
+        Ok(metadata) => metadata,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(false),
+        Err(error) => return Err(format!("Nie można odczytać magazynu danych: {error}")),
+    };
+    if metadata.file_type().is_symlink() || !metadata.is_dir() {
+        return Err("Odmowa eksportu: magazyn danych nie jest zwykłym katalogiem.".to_string());
+    }
+    if destination.exists() {
+        return Err("Odmowa eksportu: katalog docelowy już istnieje.".to_string());
+    }
+
+    let mut remaining = DATA_INVENTORY_ENTRY_LIMIT;
+    validate_removable_storage_tree(source, &mut remaining)?;
+    let parent = destination
+        .parent()
+        .ok_or_else(|| "Nie można ustalić katalogu eksportu.".to_string())?;
+    std::fs::create_dir_all(parent)
+        .map_err(|error| format!("Nie można utworzyć katalogu eksportu: {error}"))?;
+    std::fs::create_dir(destination)
+        .map_err(|error| format!("Nie można utworzyć katalogu eksportu: {error}"))?;
+
+    if let Err(error) = copy_validated_storage_tree(source, destination) {
+        let _ = remove_storage_directory(destination);
+        return Err(error);
+    }
+    Ok(true)
+}
+
+fn workspace_export_relative_path(category: &str) -> String {
+    let timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|duration| duration.as_secs())
+        .unwrap_or(0);
+    format!("sparkle_exports/{category}-{timestamp}")
+}
+
+fn sanitized_vault_key(key: &str) -> Result<String, String> {
+    if key.is_empty() {
+        return Err("Klucz nie może być pusty.".to_string());
+    }
+    let sanitized_key = key
+        .chars()
+        .filter(|character| character.is_alphanumeric() || *character == '_' || *character == '-')
+        .collect::<String>();
+    if sanitized_key.is_empty() {
+        return Err("Klucz po sanityzacji nie może być pusty.".to_string());
+    }
+    Ok(sanitized_key)
+}
+
+fn vault_secret_path(app: &AppHandle, key: &str) -> Result<(String, PathBuf), String> {
+    let sanitized_key = sanitized_vault_key(key)?;
+    let file_path = app_runtime_data_dir(app)
+        .join("identity_vault")
+        .join(format!("{sanitized_key}.enc"));
+    Ok((sanitized_key, file_path))
+}
+
 /// Python sidecars are a development-only compatibility path.  The desktop
 /// product must stay usable without a local HTTP server or Python runtime.
 fn sidecar_is_explicitly_enabled(value: Option<&str>) -> bool {
@@ -387,7 +551,15 @@ async fn start_engine(app_handle: AppHandle, state: State<'_, AppState>) -> Resu
         .map_err(|error| format!("Błąd tworzenia katalogu danych aplikacji: {error}"))?;
     let weights_path = app_data_dir.join("mock_weights.bin");
 
-    // 1. Generowanie mock_weights.bin jeśli nie istnieje
+    // 1. Sprawdzenie zasobów instalatora lub generowanie mock_weights.bin jeśli nie istnieje
+    if !weights_path.exists() {
+        if let Ok(resource_dir) = app_handle.path().resource_dir() {
+            let bundled_weights = resource_dir.join("mock_weights.bin");
+            if bundled_weights.is_file() {
+                let _ = std::fs::copy(&bundled_weights, &weights_path);
+            }
+        }
+    }
     if !weights_path.exists() {
         use std::fs::File;
         use std::io::Write;
@@ -829,7 +1001,7 @@ fn get_data_inventory(
             "label": "Odtwarzalne artefakty aplikacji",
             "location": app_storage_location(&mock_weights_path),
             "protection": "Nie zawiera danych użytkownika; generowane przez runtime.",
-            "retention": "Brak osobnej komendy czyszczenia.",
+            "retention": "Ręczne czyszczenie po L2 i natywnym potwierdzeniu; bez polityki czasowej.",
             "size_bytes": weights_size_bytes,
             "size_is_complete": weights_size_is_complete,
         }),
@@ -847,7 +1019,7 @@ fn get_data_inventory(
             "label": "Pamięć pochodna runtime",
             "location": app_storage_location(&vector_index_dir),
             "protection": "Trwałość i integralność bez potwierdzonego szyfrowania w spoczynku.",
-            "retention": "Brak zdefiniowanej retencji i operacji usunięcia.",
+            "retention": "Ręczne usunięcie całego indeksu po L2 i natywnym potwierdzeniu; bez polityki czasowej.",
             "size_bytes": index_size_bytes,
             "size_is_complete": index_size_is_complete,
         }),
@@ -869,7 +1041,7 @@ fn get_data_inventory(
             "label": "Sejf sekretów",
             "location": vault_dir.to_string_lossy().to_string(),
             "protection": "Odczyt i zapis wymagają poziomu 3 oraz używają natywnej ochrony sekretu.",
-            "retention": "Brak przenośnego kontraktu sejfu i operacji retencji.",
+            "retention": "Ręczne usunięcie pojedynczego sekretu po L3 i natywnym potwierdzeniu; bez polityki czasowej.",
             "size_bytes": vault_size_bytes,
             "size_is_complete": vault_size_is_complete,
         }));
@@ -879,7 +1051,7 @@ fn get_data_inventory(
             "label": "Sejf sekretów",
             "location": "Ukryte; szczegóły wymagają poziomu 3.",
             "protection": "Odczyt i zapis wymagają poziomu 3.",
-            "retention": "Brak przenośnego kontraktu sejfu i operacji retencji.",
+            "retention": "Usunięcie sekretu wymaga poziomu 3 i natywnego potwierdzenia.",
             "size_bytes": serde_json::Value::Null,
             "size_is_complete": false,
         }));
@@ -910,6 +1082,56 @@ fn clear_recreatable_runtime_artifacts(
         Ok("Usunięto odtwarzalny artefakt runtime.".to_string())
     } else {
         Ok("Brak odtwarzalnego artefaktu do usunięcia.".to_string())
+    }
+}
+
+#[tauri::command]
+fn clear_derived_runtime_memory(
+    app: AppHandle,
+    state: State<'_, AppState>,
+) -> Result<String, String> {
+    let permission_level = state.0.lock().unwrap().permission_level;
+    require_permission_level(permission_level, 2, "usunięcie pamięci pochodnej runtime")?;
+
+    let message = "Usunąć cały lokalny indeks pamięci pochodnej? Operacja jest nieodwracalna i nie usuwa workspace, eksportów ani sekretów.";
+    if !show_confirm_dialog(message, "Czyszczenie pamięci SPARKLE") {
+        return Err("Operacja anulowana przez użytkownika.".to_string());
+    }
+
+    let vector_index_dir = app_runtime_data_dir(&app).join("db");
+    if remove_storage_directory(&vector_index_dir)? {
+        Ok("Usunięto lokalny indeks pamięci pochodnej.".to_string())
+    } else {
+        Ok("Brak lokalnego indeksu pamięci pochodnej do usunięcia.".to_string())
+    }
+}
+
+#[tauri::command]
+fn export_derived_runtime_memory(
+    app: AppHandle,
+    state: State<'_, AppState>,
+) -> Result<String, String> {
+    let (permission_level, workspace_path) = {
+        let inner = state.0.lock().unwrap();
+        (inner.permission_level, inner.workspace_path.clone())
+    };
+    require_permission_level(permission_level, 2, "eksport pamięci pochodnej runtime")?;
+
+    let export_relative_path = workspace_export_relative_path("derived-memory");
+    let destination = resolve_workspace_relative_path(&workspace_path, &export_relative_path)?;
+    let message = "Wyeksportować cały lokalny indeks pamięci pochodnej do workspace? Eksport może zawierać reprezentacje pochodne interakcji i nie jest szyfrowany dodatkowo.";
+    if !show_confirm_dialog(message, "Eksport pamięci SPARKLE") {
+        return Err("Operacja anulowana przez użytkownika.".to_string());
+    }
+
+    let source = app_runtime_data_dir(&app).join("db");
+    if copy_storage_directory(&source, &destination)? {
+        Ok(format!(
+            "Wyeksportowano pamięć pochodną do '{}'.",
+            export_relative_path
+        ))
+    } else {
+        Ok("Brak lokalnego indeksu pamięci pochodnej do wyeksportowania.".to_string())
     }
 }
 
@@ -1122,9 +1344,16 @@ async fn read_workspace_file(path: String, state: State<'_, AppState>) -> Result
         return Err(format!("Zablokowano: Plik przekracza bezpieczny limit rozmiaru edytora (10 MB). Rozmiar: {:.2} MB", meta.len() as f64 / (1024.0 * 1024.0)));
     }
 
-    tokio::fs::read_to_string(&absolute_path)
-        .await
-        .map_err(|e| format!("Błąd odczytu pliku: {}", e))
+    match tokio::fs::read(&absolute_path).await {
+        Ok(bytes) => match String::from_utf8(bytes) {
+            Ok(text) => Ok(text),
+            Err(_) => Ok(format!(
+                "// [PLIK BINARNY: {}]\n// Rozmiar: {} B\n// Podgląd tekstowy niedostępny (dane binarne).\n// Plik można bezpiecznie usunąć przyciskiem 'USUŃ PLIK' w pasku narzędzi.",
+                path, meta.len()
+            )),
+        },
+        Err(e) => Err(format!("Błąd odczytu pliku: {}", e)),
+    }
 }
 
 #[tauri::command]
@@ -1156,6 +1385,38 @@ async fn write_workspace_file(
         .await
         .map_err(|e| format!("Błąd zapisu pliku: {}", e))?;
     Ok("Plik zapisany pomyślnie.".to_string())
+}
+
+#[tauri::command]
+async fn delete_workspace_file(path: String, state: State<'_, AppState>) -> Result<String, String> {
+    let (permission_level, workspace_path) = {
+        let inner = state.0.lock().unwrap();
+        (inner.permission_level, inner.workspace_path.clone())
+    };
+    require_permission_level(permission_level, 2, "usunięcie pliku workspace")?;
+
+    let absolute_path = resolve_workspace_relative_path(&workspace_path, &path)?;
+    let metadata = tokio::fs::symlink_metadata(&absolute_path)
+        .await
+        .map_err(|error| format!("Nie można odczytać metadanych pliku: {error}"))?;
+    if metadata.file_type().is_symlink() || !metadata.is_file() {
+        return Err(
+            "Odmowa usunięcia: wskazany element nie jest zwykłym plikiem workspace.".to_string(),
+        );
+    }
+
+    let message = format!(
+        "Usunąć nieodwracalnie plik '{}' z workspace? Nie zostaną usunięte inne pliki ani katalogi.",
+        path
+    );
+    if !show_confirm_dialog(&message, "Usuwanie pliku SPARKLE") {
+        return Err("Operacja anulowana przez użytkownika.".to_string());
+    }
+
+    tokio::fs::remove_file(&absolute_path)
+        .await
+        .map_err(|error| format!("Nie można usunąć pliku workspace: {error}"))?;
+    Ok(format!("Usunięto plik '{}' z workspace.", path))
 }
 
 #[tauri::command]
@@ -1255,21 +1516,10 @@ async fn vault_store_secret(
     let permission_level = state.0.lock().unwrap().permission_level;
     require_permission_level(permission_level, 3, "zapis do sejfu sekretów")?;
 
-    if key.is_empty() {
-        return Err("Klucz nie może być pusty".to_string());
-    }
-    let sanitized_key = key
-        .chars()
-        .filter(|c| c.is_alphanumeric() || *c == '_' || *c == '-')
-        .collect::<String>();
-    if sanitized_key.is_empty() {
-        return Err("Klucz po sanityzacji nie może być pusty.".to_string());
-    }
-    let app_data_dir = app
-        .path()
-        .app_data_dir()
-        .unwrap_or_else(|_| std::env::temp_dir().join("Blyskawica"));
-    let vault_dir = app_data_dir.join("identity_vault");
+    let (sanitized_key, file_path) = vault_secret_path(&app, &key)?;
+    let vault_dir = file_path
+        .parent()
+        .ok_or_else(|| "Nie można ustalić katalogu sejfu.".to_string())?;
     tokio::fs::create_dir_all(&vault_dir)
         .await
         .map_err(|e| format!("Błąd tworzenia katalogu vault: {}", e))?;
@@ -1277,7 +1527,6 @@ async fn vault_store_secret(
     let encrypted = blyskawica_core::native_security::protect_secret(value.as_bytes())
         .map_err(|e| format!("Błąd szyfrowania DPAPI: {}", e))?;
 
-    let file_path = vault_dir.join(format!("{}.enc", sanitized_key));
     tokio::fs::write(&file_path, encrypted)
         .await
         .map_err(|e| format!("Błąd zapisu zaszyfrowanego klucza: {}", e))?;
@@ -1297,23 +1546,7 @@ async fn vault_retrieve_secret(
     let permission_level = state.0.lock().unwrap().permission_level;
     require_permission_level(permission_level, 3, "odczyt z sejfu sekretów")?;
 
-    if key.is_empty() {
-        return Err("Klucz nie może być pusty".to_string());
-    }
-    let sanitized_key = key
-        .chars()
-        .filter(|c| c.is_alphanumeric() || *c == '_' || *c == '-')
-        .collect::<String>();
-    if sanitized_key.is_empty() {
-        return Err("Klucz po sanityzacji nie może być pusty.".to_string());
-    }
-    let app_data_dir = app
-        .path()
-        .app_data_dir()
-        .unwrap_or_else(|_| std::env::temp_dir().join("Blyskawica"));
-    let file_path = app_data_dir
-        .join("identity_vault")
-        .join(format!("{}.enc", sanitized_key));
+    let (sanitized_key, file_path) = vault_secret_path(&app, &key)?;
 
     if !file_path.exists() {
         return Err(format!(
@@ -1331,6 +1564,83 @@ async fn vault_retrieve_secret(
     let secret_str =
         String::from_utf8(decrypted_bytes).map_err(|e| format!("Błąd dekodowania UTF-8: {}", e))?;
     Ok(secret_str)
+}
+
+#[tauri::command]
+fn vault_delete_secret(
+    app: AppHandle,
+    key: String,
+    state: State<'_, AppState>,
+) -> Result<String, String> {
+    let permission_level = state.0.lock().unwrap().permission_level;
+    require_permission_level(permission_level, 3, "usunięcie sekretu z sejfu")?;
+
+    let (sanitized_key, file_path) = vault_secret_path(&app, &key)?;
+    let message = format!(
+        "Usunąć nieodwracalnie sekret '{}' z lokalnego sejfu?",
+        sanitized_key
+    );
+    if !show_confirm_dialog(&message, "Usuwanie sekretu SPARKLE") {
+        return Err("Operacja anulowana przez użytkownika.".to_string());
+    }
+
+    if remove_regular_file(&file_path)? {
+        Ok(format!(
+            "Usunięto sekret '{}' z lokalnego sejfu.",
+            sanitized_key
+        ))
+    } else {
+        Ok(format!(
+            "Sekret '{}' nie istnieje w lokalnym sejfie.",
+            sanitized_key
+        ))
+    }
+}
+
+#[tauri::command]
+fn export_vault_secret(
+    app: AppHandle,
+    key: String,
+    state: State<'_, AppState>,
+) -> Result<String, String> {
+    let (permission_level, workspace_path) = {
+        let inner = state.0.lock().unwrap();
+        (inner.permission_level, inner.workspace_path.clone())
+    };
+    require_permission_level(permission_level, 3, "eksport sekretu z sejfu")?;
+
+    let (sanitized_key, source) = vault_secret_path(&app, &key)?;
+    let metadata = source
+        .symlink_metadata()
+        .map_err(|error| format!("Nie można odczytać sekretu z sejfu: {error}"))?;
+    if metadata.file_type().is_symlink() || !metadata.is_file() {
+        return Err("Odmowa eksportu: sekret nie jest zwykłym plikiem sejfu.".to_string());
+    }
+
+    let export_relative_path = format!("sparkle_exports/vault/{sanitized_key}.enc");
+    let destination = resolve_workspace_relative_path(&workspace_path, &export_relative_path)?;
+    if destination.exists() {
+        return Err("Odmowa eksportu: zaszyfrowana kopia sekretu już istnieje.".to_string());
+    }
+    let message = format!(
+        "Wyeksportować zaszyfrowaną kopię sekretu '{}' do workspace? Kopia nie zawiera jawnej wartości, ale należy ją chronić jak sekret.",
+        sanitized_key
+    );
+    if !show_confirm_dialog(&message, "Eksport sekretu SPARKLE") {
+        return Err("Operacja anulowana przez użytkownika.".to_string());
+    }
+
+    let parent = destination
+        .parent()
+        .ok_or_else(|| "Nie można ustalić katalogu eksportu.".to_string())?;
+    std::fs::create_dir_all(parent)
+        .map_err(|error| format!("Nie można utworzyć katalogu eksportu: {error}"))?;
+    std::fs::copy(&source, &destination)
+        .map_err(|error| format!("Nie można wyeksportować sekretu z sejfu: {error}"))?;
+    Ok(format!(
+        "Wyeksportowano zaszyfrowaną kopię sekretu '{}' do '{}'.",
+        sanitized_key, export_relative_path
+    ))
 }
 
 #[tauri::command]
@@ -1711,15 +2021,20 @@ pub fn run() {
             set_connector_consent,
             get_data_inventory,
             clear_recreatable_runtime_artifacts,
+            clear_derived_runtime_memory,
+            export_derived_runtime_memory,
             execute_system_action,
             read_workspace_file,
             write_workspace_file,
+            delete_workspace_file,
             list_workspace_files,
             send_human_feedback,
             trigger_neurogenesis,
             export_logs,
             vault_store_secret,
             vault_retrieve_secret,
+            vault_delete_secret,
+            export_vault_secret,
             get_hardware_telemetry,
             scan_local_models,
             execute_sandboxed_mcp_tool,
@@ -1885,8 +2200,9 @@ mod tests {
     #[cfg(not(target_os = "windows"))]
     use super::show_confirm_dialog;
     use super::{
-        permission_change_requires_confirmation, remove_regular_file, require_permission_level,
-        resolve_workspace_relative_path, sidecar_is_explicitly_enabled, storage_inventory_stats,
+        copy_storage_directory, permission_change_requires_confirmation, remove_regular_file,
+        remove_storage_directory, require_permission_level, resolve_workspace_relative_path,
+        sanitized_vault_key, sidecar_is_explicitly_enabled, storage_inventory_stats,
         workspace_path_for_permission,
     };
     use std::fs;
@@ -2011,5 +2327,65 @@ mod tests {
         assert!(remove_regular_file(&directory).is_err());
 
         fs::remove_dir_all(&directory).expect("test directory should be removed");
+    }
+
+    #[test]
+    fn derived_memory_cleanup_removes_only_a_regular_directory_tree() {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system clock should be after the Unix epoch")
+            .as_nanos();
+        let directory =
+            std::env::temp_dir().join(format!("blyskawica-memory-cleanup-test-{unique}"));
+        let nested_directory = directory.join("nested");
+        fs::create_dir_all(&nested_directory).expect("test directory should be created");
+        fs::write(directory.join("index.bin"), [1_u8]).expect("test file should be created");
+        fs::write(nested_directory.join("wal.bin"), [2_u8]).expect("test file should be created");
+
+        assert!(remove_storage_directory(&directory).expect("directory tree should be removable"));
+        assert!(!directory.exists());
+        assert!(
+            !remove_storage_directory(&directory).expect("missing directory should be harmless")
+        );
+
+        let file_path = std::env::temp_dir().join(format!("blyskawica-memory-file-test-{unique}"));
+        fs::write(&file_path, [3_u8]).expect("test file should be created");
+        assert!(remove_storage_directory(&file_path).is_err());
+        fs::remove_file(&file_path).expect("test file should be removed");
+    }
+
+    #[test]
+    fn derived_memory_export_copies_a_regular_directory_tree() {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system clock should be after the Unix epoch")
+            .as_nanos();
+        let source = std::env::temp_dir().join(format!("blyskawica-memory-export-source-{unique}"));
+        let destination =
+            std::env::temp_dir().join(format!("blyskawica-memory-export-destination-{unique}"));
+        let nested_directory = source.join("nested");
+        fs::create_dir_all(&nested_directory).expect("source directory should be created");
+        fs::write(nested_directory.join("index.bin"), [1_u8, 2_u8])
+            .expect("source file should be created");
+
+        assert!(copy_storage_directory(&source, &destination).expect("directory should export"));
+        assert_eq!(
+            fs::read(destination.join("nested/index.bin")).unwrap(),
+            [1_u8, 2_u8]
+        );
+        assert!(copy_storage_directory(&source, &destination).is_err());
+
+        fs::remove_dir_all(&source).expect("source directory should be removed");
+        fs::remove_dir_all(&destination).expect("destination directory should be removed");
+    }
+
+    #[test]
+    fn vault_key_sanitization_blocks_path_traversal() {
+        assert_eq!(
+            sanitized_vault_key("primary-key").as_deref(),
+            Ok("primary-key")
+        );
+        assert_eq!(sanitized_vault_key("../primary"), Ok("primary".to_string()));
+        assert!(sanitized_vault_key("...").is_err());
     }
 }

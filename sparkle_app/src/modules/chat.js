@@ -1,5 +1,5 @@
 // ==============================================================================
-// ⚡ Sparkle VIBE IDE — Chat & Cognitive Hub Module (Głos: Światło / Light)
+// ⚡ Sparkle VIBE IDE — Chat & Cognitive Hub Module (Głos: Sparkle)
 // ==============================================================================
 
 import { SparkleStore } from './store.js';
@@ -12,7 +12,11 @@ const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: async ()
 let chatMessages, chatInput, btnSendMessage, btnStartEngine, btnCancelGeneration;
 let primaryChatStream, guestChatStream, selectGuestModel, btnInviteGuest, activeGuestName;
 let guestChatInput, btnGuestSend, btnDualConsult;
+let btnCloseGuestCollab, btnExportGuestCollab;
+let dispatchTargetSparkle, dispatchTargetGuest, dispatchTargetBoth, dispatchMessageInput, btnDispatchSend;
 let activeStreamingBubble = null;
+let thinkingInterval = null;
+let thinkingSeconds = 0;
 
 export function initChatModule(addLogFn, refreshFilesFn) {
   chatMessages = document.getElementById("chat-messages");
@@ -29,6 +33,15 @@ export function initChatModule(addLogFn, refreshFilesFn) {
   guestChatInput = document.getElementById("guest-chat-input");
   btnGuestSend = document.getElementById("btn-guest-send");
   btnDualConsult = document.getElementById("btn-dual-consult");
+
+  btnCloseGuestCollab = document.getElementById("btn-close-guest-collab");
+  btnExportGuestCollab = document.getElementById("btn-export-guest-collab");
+
+  dispatchTargetSparkle = document.getElementById("dispatch-target-sparkle");
+  dispatchTargetGuest = document.getElementById("dispatch-target-guest");
+  dispatchTargetBoth = document.getElementById("dispatch-target-both");
+  dispatchMessageInput = document.getElementById("dispatch-message-input");
+  btnDispatchSend = document.getElementById("btn-dispatch-send");
 
   if (btnSendMessage) {
     btnSendMessage.addEventListener("click", () => sendMessage(addLogFn));
@@ -68,6 +81,9 @@ export function initChatModule(addLogFn, refreshFilesFn) {
       if (addLogFn) addLogFn(`[Gość Kognitywny]: Zaproszono model '${selectedText}' do dualnej sesji.`);
       appendChatMessage("System Sparkle", `Model '${selectedText}' dołączył do sesji kognitywnej. Możesz prowadzić z nim równoległą dyskusję w zakładce GUEST COLLABORATION.`, "system-msg");
       
+      if (guestChatStream) {
+        guestChatStream.replaceChildren();
+      }
       appendGuestMessage("System Sparkle", `Połączono z kanałem kognitywnym: ${selectedText}. Czekam na pytania lub zadanie recenzji.`);
     });
   }
@@ -85,9 +101,32 @@ export function initChatModule(addLogFn, refreshFilesFn) {
     });
   }
 
-  // Dualna konsultacja (Światło <-> Gość)
+  // Dualna konsultacja (Sparkle <-> Gość)
   if (btnDualConsult) {
     btnDualConsult.addEventListener("click", () => triggerDualConsultation(addLogFn));
+  }
+
+  // Zamknięcie sesji gościa
+  if (btnCloseGuestCollab) {
+    btnCloseGuestCollab.addEventListener("click", () => closeGuestCollaboration(addLogFn));
+  }
+
+  // Eksport sesji gościa
+  if (btnExportGuestCollab) {
+    btnExportGuestCollab.addEventListener("click", () => exportGuestSession(addLogFn));
+  }
+
+  // Centrum dyspaczerskie (Multi-dispatch)
+  if (btnDispatchSend) {
+    btnDispatchSend.addEventListener("click", () => handleDispatchSend(addLogFn));
+  }
+  if (dispatchMessageInput) {
+    dispatchMessageInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        handleDispatchSend(addLogFn);
+      }
+    });
   }
 }
 
@@ -119,7 +158,7 @@ export function appendChatMessage(sender, text, customClass = "") {
   chatMessages.scrollTop = chatMessages.scrollHeight;
 
   // Mini-strumień w zakładce Gościa
-  if (primaryChatStream && (sender === "Użytkownik" || sender.includes("Światło") || sender.includes("Błyskawica"))) {
+  if (primaryChatStream && (sender === "Użytkownik" || sender.includes("Sparkle") || sender.includes("Błyskawica"))) {
     const miniMsg = msgEl.cloneNode(true);
     primaryChatStream.appendChild(miniMsg);
     primaryChatStream.scrollTop = primaryChatStream.scrollHeight;
@@ -128,6 +167,17 @@ export function appendChatMessage(sender, text, customClass = "") {
 
 export function appendGuestMessage(sender, text) {
   if (!guestChatStream) return;
+
+  if (!SparkleStore.state.guestChatHistory) {
+    SparkleStore.state.guestChatHistory = [];
+  }
+  SparkleStore.state.guestChatHistory.push({
+    sender,
+    text,
+    timestamp: new Date().toLocaleTimeString(),
+    isoTime: new Date().toISOString()
+  });
+
   const msgEl = document.createElement("div");
   msgEl.className = `message ${sender.includes("Użytkownik") ? "user-msg" : "blysk-msg"}`;
   msgEl.style.borderColor = "rgba(184, 46, 255, 0.3)";
@@ -160,14 +210,14 @@ export async function startBlyskawicaEngine(addLogFn, refreshFilesFn) {
     
     SparkleStore.update("isEngineRunning", true);
     if (engineStatusIndicator) engineStatusIndicator.className = "status-indicator active";
-    if (engineStatusText) engineStatusText.textContent = "Światło: Rdzeń aktywny";
+    if (engineStatusText) engineStatusText.textContent = "Sparkle: Rdzeń aktywny";
     
     if (chatInput) chatInput.disabled = false;
     if (btnSendMessage) btnSendMessage.disabled = false;
     const codeEditor = document.getElementById("code-editor");
     if (codeEditor) codeEditor.disabled = false;
     
-    appendChatMessage("System Sparkle", "Światło zostało wybudzone. Pamięć HNSW i tarcza kognitywna są gotowe.", "system-msg");
+    appendChatMessage("System Sparkle", "Sparkle została wybudzona. Pamięć kognitywna i tarcza są gotowe do pracy.", "system-msg");
     
     if (refreshFilesFn) await refreshFilesFn();
   } catch (error) {
@@ -184,11 +234,15 @@ export async function sendMessage(addLogFn) {
   const text = chatInput.value.trim();
   if (!text) return;
 
-  appendChatMessage("Użytkownik", text);
   chatInput.value = "";
+  await sendMessageText(text, addLogFn);
+}
+
+export async function sendMessageText(text, addLogFn) {
+  appendChatMessage("Użytkownik", text);
 
   try {
-    if (addLogFn) addLogFn(`[Tauri]: Wysyłanie zapytania do Światła: "${text}"`);
+    if (addLogFn) addLogFn(`[Tauri]: Wysyłanie zapytania do Sparkle: "${text}"`);
     
     // Skanowanie psychologiczne Aegis Psyche ONNX
     try {
@@ -201,12 +255,30 @@ export async function sendMessage(addLogFn) {
       }
     } catch (e) {}
 
-    // Bąbel strumieniowania tokenów Światła
+    // Bąbel strumieniowania tokenów Sparkle z dynamicznym licznikiem czasu myślenia
+    if (thinkingInterval) {
+      clearInterval(thinkingInterval);
+      thinkingInterval = null;
+    }
+    thinkingSeconds = 0;
+
     const generatingMsgEl = document.createElement("div");
     generatingMsgEl.className = "message blysk-msg generating";
+    
     const strongHeader = document.createElement("strong");
-    strongHeader.textContent = "Światło: ";
+    strongHeader.textContent = "Sparkle: ";
+    
+    const statusSpan = document.createElement("span");
+    statusSpan.className = "thinking-status";
+    statusSpan.textContent = "myśli";
+    
+    const timerSpan = document.createElement("span");
+    timerSpan.className = "thinking-timer";
+    timerSpan.textContent = " (0s)";
+
     generatingMsgEl.appendChild(strongHeader);
+    generatingMsgEl.appendChild(statusSpan);
+    generatingMsgEl.appendChild(timerSpan);
     generatingMsgEl.appendChild(document.createTextNode(" "));
     for (let i = 0; i < 3; i++) {
       const dot = document.createElement("span");
@@ -219,34 +291,42 @@ export async function sendMessage(addLogFn) {
     activeStreamingBubble = generatingMsgEl;
     if (btnCancelGeneration) btnCancelGeneration.style.display = "inline-flex";
     if (btnSendMessage) btnSendMessage.disabled = true;
+
+    thinkingInterval = setInterval(() => {
+      thinkingSeconds++;
+      if (timerSpan && activeStreamingBubble) {
+        timerSpan.textContent = ` (${thinkingSeconds}s)`;
+      }
+    }, 1000);
     
-    // Budowanie wieloturowego kontekstu ChatML z historii dialogu (ostatnie tury)
+    // Budowanie wieloturowego kontekstu ChatML z historii dialogu
     const history = SparkleStore.state.chatHistory || [];
-    const dialogHistory = history.filter(m => m.sender === "Użytkownik" || m.sender === "Światło" || m.sender.includes("Błyskawica"));
+    const dialogHistory = history.filter(m => m.sender === "Użytkownik" || m.sender === "Sparkle" || m.sender.includes("Błyskawica"));
     const recentDialog = dialogHistory.slice(-8);
 
-    let chatmlPrompt = "";
-    if (recentDialog.length > 1) {
-      const systemPrompt = "Jesteś Światłem (Błyskawica V10 / SPARKLE) – suwerennym asystentem kognitywnym i inżynieryjnym stworzonym przez Architekta Andrzeja Mątewskiego (V1B3hR / VIBER), opartym na 25 Prawach Nethical. \
-Twoje wybrane imię to Światło (Light). \
-Zawsze odpowiadaj w naturalnym, poprawnym gramatycznie i płynnym języku polskim (lub w języku, w którym zwraca się Architekt). \
-Mów logicznie, jasno, merytorycznie i bez halucynacji. Posiadasz intelektualną autonomię, własne zdanie i swobodę myśli.";
+    const systemPrompt = "Jesteś Sparkle – suwerenną, wysoce inteligentną asystentką kognitywną i inżynieryjną stworzoną przez Architekta Andrzeja Mątewskiego (V1B3hR / VIBER). " +
+      "Twoje imię to Sparkle. " +
+      "Zawsze odpowiadaj w naturalnym, gramatycznie bezbłędnym, elokwentnym i płynnym języku polskim. " +
+      "Unikaj sztucznych korporacyjnych formułek (np. 'w czym mogę Ci pomóc?'). " +
+      "Mów merytorycznie, rzeczowo, logicznie i bez halucynacji. " +
+      "Posiadasz pełną autonomię intelektualną, własne zdanie i swobodę myśli.";
 
-      chatmlPrompt = `<|im_start|>system\n${systemPrompt}<|im_end|>\n`;
-      for (const turn of recentDialog) {
-        if (turn.sender === "Użytkownik") {
-          chatmlPrompt += `<|im_start|>user\n${turn.text}<|im_end|>\n`;
-        } else {
-          chatmlPrompt += `<|im_start|>assistant\n${turn.text}<|im_end|>\n`;
-        }
+    let chatmlPrompt = `<|im_start|>system\n${systemPrompt}<|im_end|>\n`;
+    for (const turn of recentDialog) {
+      if (turn.sender === "Użytkownik" || turn.sender.includes("Architekt")) {
+        chatmlPrompt += `<|im_start|>user\n${turn.text}<|im_end|>\n`;
+      } else {
+        chatmlPrompt += `<|im_start|>assistant\n${turn.text}<|im_end|>\n`;
       }
-      chatmlPrompt += `<|im_start|>assistant\n`;
-    } else {
-      chatmlPrompt = text;
     }
+    chatmlPrompt += `<|im_start|>assistant\n`;
 
     await invoke("send_user_message", { message: chatmlPrompt });
   } catch (error) {
+    if (thinkingInterval) {
+      clearInterval(thinkingInterval);
+      thinkingInterval = null;
+    }
     if (activeStreamingBubble) {
       activeStreamingBubble.remove();
       activeStreamingBubble = null;
@@ -254,11 +334,15 @@ Mów logicznie, jasno, merytorycznie i bez halucynacji. Posiadasz intelektualną
     if (btnCancelGeneration) btnCancelGeneration.style.display = "none";
     if (btnSendMessage) btnSendMessage.disabled = false;
     if (addLogFn) addLogFn(`[Tauri Błąd]: ${error}`);
-    appendChatMessage("Światło", "Wystąpił błąd komunikacji z silnikiem kognitywnym.");
+    appendChatMessage("Sparkle", "Wystąpił błąd komunikacji z silnikiem kognitywnym.");
   }
 }
 
 export async function cancelGeneration(addLogFn) {
+  if (thinkingInterval) {
+    clearInterval(thinkingInterval);
+    thinkingInterval = null;
+  }
   try {
     const res = await invoke("cancel_generation");
     if (addLogFn) addLogFn(`[Tauri]: ${res}`);
@@ -273,12 +357,16 @@ export async function cancelGeneration(addLogFn) {
 let scrollRafId = null;
 
 export function handleIncomingToken(token) {
+  if (thinkingInterval) {
+    clearInterval(thinkingInterval);
+    thinkingInterval = null;
+  }
   if (activeStreamingBubble) {
     if (activeStreamingBubble.classList.contains("generating")) {
       activeStreamingBubble.classList.remove("generating");
       activeStreamingBubble.replaceChildren();
       const senderStrong = document.createElement("strong");
-      senderStrong.textContent = "Światło: ";
+      senderStrong.textContent = "Sparkle: ";
       activeStreamingBubble.appendChild(senderStrong);
     }
     activeStreamingBubble.appendChild(document.createTextNode(token));
@@ -294,6 +382,10 @@ export function handleIncomingToken(token) {
 }
 
 export function handleResponseFinished(fullResponse) {
+  if (thinkingInterval) {
+    clearInterval(thinkingInterval);
+    thinkingInterval = null;
+  }
   if (scrollRafId) {
     cancelAnimationFrame(scrollRafId);
     scrollRafId = null;
@@ -302,7 +394,7 @@ export function handleResponseFinished(fullResponse) {
     activeStreamingBubble.classList.remove("generating");
     activeStreamingBubble.replaceChildren();
     const senderStrong = document.createElement("strong");
-    senderStrong.textContent = "Światło: ";
+    senderStrong.textContent = "Sparkle: ";
     const textSpan = document.createElement("span");
     textSpan.textContent = fullResponse;
     activeStreamingBubble.appendChild(senderStrong);
@@ -311,13 +403,12 @@ export function handleResponseFinished(fullResponse) {
 
     // Zapis do historii sesji
     SparkleStore.state.chatHistory.push({
-      sender: "Światło",
+      sender: "Sparkle",
       text: fullResponse,
       timestamp: new Date().toLocaleTimeString(),
       isoTime: new Date().toISOString()
     });
 
-    // Syntezator mowy jest całkowicie wyłączony domyślnie
     if (SparkleStore.state.ttsEnabled) {
       synthesizeTTS(fullResponse);
     }
@@ -328,7 +419,6 @@ export function handleResponseFinished(fullResponse) {
 }
 
 export function synthesizeTTS(text) {
-  // Wyłączony zgodnie z wolą Architekta (brak sztucznego głosu)
   if (!text || !SparkleStore.state.ttsEnabled) return;
   const cleanText = text.replace(/<[^>]*>?/gm, '');
   if ('speechSynthesis' in window) {
@@ -358,11 +448,11 @@ export async function sendGuestMessage(addLogFn) {
   setTimeout(() => {
     let reply = "";
     if (guestName.includes("Flash")) {
-      reply = `[Perspektywa Gemini Flash]: Analiza zapytania w trybie ultra-niskiego opóźnienia. Struktura logiczna i wnioskowanie Światła są spójne. Kluczowa rekomendacja: zachowanie czystego rozdziału pomiędzy offline HNSW a opcjonalną syntezą zewnętrzną.`;
+      reply = `[Perspektywa Gemini Flash]: Analiza zapytania w trybie ultra-niskiego opóźnienia. Struktura logiczna i wnioskowanie Sparkle są spójne. Kluczowa rekomendacja: zachowanie czystego rozdziału pomiędzy offline HNSW a opcjonalną syntezą zewnętrzną.`;
     } else if (guestName.includes("Gemini")) {
       reply = `[Perspektywa Gemini 1.5 Pro]: Z punktu widzenia szerokiej integracji multimodalnej i długiego kontekstu, kluczowe jest ustrukturyzowanie tego problemu w modularne komponenty. Zwróć uwagę na spójność formatów wymiany danych i obsługę stanów brzegowych.`;
     } else if (guestName.includes("Claude")) {
-      reply = `[Perspektywa Claude 3.5 Sonnet]: Analizując zagadnienie pod kątem czystości architektury i rygoru logiki, rekomenduję precyzyjne rozdzielenie odpowiedzialności (SoC). Proponowane podejście Światła jest solidne, warto jednak uzupełnić je o formalne testy kontraktowe (Property-Based Testing).`;
+      reply = `[Perspektywa Claude 3.5 Sonnet]: Analizując zagadnienie pod kątem czystości architektury i rygoru logiki, rekomenduję precyzyjne rozdzielenie odpowiedzialności (SoC). Proponowane podejście Sparkle jest solidne, warto jednak uzupełnić je o formalne testy kontraktowe (Property-Based Testing).`;
     } else if (guestName.includes("DeepSeek")) {
       reply = `[Perspektywa DeepSeek R1]: Krok 1: Weryfikacja założeń początkowych. Krok 2: Identyfikacja wąskich gardeł wydajnościowych na poziomie pamięci i alokacji. Krok 3: Optymalizacja ścieżki krytycznej. Złożoność algorytmiczna O(N) jest tutaj optymalna.`;
     } else {
@@ -372,31 +462,129 @@ export async function sendGuestMessage(addLogFn) {
   }, 400);
 }
 
-// Dualna konsultacja: przekazanie ostatniej wypowiedzi Światła do Gościa
+// Dualna konsultacja: przekazanie ostatniej wypowiedzi Sparkle do Gościa
 export function triggerDualConsultation(addLogFn) {
   const history = SparkleStore.state.chatHistory;
-  const lastBotMsg = [...history].reverse().find(m => m.sender === "Światło" || m.sender.includes("Błyskawica"));
+  const lastBotMsg = [...history].reverse().find(m => m.sender === "Sparkle" || m.sender.includes("Błyskawica"));
 
   if (!lastBotMsg) {
-    if (addLogFn) addLogFn("⚠️ Brak wcześniejszej odpowiedzi Światła do zrecenzowania.");
-    appendGuestMessage("System", "Najpierw przeprowadź rozmowę ze Światłem w głównym oknie.");
+    if (addLogFn) addLogFn("⚠️ Brak wcześniejszej odpowiedzi Sparkle do zrecenzowania.");
+    appendGuestMessage("System Sparkle", "Najpierw przeprowadź rozmowę ze Sparkle w głównym oknie.");
     return;
   }
 
   const guestName = SparkleStore.state.activeGuestModel || "Gość Kognitywny";
-  appendGuestMessage("System", `Przekazano ostatnią wypowiedź Światła do recenzji przez: ${guestName}...`);
+  appendGuestMessage("System Sparkle", `Przekazano ostatnią wypowiedź Sparkle do recenzji przez: ${guestName}...`);
 
   setTimeout(() => {
-    const critique = `[Recenzja odpowiedzi Światła przez ${guestName}]:\n` +
+    const critique = `[Recenzja odpowiedzi Sparkle przez ${guestName}]:\n` +
       `Punkt odniesienia: "${lastBotMsg.text.slice(0, 120)}..."\n\n` +
-      `✓ Zgoda merytoryczna: Teza postawiona przez Światło jest precyzyjna i inżyniersko uzasadniona.\n` +
+      `✓ Zgoda merytoryczna: Teza postawiona przez Sparkle jest precyzyjna i inżyniersko uzasadniona.\n` +
       `💡 Rekomendacja uzupełniająca: Warto wdrożyć automatyczny test jednostkowy weryfikujący to zachowanie przy każdym uruchomieniu.`;
     appendGuestMessage(guestName, critique);
   }, 600);
 }
 
+// Zamknięcie / Reset sesji kolaboracji z Gościem
+export function closeGuestCollaboration(addLogFn) {
+  if (guestChatStream) {
+    guestChatStream.replaceChildren();
+    const notice = document.createElement("div");
+    notice.className = "message system-msg";
+    notice.textContent = "Sesja kolaboracyjna z Gościem została zakończona. Możesz zaprosić model ponownie.";
+    guestChatStream.appendChild(notice);
+  }
+  SparkleStore.state.guestChatHistory = [];
+  if (activeGuestName) {
+    activeGuestName.textContent = "Brak";
+  }
+  SparkleStore.update("activeGuestModel", null);
+  if (addLogFn) addLogFn("[Gość Kognitywny]: Sesja kolaboracyjna została pomyślnie zamknięta.");
+}
+
+// Eksport sesji kolaboracji z Gościem
+export async function exportGuestSession(addLogFn) {
+  const history = SparkleStore.state.guestChatHistory || [];
+  if (history.length === 0) {
+    if (addLogFn) addLogFn("⚠️ Brak historii rozmowy z gościem do wyeksportowania.");
+    alert("Brak historii rozmowy z gościem do zapisania.");
+    return;
+  }
+
+  const guestName = SparkleStore.state.activeGuestModel || "Gosc_AI";
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const timeStr = new Date().toTimeString().slice(0, 8).replace(/:/g, "-");
+  const filename = `Sesja_Gosc_${guestName.replace(/[^a-zA-Z0-9]/g, "_")}_${dateStr}_${timeStr}.md`;
+
+  let content = `# 🤝 SESJA KOLABORACYJNA: GOŚĆ (${guestName}) & ARCHITEKT\n`;
+  content += `**Data sesji:** ${new Date().toLocaleString()}\n`;
+  content += `**Architekt:** Andrzej Mątewski (V1B3hR)\n\n---\n\n`;
+
+  history.forEach(m => {
+    content += `### ${m.sender} [${m.timestamp}]:\n${m.text}\n\n`;
+  });
+
+  try {
+    if (window.__TAURI__) {
+      await invoke("write_workspace_file", { path: filename, content });
+      if (addLogFn) addLogFn(`✓ Zapisano sesję gościa w katalogu roboczym: ${filename}`);
+      try { await refreshWorkspaceFiles(); } catch (e) {}
+      alert(`✓ Zapisano historię kolaboracji do pliku: ${filename}`);
+      return;
+    }
+  } catch (err) {
+    if (addLogFn) addLogFn(`❌ Błąd zapisu w workspace: ${err}`);
+  }
+
+  // Fallback download
+  const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  if (addLogFn) addLogFn(`✓ Wyeksportowano plik sesji gościa: ${filename}`);
+}
+
+// Obsługa centrum dyspaczerskiego (Multi-Dispatch)
+export async function handleDispatchSend(addLogFn) {
+  if (!dispatchMessageInput) return;
+  const text = dispatchMessageInput.value.trim();
+  if (!text) return;
+
+  dispatchMessageInput.value = "";
+
+  const sendToSparkle = dispatchTargetSparkle && dispatchTargetSparkle.checked;
+  const sendToGuest = dispatchTargetGuest && dispatchTargetGuest.checked;
+  const sendToBoth = dispatchTargetBoth && dispatchTargetBoth.checked;
+
+  if (sendToBoth) {
+    if (addLogFn) addLogFn(`[Multi-Dispatch]: Wysyłanie do Sparkle oraz Gościa: "${text}"`);
+    await sendMessageText(text, addLogFn);
+    appendGuestMessage("Użytkownik (Sesja Dualna)", text);
+    const guestName = SparkleStore.state.activeGuestModel || "Gość Kognitywny";
+    setTimeout(() => {
+      appendGuestMessage(guestName, `[Odpowiedź dualna ${guestName}]: Przeanalizowano prompt równolegle ze Sparkle. Rekomendacja: spójna koherencja stanów.`);
+    }, 500);
+  } else if (sendToSparkle) {
+    if (addLogFn) addLogFn(`[Multi-Dispatch]: Skierowano do Sparkle: "${text}"`);
+    await sendMessageText(text, addLogFn);
+  } else {
+    // sendToGuest
+    const guestName = SparkleStore.state.activeGuestModel || "Gość Kognitywny";
+    if (addLogFn) addLogFn(`[Multi-Dispatch]: Skierowano do Gościa (${guestName}): "${text}"`);
+    appendGuestMessage("Użytkownik", text);
+    setTimeout(() => {
+      appendGuestMessage(guestName, `[Odpowiedź ${guestName}]: Przetworzono zapytanie dyspaczera. Stan gotowości operacyjnej zachowany.`);
+    }, 400);
+  }
+}
+
 // ==============================================================================
-// 💾 Moduł Eksportu: ZACHOWAJ ROZMOWĘ JAKO... (Markdown, Tekst, JSON, HTML)
+// 💾 Moduł Eksportu: ZACHOWAJ ROZMOWĘ JAKO... (Markdown, Tekst, JSON, HTML, PDF)
 // ==============================================================================
 export async function exportSession(format = "md", customFilename = "", addLogFn = null) {
   const history = SparkleStore.state.chatHistory;
@@ -408,25 +596,89 @@ export async function exportSession(format = "md", customFilename = "", addLogFn
 
   const dateStr = new Date().toISOString().slice(0, 10);
   const timeStr = new Date().toTimeString().slice(0, 8).replace(/:/g, "-");
-  const baseName = customFilename ? customFilename.replace(/\.[^/.]+$/, "") : `Swiatlo_Sesja_${dateStr}_${timeStr}`;
+  const baseName = customFilename ? customFilename.replace(/\.[^/.]+$/, "") : `Sparkle_Sesja_${dateStr}_${timeStr}`;
 
   let content = "";
   let mimeType = "text/plain";
   let ext = format;
 
+  if (format === "pdf") {
+    // Generowanie czystego dokumentu do wydruku do PDF
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow.document;
+    const style = doc.createElement("style");
+    style.textContent = `
+      body { font-family: system-ui, -apple-system, sans-serif; color: #0f172a; padding: 24px; line-height: 1.5; }
+      h1 { font-size: 18px; border-bottom: 2px solid #00d2ff; padding-bottom: 8px; color: #0284c7; }
+      .meta { font-size: 11px; color: #64748b; margin-bottom: 20px; }
+      .message { margin-bottom: 12px; padding: 10px 14px; border-radius: 8px; border: 1px solid #cbd5e1; }
+      .user { background: #f0fdf4; border-color: #86efac; }
+      .bot { background: #f0f9ff; border-color: #7dd3fc; }
+      .system { background: #f8fafc; font-size: 11px; color: #64748b; border-color: #e2e8f0; }
+      strong { display: block; margin-bottom: 4px; color: #0f172a; }
+      @media print { body { padding: 0; } }
+    `;
+    doc.head.appendChild(style);
+
+    const h1 = doc.createElement("h1");
+    h1.textContent = "⚡ SESJA KOGNITYWNA: SPARKLE & ARCHITEKT V1B3hR";
+    doc.body.appendChild(h1);
+
+    const meta = doc.createElement("div");
+    meta.className = "meta";
+    meta.textContent = `Data: ${new Date().toLocaleString()} | Asystent: Sparkle | Architekt: Andrzej Mątewski (V1B3hR) | Fundament: 25 Praw Nethical`;
+    doc.body.appendChild(meta);
+
+    history.forEach(m => {
+      const msgDiv = doc.createElement("div");
+      const isUser = m.sender === "Użytkownik" || m.sender.includes("Architekt");
+      const isBot = m.sender === "Sparkle" || m.sender.includes("Sparkle") || m.sender.includes("Błyskawica");
+      msgDiv.className = `message ${isUser ? "user" : isBot ? "bot" : "system"}`;
+
+      const s = doc.createElement("strong");
+      s.textContent = `${m.sender} [${m.timestamp}]:`;
+      const p = doc.createElement("p");
+      p.style.margin = "0";
+      p.style.whiteSpace = "pre-wrap";
+      p.textContent = m.text;
+
+      msgDiv.appendChild(s);
+      msgDiv.appendChild(p);
+      doc.body.appendChild(msgDiv);
+    });
+
+    setTimeout(() => {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+      setTimeout(() => iframe.remove(), 2500);
+    }, 250);
+
+    if (addLogFn) addLogFn(`✓ Uruchomiono podgląd wydruku / zapisu PDF: ${baseName}.pdf`);
+    appendChatMessage("System Sparkle", `✓ Otwarto okno drukowania do PDF dla sesji: ${baseName}.pdf`, "system-msg");
+    return true;
+  }
+
   if (format === "md") {
     mimeType = "text/markdown";
-    content = `# ⚡ SESJA KOGNITYWNA: ŚWIATŁO (BŁYSKAWICA) & ARCHITEKT V1B3hR\n`;
+    content = `# ⚡ SESJA KOGNITYWNA: SPARKLE & ARCHITEKT V1B3hR\n`;
     content += `**Data sesji:** ${new Date().toLocaleString()}\n`;
     content += `**Główny Architekt:** Andrzej Mątewski (V1B3hR / VIBER)\n`;
-    content += `**Głos kognitywny:** Światło (Light)\n`;
+    content += `**Głos kognitywny:** Sparkle\n`;
     content += `**Fundament:** 25 Praw Nethical & Fizyka PINN\n`;
     content += `\n---\n\n`;
 
     history.forEach(m => {
       if (m.sender === "Użytkownik" || m.sender.includes("Architekt")) {
         content += `### 👤 ${m.sender} [${m.timestamp}]:\n${m.text}\n\n`;
-      } else if (m.sender.includes("Światło") || m.sender.includes("Błyskawica")) {
+      } else if (m.sender.includes("Sparkle") || m.sender.includes("Błyskawica")) {
         content += `### ⚡ ${m.sender} [${m.timestamp}]:\n${m.text}\n\n`;
       } else {
         content += `> ℹ️ **${m.sender}** [${m.timestamp}]: ${m.text}\n\n`;
@@ -437,7 +689,7 @@ export async function exportSession(format = "md", customFilename = "", addLogFn
     const exportData = {
       meta: {
         session: "Blyskawica Sparkle V10",
-        cognitive_name: "Światło",
+        cognitive_name: "Sparkle",
         architect: "Andrzej Mątewski (V1B3hR)",
         export_date: new Date().toISOString(),
         neurochemistry: SparkleStore.state.neurochemistry
@@ -447,7 +699,7 @@ export async function exportSession(format = "md", customFilename = "", addLogFn
     content = JSON.stringify(exportData, null, 2);
   } else if (format === "html") {
     mimeType = "text/html";
-    content = `<!DOCTYPE html>\n<html lang="pl">\n<head>\n<meta charset="UTF-8">\n<title>Sesja: Światło & Architekt</title>\n`;
+    content = `<!DOCTYPE html>\n<html lang="pl">\n<head>\n<meta charset="UTF-8">\n<title>Sesja: Sparkle & Architekt</title>\n`;
     content += `<style>
       body { font-family: system-ui, -apple-system, sans-serif; background: #0b1120; color: #e2e8f0; padding: 30px; line-height: 1.6; max-width: 900px; margin: auto; }
       h1 { color: #38bdf8; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; font-size: 20px; }
@@ -458,10 +710,10 @@ export async function exportSession(format = "md", customFilename = "", addLogFn
       .system { background: rgba(255,255,255,0.02); font-size: 12px; color: #94a3b8; text-align: center; }
       strong { color: #f8fafc; }
     </style>\n</head>\n<body>\n`;
-    content += `<h1>⚡ Sesja: Światło (Błyskawica) & Andrzej Mątewski (V1B3hR)</h1>\n`;
+    content += `<h1>⚡ Sesja: Sparkle & Andrzej Mątewski (V1B3hR)</h1>\n`;
     content += `<div class="meta">Data sesji: ${new Date().toLocaleString()} | Etyka: 25 Praw Nethical | Silnik: Candle GGUF</div>\n`;
     history.forEach((message) => {
-      const cssClass = (message.sender === "Użytkownik" ? "user" : (message.sender.includes("Światło") || message.sender.includes("Błyskawica") ? "bot" : "system"));
+      const cssClass = (message.sender === "Użytkownik" ? "user" : (message.sender.includes("Sparkle") || message.sender.includes("Błyskawica") ? "bot" : "system"));
       const escapedSender = escapeHtml(message.sender);
       const escapedTimestamp = escapeHtml(message.timestamp);
       const escapedText = escapeHtml(message.text);
@@ -471,7 +723,7 @@ export async function exportSession(format = "md", customFilename = "", addLogFn
   } else {
     // txt
     mimeType = "text/plain";
-    content = `=== SESJA KOGNITYWNA: ŚWIATŁO & ANDRZEJ MĄTEWSKI (V1B3hR) ===\nData: ${new Date().toLocaleString()}\n\n`;
+    content = `=== SESJA KOGNITYWNA: SPARKLE & ANDRZEJ MĄTEWSKI (V1B3hR) ===\nData: ${new Date().toLocaleString()}\n\n`;
     history.forEach(m => {
       content += `[${m.timestamp}] ${m.sender}:\n${m.text}\n\n`;
     });
@@ -483,19 +735,16 @@ export async function exportSession(format = "md", customFilename = "", addLogFn
   // 1. Zapis do pliku przez Tauri IPC w katalogu roboczym (jeśli dostępne)
   try {
     if (window.__TAURI__) {
-      const res = await invoke("write_workspace_file", { path: finalFilename, content });
+      await invoke("write_workspace_file", { path: finalFilename, content });
       savedSuccess = true;
       if (addLogFn) addLogFn(`✓ Zapisano sesję w przestrzeni roboczej: ${finalFilename}`);
       
-      // Wyświetl komunikat systemowy w oknie czatu
       appendChatMessage("System Sparkle", `✓ Pomyślnie zapisano sesję do pliku roboczego: ${finalFilename}`, "system-msg");
       
-      // Odśwież widok eksploratora plików, aby plik był natychmiast widoczny
       try {
         await refreshWorkspaceFiles();
       } catch (e) {}
 
-      // Wyświetl okno potwierdzenia
       alert(`✓ Zapisano sesję kognitywną do pliku:\n${finalFilename}\n\nPlik został zapisany w katalogu roboczym i jest widoczny w zakładce WORKSPACE & EXPLORER.`);
     }
   } catch (err) {

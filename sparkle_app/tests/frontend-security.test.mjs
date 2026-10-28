@@ -99,6 +99,50 @@ test("recreatable artifact cleanup remains permission-gated and confirmed", asyn
   );
 });
 
+test("memory and vault deletion remain permission-gated and confirmed", async () => {
+  const rustSource = await readFile(
+    join(repositoryDirectory, "sparkle_app", "src-tauri", "src", "lib.rs"),
+    "utf8",
+  );
+
+  assert.match(
+    rustSource,
+    /fn clear_derived_runtime_memory[\s\S]*?require_permission_level\(permission_level, 2,[\s\S]*?show_confirm_dialog/s,
+  );
+  assert.match(
+    rustSource,
+    /fn vault_delete_secret[\s\S]*?require_permission_level\(permission_level, 3,[\s\S]*?show_confirm_dialog/s,
+  );
+});
+
+test("workspace deletion remains path-bounded, permission-gated, and confirmed", async () => {
+  const rustSource = await readFile(
+    join(repositoryDirectory, "sparkle_app", "src-tauri", "src", "lib.rs"),
+    "utf8",
+  );
+
+  assert.match(
+    rustSource,
+    /async fn delete_workspace_file[\s\S]*?require_permission_level\(permission_level, 2,[\s\S]*?resolve_workspace_relative_path[\s\S]*?show_confirm_dialog/s,
+  );
+});
+
+test("derived-memory and vault exports remain permission-gated and confirmed", async () => {
+  const rustSource = await readFile(
+    join(repositoryDirectory, "sparkle_app", "src-tauri", "src", "lib.rs"),
+    "utf8",
+  );
+
+  assert.match(
+    rustSource,
+    /fn export_derived_runtime_memory[\s\S]*?require_permission_level\(permission_level, 2,[\s\S]*?resolve_workspace_relative_path[\s\S]*?show_confirm_dialog/s,
+  );
+  assert.match(
+    rustSource,
+    /fn export_vault_secret[\s\S]*?require_permission_level\(permission_level, 3,[\s\S]*?resolve_workspace_relative_path[\s\S]*?show_confirm_dialog/s,
+  );
+});
+
 test("online connector registry defaults to offline and gates loopback status", async () => {
   const rustSource = await readFile(
     join(repositoryDirectory, "sparkle_app", "src-tauri", "src", "lib.rs"),
