@@ -50,6 +50,14 @@ export async function updateQuantumState(addLogFn) {
       yantSerotoninVal.textContent = `${(qState.neuro_coherence * 1.35).toFixed(2)}x`;
     }
 
+    const yantMicrotubuleVal = document.getElementById("yant-microtubule-val");
+    if (yantMicrotubuleVal && qState.microtubule_metrics) {
+      const m = qState.microtubule_metrics;
+      const statusText = m.is_orch_or_capable ? "Orch OR (Aktywny)" : "Dekoherencja";
+      yantMicrotubuleVal.textContent = `${m.coherence_time_ps.toFixed(1)} ps (${statusText})`;
+      yantMicrotubuleVal.style.color = m.is_orch_or_capable ? "#c084fc" : "#94a3b8";
+    }
+
     // Renderowanie 2D matrycy cymatycznej Chladniego na Oscyloskopie Prawdy
     if (qState.cymatics && qState.cymatics.chladni_matrix) {
       renderChladniOscilloscope(qState.cymatics.chladni_matrix, qState.cymatics.mode_n, qState.cymatics.mode_m);

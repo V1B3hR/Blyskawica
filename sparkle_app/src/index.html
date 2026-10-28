@@ -51,12 +51,12 @@
     <!-- Main Workspace Split Container -->
     <main class="split-container">
       
-      <!-- LEFT PANEL: Światło (Błyskawica) Chat & Neurochemistry -->
+      <!-- LEFT PANEL: Sparkle Chat & Neurochemistry -->
       <section class="panel left-panel">
         <div class="panel-header">
-          <h2>ŚWIATŁO (BŁYSKAWICA) COGNITIVE HUB</h2>
+          <h2>SPARKLE COGNITIVE HUB</h2>
           <div class="panel-actions" style="display: flex; gap: 8px; align-items: center;">
-            <button id="btn-quick-export" class="small-btn" title="Zachowaj rozmowę (Markdown / Tekst / JSON)">💾 ZAPISZ</button>
+            <button id="btn-quick-export" class="small-btn" title="Zachowaj rozmowę (Markdown / Tekst / JSON / PDF)">💾 ZAPISZ</button>
             <span class="neuro-pulse">Pulse: OK</span>
           </div>
         </div>
@@ -67,11 +67,11 @@
               <strong>System Sparkle:</strong> Zogniskowana przestrzeń robocza AI do myślenia, kodowania i kolaboracji — zasilana żywym rdzeniem kognitywnym.
             </div>
             <div class="message system-msg">
-              Witaj w kokpicie kognitywnym Błyskawicy V10. Uruchom rdzeń kognitywny, aby wybudzić silnik neurochemiczny i rozpocząć sesję.
+              Witaj w kokpicie kognitywnym Sparkle V10. Uruchom rdzeń kognitywny, aby wybudzić silnik neurochemiczny i rozpocząć sesję.
             </div>
           </div>
           <div class="chat-input-area">
-            <input type="text" id="chat-input" placeholder="Napisz do Błyskawicy..." disabled>
+            <input type="text" id="chat-input" placeholder="Napisz do Sparkle..." disabled>
             <button id="btn-send-message" disabled>WYŚLIJ</button>
             <button id="btn-cancel-generation" class="btn-cancel" style="display: none;" title="Zatrzymaj generowanie (Esc)">STOP</button>
           </div>
@@ -181,6 +181,7 @@
                   <button id="btn-open-file" class="control-btn small">OTWÓRZ</button>
                   <button id="btn-save-file" class="control-btn small" disabled>ZAPISZ</button>
                   <button id="btn-save-as-file" class="control-btn small" disabled>ZAPISZ JAKO</button>
+                  <button id="btn-delete-file" class="control-btn small" disabled>USUŃ PLIK</button>
                   <button id="btn-explain-code" class="control-btn small" title="Wyjaśnij zaznaczony fragment kodu" style="border-color: #00f0ff; color: #00f0ff;">✨ WYJAŚNIJ</button>
                   <button id="btn-format-code" class="control-btn small" title="Sformatuj wcięcia i spacje">FORMATUJ</button>
                   <input type="file" id="native-file-picker" style="display:none;" accept="*/*">
@@ -202,6 +203,7 @@
               <div class="form-row">
                 <label for="select-guest-model">Wybierz Model Gościa:</label>
                 <select id="select-guest-model">
+                  <option value="gemini-flash">Gemini 2.0 Flash / 3.8 Flash (Google DeepMind)</option>
                   <option value="gemini-1.5-pro">Gemini 1.5 Pro (Google DeepMind)</option>
                   <option value="claude-3.5-sonnet">Claude 3.5 Sonnet (Anthropic)</option>
                   <option value="gpt-4o">GPT-4o (OpenAI)</option>
@@ -211,12 +213,16 @@
                   <option value="local-emissary">Lokalny Rewizor Kognitywny (Offline)</option>
                 </select>
               </div>
-              <button id="btn-invite-guest" class="control-btn accent">ZAPROŚ DO DYSKUSJI</button>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
+                <button id="btn-invite-guest" class="control-btn accent">ZAPROŚ DO DYSKUSJI</button>
+                <button id="btn-export-guest-collab" class="control-btn small">💾 EKSPORTUJ SESJĘ GOŚCIA</button>
+                <button id="btn-close-guest-collab" class="control-btn small" style="border-color: rgba(239, 68, 68, 0.4); color: #fca5a5;">✕ ZAMKNIJ SESJĘ</button>
+              </div>
             </div>
             
             <div class="split-chat-view">
               <div class="split-pane pane-primary">
-                <h4>Główna rozmowa (Światło)</h4>
+                <h4>Główna rozmowa (Sparkle)</h4>
                 <div id="primary-chat-stream" class="chat-messages-mini">
                   <div class="message system-msg">Brak wiadomości.</div>
                 </div>
@@ -229,8 +235,35 @@
                 <div class="guest-input-area" style="display: flex; gap: 8px; margin-top: 10px;">
                   <input type="text" id="guest-chat-input" placeholder="Zadaj pytanie gościowi..." style="flex: 1; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 6px; padding: 8px 12px; color: #fff; font-size: 12px;">
                   <button id="btn-guest-send" class="control-btn small">WYŚLIJ</button>
-                  <button id="btn-dual-consult" class="control-btn accent small" title="Poproś gościa o recenzję / kontrargument do odpowiedzi Światła">⚡ RECENZJA</button>
+                  <button id="btn-dual-consult" class="control-btn accent small" title="Poproś gościa o recenzję / kontrargument do odpowiedzi Sparkle">⚡ RECENZJA</button>
                 </div>
+              </div>
+            </div>
+
+            <!-- Multi-Dispatch Centrum Dyspaczerskie -->
+            <div class="collab-dispatch-card" style="margin-top: 14px; padding: 12px 16px; background: rgba(15, 23, 42, 0.7); border: 1px solid var(--glass-border); border-radius: 8px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                <h4 style="margin: 0; color: #00d2ff; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                  <span>📡</span> CENTRUM DYSPACZERSKIE WIADOMOŚCI (MULTI-DISPATCH)
+                </h4>
+                <div style="display: flex; gap: 12px; font-size: 11px; flex-wrap: wrap;">
+                  <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                    <input type="radio" name="dispatch-target" value="sparkle" id="dispatch-target-sparkle">
+                    <span>⚡ Tylko Sparkle</span>
+                  </label>
+                  <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                    <input type="radio" name="dispatch-target" value="guest" id="dispatch-target-guest" checked>
+                    <span>🤝 Tylko Gość</span>
+                  </label>
+                  <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                    <input type="radio" name="dispatch-target" value="both" id="dispatch-target-both">
+                    <span>⚡+🤝 Do Obydwu (Sesja Dualna)</span>
+                  </label>
+                </div>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <input type="text" id="dispatch-message-input" placeholder="Wpisz wiadomość i wyślij do wybranego odbiorcy..." style="flex: 1; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 6px; padding: 8px 12px; color: #fff; font-size: 12px;">
+                <button id="btn-dispatch-send" class="control-btn accent small" style="white-space: nowrap;">WYŚLIJ DO ...</button>
               </div>
             </div>
           </div>
@@ -291,6 +324,10 @@
                   <span class="card-label">Ruchome Koherence 5-HT</span>
                   <span class="card-value" id="yant-serotonin-val">1.30x</span>
                 </div>
+                <div class="metric-card">
+                  <span class="card-label">Koherencja Mikrotubul (ps)</span>
+                  <span class="card-value" id="yant-microtubule-val" style="color: #c084fc;">Orch OR (Aktywny)</span>
+                </div>
               </div>
             </div>
           </div>
@@ -343,7 +380,7 @@
           <h2 style="font-size: 18px; margin: 0; color: #00d2ff; display: flex; align-items: center; gap: 8px;">
             <span>⚙️</span> OPCJE & USTAWIENIA SYSTEMU
           </h2>
-          <button id="btn-close-options" class="small-btn" style="padding: 4px 10px; font-size: 14px; cursor: pointer;">✕</button>
+          <button id="btn-close-options" class="small-btn" title="Zamknij (Esc lub kliknij w tło)" style="padding: 6px 12px; font-size: 14px; cursor: pointer; border-color: rgba(0, 210, 255, 0.4); color: #fff;">✕</button>
         </div>
 
         <!-- Section 1: Compute Engine (GPU vs CPU) -->
@@ -383,7 +420,7 @@
             <input type="checkbox" id="chk-enable-tts">
             <div>
               <div style="font-size: 12px; font-weight: 600; color: var(--text-primary);">Włącz syntezator mowy (Web Speech TTS)</div>
-              <div style="font-size: 11px; color: var(--text-muted);">Domyślnie wyłączony (głos wyciszony). Odpowiedzi Światła są wyświetlane w oknie dialogu.</div>
+              <div style="font-size: 11px; color: var(--text-muted);">Domyślnie wyłączony (głos wyciszony). Odpowiedzi Sparkle są wyświetlane w oknie dialogu.</div>
             </div>
           </label>
         </div>
@@ -394,40 +431,47 @@
             <span>💾</span> ZACHOWAJ ROZMOWĘ JAKO... (EKSPORT SESJI)
           </h4>
           <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 8px;">
-            Wybierz format eksportu historii dialogu i kodu ze Światłem.
+            Wybierz format eksportu historii dialogu i kodu ze Sparkle.
           </p>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
-            <label class="format-card" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: rgba(0, 210, 255, 0.07); border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 6px; cursor: pointer;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-bottom: 12px;">
+            <label class="format-card" style="display: flex; align-items: center; gap: 8px; padding: 10px; background: rgba(0, 210, 255, 0.07); border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 6px; cursor: pointer;">
               <input type="radio" name="export-format" value="md" id="opt-fmt-md" checked>
               <div>
                 <strong style="color: #38bdf8; font-size: 12px;">Markdown (.md)</strong>
-                <div style="font-size: 10px; color: #bae6fd;">★ Domyślny (kod, tabele, format)</div>
+                <div style="font-size: 10px; color: #bae6fd;">★ Domyślny format</div>
               </div>
             </label>
-            <label class="format-card" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; cursor: pointer;">
+            <label class="format-card" style="display: flex; align-items: center; gap: 8px; padding: 10px; background: rgba(244, 63, 94, 0.07); border: 1px solid rgba(244, 63, 94, 0.3); border-radius: 6px; cursor: pointer;">
+              <input type="radio" name="export-format" value="pdf" id="opt-fmt-pdf">
+              <div>
+                <strong style="color: #fb7185; font-size: 12px;">Dokument PDF (.pdf)</strong>
+                <div style="font-size: 10px; color: #fecdd3;">Wydruk sesji do PDF</div>
+              </div>
+            </label>
+            <label class="format-card" style="display: flex; align-items: center; gap: 8px; padding: 10px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; cursor: pointer;">
               <input type="radio" name="export-format" value="txt" id="opt-fmt-txt">
               <div>
-                <strong style="color: var(--text-primary); font-size: 12px;">Czysty Tekst (.txt)</strong>
-                <div style="font-size: 10px; color: var(--text-muted);">Surowy zapis bez znaczników</div>
+                <strong style="color: var(--text-primary); font-size: 12px;">Tekst (.txt)</strong>
+                <div style="font-size: 10px; color: var(--text-muted);">Czysty zapis</div>
               </div>
             </label>
-            <label class="format-card" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; cursor: pointer;">
+            <label class="format-card" style="display: flex; align-items: center; gap: 8px; padding: 10px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; cursor: pointer;">
               <input type="radio" name="export-format" value="json" id="opt-fmt-json">
               <div>
-                <strong style="color: var(--text-primary); font-size: 12px;">Struktura JSON (.json)</strong>
-                <div style="font-size: 10px; color: var(--text-muted);">Metadane, role, neurochemia</div>
+                <strong style="color: var(--text-primary); font-size: 12px;">Struktura (.json)</strong>
+                <div style="font-size: 10px; color: var(--text-muted);">Metadane sesji</div>
               </div>
             </label>
-            <label class="format-card" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; cursor: pointer;">
+            <label class="format-card" style="display: flex; align-items: center; gap: 8px; padding: 10px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; cursor: pointer;">
               <input type="radio" name="export-format" value="html" id="opt-fmt-html">
               <div>
-                <strong style="color: var(--text-primary); font-size: 12px;">Strona HTML (.html)</strong>
-                <div style="font-size: 10px; color: var(--text-muted);">Gotowa do czytania i wydruku</div>
+                <strong style="color: var(--text-primary); font-size: 12px;">Strona (.html)</strong>
+                <div style="font-size: 10px; color: var(--text-muted);">Widok web</div>
               </div>
             </label>
           </div>
           <div style="display: flex; gap: 8px;">
-            <input type="text" id="export-filename" placeholder="Swiatlo_Rozmowa.md" style="flex: 1; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 6px; padding: 8px 12px; color: #fff; font-size: 12px;">
+            <input type="text" id="export-filename" placeholder="Sparkle_Rozmowa.md" style="flex: 1; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 6px; padding: 8px 12px; color: #fff; font-size: 12px;">
             <button id="btn-do-export-session" class="control-btn accent small" style="white-space: nowrap;">💾 ZAPISZ SESJĘ</button>
           </div>
         </div>
@@ -441,12 +485,19 @@
             <div style="display: flex; gap: 8px;">
               <button id="btn-refresh-data-inventory" class="control-btn small">ODŚWIEŻ</button>
               <button id="btn-clear-recreatable-artifacts" class="control-btn small">WYCZYŚĆ R0</button>
+              <button id="btn-clear-derived-memory" class="control-btn small">WYCZYŚĆ R2</button>
+              <button id="btn-export-derived-memory" class="control-btn small">EKSPORTUJ R2</button>
             </div>
           </div>
           <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 8px;">
-            Metadane lokalnych magazynów — bez odczytu treści plików. Inwentaryzacja wymaga poziomu Workspace (L2), a szczegóły sejfu poziomu 3. Czyszczenie R0 wymaga osobnego natywnego potwierdzenia.
+            Metadane lokalnych magazynów — bez odczytu treści plików. Inwentaryzacja wymaga poziomu Workspace (L2), a szczegóły sejfu poziomu 3. Czyszczenie R0 i R2 wymaga osobnego natywnego potwierdzenia.
           </p>
           <div id="data-inventory" style="display: grid; gap: 6px; max-height: 190px; overflow-y: auto;"></div>
+          <div style="display: flex; gap: 8px; margin-top: 8px;">
+            <input type="text" id="vault-secret-key" autocomplete="off" placeholder="Nazwa sekretu R4 do usunięcia" style="flex: 1; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 6px; padding: 8px 12px; color: #fff; font-size: 12px;">
+            <button id="btn-delete-vault-secret" class="control-btn small">USUŃ R4</button>
+            <button id="btn-export-vault-secret" class="control-btn small">EKSPORTUJ R4</button>
+          </div>
         </div>
 
         <!-- Section 5: Online Connectors -->
@@ -479,11 +530,11 @@
         </div>
 
         <!-- Section 7: Cognitive Identity -->
-        <div style="padding: 10px 14px; background: rgba(0, 210, 255, 0.04); border-radius: 8px; border: 1px solid rgba(0, 210, 255, 0.15); display: flex; justify-content: space-between; align-items: center;">
+        <div style="padding: 10px 14px; background: rgba(0, 210, 255, 0.04); border-radius: 8px; border: 1px solid rgba(0, 210, 255, 0.15); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
           <div style="font-size: 11px; color: var(--text-secondary);">
-            Głos Kognitywny: <strong style="color: #38bdf8;">Światło (Light)</strong> | Architekt: <strong style="color: #fff;">Andrzej Mątewski (V1B3hR)</strong>
+            Głos Kognitywny: <strong style="color: #38bdf8;">Sparkle</strong> | Architekt: <strong style="color: #fff;">Andrzej Mątewski (V1B3hR)</strong>
           </div>
-          <button id="btn-save-options-close" class="control-btn small">ZAMKNIJ</button>
+          <button id="btn-save-options-close" class="control-btn accent small">ZAMKNIJ OPCJE</button>
         </div>
       </div>
     </div>
