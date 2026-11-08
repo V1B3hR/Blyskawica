@@ -4,6 +4,7 @@ pub mod anomaly_loop;
 pub mod cognitive_heartbeat;
 pub mod cognitive_llm;
 pub mod cognitive_shield;
+pub mod cra_contract;
 pub mod embedder;
 pub mod immune_system;
 pub mod local_inference;

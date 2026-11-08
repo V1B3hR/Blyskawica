@@ -23,6 +23,30 @@ import torch
 import torch.version
 
 
+def get_coherent_gpu_memory_mode(
+    params_path: Path = Path("/proc/driver/nvidia/params"),
+) -> str | None:
+    """Return the NVIDIA coherent GPU-memory mode reported by a Linux node.
+
+    CUDA 13.4 / driver r615 can report either ``"driver"`` (CDMM) or
+    ``"numa"`` for coherent NVIDIA systems. The procfs parameter is absent on
+    non-Linux hosts, non-coherent GPUs, and hosts without the NVIDIA driver;
+    those cases intentionally produce ``None`` rather than an inference.
+    """
+    try:
+        params = params_path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return None
+
+    for line in params.splitlines():
+        key, separator, value = line.partition(":")
+        if separator and key.strip() == "CoherentGPUMemoryMode":
+            mode = value.strip().strip('"').lower()
+            return mode if mode in {"driver", "numa"} else None
+
+    return None
+
+
 @dataclass
 class EnvironmentSnapshot:
     """Captures complete environment state for reproducibility."""
@@ -37,6 +61,7 @@ class EnvironmentSnapshot:
     cudnn_version: list[int] | None
     device_count: int
     device_names: list[str]
+    coherent_gpu_memory_mode: str | None = None
 
     @classmethod
     def capture(cls) -> "EnvironmentSnapshot":
@@ -73,6 +98,7 @@ class EnvironmentSnapshot:
             cudnn_version=cudnn_version,
             device_count=torch.cuda.device_count() if torch.cuda.is_available() else 0,
             device_names=device_names,
+            coherent_gpu_memory_mode=get_coherent_gpu_memory_mode(),
         )
 
 

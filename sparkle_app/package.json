@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "tauri": "tauri",
+    "test": "node --test tests/*.test.mjs",
     "test:security": "node --test tests/frontend-security.test.mjs"
   },
   "devDependencies": {

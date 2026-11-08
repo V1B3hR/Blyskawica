@@ -97,8 +97,8 @@ jobs:
             node --check "$file" || exit 1
           done
 
-      - name: Run frontend security regression tests
-        run: node --test sparkle_app/tests/frontend-security.test.mjs
+      - name: Run frontend regression tests
+        run: node --test sparkle_app/tests/frontend-security.test.mjs sparkle_app/tests/chat-cancellation.test.mjs sparkle_app/tests/chat-context.test.mjs sparkle_app/tests/chat-persistence.test.mjs sparkle_app/tests/chat-restore.test.mjs
 
       - name: Build and test Tauri runtime
         run: cargo test --locked --manifest-path sparkle_app/src-tauri/Cargo.toml

@@ -29,7 +29,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             if let Ok(entries) = std::fs::read_dir("model") {
                 for entry in entries.flatten() {
                     let p = entry.path();
-                    if p.extension().map_or(false, |ext| ext == "gguf") {
+                    if p.extension().is_some_and(|ext| ext == "gguf") {
                         return p;
                     }
                 }

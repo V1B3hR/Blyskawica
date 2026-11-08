@@ -172,6 +172,12 @@ impl AegisSentinel {
     }
 }
 
+impl Default for AegisSentinel {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

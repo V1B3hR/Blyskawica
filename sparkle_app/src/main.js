@@ -4,7 +4,7 @@
 
 import { SparkleStore } from './modules/store.js';
 import { initNeurochemistryHUD, updateNeurochemistryUI, setWolfTeethVisuals, updateRegimeBadge } from './modules/neurochemistry.js';
-import { initChatModule, appendChatMessage, handleIncomingToken, handleResponseFinished, exportSession, startBlyskawicaEngine } from './modules/chat.js';
+import { initChatModule, appendChatMessage, handleIncomingToken, handleResponseFinished, exportSession, startBlyskawicaEngine, restoreChatAutosave, pauseChatAutosave, resumeChatAutosave } from './modules/chat.js';
 import { initEditorModule, addLog, refreshWorkspaceFiles } from './modules/editor.js';
 import { initAegisModule, addAnomaly } from './modules/aegis.js';
 import { initQuantumModule } from './modules/quantum.js';
@@ -328,12 +328,19 @@ function initOptionsModule() {
   }
   if (btnClearDerivedMemory) {
     btnClearDerivedMemory.addEventListener("click", async () => {
+      let paused = false;
+      let cleared = false;
       try {
+        await pauseChatAutosave();
+        paused = true;
         const result = await invoke("clear_derived_runtime_memory");
+        cleared = true;
         addLog(`[Dane lokalne]: ${result}`);
         refreshDataInventory();
       } catch (error) {
         addLog(`[Dane lokalne]: ${error}`);
+      } finally {
+        if (paused) resumeChatAutosave(cleared);
       }
     });
   }
@@ -514,6 +521,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   initNeurochemistryHUD();
   initEditorModule();
   initChatModule(addLog, refreshWorkspaceFiles);
+  await restoreChatAutosave(addLog);
   initSporeModule(addLog);
   initAegisModule(addLog);
   initQuantumModule(addLog);

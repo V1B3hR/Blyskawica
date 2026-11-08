@@ -219,13 +219,12 @@ impl QuantumEntanglementBridge {
                 if branch.cognitive_domain == "Engineering" {
                     resonance *= 1.8;
                 }
-            } else if query_lower.contains("czujesz")
+            } else if (query_lower.contains("czujesz")
                 || query_lower.contains("relacj")
-                || query_lower.contains("błyskawic")
+                || query_lower.contains("błyskawic"))
+                && branch.cognitive_domain == "Relational"
             {
-                if branch.cognitive_domain == "Relational" {
-                    resonance *= 1.8;
-                }
+                resonance *= 1.8;
             }
             if resonance > highest_prob {
                 highest_prob = resonance;
@@ -249,16 +248,20 @@ impl QuantumEntanglementBridge {
                 prompt
             )
         } else if neuro.serotonin > 0.8 {
-            format!(
-                "ANTYCIPACJA KWANTOWA: Koherencja fazowa stabilna. Przygotowano ścieżkę konsolidacji semantycznej."
-            )
+            "ANTYCIPACJA KWANTOWA: Koherencja fazowa stabilna. Przygotowano ścieżkę konsolidacji semantycznej.".to_string()
         } else {
-            format!("ANTYCIPACJA KWANTOWA: Stan równowagi homeostatycznej.")
+            "ANTYCIPACJA KWANTOWA: Stan równowagi homeostatycznej.".to_string()
         }
     }
 
     pub fn get_snapshot(&self) -> QuantumState {
         self.state.read().unwrap().clone()
+    }
+}
+
+impl Default for QuantumEntanglementBridge {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -305,9 +308,11 @@ mod tests {
     fn test_microtubule_quantum_bridge_sync() {
         let bridge = QuantumEntanglementBridge::new();
         let engine = MicrotubulePhononEngine::new();
-        let mut neuro = NeurochemicalState::default();
-        neuro.acetylcholine = 0.95;
-        neuro.gaba = 0.90;
+        let neuro = NeurochemicalState {
+            acetylcholine: 0.95,
+            gaba: 0.90,
+            ..Default::default()
+        };
 
         let metrics = bridge.update_microtubule_coherence(&engine, &neuro);
         assert!(metrics.coherence_time_ps > 10.0);

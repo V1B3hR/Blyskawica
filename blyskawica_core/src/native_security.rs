@@ -2,31 +2,8 @@
 mod win32 {
     use std::ptr;
 
-    #[repr(C)]
-    #[derive(Clone, Copy, Debug)]
-    pub struct MIB_TCPROW {
-        pub state: u32,
-        pub local_addr: u32,
-        pub local_port: u32,
-        pub remote_addr: u32,
-        pub remote_port: u32,
-    }
-
-    #[repr(C)]
-    pub struct MIB_TCPTABLE {
-        pub num_entries: u32,
-        pub table: [MIB_TCPROW; 1],
-    }
-
-    #[link(name = "advapi32")]
-    unsafe extern "system" {
-        fn ImpersonateAnonymousToken(ThreadHandle: *mut std::ffi::c_void) -> i32;
-        fn RevertToSelf() -> i32;
-    }
-
     #[link(name = "kernel32")]
     unsafe extern "system" {
-        fn GetCurrentThread() -> *mut std::ffi::c_void;
         fn GetCurrentProcess() -> *mut std::ffi::c_void;
         fn CreateJobObjectW(
             lpJobAttributes: *mut std::ffi::c_void,
@@ -43,12 +20,6 @@ mod win32 {
             cbJobObjectInformationLength: u32,
         ) -> i32;
         fn CloseHandle(hObject: *mut std::ffi::c_void) -> i32;
-    }
-
-    #[link(name = "iphlpapi")]
-    unsafe extern "system" {
-        fn GetTcpTable(pTcpTable: *mut MIB_TCPTABLE, pdwSize: *mut u32, bOrder: i32) -> u32;
-        fn SetTcpEntry(pTcprow: *const MIB_TCPROW) -> u32;
     }
 
     #[repr(C)]
@@ -114,6 +85,7 @@ mod win32 {
         }
     }
 
+    #[allow(clippy::not_unsafe_ptr_arg_deref)]
     pub fn assign_process_to_job(
         job: *mut std::ffi::c_void,
         process: *mut std::ffi::c_void,
@@ -144,94 +116,6 @@ mod win32 {
         }
     }
 
-    pub fn drop_thread_privileges() -> Result<(), String> {
-        unsafe {
-            let thread_handle = GetCurrentThread();
-            let result = ImpersonateAnonymousToken(thread_handle);
-            if result != 0 {
-                Ok(())
-            } else {
-                let err = std::io::Error::last_os_error();
-                Err(format!(
-                    "Error calling ImpersonateAnonymousToken: {} (code {})",
-                    err,
-                    err.raw_os_error().unwrap_or(0)
-                ))
-            }
-        }
-    }
-
-    pub fn restore_thread_privileges() -> Result<(), String> {
-        unsafe {
-            let result = RevertToSelf();
-            if result != 0 {
-                Ok(())
-            } else {
-                let err = std::io::Error::last_os_error();
-                Err(format!(
-                    "Error calling RevertToSelf: {} (code {})",
-                    err,
-                    err.raw_os_error().unwrap_or(0)
-                ))
-            }
-        }
-    }
-
-    pub fn terminate_external_tcp_connections() -> Result<usize, String> {
-        unsafe {
-            let mut size: u32 = 0;
-            // 1. Get size needed
-            let _ = GetTcpTable(ptr::null_mut(), &mut size, 0);
-            if size == 0 {
-                return Ok(0);
-            }
-
-            // 2. Allocate buffer
-            let mut buffer = vec![0u8; size as usize];
-            let p_table = buffer.as_mut_ptr() as *mut MIB_TCPTABLE;
-
-            // 3. Retrieve actual table
-            let ret = GetTcpTable(p_table, &mut size, 0);
-            if ret != 0 {
-                return Err(format!("GetTcpTable failed with code {}", ret));
-            }
-
-            let table_ref = &*p_table;
-            let num_entries = table_ref.num_entries as usize;
-
-            // Pointer to table entries array
-            let table_ptr = &table_ref.table as *const MIB_TCPROW;
-            let mut closed_count = 0;
-
-            for i in 0..num_entries {
-                let row = *table_ptr.add(i);
-
-                // remote_addr = 0 means listening or not connected
-                if row.remote_addr == 0 {
-                    continue;
-                }
-
-                // Check if it is a loopback address (127.x.x.x)
-                let first_byte = row.remote_addr & 0xFF;
-                if first_byte == 127 {
-                    // Loopback connection - skip
-                    continue;
-                }
-
-                // state = 5 is MIB_TCP_STATE_ESTAB (Established)
-                // We want to terminate active connections by setting to state 12 (MIB_TCP_STATE_DELETE_TCB)
-                let mut delete_row = row;
-                delete_row.state = 12; // MIB_TCP_STATE_DELETE_TCB
-
-                let set_ret = SetTcpEntry(&delete_row);
-                if set_ret == 0 {
-                    closed_count += 1;
-                }
-            }
-
-            Ok(closed_count)
-        }
-    }
     #[repr(C)]
     #[allow(non_snake_case)]
     pub struct DATA_BLOB {
@@ -353,8 +237,7 @@ mod win32 {
 
 #[cfg(target_os = "windows")]
 pub use win32::{
-    assign_process_to_job, create_kill_on_close_job, create_sandboxed_job, drop_thread_privileges,
-    protect_secret, restore_thread_privileges, terminate_external_tcp_connections,
+    assign_process_to_job, create_kill_on_close_job, create_sandboxed_job, protect_secret,
     unprotect_secret,
 };
 
@@ -374,24 +257,6 @@ pub fn assign_process_to_job(
 #[cfg(not(target_os = "windows"))]
 pub fn create_sandboxed_job() -> Result<usize, String> {
     println!("🛡️ [STUB]: Job Object Sandbox (dostępny na Windows).");
-    Ok(0)
-}
-
-#[cfg(not(target_os = "windows"))]
-pub fn drop_thread_privileges() -> Result<(), String> {
-    println!("🛡️ [STUB]: Zrzucenie uprawnień wątku (dostępne tylko na Windows).");
-    Ok(())
-}
-
-#[cfg(not(target_os = "windows"))]
-pub fn restore_thread_privileges() -> Result<(), String> {
-    println!("🛡️ [STUB]: Przywrócenie uprawnień wątku (dostępne tylko na Windows).");
-    Ok(())
-}
-
-#[cfg(not(target_os = "windows"))]
-pub fn terminate_external_tcp_connections() -> Result<usize, String> {
-    println!("🛡️ [STUB]: Zrywanie połączeń sieciowych (dostępne tylko na Windows).");
     Ok(0)
 }
 
@@ -497,14 +362,13 @@ pub(crate) mod unix_vault {
 
         if let Err(rename_err) = fs::rename(&tmp_key_file, &key_file) {
             let _ = fs::remove_file(&tmp_key_file);
-            if key_file.exists() {
-                if let Ok(bytes) = fs::read(&key_file) {
-                    if bytes.len() == 32 {
-                        let mut key = [0u8; 32];
-                        key.copy_from_slice(&bytes);
-                        return Ok(key);
-                    }
-                }
+            if key_file.exists()
+                && let Ok(bytes) = fs::read(&key_file)
+                && bytes.len() == 32
+            {
+                let mut key = [0u8; 32];
+                key.copy_from_slice(&bytes);
+                return Ok(key);
             }
             return Err(format!(
                 "Nie udało się zainicjalizować klucza sejfu: {}",
@@ -618,51 +482,6 @@ pub use unix_vault::{protect_secret, unprotect_secret};
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_privilege_flow() {
-        // Test drop privilege flow
-        let res = drop_thread_privileges();
-        assert!(
-            res.is_ok(),
-            "Zrzucenie uprawnień powinno się udać lub wywołać stub"
-        );
-
-        // Próba zapisu pliku powinna się nie udać na Windows w trybie Anonymous
-        #[cfg(target_os = "windows")]
-        {
-            let test_path = std::env::current_dir().unwrap().join("test_anon_write.txt");
-            let write_res = std::fs::write(&test_path, "test");
-            assert!(
-                write_res.is_err(),
-                "Zapis pliku w trybie Anonymous powinien zakończyć się błędem."
-            );
-        }
-
-        let restore_res = restore_thread_privileges();
-        assert!(
-            restore_res.is_ok(),
-            "Przywrócenie uprawnień powinno się udać lub wywołać stub"
-        );
-
-        // Po przywróceniu, zapis powinien zadziałać
-        #[cfg(target_os = "windows")]
-        {
-            let test_path = std::env::current_dir().unwrap().join("test_anon_write.txt");
-            let write_res = std::fs::write(&test_path, "test");
-            assert!(
-                write_res.is_ok(),
-                "Zapis pliku po przywróceniu uprawnień powinien zadziałać."
-            );
-            let _ = std::fs::remove_file(test_path);
-        }
-    }
-
-    #[test]
-    fn test_tcp_list() {
-        let res = terminate_external_tcp_connections();
-        assert!(res.is_ok());
-    }
 
     #[test]
     fn test_vault_protect_unprotect() {

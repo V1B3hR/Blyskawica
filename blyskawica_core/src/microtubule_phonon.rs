@@ -230,10 +230,12 @@ mod tests {
     #[test]
     fn test_neurochemistry_integration() {
         let engine = MicrotubulePhononEngine::new();
-        let mut neuro = NeurochemicalState::default();
-        neuro.acetylcholine = 0.90;
-        neuro.gaba = 0.85;
-        neuro.temperature = 0.60;
+        let neuro = NeurochemicalState {
+            acetylcholine: 0.90,
+            gaba: 0.85,
+            temperature: 0.60,
+            ..Default::default()
+        };
 
         let metrics = engine.simulate_from_neurochemistry(&neuro);
         assert!(metrics.coherence_time_ps > 10.0);

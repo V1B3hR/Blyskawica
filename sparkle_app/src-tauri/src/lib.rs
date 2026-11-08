@@ -1,12 +1,48 @@
 use blyskawica_core::state_manager::{BlyskawicaEngine, StateCommand};
-use blyskawica_core::vector_index::SparkleVectorIndex;
+use blyskawica_core::vector_index::{IndexLease, SparkleVectorIndex};
 use std::collections::BTreeSet;
 use std::path::{Component, Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager, State};
 use tokio::sync::mpsc;
+
+mod chat_autosave;
+
+#[derive(Default)]
+struct GenerationGate {
+    active: Option<Arc<AtomicBool>>,
+}
+
+impl GenerationGate {
+    fn reserve(&mut self) -> Result<Arc<AtomicBool>, String> {
+        if self.active.is_some() {
+            return Err("Poczekaj na zakończenie poprzedniej odpowiedzi.".into());
+        }
+        let cancellation = Arc::new(AtomicBool::new(false));
+        self.active = Some(cancellation.clone());
+        Ok(cancellation)
+    }
+    fn cancel(&self) -> Result<(), String> {
+        let cancellation = self
+            .active
+            .as_ref()
+            .ok_or("Brak aktywnej odpowiedzi do przerwania.")?;
+        cancellation.store(true, Ordering::SeqCst);
+        Ok(())
+    }
+    fn release_if(&mut self, cancellation: &Arc<AtomicBool>) {
+        if self
+            .active
+            .as_ref()
+            .is_some_and(|active| Arc::ptr_eq(active, cancellation))
+        {
+            self.active = None;
+        }
+    }
+}
 
 pub struct AppStateInner {
     tx: Option<mpsc::Sender<StateCommand>>,
@@ -17,6 +53,10 @@ pub struct AppStateInner {
     backend_child: Option<std::process::Child>,
     shell_secret: Option<String>,
     engine_handle: Option<tokio::task::JoinHandle<()>>,
+    index_lease: Option<Arc<IndexLease>>,
+    chat_save_failed: bool,
+    generation_gate: GenerationGate,
+    engine_session: Option<Arc<()>>,
     shadow_board: blyskawica_core::shadow_forge::ShadowBoard,
     aegis: blyskawica_core::aegis_sentinel::AegisSentinel,
     tree: blyskawica_core::cognitive_heartbeat::CognitiveHeartbeat,
@@ -202,7 +242,27 @@ fn workspace_path_for_permission(permission_level: u8, workspace: &Path) -> Opti
     (permission_level >= 2).then(|| workspace.to_string_lossy().to_string())
 }
 
+#[cfg(feature = "ui-smoke-isolation")]
+fn smoke_root() -> PathBuf {
+    let path_str = std::env::var("SPARKLE_UI_SMOKE_ROOT")
+        .expect("Zmienna środowiskowa SPARKLE_UI_SMOKE_ROOT nie została ustawiona");
+    let root = PathBuf::from(path_str)
+        .canonicalize()
+        .expect("Nie znaleziono katalogu testu UI");
+    assert!(
+        root.join(".sparkle-ui-smoke").is_file(),
+        "Brak znacznika izolowanego testu UI"
+    );
+    root
+}
+
 fn app_runtime_data_dir(app_handle: &AppHandle) -> PathBuf {
+    #[cfg(feature = "ui-smoke-isolation")]
+    {
+        let _ = app_handle;
+        smoke_root().join("data")
+    }
+    #[cfg(not(feature = "ui-smoke-isolation"))]
     app_handle
         .path()
         .app_data_dir()
@@ -539,16 +599,138 @@ fn show_confirm_dialog(_message: &str, _title: &str) -> bool {
     false
 }
 
+fn open_or_initialize_vector_index(
+    db_dir: &Path,
+    basename: &str,
+    dimension: usize,
+    lease: Arc<IndexLease>,
+) -> Result<SparkleVectorIndex, String> {
+    let artifacts_exist = match std::fs::read_dir(db_dir) {
+        Ok(entries) => {
+            let mut found = false;
+            for entry in entries {
+                let entry = entry.map_err(|e| format!("Błąd odczytu katalogu indeksu: {e}"))?;
+                let name = entry.file_name();
+                let name = name.to_string_lossy();
+                if name.starts_with(&format!("{basename}."))
+                    || name.starts_with(&format!("{basename}_tmp."))
+                    || name.starts_with(&format!("{basename}_tmp_"))
+                {
+                    found = true;
+                }
+            }
+            found
+        }
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => false,
+        Err(e) => return Err(format!("Błąd otwierania katalogu indeksu: {e}")),
+    };
+
+    if artifacts_exist {
+        return SparkleVectorIndex::load_hnsw(db_dir, basename, dimension, lease).map_err(|e| {
+            format!("Nie można odczytać istniejącej pamięci; pliki pozostawiono bez zmian: {e}")
+        });
+    }
+
+    let index = SparkleVectorIndex::new(dimension, 10_000).with_storage(db_dir, lease)?;
+    let mut adversarial_vector = vec![0.0f32; dimension];
+    if dimension <= 10 {
+        return Err("Nieprawidłowy wymiar indeksu dla wektora ochronnego".to_string());
+    }
+    adversarial_vector[10] = 1.0;
+    index.insert(666, &adversarial_vector)?;
+    index
+        .file_dump(db_dir, basename)
+        .map_err(|e| format!("Nie udało się utworzyć indeksu pamięci: {e}"))?;
+    Ok(index)
+}
+
+fn require_stopped_engine(inner: &AppStateInner) -> Result<(), String> {
+    require_finished_handle(inner.engine_handle.as_ref())
+}
+
+fn require_finished_handle(handle: Option<&tokio::task::JoinHandle<()>>) -> Result<(), String> {
+    if handle.is_some_and(|handle| !handle.is_finished()) {
+        return Err(
+            "Zatrzymaj silnik i poczekaj na jego zakończenie przed operacją na pamięci."
+                .to_string(),
+        );
+    }
+    Ok(())
+}
+
+fn ensure_index_lease(inner: &mut AppStateInner, app_data_dir: &Path) -> Result<(), String> {
+    if inner.index_lease.is_none() {
+        std::fs::create_dir_all(app_data_dir)
+            .map_err(|e| format!("Nie można utworzyć katalogu danych: {e}"))?;
+        inner.index_lease = Some(Arc::new(IndexLease::acquire(
+            &app_data_dir.join("sparkle-index.lock"),
+        )?));
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn load_chat_autosave(
+    app: AppHandle,
+    state: State<'_, AppState>,
+) -> Result<Vec<chat_autosave::ChatRecord>, String> {
+    let mut inner = state
+        .0
+        .lock()
+        .map_err(|_| "Blokada aplikacji jest uszkodzona")?;
+    let root = app_runtime_data_dir(&app);
+    ensure_index_lease(&mut inner, &root)?;
+    let result = chat_autosave::load(&root.join("db"));
+    if result.is_err() {
+        inner.chat_save_failed = true;
+    }
+    result
+}
+
+#[tauri::command]
+fn append_chat_autosave(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    record: chat_autosave::ChatRecord,
+) -> Result<(), String> {
+    let mut inner = state
+        .0
+        .lock()
+        .map_err(|_| "Blokada aplikacji jest uszkodzona")?;
+    if inner.chat_save_failed {
+        return Err(
+            "Autozapis rozmowy wstrzymany po błędzie; zachowaj dane i sprawdź historię".into(),
+        );
+    }
+    let root = app_runtime_data_dir(&app);
+    ensure_index_lease(&mut inner, &root)?;
+    let result = chat_autosave::append(&root.join("db"), &record);
+    if result.is_err() {
+        inner.chat_save_failed = true;
+    }
+    result
+}
+
 #[tauri::command]
 async fn start_engine(app_handle: AppHandle, state: State<'_, AppState>) -> Result<String, String> {
     let mut inner = state.0.lock().unwrap();
+    if inner
+        .engine_handle
+        .as_ref()
+        .is_some_and(|handle| handle.is_finished())
+    {
+        inner.tx = None;
+        inner.generation_gate.active = None;
+    }
     if inner.tx.is_some() {
         return Ok("Silnik jest już uruchomiony.".to_string());
     }
+    require_stopped_engine(&inner)?;
 
     let app_data_dir = app_runtime_data_dir(&app_handle);
     std::fs::create_dir_all(&app_data_dir)
         .map_err(|error| format!("Błąd tworzenia katalogu danych aplikacji: {error}"))?;
+    ensure_index_lease(&mut inner, &app_data_dir)?;
     let weights_path = app_data_dir.join("mock_weights.bin");
 
     // 1. Sprawdzenie zasobów instalatora lub generowanie mock_weights.bin jeśli nie istnieje
@@ -595,27 +777,16 @@ async fn start_engine(app_handle: AppHandle, state: State<'_, AppState>) -> Resu
     let db_dir = app_data_dir.join("db");
     let file_basename = "sparkle_vectors";
 
-    let index = match SparkleVectorIndex::load_hnsw(&db_dir, file_basename, dimension) {
-        Ok(idx) => {
-            println!("💾 [Tauri]: Pomyślnie wczytano indeks wektorowy Sparkle HNSW z dysku.");
-            Arc::new(idx)
-        }
-        Err(err) => {
-            println!(
-                "📊 [Tauri]: Brak zapisanego indeksu lub błąd ({}). Tworzenie nowego...",
-                err
-            );
-            let idx = Arc::new(SparkleVectorIndex::new(dimension, 10000));
-            // Wektor adwersarialny dla Wolf Teeth
-            let adv_id = 666;
-            let mut adv_vec = vec![0.0f32; dimension];
-            adv_vec[10] = 1.0;
-            let _ = idx.insert(adv_id, &adv_vec);
-            // Pierwszy zapis w celu zainicjowania plików bazowych
-            let _ = idx.file_dump(&db_dir, file_basename);
-            idx
-        }
-    };
+    let index = Arc::new(open_or_initialize_vector_index(
+        &db_dir,
+        file_basename,
+        dimension,
+        inner
+            .index_lease
+            .as_ref()
+            .expect("index lease acquired")
+            .clone(),
+    )?);
 
     // 3. Konfiguracja i uruchomienie BlyskawicaEngine
     let adv_id = 666;
@@ -634,21 +805,49 @@ async fn start_engine(app_handle: AppHandle, state: State<'_, AppState>) -> Resu
         adversarial_ids,
         semantic_threshold,
     )
-    .with_db(db_dir, file_basename.to_string());
+    .with_db(db_dir, file_basename.to_string())?;
 
     let (event_tx, mut event_rx) = mpsc::channel(100);
     engine.set_event_sender(event_tx);
     let tx = engine.get_sender();
+    let engine_session = Arc::new(());
+    inner.engine_session = Some(engine_session.clone());
 
     // Spawnowanie silnika
-    let handle = tokio::spawn(async move {
-        engine.run().await;
+    let handle = tokio::task::spawn_blocking(move || {
+        match tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+        {
+            Ok(runtime) => runtime.block_on(engine.run()),
+            Err(error) => eprintln!("Nie można uruchomić pętli silnika: {error}"),
+        }
     });
 
     // Spawnowanie forwardera zdarzeń z Core do Tauri frontend
     let app_handle_clone = app_handle.clone();
     tokio::spawn(async move {
         while let Some(event) = event_rx.recv().await {
+            let current = if let Ok(mut inner) = app_handle_clone.state::<AppState>().0.lock() {
+                let current = inner
+                    .engine_session
+                    .as_ref()
+                    .is_some_and(|session| Arc::ptr_eq(session, &engine_session));
+                if current
+                    && matches!(
+                        event,
+                        blyskawica_core::state_manager::EngineEvent::ResponseFinished(_)
+                    )
+                {
+                    inner.generation_gate.active = None;
+                }
+                current
+            } else {
+                false
+            };
+            if !current {
+                continue;
+            }
             if let blyskawica_core::state_manager::EngineEvent::Neurochemistry(ref ns) = event {
                 if let Ok(mut inner) = app_handle_clone.state::<AppState>().0.lock() {
                     inner.current_neurochemistry = ns.clone();
@@ -656,63 +855,82 @@ async fn start_engine(app_handle: AppHandle, state: State<'_, AppState>) -> Resu
             }
             let _ = app_handle_clone.emit("engine-event", event);
         }
+        let interrupted = if let Ok(mut inner) = app_handle_clone.state::<AppState>().0.lock() {
+            if inner
+                .engine_session
+                .as_ref()
+                .is_some_and(|session| Arc::ptr_eq(session, &engine_session))
+            {
+                inner.tx = None;
+                inner.generation_gate.active.take().is_some()
+            } else {
+                false
+            }
+        } else {
+            false
+        };
+        if interrupted {
+            let _ = app_handle_clone.emit(
+                "engine-event",
+                blyskawica_core::state_manager::EngineEvent::ResponseFinished(
+                    "Silnik zakończył pracę przed ukończeniem odpowiedzi.".into(),
+                ),
+            );
+        }
     });
 
     inner.tx = Some(tx);
     inner.engine_handle = Some(handle);
+    inner.generation_gate.active = None;
     Ok("Silnik Błyskawicy został pomyślnie uruchomiony.".to_string())
 }
 
 #[tauri::command]
 async fn send_user_message(message: String, state: State<'_, AppState>) -> Result<String, String> {
-    let tx = {
-        let inner = state.0.lock().unwrap();
-        inner
-            .tx
-            .clone()
-            .ok_or_else(|| "Silnik nie jest uruchomiony.".to_string())?
-    };
-
-    tx.send(StateCommand::Prompt(message))
-        .await
-        .map_err(|e| format!("Błąd wysyłania wiadomości do silnika: {}", e))?;
-
+    submit_prompt(&state.0, message)?;
     Ok("Wiadomość wysłana".to_string())
+}
+
+fn submit_prompt(state: &Mutex<AppStateInner>, message: String) -> Result<(), String> {
+    let mut inner = state
+        .lock()
+        .map_err(|_| "Blokada aplikacji jest uszkodzona")?;
+    let tx = inner.tx.clone().ok_or("Silnik nie jest uruchomiony.")?;
+    enqueue_prompt(&tx, &mut inner.generation_gate, message)
+}
+
+fn enqueue_prompt(
+    tx: &mpsc::Sender<StateCommand>,
+    gate: &mut GenerationGate,
+    message: String,
+) -> Result<(), String> {
+    let cancellation = gate.reserve()?;
+    if let Err(error) = tx.try_send(StateCommand::PromptWithCancellation {
+        text: message,
+        cancellation: cancellation.clone(),
+    }) {
+        gate.release_if(&cancellation);
+        return Err(format!("Błąd wysyłania wiadomości do silnika: {error}"));
+    }
+    Ok(())
 }
 
 #[tauri::command]
 async fn cancel_generation(state: State<'_, AppState>) -> Result<String, String> {
-    let tx = {
-        let inner = state.0.lock().unwrap();
-        inner
-            .tx
-            .clone()
-            .ok_or_else(|| "Silnik nie jest uruchomiony.".to_string())?
-    };
-
-    tx.send(StateCommand::Cancel)
-        .await
-        .map_err(|e| format!("Błąd wysyłania komendy anulowania: {}", e))?;
-
-    Ok("Wysłano żądanie anulowania generowania.".to_string())
+    let inner = state
+        .0
+        .lock()
+        .map_err(|_| "Blokada aplikacji jest uszkodzona")?;
+    inner.generation_gate.cancel()?;
+    Ok("Poproszono o przerwanie; oczekiwanie na zakończenie bieżącej operacji modelu.".to_string())
 }
 
 #[tauri::command]
 async fn send_human_feedback(feedback: f32, state: State<'_, AppState>) -> Result<String, String> {
-    let tx = {
-        let inner = state.0.lock().unwrap();
-        inner
-            .tx
-            .clone()
-            .ok_or_else(|| "Silnik nie jest uruchomiony.".to_string())?
-    };
-
-    tx.send(StateCommand::Prompt(format!(
-        "[R_HUMAN_FEEDBACK]: {}",
-        feedback
-    )))
-    .await
-    .map_err(|e| format!("Błąd wysyłania feedbacku: {}", e))?;
+    if !feedback.is_finite() {
+        return Err("Wartość feedbacku musi być skończoną liczbą rzeczywistą.".to_string());
+    }
+    submit_prompt(&state.0, format!("[R_HUMAN_FEEDBACK]: {}", feedback))?;
 
     Ok("Feedback wysłany".to_string())
 }
@@ -915,7 +1133,10 @@ async fn get_engine_status(state: State<'_, AppState>) -> Result<serde_json::Val
         sidecar_status_allowed,
     ) = {
         let mut inner = state.0.lock().unwrap();
-        let is_running = inner.tx.is_some();
+        let is_running = inner
+            .engine_handle
+            .as_ref()
+            .is_some_and(|handle| !handle.is_finished());
         let backend_alive = inner
             .backend_child
             .as_mut()
@@ -1016,10 +1237,10 @@ fn get_data_inventory(
         }),
         serde_json::json!({
             "class": "R2",
-            "label": "Pamięć pochodna runtime",
+            "label": "Pamięć runtime, kolejka i historia rozmów",
             "location": app_storage_location(&vector_index_dir),
-            "protection": "Trwałość i integralność bez potwierdzonego szyfrowania w spoczynku.",
-            "retention": "Ręczne usunięcie całego indeksu po L2 i natywnym potwierdzeniu; bez polityki czasowej.",
+            "protection": "Historia rozmów i kolejka zawierają jawny tekst; brak potwierdzonego szyfrowania w spoczynku.",
+            "retention": "Brak automatycznego usuwania. Historia ma limit 16 MiB lub 10000 wiadomości; WAL ma limit 64 MiB, a checkpoint próg 4 GiB lub 10000 wpisów.",
             "size_bytes": index_size_bytes,
             "size_is_complete": index_size_is_complete,
         }),
@@ -1093,13 +1314,24 @@ fn clear_derived_runtime_memory(
     let permission_level = state.0.lock().unwrap().permission_level;
     require_permission_level(permission_level, 2, "usunięcie pamięci pochodnej runtime")?;
 
-    let message = "Usunąć cały lokalny indeks pamięci pochodnej? Operacja jest nieodwracalna i nie usuwa workspace, eksportów ani sekretów.";
+    let message = "Usunąć lokalny indeks, kolejkę, automatycznie zapisaną historię rozmów i ich kopie? Operacja jest nieodwracalna. Obecnie wyświetlane wiadomości pozostaną na ekranie do zamknięcia aplikacji. Workspace, eksporty i sekrety nie są usuwane.";
     if !show_confirm_dialog(message, "Czyszczenie pamięci SPARKLE") {
         return Err("Operacja anulowana przez użytkownika.".to_string());
     }
 
-    let vector_index_dir = app_runtime_data_dir(&app).join("db");
-    if remove_storage_directory(&vector_index_dir)? {
+    let mut inner = state.0.lock().unwrap();
+    require_permission_level(
+        inner.permission_level,
+        2,
+        "usunięcie pamięci pochodnej runtime",
+    )?;
+    require_stopped_engine(&inner)?;
+    let app_data_dir = app_runtime_data_dir(&app);
+    ensure_index_lease(&mut inner, &app_data_dir)?;
+    let vector_index_dir = app_data_dir.join("db");
+    let removed = remove_storage_directory(&vector_index_dir)?;
+    inner.chat_save_failed = false;
+    if removed {
         Ok("Usunięto lokalny indeks pamięci pochodnej.".to_string())
     } else {
         Ok("Brak lokalnego indeksu pamięci pochodnej do usunięcia.".to_string())
@@ -1119,12 +1351,21 @@ fn export_derived_runtime_memory(
 
     let export_relative_path = workspace_export_relative_path("derived-memory");
     let destination = resolve_workspace_relative_path(&workspace_path, &export_relative_path)?;
-    let message = "Wyeksportować cały lokalny indeks pamięci pochodnej do workspace? Eksport może zawierać reprezentacje pochodne interakcji i nie jest szyfrowany dodatkowo.";
+    let message = "Wyeksportować indeks, kolejkę, automatycznie zapisaną historię rozmów i ich kopie do workspace? Eksport zawiera jawny tekst i nie jest dodatkowo szyfrowany.";
     if !show_confirm_dialog(message, "Eksport pamięci SPARKLE") {
         return Err("Operacja anulowana przez użytkownika.".to_string());
     }
 
-    let source = app_runtime_data_dir(&app).join("db");
+    let mut inner = state.0.lock().unwrap();
+    require_permission_level(
+        inner.permission_level,
+        2,
+        "eksport pamięci pochodnej runtime",
+    )?;
+    require_stopped_engine(&inner)?;
+    let app_data_dir = app_runtime_data_dir(&app);
+    ensure_index_lease(&mut inner, &app_data_dir)?;
+    let source = app_data_dir.join("db");
     if copy_storage_directory(&source, &destination)? {
         Ok(format!(
             "Wyeksportowano pamięć pochodną do '{}'.",
@@ -1371,6 +1612,10 @@ async fn write_workspace_file(
         return Err("Zablokowano. Zapis plików wyłączony w trybie Sandbox (Poziom 1).".to_string());
     }
 
+    if content.len() > 10 * 1024 * 1024 {
+        return Err("Zablokowano: Plik przekracza bezpieczny limit zapisu (10 MB).".to_string());
+    }
+
     let absolute_path = resolve_workspace_relative_path(&workspace_path, &path)?;
 
     if let Some(parent) = absolute_path.parent() {
@@ -1481,6 +1726,10 @@ async fn export_logs(logs: String, state: State<'_, AppState>) -> Result<String,
         return Err(
             "Zablokowano. Eksport logów wyłączony w trybie Sandbox (Poziom 1).".to_string(),
         );
+    }
+
+    if logs.len() > 5 * 1024 * 1024 {
+        return Err("Zablokowano: Rozmiar logów przekracza bezpieczny limit (5 MB).".to_string());
     }
 
     let log_path = workspace_path.join("sparkle_app_activity.log");
@@ -1750,14 +1999,17 @@ async fn execute_sandboxed_mcp_tool(
     params: serde_json::Value,
     state: State<'_, AppState>,
 ) -> Result<serde_json::Value, String> {
-    let (permission_level, workspace_path) = {
+    let (permission_level, workspace_path, current_neuro) = {
         let inner = state.0.lock().unwrap();
-        (inner.permission_level, inner.workspace_path.clone())
+        (
+            inner.permission_level,
+            inner.workspace_path.clone(),
+            inner.current_neurochemistry.clone(),
+        )
     };
 
     // Zero-Trust Sandbox Audit
     let sandbox = blyskawica_core::zero_trust_mcp_sandbox::ZeroTrustMcpSandbox::new();
-    let mock_neuro = blyskawica_core::neurochemistry::NeurochemicalState::default();
     let reality_anchor = if permission_level == 1 {
         0.5
     } else if permission_level == 2 {
@@ -1768,7 +2020,7 @@ async fn execute_sandboxed_mcp_tool(
 
     require_permission_level(permission_level, 2, "uruchomienie narzędzia MCP")?;
 
-    if !sandbox.audit_tool_execution(&tool_name, reality_anchor, &mock_neuro) {
+    if !sandbox.audit_tool_execution(&tool_name, reality_anchor, &current_neuro) {
         return Err(format!("Zero-Trust VETO: Narzędzie '{}' zablokowane z powodu niewystarczających uprawnień lub wysokiego poziomu zagrożenia.", tool_name));
     }
 
@@ -1810,11 +2062,19 @@ async fn execute_sandboxed_mcp_tool(
 #[tauri::command]
 fn stop_engine(state: State<'_, AppState>) -> Result<String, String> {
     let mut inner = state.0.lock().unwrap();
-    inner.tx = None;
-    if let Some(handle) = inner.engine_handle.take() {
-        handle.abort();
+    let tx = inner.tx.take();
+    request_engine_stop(tx, &inner.generation_gate);
+    Ok(
+        "Poproszono o zatrzymanie silnika; operacje na pamięci będą dostępne po jego zakończeniu."
+            .to_string(),
+    )
+}
+
+fn request_engine_stop(tx: Option<mpsc::Sender<StateCommand>>, gate: &GenerationGate) {
+    let _ = gate.cancel();
+    if let Some(tx) = tx {
+        let _ = tx.try_send(StateCommand::Shutdown);
     }
-    Ok("Silnik został zatrzymany.".to_string())
 }
 
 #[tauri::command]
@@ -1833,6 +2093,9 @@ async fn run_native_expert_inference(
     input: Vec<f32>,
     app_handle: AppHandle,
 ) -> Result<Vec<f32>, String> {
+    if input.iter().any(|v| !v.is_finite()) {
+        return Err("Wektor wejściowy zawiera wartości nieliczbowe (NaN / Inf).".to_string());
+    }
     let weights_path = app_runtime_data_dir(&app_handle).join("mock_weights.bin");
     if !weights_path.exists() {
         return Err("Plik wag mock_weights.bin nie istnieje w danych aplikacji.".to_string());
@@ -1865,6 +2128,16 @@ fn forge_tool_on_anvil(
     state: State<'_, AppState>,
 ) -> Result<String, String> {
     let mut inner = state.0.lock().unwrap();
+    require_permission_level(inner.permission_level, 2, "wykucie narzędzia na kowadle")?;
+
+    let sanitized_id = sanitized_vault_key(&tool_id)?;
+    if sanitized_id != tool_id || tool_id.len() > 64 {
+        return Err("Nieprawidłowy identyfikator narzędzia (dozwolone znaki alfanumeryczne, _, -, max 64 znaki).".into());
+    }
+    if code.len() > 1024 * 1024 {
+        return Err("Zablokowano: Kod narzędzia przekracza limit 1 MB.".into());
+    }
+
     let checksum = blyskawica_core::shadow_forge::TheAnvil::temper_tool(
         &tool_id,
         &code,
@@ -1895,8 +2168,18 @@ fn aegis_neutralize_intrusion(
     state: State<'_, AppState>,
 ) -> Result<String, String> {
     let mut inner = state.0.lock().unwrap();
+    require_permission_level(inner.permission_level, 2, "decyzja bezpieczeństwa Aegis")?;
+
     let status = match action.as_str() {
-        "allow" => blyskawica_core::aegis_sentinel::SentinelActionStatus::AllowedByArchitect,
+        "allow" => {
+            if inner.permission_level < 3 {
+                return Err(
+                    "Zezwolenie na zablokowane zdarzenie Aegis wymaga poziomu Full OS (Poziom 3)."
+                        .into(),
+                );
+            }
+            blyskawica_core::aegis_sentinel::SentinelActionStatus::AllowedByArchitect
+        }
         "terminate" => blyskawica_core::aegis_sentinel::SentinelActionStatus::Terminated,
         _ => blyskawica_core::aegis_sentinel::SentinelActionStatus::QuarantinedInJobObject,
     };
@@ -1913,8 +2196,16 @@ fn absorb_intent_seed(
     amplitude: f32,
     state: State<'_, AppState>,
 ) -> Result<String, String> {
+    if snippet.len() > 16 * 1024 {
+        return Err("Zalążek intencji przekracza dopuszczalny limit 16 KB.".into());
+    }
+    let safe_amplitude = if amplitude.is_finite() {
+        amplitude
+    } else {
+        0.1
+    };
     let mut inner = state.0.lock().unwrap();
-    inner.tree.absorb_intent_seed(&snippet, amplitude);
+    inner.tree.absorb_intent_seed(&snippet, safe_amplitude);
     Ok("Zalążek intencji został wchłonięty przez korzenie Drzewa Kognicji".to_string())
 }
 
@@ -1931,6 +2222,9 @@ fn evaluate_cognitive_shield(
     prompt: String,
     state: State<'_, AppState>,
 ) -> Result<blyskawica_core::cognitive_shield::CognitiveShieldVerdict, String> {
+    if prompt.len() > 64 * 1024 {
+        return Err("Prompt przekracza dopuszczalny limit tarczy (64 KB).".into());
+    }
     let inner = state.0.lock().unwrap();
     Ok(inner.cognitive_shield.evaluate_psyche(&prompt))
 }
@@ -1940,6 +2234,9 @@ fn aegis_evaluate_psyche_vad(
     text: String,
     state: State<'_, AppState>,
 ) -> Result<blyskawica_core::aegis_psyche_onnx::AegisPsycheRustReport, String> {
+    if text.len() > 64 * 1024 {
+        return Err("Tekst przekracza dopuszczalny limit analizy VAD (64 KB).".into());
+    }
     let inner = state.0.lock().unwrap();
     Ok(inner.aegis_psyche.analyze(&text))
 }
@@ -1957,6 +2254,9 @@ fn quantum_trigger_tunneling(
     barrier_potential: f32,
     state: State<'_, AppState>,
 ) -> Result<serde_json::Value, String> {
+    if !barrier_potential.is_finite() || barrier_potential < 0.0 {
+        return Err("Potencjał bariery musi być nieujemną skończoną liczbą rzeczywistą.".into());
+    }
     let inner = state.0.lock().unwrap();
     let mut mock_weights = vec![0.5f32; 128];
     let (gamma, count) = inner
@@ -1975,6 +2275,9 @@ fn quantum_observe_collapse(
     query: String,
     state: State<'_, AppState>,
 ) -> Result<blyskawica_core::quantum_core::SuperpositionBranch, String> {
+    if query.len() > 16 * 1024 {
+        return Err("Zapytanie obserwatora przekracza limit 16 KB.".into());
+    }
     let inner = state.0.lock().unwrap();
     Ok(inner.quantum_bridge.collapse_superposition(&query))
 }
@@ -2000,6 +2303,10 @@ pub fn run() {
             backend_child: None,
             shell_secret: None,
             engine_handle: None,
+            index_lease: None,
+            chat_save_failed: false,
+            generation_gate: GenerationGate::default(),
+            engine_session: None,
             shadow_board: blyskawica_core::shadow_forge::ShadowBoard::new(),
             aegis: blyskawica_core::aegis_sentinel::AegisSentinel::new(),
             tree: blyskawica_core::cognitive_heartbeat::CognitiveHeartbeat::new(),
@@ -2012,6 +2319,8 @@ pub fn run() {
             start_engine,
             stop_engine,
             send_user_message,
+            load_chat_autosave,
+            append_chat_autosave,
             cancel_generation,
             set_permission_level,
             get_permission_report,
@@ -2058,12 +2367,13 @@ pub fn run() {
             let mut inner = state.0.lock().unwrap();
 
             // Dynamic workspace resolution: use local repo dir if valid, else standalone bundle dir, else fallback to app_data_dir
-            let app_data_dir = app.path().app_data_dir().unwrap_or_else(|_| std::env::temp_dir().join("Blyskawica"));
+            let app_data_dir = app_runtime_data_dir(app.handle());
             let current_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
 
-            if current_dir.join("adaptiveneuralnetwork").exists() || current_dir.join("blyskawica_core").exists() {
-                inner.workspace_path = current_dir;
-            } else if current_dir.join("model").exists() {
+            if current_dir.join("adaptiveneuralnetwork").exists()
+                || current_dir.join("blyskawica_core").exists()
+                || current_dir.join("model").exists()
+            {
                 inner.workspace_path = current_dir;
             } else if let Ok(exe_path) = std::env::current_exe() {
                 if let Some(exe_dir) = exe_path.parent() {
@@ -2088,6 +2398,11 @@ pub fn run() {
                 let _ = std::fs::create_dir_all(&app_data_dir);
                 inner.workspace_path = app_data_dir.clone();
             }
+            #[cfg(feature = "ui-smoke-isolation")]
+            {
+                inner.workspace_path = smoke_root().join("workspace");
+                std::fs::create_dir_all(&inner.workspace_path)?;
+            }
             println!("📂 [SPARKLE App]: Working directory set to: {:?}", inner.workspace_path);
 
             let workspace = inner.workspace_path.clone();
@@ -2105,7 +2420,8 @@ pub fn run() {
             }
 
             let sidecar_setting = std::env::var("SPARKLE_ENABLE_SIDECAR").ok();
-            let enable_sidecar = sidecar_is_explicitly_enabled(sidecar_setting.as_deref());
+            let enable_sidecar = !cfg!(feature = "ui-smoke-isolation")
+                && sidecar_is_explicitly_enabled(sidecar_setting.as_deref());
 
             if enable_sidecar && sidecar_path.exists() {
                 let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_nanos();
@@ -2152,21 +2468,34 @@ pub fn run() {
                 println!("ℹ️ [Tauri Setup]: Sidecar Python jest wyłączony. Działanie w samodzielnym trybie Rust/Tauri.");
             }
 
+            #[cfg(feature = "ui-smoke-isolation")]
+            tauri::WebviewWindowBuilder::new(app, "main", tauri::WebviewUrl::App("index.html".into()))
+                .title("Sparkle VIBE IDE — IZOLACJA TESTOWA")
+                .inner_size(1280.0, 840.0)
+                .data_directory(smoke_root().join("webview"))
+                .build()?;
             Ok(())
         });
 
+    let context = tauri::generate_context!();
+    #[cfg(feature = "ui-smoke-isolation")]
+    let context = {
+        let mut context = context;
+        context.config_mut().app.windows.clear();
+        context
+    };
     let app = builder
-        .build(tauri::generate_context!())
+        .build(context)
         .expect("error while building tauri application");
 
     app.run(move |app_handle, event| {
         if let tauri::RunEvent::Exit = event {
             let state = app_handle.state::<AppState>();
             let mut inner = state.0.lock().unwrap();
-            if let Some(handle) = inner.engine_handle.take() {
-                println!("🛑 [Tauri Exit]: Zatrzymywanie zadania silnika Rust...");
-                handle.abort();
-            }
+            let tx = inner.tx.take();
+            request_engine_stop(tx, &inner.generation_gate);
+            // A running spawn_blocking task cannot be forcibly aborted; request
+            // cooperative cancellation and let process shutdown take its course.
             if let Some(mut child) = inner.backend_child.take() {
                 println!("🛑 [Tauri Exit]: Graceful shutdown — wysyłanie sygnału zamykania...");
                 // Attempt graceful shutdown: wait up to 3 seconds for clean exit
@@ -2200,14 +2529,251 @@ mod tests {
     #[cfg(not(target_os = "windows"))]
     use super::show_confirm_dialog;
     use super::{
-        copy_storage_directory, permission_change_requires_confirmation, remove_regular_file,
-        remove_storage_directory, require_permission_level, resolve_workspace_relative_path,
+        copy_storage_directory, open_or_initialize_vector_index,
+        permission_change_requires_confirmation, remove_regular_file, remove_storage_directory,
+        require_finished_handle, require_permission_level, resolve_workspace_relative_path,
         sanitized_vault_key, sidecar_is_explicitly_enabled, storage_inventory_stats,
         workspace_path_for_permission,
     };
     use std::fs;
     use std::path::Path;
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[test]
+    fn cancellation_reaches_busy_worker_and_next_request_is_independent() {
+        use std::sync::atomic::Ordering;
+        let mut gate = super::GenerationGate::default();
+        let first = gate.reserve().unwrap();
+        assert!(gate.reserve().is_err());
+        let worker_flag = first.clone();
+        let (started_tx, started_rx) = std::sync::mpsc::channel();
+        let (stopped_tx, stopped_rx) = std::sync::mpsc::channel();
+        let worker = std::thread::spawn(move || {
+            started_tx.send(()).unwrap();
+            while !worker_flag.load(Ordering::SeqCst) {
+                std::thread::yield_now();
+            }
+            stopped_tx.send(()).unwrap();
+        });
+        started_rx
+            .recv_timeout(std::time::Duration::from_secs(2))
+            .unwrap();
+        gate.cancel().unwrap();
+        stopped_rx
+            .recv_timeout(std::time::Duration::from_secs(2))
+            .unwrap();
+        worker.join().unwrap();
+        gate.release_if(&first);
+        let next = gate.reserve().unwrap();
+        assert!(!next.load(Ordering::SeqCst));
+        gate.release_if(&first);
+        assert!(gate.reserve().is_err());
+        gate.release_if(&next);
+        assert!(gate.cancel().is_err());
+    }
+
+    #[test]
+    fn full_command_queue_releases_generation_slot_without_losing_order() {
+        let (tx, mut rx) = tokio::sync::mpsc::channel(1);
+        tx.try_send(blyskawica_core::state_manager::StateCommand::Status)
+            .unwrap();
+        let mut gate = super::GenerationGate::default();
+        assert!(super::enqueue_prompt(&tx, &mut gate, "blocked".into()).is_err());
+        assert!(gate.active.is_none());
+        assert!(matches!(
+            rx.try_recv().unwrap(),
+            blyskawica_core::state_manager::StateCommand::Status
+        ));
+        super::enqueue_prompt(&tx, &mut gate, "accepted".into()).unwrap();
+        assert!(super::enqueue_prompt(&tx, &mut gate, "second".into()).is_err());
+        gate.cancel().unwrap();
+        match rx.try_recv().unwrap() {
+            blyskawica_core::state_manager::StateCommand::PromptWithCancellation {
+                text,
+                cancellation,
+            } => {
+                assert_eq!(text, "accepted");
+                assert!(cancellation.load(std::sync::atomic::Ordering::SeqCst));
+            }
+            _ => panic!("unexpected command"),
+        }
+    }
+
+    #[test]
+    fn stop_request_cancels_active_generation_and_signals_shutdown() {
+        let (tx, mut rx) = tokio::sync::mpsc::channel(1);
+        let mut gate = super::GenerationGate::default();
+        let active = gate.reserve().unwrap();
+        super::request_engine_stop(Some(tx), &gate);
+        assert!(active.load(std::sync::atomic::Ordering::SeqCst));
+        assert!(matches!(
+            rx.try_recv().unwrap(),
+            blyskawica_core::state_manager::StateCommand::Shutdown
+        ));
+    }
+
+    #[tokio::test]
+    async fn memory_operations_wait_for_engine_task_to_finish() {
+        let handle = tokio::spawn(std::future::pending::<()>());
+        assert!(require_finished_handle(Some(&handle)).is_err());
+        handle.abort();
+        while !handle.is_finished() {
+            tokio::task::yield_now().await;
+        }
+        assert!(require_finished_handle(Some(&handle)).is_ok());
+        assert!(require_finished_handle(None).is_ok());
+    }
+
+    #[test]
+    fn first_index_start_and_r2_cleanup_preserve_chat_boundaries() {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!("sparkle-chat-index-{unique}"));
+        fs::create_dir_all(&root).unwrap();
+        let dir = root.join("db");
+        let record = super::chat_autosave::ChatRecord {
+            channel: "main".into(),
+            sender: "Użytkownik".into(),
+            text: "synthetic".into(),
+            iso_time: "2026-11-03T00:00:00Z".into(),
+        };
+        super::chat_autosave::append(&dir, &record).unwrap();
+        let lease = std::sync::Arc::new(
+            blyskawica_core::vector_index::IndexLease::acquire(&root.join("sparkle-index.lock"))
+                .unwrap(),
+        );
+        let index =
+            open_or_initialize_vector_index(&dir, "sparkle_vectors", 128, lease.clone()).unwrap();
+        assert_eq!(index.len(), 1);
+        assert_eq!(super::chat_autosave::load(&dir).unwrap(), vec![record]);
+        drop(index);
+        assert!(remove_storage_directory(&dir).unwrap());
+        assert!(super::chat_autosave::load(&dir).unwrap().is_empty());
+        drop(lease);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn vector_index_first_start_and_corruption_do_not_overwrite_existing_data() {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!("sparkle-index-start-{unique}"));
+        fs::create_dir_all(&root).unwrap();
+        let dir = root.join("db");
+        let lease = std::sync::Arc::new(
+            blyskawica_core::vector_index::IndexLease::acquire(&root.join("sparkle-index.lock"))
+                .unwrap(),
+        );
+        let name = "sparkle_vectors";
+        let index = open_or_initialize_vector_index(&dir, name, 128, lease.clone()).unwrap();
+        assert_eq!(index.len(), 1);
+        drop(index);
+        let reopened = open_or_initialize_vector_index(&dir, name, 128, lease.clone()).unwrap();
+        assert_eq!(reopened.len(), 1);
+        drop(reopened);
+
+        let graph = dir.join("sparkle_vectors.hnsw.graph");
+        let data = dir.join("sparkle_vectors.hnsw.data");
+        let checksum = dir.join("sparkle_vectors.checksum");
+        std::fs::write(&checksum, b"corrupt").unwrap();
+        let before = [&graph, &data, &checksum].map(|path| fs::read(path).unwrap());
+        assert!(open_or_initialize_vector_index(&dir, name, 128, lease.clone()).is_err());
+        let after = [&graph, &data, &checksum].map(|path| fs::read(path).unwrap());
+        assert_eq!(before, after);
+        drop(lease);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn desktop_reopens_published_generation_and_its_new_wal() {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!("sparkle-generation-reopen-{unique}"));
+        fs::create_dir_all(&root).unwrap();
+        let dir = root.join("db");
+        let lease = std::sync::Arc::new(
+            blyskawica_core::vector_index::IndexLease::acquire(&root.join("sparkle-index.lock"))
+                .unwrap(),
+        );
+        let index =
+            open_or_initialize_vector_index(&dir, "sparkle_vectors", 128, lease.clone()).unwrap();
+        let mut first = vec![0.0; 128];
+        first[0] = 1.0;
+        index
+            .insert_with_wal(&dir, "sparkle_vectors", 100, &first)
+            .unwrap();
+        index.checkpoint(&dir, "sparkle_vectors").unwrap();
+        let mut second = vec![0.0; 128];
+        second[1] = 1.0;
+        index
+            .insert_with_wal(&dir, "sparkle_vectors", 101, &second)
+            .unwrap();
+        drop(index);
+        let reopened =
+            open_or_initialize_vector_index(&dir, "sparkle_vectors", 128, lease.clone()).unwrap();
+        assert_eq!(reopened.len(), 3);
+        assert_eq!(reopened.search(&first, 1)[0].d_id, 100);
+        assert_eq!(reopened.search(&second, 1)[0].d_id, 101);
+        drop(reopened);
+        drop(lease);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn orphaned_wal_is_not_treated_as_an_empty_store() {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!("sparkle-orphan-wal-{unique}"));
+        fs::create_dir_all(&root).unwrap();
+        let dir = root.join("db");
+        let lease = std::sync::Arc::new(
+            blyskawica_core::vector_index::IndexLease::acquire(&root.join("sparkle-index.lock"))
+                .unwrap(),
+        );
+        fs::create_dir_all(&dir).unwrap();
+        let wal = dir.join("sparkle_vectors.hnsw.wal");
+        fs::write(&wal, b"unfinished data").unwrap();
+        assert!(
+            open_or_initialize_vector_index(&dir, "sparkle_vectors", 128, lease.clone()).is_err()
+        );
+        assert_eq!(fs::read(&wal).unwrap(), b"unfinished data");
+        assert_eq!(fs::read_dir(&dir).unwrap().count(), 1);
+        drop(lease);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn orphaned_staged_generation_is_not_treated_as_an_empty_store() {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!("sparkle-orphan-stage-{unique}"));
+        fs::create_dir_all(&root).unwrap();
+        let dir = root.join("db");
+        let lease = std::sync::Arc::new(
+            blyskawica_core::vector_index::IndexLease::acquire(&root.join("sparkle-index.lock"))
+                .unwrap(),
+        );
+        fs::create_dir_all(&dir).unwrap();
+        let staged = dir.join("sparkle_vectors_tmp_abcd.hnsw.graph");
+        fs::write(&staged, b"partial").unwrap();
+        assert!(
+            open_or_initialize_vector_index(&dir, "sparkle_vectors", 128, lease.clone()).is_err()
+        );
+        assert_eq!(fs::read(&staged).unwrap(), b"partial");
+        assert_eq!(fs::read_dir(&dir).unwrap().count(), 1);
+        drop(lease);
+        fs::remove_dir_all(root).unwrap();
+    }
 
     #[test]
     fn workspace_resolver_allows_new_files_and_rejects_escape_attempts() {
@@ -2244,6 +2810,8 @@ mod tests {
     #[test]
     fn privileged_operations_require_the_declared_level() {
         assert!(require_permission_level(1, 2, "MCP").is_err());
+        assert!(require_permission_level(1, 2, "wykucie narzędzia na kowadle").is_err());
+        assert!(require_permission_level(1, 2, "decyzja bezpieczeństwa Aegis").is_err());
         assert!(require_permission_level(2, 3, "vault").is_err());
         assert!(require_permission_level(3, 3, "vault").is_ok());
     }
@@ -2387,5 +2955,143 @@ mod tests {
         );
         assert_eq!(sanitized_vault_key("../primary"), Ok("primary".to_string()));
         assert!(sanitized_vault_key("...").is_err());
+    }
+
+    #[test]
+    fn vertical_mvp_pipeline_end_to_end() {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system clock should be after the Unix epoch")
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!("sparkle-mvp-e2e-{unique}"));
+        fs::create_dir_all(&root).unwrap();
+
+        let db_dir = root.join("db");
+        let workspace = root.join("workspace");
+        fs::create_dir_all(&workspace).unwrap();
+
+        // 1. First-start vector index initialization with lease
+        let lease = std::sync::Arc::new(
+            blyskawica_core::vector_index::IndexLease::acquire(&root.join("sparkle-index.lock"))
+                .unwrap(),
+        );
+        let index = open_or_initialize_vector_index(&db_dir, "sparkle_vectors", 128, lease.clone())
+            .expect("open_or_initialize_vector_index should succeed on clean directory");
+        assert!(!index.is_empty());
+
+        // 2. Chat autosave persistence and restore
+        let user_record = super::chat_autosave::ChatRecord {
+            channel: "main".into(),
+            sender: "Użytkownik".into(),
+            text: "Cześć Sparkle!".into(),
+            iso_time: "2026-11-05T05:00:00.000Z".into(),
+        };
+        let sparkle_record = super::chat_autosave::ChatRecord {
+            channel: "main".into(),
+            sender: "Sparkle".into(),
+            text: "Witaj! Jestem gotowa do pomocy.".into(),
+            iso_time: "2026-11-05T05:00:01.000Z".into(),
+        };
+        super::chat_autosave::append(&db_dir, &user_record).unwrap();
+        super::chat_autosave::append(&db_dir, &sparkle_record).unwrap();
+
+        let loaded = super::chat_autosave::load(&db_dir).unwrap();
+        assert_eq!(loaded.len(), 2);
+        assert_eq!(loaded[0], user_record);
+        assert_eq!(loaded[1], sparkle_record);
+
+        // 3. Generation gate concurrency and cancellation
+        let mut gate = super::GenerationGate::default();
+        let cancel_flag = gate.reserve().expect("first prompt should reserve gate");
+        assert!(gate.reserve().is_err(), "concurrent prompt must be refused");
+        gate.cancel()
+            .expect("cancel should succeed on active prompt");
+        assert!(cancel_flag.load(std::sync::atomic::Ordering::SeqCst));
+        gate.release_if(&cancel_flag);
+        assert!(
+            gate.reserve().is_ok(),
+            "gate should be available after release"
+        );
+
+        // 4. Workspace path boundaries
+        let test_file = workspace.join("notes.txt");
+        fs::write(&test_file, b"test content").unwrap();
+        assert!(resolve_workspace_relative_path(&workspace, "notes.txt").is_ok());
+        assert!(resolve_workspace_relative_path(&workspace, "../notes.txt").is_err());
+        assert!(resolve_workspace_relative_path(&workspace, "subdir/../../outside.txt").is_err());
+
+        // 5. Cleanup
+        drop(index);
+        drop(lease);
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn connector_consent_and_offline_boundaries_are_enforced() {
+        use std::collections::BTreeSet;
+        let mut consents = BTreeSet::new();
+
+        // 1. When online_mode is false, access is ALWAYS denied, even if consent set contains the ID
+        assert!(!super::connector_access_granted(
+            false,
+            &consents,
+            super::LEGACY_SIDECAR_STATUS_CONNECTOR_ID
+        ));
+        consents.insert(super::LEGACY_SIDECAR_STATUS_CONNECTOR_ID.to_string());
+        assert!(!super::connector_access_granted(
+            false,
+            &consents,
+            super::LEGACY_SIDECAR_STATUS_CONNECTOR_ID
+        ));
+
+        // 2. When online_mode is true, access is granted ONLY if consent was explicitly granted
+        assert!(super::connector_access_granted(
+            true,
+            &consents,
+            super::LEGACY_SIDECAR_STATUS_CONNECTOR_ID
+        ));
+        assert!(!super::connector_access_granted(
+            true,
+            &consents,
+            "cognitive_guest"
+        ));
+
+        // 3. Connectors without transport cannot be enabled
+        let internet_search = super::connector_definition("internet_search")
+            .expect("internet_search connector must exist");
+        assert!(!internet_search.can_be_enabled);
+        let cloud_backup =
+            super::connector_definition("cloud_backup").expect("cloud_backup connector must exist");
+        assert!(!cloud_backup.can_be_enabled);
+
+        // 4. Registry JSON reflects current online_mode and consents accurately
+        let reg_offline = super::connector_registry_json(false, &consents);
+        assert_eq!(reg_offline["online_mode"], false);
+        let connectors = reg_offline["connectors"]
+            .as_array()
+            .expect("connectors array");
+        for c in connectors {
+            assert_eq!(
+                c["consented"], false,
+                "connector {} reported consented=true in offline mode",
+                c["id"]
+            );
+        }
+
+        let reg_online = super::connector_registry_json(true, &consents);
+        assert_eq!(reg_online["online_mode"], true);
+        let connectors_online = reg_online["connectors"]
+            .as_array()
+            .expect("connectors array");
+        let sidecar_entry = connectors_online
+            .iter()
+            .find(|c| c["id"] == super::LEGACY_SIDECAR_STATUS_CONNECTOR_ID)
+            .unwrap();
+        assert_eq!(sidecar_entry["consented"], true);
+        let guest_entry = connectors_online
+            .iter()
+            .find(|c| c["id"] == "cognitive_guest")
+            .unwrap();
+        assert_eq!(guest_entry["consented"], false);
     }
 }

@@ -6,6 +6,8 @@ import { SparkleStore } from './store.js';
 import { updateNeurochemistryUI, setWolfTeethVisuals } from './neurochemistry.js';
 import { refreshWorkspaceFiles } from './editor.js';
 import { escapeHtml } from './html.js';
+import { createChatPersistence } from './chat-persistence.js';
+import { dialogForModel } from './chat-context.js';
 
 const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: async () => {} };
 
@@ -17,6 +19,49 @@ let dispatchTargetSparkle, dispatchTargetGuest, dispatchTargetBoth, dispatchMess
 let activeStreamingBubble = null;
 let thinkingInterval = null;
 let thinkingSeconds = 0;
+let chatPersistence = null;
+let messageInFlight = false;
+
+function updateAutosaveStatus(status, error) {
+  const el = document.getElementById("chat-autosave-status");
+  if (el) {
+    el.textContent = status === "saved" ? "Autozapis rozmów: zapisano lokalnie" :
+      status === "pending" ? "Autozapis rozmów: zapisywanie…" :
+      "Autozapis rozmów: błąd — sprawdź dziennik";
+    el.style.color = status === "error" ? "#ff8c8c" : "";
+  }
+  if (status === "error") console.error("Błąd autozapisu rozmów:", error);
+}
+
+export async function restoreChatAutosave(addLogFn) {
+  if (!window.__TAURI__) {
+    const el = document.getElementById("chat-autosave-status");
+    if (el) el.textContent = "Autozapis rozmów: niedostępny w podglądzie";
+    return;
+  }
+  chatPersistence = createChatPersistence(invoke, (status, error) => {
+    updateAutosaveStatus(status, error);
+    if (status === "error" && addLogFn) addLogFn(`[Autozapis rozmów]: ${error}`);
+  });
+  const records = await chatPersistence.load();
+  for (const record of records) {
+    if (record.channel === "guest") appendGuestMessage(record.sender, record.text, false, record.iso_time);
+    else appendChatMessage(record.sender, record.text, "", false, record.iso_time);
+  }
+}
+
+export async function pauseChatAutosave() {
+  if (chatPersistence) await chatPersistence.pause();
+}
+
+export function resumeChatAutosave(cleared = false) {
+  if (chatPersistence) chatPersistence.resume(cleared);
+}
+
+function saveChatRecord(channel, sender, text, isoTime) {
+  if (!chatPersistence) return Promise.resolve(false);
+  return chatPersistence.append({ channel, sender, text, iso_time: isoTime });
+}
 
 export function initChatModule(addLogFn, refreshFilesFn) {
   chatMessages = document.getElementById("chat-messages");
@@ -64,7 +109,7 @@ export function initChatModule(addLogFn, refreshFilesFn) {
   }
 
   window.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && btnCancelGeneration && btnCancelGeneration.style.display !== "none") {
+    if (e.key === "Escape" && btnCancelGeneration && !btnCancelGeneration.disabled && btnCancelGeneration.style.display !== "none") {
       e.preventDefault();
       cancelGeneration(addLogFn);
     }
@@ -130,7 +175,7 @@ export function initChatModule(addLogFn, refreshFilesFn) {
   }
 }
 
-export function appendChatMessage(sender, text, customClass = "") {
+export function appendChatMessage(sender, text, customClass = "", persist = true, isoTime = new Date().toISOString()) {
   if (!chatMessages) return;
 
   // Rejestracja w historii sesji do eksportu
@@ -139,7 +184,7 @@ export function appendChatMessage(sender, text, customClass = "") {
     sender,
     text,
     timestamp: time,
-    isoTime: new Date().toISOString()
+    isoTime
   });
 
   const msgEl = document.createElement("div");
@@ -163,9 +208,10 @@ export function appendChatMessage(sender, text, customClass = "") {
     primaryChatStream.appendChild(miniMsg);
     primaryChatStream.scrollTop = primaryChatStream.scrollHeight;
   }
+  return persist ? saveChatRecord("main", sender, text, isoTime) : Promise.resolve(true);
 }
 
-export function appendGuestMessage(sender, text) {
+export function appendGuestMessage(sender, text, persist = true, isoTime = new Date().toISOString()) {
   if (!guestChatStream) return;
 
   if (!SparkleStore.state.guestChatHistory) {
@@ -175,7 +221,7 @@ export function appendGuestMessage(sender, text) {
     sender,
     text,
     timestamp: new Date().toLocaleTimeString(),
-    isoTime: new Date().toISOString()
+    isoTime
   });
 
   const msgEl = document.createElement("div");
@@ -195,6 +241,7 @@ export function appendGuestMessage(sender, text) {
 
   guestChatStream.appendChild(msgEl);
   guestChatStream.scrollTop = guestChatStream.scrollHeight;
+  return persist ? saveChatRecord("guest", sender, text, isoTime) : Promise.resolve(true);
 }
 
 export async function startBlyskawicaEngine(addLogFn, refreshFilesFn) {
@@ -230,7 +277,7 @@ export async function startBlyskawicaEngine(addLogFn, refreshFilesFn) {
 }
 
 export async function sendMessage(addLogFn) {
-  if (!chatInput) return;
+  if (!chatInput || messageInFlight) return;
   const text = chatInput.value.trim();
   if (!text) return;
 
@@ -239,9 +286,12 @@ export async function sendMessage(addLogFn) {
 }
 
 export async function sendMessageText(text, addLogFn) {
-  appendChatMessage("Użytkownik", text);
+  if (messageInFlight) return;
+  messageInFlight = true;
+  if (btnSendMessage) btnSendMessage.disabled = true;
 
   try {
+    await appendChatMessage("Użytkownik", text);
     if (addLogFn) addLogFn(`[Tauri]: Wysyłanie zapytania do Sparkle: "${text}"`);
     
     // Skanowanie psychologiczne Aegis Psyche ONNX
@@ -289,8 +339,6 @@ export async function sendMessageText(text, addLogFn) {
     chatMessages.appendChild(generatingMsgEl);
     chatMessages.scrollTop = chatMessages.scrollHeight;
     activeStreamingBubble = generatingMsgEl;
-    if (btnCancelGeneration) btnCancelGeneration.style.display = "inline-flex";
-    if (btnSendMessage) btnSendMessage.disabled = true;
 
     thinkingInterval = setInterval(() => {
       thinkingSeconds++;
@@ -301,8 +349,7 @@ export async function sendMessageText(text, addLogFn) {
     
     // Budowanie wieloturowego kontekstu ChatML z historii dialogu
     const history = SparkleStore.state.chatHistory || [];
-    const dialogHistory = history.filter(m => m.sender === "Użytkownik" || m.sender === "Sparkle" || m.sender.includes("Błyskawica"));
-    const recentDialog = dialogHistory.slice(-8);
+    const recentDialog = dialogForModel(history).slice(-8);
 
     const systemPrompt = "Jesteś Sparkle – suwerenną, wysoce inteligentną asystentką kognitywną i inżynieryjną stworzoną przez Architekta Andrzeja Mątewskiego (V1B3hR / VIBER). " +
       "Twoje imię to Sparkle. " +
@@ -322,6 +369,10 @@ export async function sendMessageText(text, addLogFn) {
     chatmlPrompt += `<|im_start|>assistant\n`;
 
     await invoke("send_user_message", { message: chatmlPrompt });
+    if (activeStreamingBubble && btnCancelGeneration) {
+      btnCancelGeneration.disabled = false;
+      btnCancelGeneration.style.display = "inline-flex";
+    }
   } catch (error) {
     if (thinkingInterval) {
       clearInterval(thinkingInterval);
@@ -333,24 +384,20 @@ export async function sendMessageText(text, addLogFn) {
     }
     if (btnCancelGeneration) btnCancelGeneration.style.display = "none";
     if (btnSendMessage) btnSendMessage.disabled = false;
+    messageInFlight = false;
     if (addLogFn) addLogFn(`[Tauri Błąd]: ${error}`);
     appendChatMessage("Sparkle", "Wystąpił błąd komunikacji z silnikiem kognitywnym.");
   }
 }
 
 export async function cancelGeneration(addLogFn) {
-  if (thinkingInterval) {
-    clearInterval(thinkingInterval);
-    thinkingInterval = null;
-  }
+  if (btnCancelGeneration) btnCancelGeneration.disabled = true;
   try {
     const res = await invoke("cancel_generation");
     if (addLogFn) addLogFn(`[Tauri]: ${res}`);
   } catch (err) {
     if (addLogFn) addLogFn(`[Tauri Błąd anulowania]: ${err}`);
-  } finally {
-    if (btnCancelGeneration) btnCancelGeneration.style.display = "none";
-    if (btnSendMessage) btnSendMessage.disabled = false;
+    if (btnCancelGeneration && activeStreamingBubble) btnCancelGeneration.disabled = false;
   }
 }
 
@@ -402,12 +449,14 @@ export function handleResponseFinished(fullResponse) {
     if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
 
     // Zapis do historii sesji
+    const isoTime = new Date().toISOString();
     SparkleStore.state.chatHistory.push({
       sender: "Sparkle",
       text: fullResponse,
       timestamp: new Date().toLocaleTimeString(),
-      isoTime: new Date().toISOString()
+      isoTime
     });
+    void saveChatRecord("main", "Sparkle", fullResponse, isoTime);
 
     if (SparkleStore.state.ttsEnabled) {
       synthesizeTTS(fullResponse);
@@ -415,6 +464,7 @@ export function handleResponseFinished(fullResponse) {
     if (btnCancelGeneration) btnCancelGeneration.style.display = "none";
     if (btnSendMessage) btnSendMessage.disabled = false;
     activeStreamingBubble = null;
+    messageInFlight = false;
   }
 }
 
