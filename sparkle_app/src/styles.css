@@ -113,8 +113,12 @@ body.wolf-teeth-active {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  padding: 15px;
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
+  padding: 12px;
   backdrop-filter: blur(10px);
+  overflow-x: hidden;
 }
 
 /* Header */
@@ -122,18 +126,23 @@ body.wolf-teeth-active {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 20px;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 16px;
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   border-radius: 12px;
   margin-bottom: 12px;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .logo-area {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-shrink: 0;
 }
 
 .lightning-icon {
@@ -165,7 +174,10 @@ body.wolf-teeth-active {
 .status-area {
   display: flex;
   align-items: center;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+  justify-content: flex-end;
 }
 
 .telemetry-badge {
@@ -1246,3 +1258,70 @@ body.wolf-teeth-active {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.05) transparent;
 }
+
+/* Helper styles for new features */
+.file-delete-btn:hover {
+  background: rgba(239, 68, 68, 0.25) !important;
+  color: #f87171 !important;
+  transform: scale(1.15);
+}
+
+.collab-dispatch-card input[type="text"]:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 10px rgba(0, 210, 255, 0.25);
+}
+
+.thinking-timer {
+  font-family: var(--font-family-mono);
+  font-size: 11px;
+  color: #38bdf8;
+  margin-left: 2px;
+}
+
+.thinking-status {
+  color: #94a3b8;
+  font-style: italic;
+  font-size: 13px;
+}
+
+/* Responsive Scaling for Unmaximized Window */
+@media (max-width: 1280px) {
+  .app-container {
+    padding: 8px;
+  }
+  .app-header {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+  .app-header h1 {
+    font-size: 17px;
+  }
+  .telemetry-badge {
+    font-size: 10px;
+    padding: 3px 6px;
+  }
+  .control-btn.small {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .split-container {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .left-panel, .right-panel {
+    flex: none;
+    width: 100%;
+    min-height: 480px;
+  }
+  .app-header {
+    justify-content: center;
+  }
+  .status-area {
+    justify-content: center;
+  }
+}
+

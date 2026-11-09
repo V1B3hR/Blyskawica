@@ -14,6 +14,15 @@ edition = "2021"
 name = "sparkle_app_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
+[features]
+# Explicitly selected builds only; requires a separately prepared test directory.
+ui-smoke-isolation = []
+
+[[bin]]
+name = "sparkle_ui_smoke"
+path = "src/bin/ui_smoke.rs"
+required-features = ["ui-smoke-isolation"]
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
@@ -22,6 +31,7 @@ tauri = { version = "2", features = [] }
 tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+sha2 = "0.10"
 tokio = { version = "1.38", features = ["full"] }
 sysinfo = "0.30"
 blyskawica_core = { path = "../../blyskawica_core" }

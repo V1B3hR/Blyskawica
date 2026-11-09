@@ -4,7 +4,7 @@ import { SparkleStore } from './store.js';
 const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: async () => {} };
 
 let fileList, btnRefreshFiles, currentFilenameText, btnSaveFile, codeEditor;
-let btnNewFile, btnOpenFile, btnSaveAsFile;
+let btnNewFile, btnOpenFile, btnSaveAsFile, btnDeleteFile, nativeFilePicker;
 let logConsole, btnClearLogs, btnExportLogs;
 
 export function initEditorModule() {
@@ -17,6 +17,8 @@ export function initEditorModule() {
   btnNewFile = document.getElementById("btn-new-file");
   btnOpenFile = document.getElementById("btn-open-file");
   btnSaveAsFile = document.getElementById("btn-save-as-file");
+  btnDeleteFile = document.getElementById("btn-delete-file");
+  nativeFilePicker = document.getElementById("native-file-picker");
 
   logConsole = document.getElementById("log-console");
   btnClearLogs = document.getElementById("btn-clear-logs");
@@ -37,11 +39,17 @@ export function initEditorModule() {
   if (btnSaveAsFile) {
     btnSaveAsFile.addEventListener("click", saveAsFile);
   }
+  if (btnDeleteFile) {
+    btnDeleteFile.addEventListener("click", deleteCurrentFile);
+  }
   if (btnClearLogs) {
     btnClearLogs.addEventListener("click", clearLogs);
   }
   if (btnExportLogs) {
     btnExportLogs.addEventListener("click", exportLogs);
+  }
+  if (nativeFilePicker) {
+    nativeFilePicker.addEventListener("change", handleNativeFileSelected);
   }
   if (codeEditor) {
     codeEditor.addEventListener("keydown", (e) => {
@@ -131,7 +139,19 @@ export async function refreshWorkspaceFiles() {
     files.forEach(file => {
       const itemEl = document.createElement("div");
       itemEl.className = `file-item ${file.is_dir ? 'is-directory' : 'is-file'}`;
+      itemEl.style.display = "flex";
+      itemEl.style.alignItems = "center";
+      itemEl.style.justifyContent = "space-between";
       
+      const mainPart = document.createElement("div");
+      mainPart.style.display = "flex";
+      mainPart.style.alignItems = "center";
+      mainPart.style.gap = "6px";
+      mainPart.style.overflow = "hidden";
+      mainPart.style.textOverflow = "ellipsis";
+      mainPart.style.whiteSpace = "nowrap";
+      mainPart.style.flex = "1";
+
       const iconSpan = document.createElement("span");
       iconSpan.className = "file-icon";
       iconSpan.textContent = file.is_dir ? "📁 " : "📄 ";
@@ -140,8 +160,53 @@ export async function refreshWorkspaceFiles() {
       nameSpan.className = "file-name";
       nameSpan.textContent = file.name;
       
-      itemEl.appendChild(iconSpan);
-      itemEl.appendChild(nameSpan);
+      mainPart.appendChild(iconSpan);
+      mainPart.appendChild(nameSpan);
+      itemEl.appendChild(mainPart);
+
+      // Przycisk bezpośredniego usuwania pliku (🗑️)
+      if (!file.is_dir) {
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "file-delete-btn";
+        deleteBtn.textContent = "🗑️";
+        deleteBtn.title = `Usuń plik ${file.name}`;
+        deleteBtn.style.background = "none";
+        deleteBtn.style.border = "none";
+        deleteBtn.style.cursor = "pointer";
+        deleteBtn.style.fontSize = "12px";
+        deleteBtn.style.opacity = "0.6";
+        deleteBtn.style.padding = "2px 4px";
+        deleteBtn.style.borderRadius = "4px";
+
+        deleteBtn.addEventListener("mouseover", () => { deleteBtn.style.opacity = "1.0"; });
+        deleteBtn.addEventListener("mouseout", () => { deleteBtn.style.opacity = "0.6"; });
+
+        deleteBtn.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          const confirmed = confirm(`Czy na pewno chcesz usunąć plik:\n"${file.name}"?`);
+          if (!confirmed) return;
+
+          try {
+            const res = await invoke("delete_workspace_file", { path: file.path });
+            addLog(`✓ ${res}`);
+            if (SparkleStore.state.currentFileOpen === file.path) {
+              SparkleStore.update("currentFileOpen", null);
+              if (codeEditor) {
+                codeEditor.value = "";
+                codeEditor.disabled = true;
+              }
+              if (currentFilenameText) currentFilenameText.textContent = "Nie wybrano pliku";
+              if (btnSaveFile) btnSaveFile.disabled = true;
+              if (btnSaveAsFile) btnSaveAsFile.disabled = true;
+              if (btnDeleteFile) btnDeleteFile.disabled = true;
+            }
+            await refreshWorkspaceFiles();
+          } catch (err) {
+            addLog(`❌ Błąd usuwania pliku: ${err}`);
+          }
+        });
+        itemEl.appendChild(deleteBtn);
+      }
 
       if (file.is_dir) {
         itemEl.style.cursor = "pointer";
@@ -183,6 +248,9 @@ export async function openWorkspaceFile(path, filename) {
     if (btnSaveAsFile) {
       btnSaveAsFile.disabled = false;
     }
+    if (btnDeleteFile) {
+      btnDeleteFile.disabled = false;
+    }
     SparkleStore.update("currentFileOpen", path);
     addLog(`✓ Otwarto plik: ${filename}`);
   } catch (error) {
@@ -200,21 +268,59 @@ export async function saveCurrentFile() {
   addLog(`[Pliki]: Zapisywanie ${currentPath}...`);
   try {
     const res = await invoke("write_workspace_file", { path: currentPath, content });
+    if (btnDeleteFile) {
+      btnDeleteFile.disabled = false;
+    }
     addLog(`✓ ${res}`);
+    await refreshWorkspaceFiles();
   } catch (error) {
     addLog(`❌ Błąd zapisu pliku: ${error}`);
   }
 }
 
+export async function deleteCurrentFile() {
+  const currentPath = SparkleStore.state.currentFileOpen;
+  if (!currentPath) {
+    addLog("[Pliki]: Brak wybranego pliku do usunięcia.");
+    return;
+  }
+  const confirmed = confirm(`Czy na pewno chcesz usunąć aktualnie otwarty plik:\n"${currentPath}"?`);
+  if (!confirmed) return;
+
+  try {
+    const result = await invoke("delete_workspace_file", { path: currentPath });
+    SparkleStore.update("currentFileOpen", null);
+    if (codeEditor) {
+      codeEditor.value = "";
+      codeEditor.disabled = true;
+    }
+    if (currentFilenameText) {
+      currentFilenameText.textContent = "Nie wybrano pliku";
+    }
+    if (btnSaveFile) btnSaveFile.disabled = true;
+    if (btnSaveAsFile) btnSaveAsFile.disabled = true;
+    if (btnDeleteFile) btnDeleteFile.disabled = true;
+    addLog(`✓ ${result}`);
+    refreshWorkspaceFiles();
+  } catch (error) {
+    addLog(`❌ Błąd usuwania pliku: ${error}`);
+  }
+}
+
 export function createNewFile() {
-  const filename = prompt("Podaj nazwę nowego pliku:");
+  const filename = prompt(
+    "Utwórz nowy plik w katalogu roboczym:\n(Podaj nazwę pliku z rozszerzeniem, np. script.py, notatki.md, logic.rs):",
+    "nowy_skrypt.py"
+  );
   if (!filename) return;
+
+  const cleanName = filename.trim();
   if (codeEditor) {
     codeEditor.value = "";
     codeEditor.disabled = false;
   }
   if (currentFilenameText) {
-    currentFilenameText.textContent = filename;
+    currentFilenameText.textContent = cleanName;
   }
   if (btnSaveFile) {
     btnSaveFile.disabled = false;
@@ -222,21 +328,88 @@ export function createNewFile() {
   if (btnSaveAsFile) {
     btnSaveAsFile.disabled = false;
   }
-  SparkleStore.update("currentFileOpen", filename);
-  addLog(`[Pliki]: Utworzono nowy dokument '${filename}'. Kliknij Zapisz, aby zapisać na dysku.`);
+  if (btnDeleteFile) {
+    btnDeleteFile.disabled = false;
+  }
+  SparkleStore.update("currentFileOpen", cleanName);
+  addLog(`[Pliki]: Utworzono nowy dokument '${cleanName}'. Zapisz go przyciskiem ZAPISZ lub [Ctrl+S].`);
 }
 
 export function openFileDialog() {
-  const filename = prompt("Podaj względną ścieżkę do pliku:");
-  if (filename) {
-    openWorkspaceFile(filename, filename);
+  if (nativeFilePicker) {
+    nativeFilePicker.click();
+  } else {
+    const filename = prompt("Podaj nazwę pliku w katalogu roboczym:");
+    if (filename) {
+      openWorkspaceFile(filename, filename);
+    }
   }
 }
 
+async function handleNativeFileSelected(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+
+  addLog(`[Pliki]: Otwieranie pliku z eksploratora systemowego: ${file.name}...`);
+  const reader = new FileReader();
+  reader.onload = async (evt) => {
+    const content = evt.target.result;
+    if (codeEditor) {
+      codeEditor.value = content;
+      codeEditor.disabled = false;
+    }
+    if (currentFilenameText) {
+      currentFilenameText.textContent = file.name;
+    }
+    if (btnSaveFile) btnSaveFile.disabled = false;
+    if (btnSaveAsFile) btnSaveAsFile.disabled = false;
+    if (btnDeleteFile) btnDeleteFile.disabled = false;
+
+    SparkleStore.update("currentFileOpen", file.name);
+    addLog(`✓ Wczytano plik: ${file.name} (${file.size} B)`);
+
+    try {
+      await invoke("write_workspace_file", { path: file.name, content });
+      await refreshWorkspaceFiles();
+    } catch (err) {
+      // dozwolony fallback jeśli w trybie piaskownicy
+    }
+  };
+  reader.onerror = () => {
+    addLog(`❌ Błąd odczytu pliku z eksploratora systemowego.`);
+  };
+  reader.readAsText(file);
+  nativeFilePicker.value = "";
+}
+
 export function saveAsFile() {
-  const filename = prompt("Zapisz plik jako (nazwa):", currentFilenameText ? currentFilenameText.textContent : "nowy_plik.py");
-  if (!filename) return;
-  SparkleStore.update("currentFileOpen", filename);
-  if (currentFilenameText) currentFilenameText.textContent = filename;
+  const currentName = currentFilenameText ? currentFilenameText.textContent : "nowy_plik.py";
+  const targetPath = prompt(
+    "Wybierz miejsce / nazwę zapisu pliku:\n\n" +
+    "• Wpisz ścieżkę w katalogu roboczym (np. folder/skrypt.py)\n" +
+    "• Lub wpisz końcówkę '#export', aby natychmiast zapisać plik w dowolnym folderze na komputerze:",
+    currentName
+  );
+  if (!targetPath) return;
+
+  const trimmed = targetPath.trim();
+  if (trimmed.endsWith("#export")) {
+    const exportName = trimmed.replace("#export", "").trim() || currentName;
+    const content = codeEditor ? codeEditor.value : "";
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = exportName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    addLog(`✓ Wyeksportowano plik na dysk: ${exportName}`);
+    return;
+  }
+
+  SparkleStore.update("currentFileOpen", trimmed);
+  if (currentFilenameText) currentFilenameText.textContent = trimmed;
   saveCurrentFile();
 }

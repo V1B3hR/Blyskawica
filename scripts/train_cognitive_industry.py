@@ -8,14 +8,18 @@ Skrypt inicjuje naukę Błyskawicy na nowo wygenerowanych przemysłowych zbiorac
 
 import json
 import os
+import sys
 from pathlib import Path
 
-import numpy as np
-import torch
-
-from adaptiveneuralnetwork.cognitive_tools.pinn_thermal_engine import PINNTrainer
-
 BASE_DIR = Path(__file__).resolve().parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
+
+from adaptiveneuralnetwork.cognitive_tools.pinn_thermal_engine import PINNTrainer  # noqa: E402
+
 DATA_DIR = str(BASE_DIR / "data")
 
 def train_pinn_on_real_materials():

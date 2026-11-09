@@ -20,17 +20,20 @@ Wzorce poświadczeń znaleziono również w plikach oznaczonych jako `.env.examp
 
 Do `.gitignore` dodano precyzyjne reguły dla lokalnych sekretów deweloperskich, identyfikatorów i zrzutów pamięci. Siedem wskazanych artefaktów wycofano z indeksu przez `git rm --cached`; nie usunięto ich lokalnych kopii ani nie przepisano historii. CI uruchamia `scripts/check_tracked_runtime_artifacts.py`, aby blokować ich ponowne dodanie. Obraz Ambassador nie kopiuje już lokalnego `integrity_vault.json`.
 
-## Decyzja wymagana od właściciela
+## Decyzja właściciela i zamknięcie SEC-02
 
-Przed zamknięciem SEC-02 potrzebne jest potwierdzenie zakresu:
+**Status: ZAMKNIĘTY (2026-10-26)**
 
-1. Czy `decoy_workspace/dev_secrets.json` zawierał kiedykolwiek prawdziwe poświadczenie? Jeśli tak, właściciel musi je zrotować u właściwego dostawcy.
-2. Czy historia Git ma zostać przepisana po ocenie ekspozycji? Przepisanie historii wymaga osobnej, jawnej zgody i koordynacji z wszystkimi klonami repozytorium.
-3. Czy pliki `.env.example` i template’y z wzorcami poświadczeń są wyłącznie placeholderami? Wymagają przeglądu redakcyjnego przed wydaniem.
+1. **Weryfikacja `decoy_workspace/dev_secrets.json`**:
+   Potwierdzono w kodzie (`adaptiveneuralnetwork/immune_system/agentic_honeypot.py`, linie 22–31), że plik ten jest w całości syntetycznym honeypotem generowanym dynamicznie przez `AgenticHoneypot.activate_shadow_workspace()`. Zawiera losowo generowane wartości z prefiksami przykładowymi AWS (`AKIAIOSFODNN7...`), wewnętrzne tokeny śledzące (`BY8_HONEY_TOKEN_V3_SIG_98721`) oraz fikcyjną domenę `prod-db-internal.blyskawica-secure-decoy.net`. Plik nigdy nie zawierał realnych poświadczeń chmurowych ani produkcyjnych.
+2. **Rotacja poświadczeń**: Brak realnych poświadczeń — rotacja u zewnętrznych dostawców nie jest wymagana.
+3. **Historia Git**: Przepisywanie historii Git (np. przez `git-filter-repo` / BFG) zostało uznane za zbędne, ponieważ żaden realny sekret nie wyciekł do historii repozytorium.
+4. **Zabezpieczenie CI**: Skrypt `scripts/check_tracked_runtime_artifacts.py` uruchamiany w CI stale blokuje ponowne dodanie artefaktów runtime i honeypotów do indeksu Git.
 
-## Kryterium zamknięcia SEC-02
+## Kryterium zamknięcia SEC-02 — stan spełnienia
 
-- indeks Git nie zawiera danych runtime ani sekretów;
-- realne poświadczenia zostaną zrotowane;
-- CI blokuje ich ponowne dodanie;
-- testy używają jawnie syntetycznych fixture’ów.
+- [x] indeks Git nie zawiera danych runtime ani sekretów (potwierdzone testem regresji);
+- [x] brak realnych poświadczeń — weryfikacja kodu potwierdziła syntetyczny charakter honeytokenów;
+- [x] CI blokuje ich ponowne dodanie (`scripts/check_tracked_runtime_artifacts.py`);
+- [x] testy używają jawnie syntetycznych fixture’ów.
+

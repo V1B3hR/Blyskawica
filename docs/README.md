@@ -7,6 +7,8 @@
 
 Niniejszy dokument stanowi **centralną bazę zbiorczą** i ujednolicony portal nawigacyjny dla wszystkich dokumentacji, specyfikacji technicznych, modeli fizycznych, zasad etycznych oraz planów rozwojowych projektu **Błyskawica & SPARKLE V10**.
 
+Po błędzie pamięci lub zaniku zasilania: [diagnostyka WAL i granice odzyskiwania](technical/POWER_LOSS_AND_WAL_RECOVERY.md).
+
 ---
 
 ## 🧭 Mapa Zbiorcza Modułów Dokumentacji
@@ -134,6 +136,8 @@ Architektura bezpieczeństwa operacyjnego, suwerenności danych i nadrzędnego n
 Lokalna suwerenność kognitywna w nowoczesnej powłoce desktopowej:
 
 - **[Kontrakt samodzielnego runtime SPARKLE](technical/SPARKLE_RUNTIME_CONTRACT.md)** — Aktywna granica Rust/Python, tryby offline/online oraz kolejność migracji na Windows 11, Linux i macOS.
+- **[CUDA 13.4 coherent GPU-memory preflight](technical/CUDA_13_4_COHERENT_MEMORY.md)** — Zakres zmiany r615, preflight węzła Linux oraz walidacja po aktualizacji sterownika.
+- **[Zestaw Walidacji Modelu i Bramki Retencji EWC](../tests/test_golden_dataset_validation.py)** — 4-filarowa walidacja AI: Golden Dataset (F1/MSE), retencja wiedzy EWC, Data Slicing (SNR/Edge Cases) oraz kalibracja OOD.
 - **[Kontrakt ciągłości kognitywnej](technical/COGNITIVE_CONTINUITY_CONTRACT.md)** — Ochrona charakteru działania Błyskawicy: referencje Python dla neurochemii, C.R.A. i PINN oraz bramki przed ich migracją do Rust.
 - **[Przewodnik SPARKLE Desktop V10](phases/v10_standalone_shell/README.md)** — Architektura Rust Candle + Tauri v2.
 - **[Skrypt Uruchomieniowy Desktopu](../Uruchom_Sparkle.bat)** — Jednoklikowe uruchomienie środowiska offline w systemie Windows.
@@ -156,6 +160,8 @@ Przetwarzanie strumieniowe obrazu i modeli wideo w architekturze adaptacyjnej:
 Plany rozwoju, ewolucja architektoniczna i cele strategiczne:
 
 - **[Zaakceptowany plan rozwoju i remediacji (2026-10)](planning/2026-10-development-plan.md)** — Bieżący werdykt jakościowy, priorytety P0–P2, kryteria wydania i rejestr decyzji. Ten dokument ma pierwszeństwo przed historycznymi roadmapami.
+- **[Plan ukończenia i audyt migracji Rust (2026-11-01)](planning/2026-11-01-finish-and-rust-audit-plan.md)** — Bieżący plan wykonawczy, audyt bezpieczeństwa i jakości kodu, rejestr dowodów testowych, status P0/P1 oraz otwarte bramki wydania.
+- **[Audyt Statusu P2–P5 i Zadań Otwartych (2026-11-09)](planning/2026-11-09-p2-to-p5-status-and-roadmap-audit.md)** — Szczegółowe zestawienie stanu realizacji kroków 2–5, priorytetu P2, kamieni milowych migracji oraz bramek przed V11.
 - **[Roadmap V11 Next-Gen](roadmaps/ROADMAP_V11_NEXTGEN.md)** — Historyczny kierunek funkcji WebGPU, BCI, EWC i Z3; nie jest aktywny przed zamknięciem P0 i P1 w planie remediacji.
 - **[Raport ze Statusu Mapy Drogowej (Aktualizacja V10)](roadmaps/roadmapstatus.md)** — Potwierdzony audyt realizacji wszystkich celów historycznych.
 - **[Plan Rozwoju Hybrydowego Rdzenia V9](roadmaps/roadmap_V9.md)** — Zrealizowany plan uniezależnienia od API zewnętrznych i integracji solverów fizycznych.
