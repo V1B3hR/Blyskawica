@@ -107,6 +107,7 @@ This document provides a comprehensive, verified catalogue of all documentation 
 
 - **[Active remediation plan](../planning/2026-10-development-plan.md)** — Source of truth for P0/P1 closure, release criteria, and the V11 gate.
 - **[Rust Audit & Migration Plan (2026-11-01)](../planning/2026-11-01-finish-and-rust-audit-plan.md)** — Targeted quality and security audit, test evidence registry, P0/P1 status, and open release gates.
+- **[P2–P5 Status & Open Tasks Audit (2026-11-09)](../planning/2026-11-09-p2-to-p5-status-and-roadmap-audit.md)** — Precise audit of Steps 2–5, Priority P2, runtime migration milestones 1–6, and V11 gating.
 - **[ROADMAP V11 NEXT-GEN](../roadmaps/ROADMAP_V11_NEXTGEN.md)** — Historical direction for WebGPU, BCI, EWC, and Z3; not active before the remediation plan closes P0 and P1.
 - **[Roadmap Status Audit (V10 Update)](../roadmaps/roadmapstatus.md)** — Historical milestone snapshot; not release evidence.
 - **[Roadmap V9 Hybrid Core](../roadmaps/roadmap_V9.md)** — Development plan for hybrid core and offline autonomy.

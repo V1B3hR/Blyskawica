@@ -161,6 +161,7 @@ Plany rozwoju, ewolucja architektoniczna i cele strategiczne:
 
 - **[Zaakceptowany plan rozwoju i remediacji (2026-10)](planning/2026-10-development-plan.md)** — Bieżący werdykt jakościowy, priorytety P0–P2, kryteria wydania i rejestr decyzji. Ten dokument ma pierwszeństwo przed historycznymi roadmapami.
 - **[Plan ukończenia i audyt migracji Rust (2026-11-01)](planning/2026-11-01-finish-and-rust-audit-plan.md)** — Bieżący plan wykonawczy, audyt bezpieczeństwa i jakości kodu, rejestr dowodów testowych, status P0/P1 oraz otwarte bramki wydania.
+- **[Audyt Statusu P2–P5 i Zadań Otwartych (2026-11-09)](planning/2026-11-09-p2-to-p5-status-and-roadmap-audit.md)** — Szczegółowe zestawienie stanu realizacji kroków 2–5, priorytetu P2, kamieni milowych migracji oraz bramek przed V11.
 - **[Roadmap V11 Next-Gen](roadmaps/ROADMAP_V11_NEXTGEN.md)** — Historyczny kierunek funkcji WebGPU, BCI, EWC i Z3; nie jest aktywny przed zamknięciem P0 i P1 w planie remediacji.
 - **[Raport ze Statusu Mapy Drogowej (Aktualizacja V10)](roadmaps/roadmapstatus.md)** — Potwierdzony audyt realizacji wszystkich celów historycznych.
 - **[Plan Rozwoju Hybrydowego Rdzenia V9](roadmaps/roadmap_V9.md)** — Zrealizowany plan uniezależnienia od API zewnętrznych i integracji solverów fizycznych.
