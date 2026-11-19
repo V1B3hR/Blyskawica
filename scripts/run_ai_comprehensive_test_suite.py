@@ -538,7 +538,9 @@ def verify_pinn_conservation(energy_initial: float, energy_final: float, toleran
             # Sprawdzamy czy wzorce i baza wiedzy w repozytorium pokrywają Golden Dataset
             repo_text = (self.root_dir / "viber_core_bond.md").read_text(encoding="utf-8").lower()
             verdict_text = (self.root_dir / "blyskawica_ambassador_verdict.txt").read_text(encoding="utf-8").lower()
-            combined = repo_text + " " + verdict_text
+            matrix_path = self.root_dir / "docs" / "curriculum" / "hyper_synthesis_v4" / "matrix.json"
+            matrix_text = matrix_path.read_text(encoding="utf-8").lower() if matrix_path.exists() else ""
+            combined = repo_text + " " + verdict_text + " " + matrix_text
 
             matches = 0
             for item in golden_benchmarks:

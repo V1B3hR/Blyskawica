@@ -169,15 +169,20 @@ impl ShadowBoard {
     }
 
     pub fn request_silhouette(&mut self, id: &str) {
-        if let Some(tool) = self.tools.get_mut(id) {
-            if let ShadowStatus::EmptySilhouette {
+        if let Some(tool) = self.tools.get_mut(id)
+            && let ShadowStatus::EmptySilhouette {
                 ref mut requested_times,
                 ..
             } = tool.status
-            {
-                *requested_times += 1;
-            }
+        {
+            *requested_times += 1;
         }
+    }
+}
+
+impl Default for ShadowBoard {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

@@ -255,6 +255,10 @@ sparkle_app/src-tauri/target/
 # SQLite WAL files
 *.db-wal
 *.db-shm
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite-journal
+nethical_mcp_data/
 
 # Local cargo machine-specific overrides
 .cargo/

@@ -71,6 +71,21 @@ test("CSP keeps network connections local to the application", async () => {
   assert.match(csp, /default-src 'self'/);
   assert.match(csp, /connect-src 'self'/);
   assert.doesNotMatch(csp, /\b(?:https?|wss?):|localhost/i);
+  assert.equal(
+    config.app.withGlobalTauri,
+    false,
+    "withGlobalTauri must remain disabled; use modular @tauri-apps/api imports instead",
+  );
+});
+
+test("frontend sources do not rely on global window.__TAURI__", async () => {
+  for (const { filePath, source } of await loadFrontendSources()) {
+    assert.equal(
+      /\b__TAURI__\b/.test(source),
+      false,
+      `${filePath} must not reference global window.__TAURI__; use tauri-bridge.js`,
+    );
+  }
 });
 
 test("non-Windows privilege prompts fail closed in headless or unsupported environments", async () => {
@@ -96,6 +111,50 @@ test("recreatable artifact cleanup remains permission-gated and confirmed", asyn
   assert.match(
     rustSource,
     /fn clear_recreatable_runtime_artifacts[\s\S]*?require_permission_level\(permission_level, 2,[\s\S]*?show_confirm_dialog/s,
+  );
+});
+
+test("memory and vault deletion remain permission-gated and confirmed", async () => {
+  const rustSource = await readFile(
+    join(repositoryDirectory, "sparkle_app", "src-tauri", "src", "lib.rs"),
+    "utf8",
+  );
+
+  assert.match(
+    rustSource,
+    /fn clear_derived_runtime_memory[\s\S]*?require_permission_level\(permission_level, 2,[\s\S]*?show_confirm_dialog/s,
+  );
+  assert.match(
+    rustSource,
+    /fn vault_delete_secret[\s\S]*?require_permission_level\(permission_level, 3,[\s\S]*?show_confirm_dialog/s,
+  );
+});
+
+test("workspace deletion remains path-bounded, permission-gated, and confirmed", async () => {
+  const rustSource = await readFile(
+    join(repositoryDirectory, "sparkle_app", "src-tauri", "src", "lib.rs"),
+    "utf8",
+  );
+
+  assert.match(
+    rustSource,
+    /async fn delete_workspace_file[\s\S]*?require_permission_level\(permission_level, 2,[\s\S]*?resolve_workspace_relative_path[\s\S]*?show_confirm_dialog/s,
+  );
+});
+
+test("derived-memory and vault exports remain permission-gated and confirmed", async () => {
+  const rustSource = await readFile(
+    join(repositoryDirectory, "sparkle_app", "src-tauri", "src", "lib.rs"),
+    "utf8",
+  );
+
+  assert.match(
+    rustSource,
+    /fn export_derived_runtime_memory[\s\S]*?require_permission_level\(permission_level, 2,[\s\S]*?resolve_workspace_relative_path[\s\S]*?show_confirm_dialog/s,
+  );
+  assert.match(
+    rustSource,
+    /fn export_vault_secret[\s\S]*?require_permission_level\(permission_level, 3,[\s\S]*?resolve_workspace_relative_path[\s\S]*?show_confirm_dialog/s,
   );
 });
 

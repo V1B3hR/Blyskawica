@@ -88,6 +88,10 @@ This document provides a comprehensive, verified catalogue of all documentation 
 - **[Data Governance Policy](../DATA_GOVERNANCE.md)** — Offline data sovereignty and local retention standards.
 - **[SPARKLE Data Model & Retention Contract](DATA_MODEL_RETENTION_CONTRACT.md)** — Runtime storage classes, current protection limits, and PRIV-01 gates.
 - **[Online Connector Contract](ONLINE_CONNECTOR_CONTRACT.md)** — Offline-by-default connector registry, session consent, and ONL-01 limits.
+- **[Power-Loss Diagnostics & WAL Recovery](POWER_LOSS_AND_WAL_RECOVERY.md)** — Procedure for inspecting WAL, candidate preparation, verification, selective activation, and generation retention.
+- **[Cognitive Continuity Contract](COGNITIVE_CONTINUITY_CONTRACT.md)** — Protecting the character of Błyskawica: reference Python baselines for neurochemistry, C.R.A. and PINN, and gates prior to Rust migration.
+- **[CUDA 13.4 coherent GPU-memory preflight](CUDA_13_4_COHERENT_MEMORY.md)** — Scope, node-level checks, and post-upgrade validation for CUDA 13.4 / r615 coherent-memory mode changes.
+- **[Golden Dataset & Continual Validation Suite](../../tests/test_golden_dataset_validation.py)** — 4-pillar model validation: baseline thresholds, EWC retention gate, data slicing, and OOD calibration.
 - **[SQL Security Summary](../summaries/SQL_SECURITY_SUMMARY.md)** — Database query parameterization and data protection.
 
 ---
@@ -102,6 +106,8 @@ This document provides a comprehensive, verified catalogue of all documentation 
 ## 🗺️ Roadmaps, Strategy & Next-Gen Evolution (`docs/roadmaps/`)
 
 - **[Active remediation plan](../planning/2026-10-development-plan.md)** — Source of truth for P0/P1 closure, release criteria, and the V11 gate.
+- **[Rust Audit & Migration Plan (2026-11-01)](../planning/2026-11-01-finish-and-rust-audit-plan.md)** — Targeted quality and security audit, test evidence registry, P0/P1 status, and open release gates.
+- **[P2–P5 Status & Open Tasks Audit (2026-11-09)](../planning/2026-11-09-p2-to-p5-status-and-roadmap-audit.md)** — Precise audit of Steps 2–5, Priority P2, runtime migration milestones 1–6, and V11 gating.
 - **[ROADMAP V11 NEXT-GEN](../roadmaps/ROADMAP_V11_NEXTGEN.md)** — Historical direction for WebGPU, BCI, EWC, and Z3; not active before the remediation plan closes P0 and P1.
 - **[Roadmap Status Audit (V10 Update)](../roadmaps/roadmapstatus.md)** — Historical milestone snapshot; not release evidence.
 - **[Roadmap V9 Hybrid Core](../roadmaps/roadmap_V9.md)** — Development plan for hybrid core and offline autonomy.

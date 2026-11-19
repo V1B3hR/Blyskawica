@@ -51,18 +51,45 @@ impl ZeroTrustMcpSandbox {
                 "🛡️ [ZERO-TRUST MCP]: ZABLOKOWANO operację zapisu/wykonania: '{}'. Wskaźnik bezpieczeństwa: {:.4} (wymagane: >= 0.40)",
                 tool_name, sec_index
             );
-            // Natychmiastowe obniżenie uprawnień wątku do poziomu Read-Only
-            if let Err(e) = crate::native_security::drop_thread_privileges() {
-                println!(
-                    "⚠️ [ZERO-TRUST MCP ERROR]: Nie udało się zrzucić uprawnień wątku: {}",
-                    e
-                );
-            } else {
-                println!("🔒 [ZERO-TRUST MCP]: Pomyślnie zrzucono uprawnienia wątku roboczego.");
-            }
             return false;
         }
 
         true
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn veto_blocks_dangerous_actions_without_blocking_safe_actions() {
+        let sandbox = ZeroTrustMcpSandbox::new();
+        let neuro = NeurochemicalState {
+            cortisol: 1.0,
+            ..NeurochemicalState::default()
+        };
+        assert!(!sandbox.audit_tool_execution("write_file", 0.2, &neuro));
+        assert!(sandbox.audit_tool_execution("read_file", 0.2, &neuro));
+    }
+
+    #[test]
+    fn threat_response_has_no_system_wide_network_or_thread_token_apis() {
+        let sources = [
+            include_str!("native_security.rs"),
+            include_str!("state_manager.rs"),
+            include_str!("zero_trust_mcp_sandbox.rs"),
+        ];
+        let forbidden = [
+            concat!("Set", "TcpEntry"),
+            concat!("Get", "TcpTable"),
+            concat!("Impersonate", "AnonymousToken"),
+            concat!("Revert", "ToSelf"),
+        ];
+        for source in sources {
+            for symbol in forbidden {
+                assert!(!source.contains(symbol), "unexpected system API: {symbol}");
+            }
+        }
     }
 }

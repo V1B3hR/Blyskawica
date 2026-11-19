@@ -40,15 +40,21 @@ except ImportError:
 
 try:
     from blyskawica_app.backend.upload_policy import (
+        MAX_MEDIA_STORAGE_BYTES,
         MAX_MEDIA_UPLOAD_BYTES,
         MEDIA_UPLOAD_CHUNK_BYTES,
+        exceeds_media_storage_limit,
         exceeds_media_upload_limit,
+        media_storage_usage_bytes,
     )
 except ImportError:
     from .upload_policy import (  # type: ignore[relative-beyond-top-level]
+        MAX_MEDIA_STORAGE_BYTES,
         MAX_MEDIA_UPLOAD_BYTES,
         MEDIA_UPLOAD_CHUNK_BYTES,
+        exceeds_media_storage_limit,
         exceeds_media_upload_limit,
+        media_storage_usage_bytes,
     )
 
 # Setup paths and environment
@@ -1608,9 +1614,19 @@ async def upload_media(
 
     if file_path.is_symlink():
         return JSONResponse(status_code=403, content={"status": "error", "message": "Zablokowano: docelowa ścieżka jest linkiem symbolicznym."})
+    if file_path.exists() and not file_path.is_file():
+        return JSONResponse(status_code=403, content={"status": "error", "message": "Zablokowano: docelowa ścieżka nie jest zwykłym plikiem."})
 
     if file.size is not None and file.size > MAX_MEDIA_UPLOAD_BYTES:
         return JSONResponse(status_code=413, content={"status": "error", "message": "Plik przekracza limit 25 MiB."})
+
+    stored_bytes, scan_complete = media_storage_usage_bytes(MEDIA_DIR)
+    if not scan_complete:
+        return JSONResponse(status_code=503, content={"status": "error", "message": "Nie można bezpiecznie potwierdzić limitu magazynu mediów."})
+    previous_file_size = file_path.stat().st_size if file_path.exists() else 0
+    available_bytes = stored_bytes - previous_file_size
+    if file.size is not None and exceeds_media_storage_limit(available_bytes, file.size):
+        return JSONResponse(status_code=413, content={"status": "error", "message": f"Magazyn mediów przekracza limit {MAX_MEDIA_STORAGE_BYTES // (1024 * 1024)} MiB."})
 
     temporary_path: Path | None = None
     try:
@@ -1627,6 +1643,8 @@ async def upload_media(
                 total_bytes += len(chunk)
                 if exceeds_media_upload_limit(total_bytes):
                     return JSONResponse(status_code=413, content={"status": "error", "message": "Plik przekracza limit 25 MiB."})
+                if exceeds_media_storage_limit(available_bytes, total_bytes):
+                    return JSONResponse(status_code=413, content={"status": "error", "message": f"Magazyn mediów przekracza limit {MAX_MEDIA_STORAGE_BYTES // (1024 * 1024)} MiB."})
                 temporary_file.write(chunk)
 
         os.replace(temporary_path, file_path)
