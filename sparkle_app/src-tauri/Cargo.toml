@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "A Tauri App"
 authors = ["you"]
 edition = "2021"
+default-run = "sparkle_app"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -17,6 +18,10 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 [features]
 # Explicitly selected builds only; requires a separately prepared test directory.
 ui-smoke-isolation = []
+
+[[bin]]
+name = "sparkle_app"
+path = "src/main.rs"
 
 [[bin]]
 name = "sparkle_ui_smoke"
