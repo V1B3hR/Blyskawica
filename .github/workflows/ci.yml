@@ -100,5 +100,11 @@ jobs:
       - name: Run frontend regression tests
         run: node --test sparkle_app/tests/frontend-security.test.mjs sparkle_app/tests/chat-cancellation.test.mjs sparkle_app/tests/chat-context.test.mjs sparkle_app/tests/chat-persistence.test.mjs sparkle_app/tests/chat-restore.test.mjs
 
+      - name: Build frontend bundle
+        working-directory: sparkle_app
+        run: |
+          npm ci
+          npm run build
+
       - name: Build and test Tauri runtime
         run: cargo test --locked --manifest-path sparkle_app/src-tauri/Cargo.toml

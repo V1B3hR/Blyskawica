@@ -264,9 +264,19 @@ pub fn create_sandboxed_job() -> Result<usize, String> {
 pub(crate) mod unix_vault {
     use sha2::{Digest, Sha256};
     use std::fs;
-    use std::path::PathBuf;
+    use std::path::{Path, PathBuf};
+    use std::sync::Mutex;
 
     const MAGIC: &[u8; 4] = b"BLY1";
+    static VAULT_KEY_LOCK: Mutex<()> = Mutex::new(());
+
+    #[cfg_attr(target_os = "windows", allow(dead_code))]
+    fn default_home_dir() -> Result<PathBuf, String> {
+        std::env::var_os("HOME").map(PathBuf::from).ok_or_else(|| {
+            "Brak zmiennej środowiskowej HOME: brak zaufanego katalogu użytkownika dla sejfu."
+                .to_string()
+        })
+    }
 
     fn hmac_sha256(key: &[u8], data: &[u8]) -> [u8; 32] {
         let mut k_pad = [0u8; 64];
@@ -297,12 +307,20 @@ pub(crate) mod unix_vault {
         outer.finalize().into()
     }
 
-    fn get_or_create_vault_master_key() -> Result<[u8; 32], String> {
-        let home = std::env::var_os("HOME").ok_or_else(|| {
-            "Brak zmiennej środowiskowej HOME: brak zaufanego katalogu użytkownika dla sejfu."
-                .to_string()
-        })?;
-        let config_dir = PathBuf::from(home).join(".config").join("blyskawica");
+    fn read_existing_key(key_file: &Path) -> Result<[u8; 32], String> {
+        let bytes = fs::read(key_file).map_err(|e| format!("Błąd odczytu klucza sejfu: {}", e))?;
+        if bytes.len() == 32 {
+            let mut key = [0u8; 32];
+            key.copy_from_slice(&bytes);
+            return Ok(key);
+        }
+        Err("Klucz sejfu ma nieprawidłową długość.".to_string())
+    }
+
+    fn get_or_create_vault_master_key_in_home(home: &Path) -> Result<[u8; 32], String> {
+        let _guard = VAULT_KEY_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+
+        let config_dir = home.join(".config").join("blyskawica");
         fs::create_dir_all(&config_dir)
             .map_err(|e| format!("Błąd tworzenia katalogu konfiguracyjnego sejfu: {}", e))?;
 
@@ -315,14 +333,7 @@ pub(crate) mod unix_vault {
         let key_file = config_dir.join(".vault_master.key");
 
         if key_file.exists() {
-            let bytes =
-                fs::read(&key_file).map_err(|e| format!("Błąd odczytu klucza sejfu: {}", e))?;
-            if bytes.len() == 32 {
-                let mut key = [0u8; 32];
-                key.copy_from_slice(&bytes);
-                return Ok(key);
-            }
-            return Err("Klucz sejfu ma nieprawidłową długość.".to_string());
+            return read_existing_key(&key_file);
         }
 
         let mut raw_key = [0u8; 32];
@@ -353,6 +364,7 @@ pub(crate) mod unix_vault {
                 .map_err(|e| format!("Błąd zapisu klucza do pliku tymczasowego: {}", e))?;
             file.flush()
                 .map_err(|e| format!("Błąd zapisu buforowanego klucza: {}", e))?;
+            let _ = file.sync_all();
         }
         #[cfg(not(unix))]
         {
@@ -360,27 +372,35 @@ pub(crate) mod unix_vault {
                 .map_err(|e| format!("Błąd zapisu klucza sejfu: {}", e))?;
         }
 
-        if let Err(rename_err) = fs::rename(&tmp_key_file, &key_file) {
-            let _ = fs::remove_file(&tmp_key_file);
-            if key_file.exists()
-                && let Ok(bytes) = fs::read(&key_file)
-                && bytes.len() == 32
-            {
-                let mut key = [0u8; 32];
-                key.copy_from_slice(&bytes);
-                return Ok(key);
+        // Atomic non-clobbering link so concurrent processes cannot overwrite an existing master key.
+        match fs::hard_link(&tmp_key_file, &key_file) {
+            Ok(()) => {
+                let _ = fs::remove_file(&tmp_key_file);
+                Ok(raw_key)
             }
-            return Err(format!(
-                "Nie udało się zainicjalizować klucza sejfu: {}",
-                rename_err
-            ));
+            Err(link_err) => {
+                if link_err.kind() == std::io::ErrorKind::AlreadyExists || key_file.exists() {
+                    let _ = fs::remove_file(&tmp_key_file);
+                    return read_existing_key(&key_file);
+                }
+                // Fallback for filesystems without hard-link support.
+                if let Err(rename_err) = fs::rename(&tmp_key_file, &key_file) {
+                    let _ = fs::remove_file(&tmp_key_file);
+                    if key_file.exists() {
+                        return read_existing_key(&key_file);
+                    }
+                    return Err(format!(
+                        "Nie udało się zainicjalizować klucza sejfu: {} / {}",
+                        link_err, rename_err
+                    ));
+                }
+                Ok(raw_key)
+            }
         }
-
-        Ok(raw_key)
     }
 
-    fn derive_subkeys() -> Result<([u8; 32], [u8; 32]), String> {
-        let master = get_or_create_vault_master_key()?;
+    fn derive_subkeys_in_home(home: &Path) -> Result<([u8; 32], [u8; 32]), String> {
+        let master = get_or_create_vault_master_key_in_home(home)?;
         let mut machine_binding = Vec::new();
         if let Ok(id) = fs::read_to_string("/etc/machine-id") {
             machine_binding.extend_from_slice(id.trim().as_bytes());
@@ -414,8 +434,8 @@ pub(crate) mod unix_vault {
         }
     }
 
-    pub fn protect_secret(plaintext: &[u8]) -> Result<Vec<u8>, String> {
-        let (k_enc, k_mac) = derive_subkeys()?;
+    pub(crate) fn protect_secret_in_home(plaintext: &[u8], home: &Path) -> Result<Vec<u8>, String> {
+        let (k_enc, k_mac) = derive_subkeys_in_home(home)?;
 
         let mut nonce = [0u8; 16];
         rand::Rng::fill(&mut rand::thread_rng(), &mut nonce);
@@ -437,7 +457,10 @@ pub(crate) mod unix_vault {
         Ok(result)
     }
 
-    pub fn unprotect_secret(ciphertext: &[u8]) -> Result<Vec<u8>, String> {
+    pub(crate) fn unprotect_secret_in_home(
+        ciphertext: &[u8],
+        home: &Path,
+    ) -> Result<Vec<u8>, String> {
         if ciphertext.len() < 4 + 16 + 32 {
             return Err("Nieprawidłowy format zaszyfrowanego sekretu (zbyt krótki).".to_string());
         }
@@ -445,7 +468,7 @@ pub(crate) mod unix_vault {
             return Err("Nieprawidłowy nagłówek sejfu (nieznany format BLY).".to_string());
         }
 
-        let (k_enc, k_mac) = derive_subkeys()?;
+        let (k_enc, k_mac) = derive_subkeys_in_home(home)?;
 
         let mut nonce = [0u8; 16];
         nonce.copy_from_slice(&ciphertext[4..20]);
@@ -473,6 +496,18 @@ pub(crate) mod unix_vault {
         let mut plaintext = encrypted_body.to_vec();
         keystream_xor(&k_enc, &nonce, &mut plaintext);
         Ok(plaintext)
+    }
+
+    #[cfg_attr(target_os = "windows", allow(dead_code))]
+    pub fn protect_secret(plaintext: &[u8]) -> Result<Vec<u8>, String> {
+        let home = default_home_dir()?;
+        protect_secret_in_home(plaintext, &home)
+    }
+
+    #[cfg_attr(target_os = "windows", allow(dead_code))]
+    pub fn unprotect_secret(ciphertext: &[u8]) -> Result<Vec<u8>, String> {
+        let home = default_home_dir()?;
+        unprotect_secret_in_home(ciphertext, &home)
     }
 }
 
@@ -526,46 +561,68 @@ mod tests {
         let unique = u64::from_le_bytes(unique_bytes);
         let temp_dir = std::env::temp_dir().join(format!("blyskawica_unix_vault_test_{unique}"));
         let _ = std::fs::create_dir_all(&temp_dir);
-        let orig_home = std::env::var_os("HOME");
-        unsafe {
-            std::env::set_var("HOME", &temp_dir);
-        }
 
-        // 1. Normal secret roundtrip
+        // 1. Normal secret roundtrip (isolated temp home, no process-wide HOME mutation)
         let secret = b"super_secret_cross_platform_payload_123";
-        let encrypted = unix_vault::protect_secret(secret).expect("protect should succeed");
+        let encrypted =
+            unix_vault::protect_secret_in_home(secret, &temp_dir).expect("protect should succeed");
         assert!(encrypted.len() >= 52);
         assert_eq!(&encrypted[..4], b"BLY1");
-        let decrypted = unix_vault::unprotect_secret(&encrypted).expect("unprotect should succeed");
+        let decrypted = unix_vault::unprotect_secret_in_home(&encrypted, &temp_dir)
+            .expect("unprotect should succeed");
         assert_eq!(decrypted, secret);
 
         // 2. Empty plaintext produces valid 52-byte envelope
-        let empty_enc = unix_vault::protect_secret(b"").expect("protect empty should succeed");
+        let empty_enc = unix_vault::protect_secret_in_home(b"", &temp_dir)
+            .expect("protect empty should succeed");
         assert_eq!(empty_enc.len(), 52);
-        let empty_dec =
-            unix_vault::unprotect_secret(&empty_enc).expect("unprotect empty should succeed");
+        let empty_dec = unix_vault::unprotect_secret_in_home(&empty_enc, &temp_dir)
+            .expect("unprotect empty should succeed");
         assert!(empty_dec.is_empty());
 
         // 3. Short / truncated ciphertext rejection
-        assert!(unix_vault::unprotect_secret(&[]).is_err());
-        assert!(unix_vault::unprotect_secret(b"BLY1").is_err());
-        assert!(unix_vault::unprotect_secret(&encrypted[..51]).is_err());
+        assert!(unix_vault::unprotect_secret_in_home(&[], &temp_dir).is_err());
+        assert!(unix_vault::unprotect_secret_in_home(b"BLY1", &temp_dir).is_err());
+        assert!(unix_vault::unprotect_secret_in_home(&encrypted[..51], &temp_dir).is_err());
 
         // 4. Tampering rejection
         let mut tampered = encrypted.clone();
         let len = tampered.len();
         tampered[len - 1] ^= 0x42;
-        assert!(unix_vault::unprotect_secret(&tampered).is_err());
+        assert!(unix_vault::unprotect_secret_in_home(&tampered, &temp_dir).is_err());
 
         // Clean up
         let _ = std::fs::remove_dir_all(&temp_dir);
-        unsafe {
-            if let Some(h) = orig_home {
-                std::env::set_var("HOME", h);
-            } else {
-                std::env::remove_var("HOME");
-            }
+    }
+
+    #[test]
+    fn test_unix_vault_concurrent_first_init() {
+        let mut unique_bytes = [0u8; 8];
+        rand::Rng::fill(&mut rand::thread_rng(), &mut unique_bytes);
+        let unique = u64::from_le_bytes(unique_bytes);
+        let temp_dir =
+            std::env::temp_dir().join(format!("blyskawica_unix_vault_concurrent_{unique}"));
+        let _ = std::fs::create_dir_all(&temp_dir);
+
+        let handles: Vec<_> = (0..8)
+            .map(|idx| {
+                let dir = temp_dir.clone();
+                std::thread::spawn(move || {
+                    let payload = format!("concurrent_secret_{idx}");
+                    let enc = unix_vault::protect_secret_in_home(payload.as_bytes(), &dir)
+                        .expect("concurrent protect should succeed");
+                    let dec = unix_vault::unprotect_secret_in_home(&enc, &dir)
+                        .expect("concurrent unprotect should succeed");
+                    assert_eq!(dec, payload.as_bytes());
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().expect("worker thread must not panic");
         }
+
+        let _ = std::fs::remove_dir_all(&temp_dir);
     }
 
     #[test]

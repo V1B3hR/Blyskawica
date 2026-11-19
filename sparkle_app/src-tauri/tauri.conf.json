@@ -33,9 +33,6 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": [
-      "../../mock_weights.bin"
-    ],
     "windows": {
       "nsis": {
         "installerIcon": "icons/icon.ico",
