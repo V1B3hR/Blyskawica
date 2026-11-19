@@ -8,7 +8,7 @@
     "frontendDist": "../dist"
   },
   "app": {
-    "withGlobalTauri": true,
+    "withGlobalTauri": false,
     "windows": [
       {
         "title": "Sparkle VIBE IDE & Błyskawica V10",

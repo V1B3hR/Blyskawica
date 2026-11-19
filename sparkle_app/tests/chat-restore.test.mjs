@@ -14,20 +14,28 @@ test("restores both channels without resaving and stores new messages as text", 
   }
   const elements = { "chat-messages": new Element(), "guest-chat-stream": new Element(), "chat-autosave-status": new Element() };
   globalThis.document = { getElementById: (id) => elements[id] || null, createElement: () => new Element() };
-  globalThis.window = { addEventListener() {}, __TAURI__: { core: { invoke: async (command, args) => {
-    calls.push({ command, args });
-    return command === "load_chat_autosave" ? previous : undefined;
-  } } } };
-  const chat = await import("../src/modules/chat.js");
-  const { SparkleStore } = await import("../src/modules/store.js");
-  chat.initChatModule(() => {}, () => {});
-  await chat.restoreChatAutosave(() => {});
-  assert.equal(calls.length, 1);
-  assert.equal(SparkleStore.state.chatHistory[0].text, "<img src=x>");
-  assert.equal(SparkleStore.state.guestChatHistory[0].text, "odpowiedź");
-  assert.equal(elements["chat-messages"].children[0].children[1].textContent, "<img src=x>");
-  await chat.appendChatMessage("Użytkownik", "nowa");
-  assert.equal(calls[1].command, "append_chat_autosave");
-  assert.equal(calls[1].args.record.text, "nowa");
-  assert.equal(calls[1].args.record.channel, "main");
+  globalThis.window = { addEventListener() {} };
+  const { setTauriTestBridge } = await import("../src/modules/tauri-bridge.js");
+  setTauriTestBridge({
+    invoke: async (command, args) => {
+      calls.push({ command, args });
+      return command === "load_chat_autosave" ? previous : undefined;
+    },
+  });
+  try {
+    const chat = await import("../src/modules/chat.js");
+    const { SparkleStore } = await import("../src/modules/store.js");
+    chat.initChatModule(() => {}, () => {});
+    await chat.restoreChatAutosave(() => {});
+    assert.equal(calls.length, 1);
+    assert.equal(SparkleStore.state.chatHistory[0].text, "<img src=x>");
+    assert.equal(SparkleStore.state.guestChatHistory[0].text, "odpowiedź");
+    assert.equal(elements["chat-messages"].children[0].children[1].textContent, "<img src=x>");
+    await chat.appendChatMessage("Użytkownik", "nowa");
+    assert.equal(calls[1].command, "append_chat_autosave");
+    assert.equal(calls[1].args.record.text, "nowa");
+    assert.equal(calls[1].args.record.channel, "main");
+  } finally {
+    setTauriTestBridge(null);
+  }
 });

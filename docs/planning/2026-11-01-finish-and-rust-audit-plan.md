@@ -92,3 +92,13 @@ Przeprowadzono ukierunkowany audyt bezpieczeństwa i jakości kodu po rozpoczęc
 - `python -m pytest -q -p no:cacheprovider tests/test_cra_stabilization_contract.py tests/test_neuro_regulator.py`: 11/11; ostrzeżenie o niedostępnym scikit-learn i ograniczonych funkcjach preprocessingowych. Testy używały lokalnego katalogu tymczasowego.
 - `cargo fmt --check` dla rdzenia i Tauri: bez błędów; `npm run test:security`: 11/11, głównie kontrole źródeł.
 - Nie uruchamiano pełnej puli Rust z uwagi na test wywołujący funkcję zamykania połączeń. Nie zweryfikowano instalatora, faktycznego trybu offline, jakości modelu, macOS/Linux ani zewnętrznego CI. Wszystkie powyższe pozostają bramkami.
+
+### Aktualizacja dowodów wydaniowych (2026-11-19 — Etap A: CI 3-OS, SEC-04, Vulnerabilities & Release Pipeline)
+
+- **Wieloplatformowe CI (`CI & Security Audit`, run `44487145933` na `main@d942cbc`):** **7/7 zadań ZALICZONYCH** — `Rust core` (Windows, Ubuntu, macOS), `SPARKLE Tauri` (Windows, Ubuntu, macOS) oraz `test-and-audit` (`ruff`, kontrola artefaktów runtime, `pip-audit`, `pytest`). Bramka zdalnego CI na 3 systemach operacyjnych została zamknięta.
+- **SEC-04 (Eliminacja `withGlobalTauri`):** wprowadzono modułowy mostek `sparkle_app/src/modules/tauri-bridge.js` oparty o `@tauri-apps/api/core` i `@tauri-apps/api/event`, wyłączono `"withGlobalTauri": false` w `sparkle_app/src-tauri/tauri.conf.json` i utrwalono regresyjnie w `sparkle_app/tests/frontend-security.test.mjs` (20/20 testów).
+- **Podatności i higiena zależności:**
+  - Załatano wszystkie 6 otwartych alertów Dependabot w `extensions/nethical/requirements-hashed.txt` (`aiohttp 3.14.4`, `certifi 2026.10.19`, `mako 1.4.2`, `multidict 6.9.1`, `pyjwt 2.15.0`) oraz `extensions/AiMedRes/deployment/technical/mlflow-requirements.txt` (`mlflow 3.17.2`) — `pip-audit --no-deps` zgłasza 0 znanych podatności.
+  - Zaktualizowano podatne skrzynki Rust w `blyskawica_core/Cargo.lock` i `sparkle_app/src-tauri/Cargo.lock` (`anyhow 1.0.104`, `crossbeam-epoch 0.9.21`, `memmap2 0.9.12`, `tokio 1.54.1`, `event-listener 5.4.2`, `rustix 1.1.6`) oraz dodano zadanie `rust-security-audit` (`cargo-audit`) do `.github/workflows/ci.yml` z jawnie udokumentowanymi wyjątkami przechodnimi upstream (`candle-core` `zip`, `tauri/gtk-rs` `glib`/`quick-xml`).
+- **Workflow instalatora Windows (ADR 0002):** przepisano `.github/workflows/release-windows.yml` na czysty build Rust/Tauri (`NSIS` + `MSI`) bez Pythona 3.11 i bez wycofanego sidecara PyInstaller.
+- **Pozostałe otwarte bramki (niezrealizowane sprzętowo/zewnętrznie):** fizyczny test odcięcia zasilania (power-cut), manualny smoke-test czystej instalacji na komputerze bez narzędzi deweloperskich oraz niezależny przegląd bezpieczeństwa trzeciej strony.

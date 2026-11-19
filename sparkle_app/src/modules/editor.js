@@ -1,7 +1,6 @@
 // Code Editor & Workspace File Manager Module
 import { SparkleStore } from './store.js';
-
-const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: async () => {} };
+import { invoke } from './tauri-bridge.js';
 
 let fileList, btnRefreshFiles, currentFilenameText, btnSaveFile, codeEditor;
 let btnNewFile, btnOpenFile, btnSaveAsFile, btnDeleteFile, nativeFilePicker;

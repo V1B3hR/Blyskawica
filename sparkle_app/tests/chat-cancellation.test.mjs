@@ -24,27 +24,35 @@ test("cancel waits for the terminal response before allowing the next message", 
     createElement: () => new Element(),
     createTextNode: (text) => ({ textContent: text }),
   };
-  globalThis.window = { addEventListener() {}, __TAURI__: { core: { invoke: async (command) => {
-    requests.push(command);
-    if (command === "send_user_message") return new Promise((resolve) => { finishSend = resolve; });
-    return undefined;
-  } } } };
-  const chat = await import("../src/modules/chat.js");
-  chat.initChatModule(() => {}, () => {});
-  const sending = chat.sendMessageText("pierwsze", () => {});
-  await new Promise((resolve) => setTimeout(resolve, 0));
-  assert.equal(send.disabled, true);
-  assert.equal(cancel.style.display, "none");
-  assert.equal(typeof finishSend, "function");
-  finishSend();
-  await sending;
-  assert.equal(cancel.style.display, "inline-flex");
-  await chat.cancelGeneration(() => {});
-  assert.equal(send.disabled, true);
-  assert.equal(cancel.disabled, true);
-  await chat.sendMessageText("drugie", () => {});
-  assert.equal(requests.filter((item) => item === "send_user_message").length, 1);
-  chat.handleResponseFinished("część [Przerwano]");
-  assert.equal(send.disabled, false);
-  assert.equal(cancel.style.display, "none");
+  globalThis.window = { addEventListener() {} };
+  const { setTauriTestBridge } = await import("../src/modules/tauri-bridge.js");
+  setTauriTestBridge({
+    invoke: async (command) => {
+      requests.push(command);
+      if (command === "send_user_message") return new Promise((resolve) => { finishSend = resolve; });
+      return undefined;
+    },
+  });
+  try {
+    const chat = await import("../src/modules/chat.js");
+    chat.initChatModule(() => {}, () => {});
+    const sending = chat.sendMessageText("pierwsze", () => {});
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.equal(send.disabled, true);
+    assert.equal(cancel.style.display, "none");
+    assert.equal(typeof finishSend, "function");
+    finishSend();
+    await sending;
+    assert.equal(cancel.style.display, "inline-flex");
+    await chat.cancelGeneration(() => {});
+    assert.equal(send.disabled, true);
+    assert.equal(cancel.disabled, true);
+    await chat.sendMessageText("drugie", () => {});
+    assert.equal(requests.filter((item) => item === "send_user_message").length, 1);
+    chat.handleResponseFinished("część [Przerwano]");
+    assert.equal(send.disabled, false);
+    assert.equal(cancel.style.display, "none");
+  } finally {
+    setTauriTestBridge(null);
+  }
 });

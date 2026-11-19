@@ -71,6 +71,21 @@ test("CSP keeps network connections local to the application", async () => {
   assert.match(csp, /default-src 'self'/);
   assert.match(csp, /connect-src 'self'/);
   assert.doesNotMatch(csp, /\b(?:https?|wss?):|localhost/i);
+  assert.equal(
+    config.app.withGlobalTauri,
+    false,
+    "withGlobalTauri must remain disabled; use modular @tauri-apps/api imports instead",
+  );
+});
+
+test("frontend sources do not rely on global window.__TAURI__", async () => {
+  for (const { filePath, source } of await loadFrontendSources()) {
+    assert.equal(
+      /\b__TAURI__\b/.test(source),
+      false,
+      `${filePath} must not reference global window.__TAURI__; use tauri-bridge.js`,
+    );
+  }
 });
 
 test("non-Windows privilege prompts fail closed in headless or unsupported environments", async () => {

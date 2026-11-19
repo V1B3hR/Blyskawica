@@ -9,13 +9,11 @@ import { initEditorModule, addLog, refreshWorkspaceFiles } from './modules/edito
 import { initAegisModule, addAnomaly } from './modules/aegis.js';
 import { initQuantumModule } from './modules/quantum.js';
 import { initSporeModule } from './modules/spore.js';
-
-const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: async () => {} };
-const { listen } = window.__TAURI__ ? window.__TAURI__.event : { listen: async () => {} };
+import { invoke, listen, isTauriRuntime } from './modules/tauri-bridge.js';
 
 // Inicjalizacja nasłuchu zdarzeń z silnika Rust
 async function initEventListeners() {
-  if (!window.__TAURI__) {
+  if (!isTauriRuntime()) {
     console.warn("Brak środowiska Tauri. Aplikacja działa w trybie podglądu przeglądarkowego.");
     return;
   }
@@ -144,7 +142,7 @@ function initOptionsModule() {
   };
 
   const refreshConnectorRegistry = async () => {
-    if (!window.__TAURI__) {
+    if (!isTauriRuntime()) {
       renderConnectorRegistryMessage("Rejestr łączników jest dostępny w aplikacji desktopowej SPARKLE.");
       return;
     }
@@ -220,7 +218,7 @@ function initOptionsModule() {
   };
 
   const refreshPermissionReport = async () => {
-    if (!window.__TAURI__) {
+    if (!isTauriRuntime()) {
       renderPermissionReportMessage("Raport uprawnień jest dostępny w aplikacji desktopowej SPARKLE.");
       return;
     }
@@ -256,7 +254,7 @@ function initOptionsModule() {
   };
 
   const refreshDataInventory = async () => {
-    if (!window.__TAURI__) {
+    if (!isTauriRuntime()) {
       renderDataInventoryMessage("Inwentaryzacja danych jest dostępna w aplikacji desktopowej SPARKLE.");
       return;
     }
@@ -426,7 +424,7 @@ function initOptionsModule() {
 
 // Cykliczne odpytywanie silnika Tauri o status
 async function pollEngineStatus() {
-  if (!window.__TAURI__) return;
+  if (!isTauriRuntime()) return;
   try {
     const status = await invoke("get_engine_status");
     if (!status) return;
@@ -467,7 +465,7 @@ async function initStartupSequence(addLogFn, refreshFilesFn) {
 
   // Krok 1: Weryfikacja powłoki Tauri IPC
   if (stepBackend) {
-    if (window.__TAURI__) {
+    if (isTauriRuntime()) {
       stepBackend.className = "step done";
       stepBackend.textContent = "✓ Połączenie z natywną powłoką Tauri IPC: OK";
     } else {
@@ -483,7 +481,7 @@ async function initStartupSequence(addLogFn, refreshFilesFn) {
   }
 
   // Krok 3: Rzeczywisty start rdzenia Sparkle (Aegis + HNSW + Candle)
-  if (window.__TAURI__) {
+  if (isTauriRuntime()) {
     try {
       await startBlyskawicaEngine(addLogFn, refreshFilesFn);
       if (stepEngine) {

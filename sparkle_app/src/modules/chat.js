@@ -8,8 +8,7 @@ import { refreshWorkspaceFiles } from './editor.js';
 import { escapeHtml } from './html.js';
 import { createChatPersistence } from './chat-persistence.js';
 import { dialogForModel } from './chat-context.js';
-
-const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: async () => {} };
+import { invoke, isTauriRuntime } from './tauri-bridge.js';
 
 let chatMessages, chatInput, btnSendMessage, btnStartEngine, btnCancelGeneration;
 let primaryChatStream, guestChatStream, selectGuestModel, btnInviteGuest, activeGuestName;
@@ -34,7 +33,7 @@ function updateAutosaveStatus(status, error) {
 }
 
 export async function restoreChatAutosave(addLogFn) {
-  if (!window.__TAURI__) {
+  if (!isTauriRuntime()) {
     const el = document.getElementById("chat-autosave-status");
     if (el) el.textContent = "Autozapis rozmów: niedostępny w podglądzie";
     return;
@@ -575,7 +574,7 @@ export async function exportGuestSession(addLogFn) {
   });
 
   try {
-    if (window.__TAURI__) {
+    if (isTauriRuntime()) {
       await invoke("write_workspace_file", { path: filename, content });
       if (addLogFn) addLogFn(`✓ Zapisano sesję gościa w katalogu roboczym: ${filename}`);
       try { await refreshWorkspaceFiles(); } catch (e) {}
@@ -784,7 +783,7 @@ export async function exportSession(format = "md", customFilename = "", addLogFn
 
   // 1. Zapis do pliku przez Tauri IPC w katalogu roboczym (jeśli dostępne)
   try {
-    if (window.__TAURI__) {
+    if (isTauriRuntime()) {
       await invoke("write_workspace_file", { path: finalFilename, content });
       savedSuccess = true;
       if (addLogFn) addLogFn(`✓ Zapisano sesję w przestrzeni roboczej: ${finalFilename}`);

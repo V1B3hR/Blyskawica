@@ -3,8 +3,7 @@
 // ==============================================================================
 
 import { SparkleStore } from './store.js';
-
-const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: async () => {} };
+import { invoke, isTauriRuntime } from './tauri-bridge.js';
 
 let btnSporeLoad, btnSporeRun;
 let sporePlasticityVal, sporeStateVal, sporeCanvas;
@@ -157,7 +156,7 @@ export async function runSporeInference(addLogFn) {
 
   try {
     let result = null;
-    if (window.__TAURI__) {
+    if (isTauriRuntime()) {
       result = await invoke("run_native_expert_inference", { input: sampleInput });
     }
     
