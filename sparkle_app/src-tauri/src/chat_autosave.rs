@@ -185,12 +185,17 @@ mod tests {
     use std::time::{SystemTime, UNIX_EPOCH};
 
     fn root() -> std::path::PathBuf {
+        use std::sync::atomic::{AtomicU64, Ordering};
+        static COUNTER: AtomicU64 = AtomicU64::new(0);
+        let seq = COUNTER.fetch_add(1, Ordering::Relaxed);
         let unique = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_nanos();
-        let root =
-            std::env::temp_dir().join(format!("sparkle-chat-{}-{unique}", std::process::id()));
+        let root = std::env::temp_dir().join(format!(
+            "sparkle-chat-{}-{unique}-{seq}",
+            std::process::id()
+        ));
         std::fs::create_dir(&root).unwrap();
         root
     }
