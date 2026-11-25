@@ -4,6 +4,67 @@ use std::fs::File;
 use std::path::Path;
 use tokenizers::Tokenizer;
 
+fn checksum_reader(mut reader: impl std::io::Read) -> Result<String, String> {
+    use sha2::{Digest, Sha256};
+    let mut hasher = Sha256::new();
+    let mut buf = [0u8; 65536];
+    loop {
+        let bytes = reader
+            .read(&mut buf)
+            .map_err(|e| format!("Błąd odczytu modelu podczas kontroli SHA-256: {e}"))?;
+        if bytes == 0 {
+            break;
+        }
+        hasher.update(&buf[..bytes]);
+    }
+    Ok(format!("{:x}", hasher.finalize()))
+}
+
+fn verify_optional_model_checksum(model_path: &Path) -> Result<(), String> {
+    use std::io::Read;
+    let sidecar = model_path.with_extension("gguf.sha256");
+    match std::fs::symlink_metadata(&sidecar) {
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+        Err(error) => return Err(format!("Nie można sprawdzić sumy modelu: {error}")),
+        Ok(metadata) if !metadata.file_type().is_file() || metadata.file_type().is_symlink() => {
+            return Err("Nieprawidłowy plik sumy kontrolnej modelu".into());
+        }
+        Ok(metadata) => {
+            #[cfg(windows)]
+            {
+                use std::os::windows::fs::MetadataExt;
+                if metadata.file_attributes() & 0x400 != 0 {
+                    return Err("Suma modelu jest punktem przekierowania".into());
+                }
+            }
+            #[cfg(not(windows))]
+            let _ = metadata;
+        }
+    }
+    let mut bytes = Vec::new();
+    File::open(&sidecar)
+        .map_err(|e| format!("Nie można otworzyć sumy modelu: {e}"))?
+        .take(1025)
+        .read_to_end(&mut bytes)
+        .map_err(|e| format!("Nie można odczytać sumy modelu: {e}"))?;
+    if bytes.len() > 1024 {
+        return Err("Plik sumy kontrolnej modelu jest zbyt duży".into());
+    }
+    let expected = std::str::from_utf8(&bytes)
+        .map_err(|_| "Suma modelu nie jest tekstem UTF-8")?
+        .trim();
+    if expected.len() != 64 || !expected.bytes().all(|b| b.is_ascii_hexdigit()) {
+        return Err("Suma modelu musi zawierać dokładnie 64 cyfry szesnastkowe SHA-256".into());
+    }
+    let model = File::open(model_path)
+        .map_err(|e| format!("Nie można otworzyć modelu do kontroli SHA-256: {e}"))?;
+    let actual = checksum_reader(model)?;
+    if !expected.eq_ignore_ascii_case(&actual) {
+        return Err("Weryfikacja integralności modelu GGUF (SHA-256) nie powiodła się".into());
+    }
+    Ok(())
+}
+
 #[derive(Debug, Clone)]
 pub struct GenerationParams {
     pub temperature: f64,
@@ -45,35 +106,9 @@ impl CognitiveLlmEngine {
             ));
         }
 
-        // Weryfikacja spójności pliku GGUF z plikiem .sha256 jeśli istnieje (kryptograficzne SHA-256)
-        let sha256_sidecar = model_path.with_extension("gguf.sha256");
-        if sha256_sidecar.exists() {
-            if let Ok(raw_hash) = std::fs::read_to_string(&sha256_sidecar) {
-                let expected_hash = raw_hash.trim();
-                if !expected_hash.is_empty() {
-                    use sha2::{Digest, Sha256};
-                    use std::io::Read;
-
-                    let mut hasher = Sha256::new();
-                    if let Ok(mut f) = File::open(model_path) {
-                        let mut buf = [0u8; 65536];
-                        while let Ok(bytes) = f.read(&mut buf) {
-                            if bytes == 0 {
-                                break;
-                            }
-                            hasher.update(&buf[..bytes]);
-                        }
-                        let actual_hash = format!("{:x}", hasher.finalize());
-                        if !expected_hash.eq_ignore_ascii_case(&actual_hash) {
-                            return Err(format!(
-                                "Weryfikacja integralności modelu GGUF (SHA-256) nie powiodła się. Oczekiwano: {}, Obliczono: {}",
-                                expected_hash, actual_hash
-                            ));
-                        }
-                    }
-                }
-            }
-        }
+        // Missing sidecar is accepted but does not establish integrity.
+        // A present unreadable, malformed or mismatched sidecar fails closed.
+        verify_optional_model_checksum(model_path)?;
 
         // Weryfikacja nagłówka GGUF (magic bytes: "GGUF" = [0x47, 0x47, 0x55, 0x46])
         {
@@ -143,7 +178,8 @@ impl CognitiveLlmEngine {
         self.generate_with_cancel(prompt, params, None, callback)
     }
 
-    /// Generuje odpowiedź z możliwością natychmiastowego anulowania (sub-50ms cancellation) przez AtomicBool.
+    /// Sprawdza żądanie anulowania pomiędzy operacjami modelu; czas zależy od
+    /// tokenizacji i aktualnie wykonywanego wywołania modelu.
     pub fn generate_with_cancel<F>(
         &mut self,
         prompt: &str,
@@ -154,6 +190,9 @@ impl CognitiveLlmEngine {
     where
         F: FnMut(&str),
     {
+        if cancel_flag.is_some_and(|flag| flag.load(std::sync::atomic::Ordering::Relaxed)) {
+            return Ok(String::new());
+        }
         let tokens = self
             .tokenizer
             .encode(prompt, true)
@@ -171,13 +210,13 @@ impl CognitiveLlmEngine {
         let mut index_pos = 0;
         for _i in 0..params.max_tokens {
             // Weryfikacja flagi anulowania generowania
-            if let Some(flag) = cancel_flag {
-                if flag.load(std::sync::atomic::Ordering::Relaxed) {
-                    println!(
-                        "🛑 [Cognitive LLM]: Generowanie tokenów zostało anulowane przez użytkownika."
-                    );
-                    break;
-                }
+            if let Some(flag) = cancel_flag
+                && flag.load(std::sync::atomic::Ordering::Relaxed)
+            {
+                println!(
+                    "🛑 [Cognitive LLM]: Generowanie tokenów zostało anulowane przez użytkownika."
+                );
+                break;
             }
 
             let context_size = if index_pos > 0 { 1 } else { tokens.len() };
@@ -192,6 +231,10 @@ impl CognitiveLlmEngine {
                 .model
                 .forward(&input_tensor, index_pos)
                 .map_err(|e| format!("Błąd inferencji w modelu: {}", e))?;
+
+            if cancel_flag.is_some_and(|flag| flag.load(std::sync::atomic::Ordering::Relaxed)) {
+                break;
+            }
 
             let logits = logits
                 .squeeze(0)
@@ -318,5 +361,146 @@ impl CognitiveLlmEngine {
         }
 
         Ok(generated_text)
+    }
+}
+
+#[cfg(test)]
+mod cancellation_real_model_tests {
+    use super::*;
+    use std::sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+        mpsc,
+    };
+    use std::time::{Duration, Instant};
+
+    #[test]
+    fn optional_checksum_fails_closed_when_present_but_invalid() {
+        let root = std::env::temp_dir().join(format!(
+            "sparkle-model-checksum-{:016x}",
+            rand::random::<u64>()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let model = root.join("synthetic.gguf");
+        std::fs::write(&model, b"synthetic model").unwrap();
+        let sidecar = model.with_extension("gguf.sha256");
+        assert!(verify_optional_model_checksum(&model).is_ok());
+        std::fs::write(&sidecar, b"").unwrap();
+        assert!(verify_optional_model_checksum(&model).is_err());
+        std::fs::write(&sidecar, "a".repeat(1025)).unwrap();
+        assert!(verify_optional_model_checksum(&model).is_err());
+        std::fs::write(&sidecar, "z".repeat(64)).unwrap();
+        assert!(verify_optional_model_checksum(&model).is_err());
+        std::fs::write(&sidecar, "0".repeat(64)).unwrap();
+        assert!(verify_optional_model_checksum(&model).is_err());
+        let expected = checksum_reader(&b"synthetic model"[..]).unwrap();
+        std::fs::write(&sidecar, format!("{}\n", expected.to_uppercase())).unwrap();
+        assert!(verify_optional_model_checksum(&model).is_ok());
+        std::fs::remove_file(&model).unwrap();
+        assert!(verify_optional_model_checksum(&model).is_err());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn checksum_reader_propagates_read_errors() {
+        struct FaultyReader(bool);
+        impl std::io::Read for FaultyReader {
+            fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+                if !self.0 {
+                    self.0 = true;
+                    buf[0] = b'x';
+                    Ok(1)
+                } else {
+                    Err(std::io::Error::other("synthetic read failure"))
+                }
+            }
+        }
+        assert!(checksum_reader(FaultyReader(false)).is_err());
+    }
+
+    // Explicitly run only with a locally selected model; ordinary tests never
+    // load multi-gigabyte user assets or assert a universal latency.
+    #[test]
+    #[ignore = "wymaga lokalnego modelu GGUF i znacznej ilości pamięci"]
+    fn real_model_stops_after_external_cancellation() {
+        enum Event {
+            Loaded,
+            FirstToken,
+            Finished(Result<usize, String>),
+        }
+        let model = std::env::var_os("SPARKLE_TEST_GGUF").expect("SPARKLE_TEST_GGUF");
+        let tokenizer = std::env::var_os("SPARKLE_TEST_TOKENIZER").expect("SPARKLE_TEST_TOKENIZER");
+        let cancellation = Arc::new(AtomicBool::new(false));
+        let worker_cancellation = cancellation.clone();
+        let (tx, rx) = mpsc::channel();
+        let worker = std::thread::spawn(move || {
+            let mut engine = match CognitiveLlmEngine::new(Path::new(&model), Path::new(&tokenizer))
+            {
+                Ok(engine) => engine,
+                Err(error) => {
+                    let _ = tx.send(Event::Finished(Err(error)));
+                    return;
+                }
+            };
+            let _ = tx.send(Event::Loaded);
+            let mut chunks = 0;
+            let params = GenerationParams {
+                max_tokens: 128,
+                temperature: 0.0,
+                top_p: 1.0,
+                repetition_penalty: 1.0,
+            };
+            let result = engine.generate_with_cancel(
+                "<|im_start|>user\nPolicz od jeden do stu.\n<|im_end|>\n<|im_start|>assistant\n",
+                &params,
+                Some(&worker_cancellation),
+                |_| {
+                    chunks += 1;
+                    if chunks == 1 {
+                        let _ = tx.send(Event::FirstToken);
+                    }
+                },
+            );
+            let _ = tx.send(Event::Finished(result.map(|_| chunks)));
+        });
+        match rx
+            .recv_timeout(Duration::from_secs(180))
+            .expect("model nie został załadowany w czasie testu")
+        {
+            Event::Loaded => println!("Model i tokenizator załadowane na CPU."),
+            Event::Finished(Err(error)) => panic!("Błąd ładowania modelu: {error}"),
+            _ => panic!("Nieoczekiwane zdarzenie podczas ładowania"),
+        }
+        match rx
+            .recv_timeout(Duration::from_secs(180))
+            .expect("nie otrzymano pierwszego tokenu")
+        {
+            Event::FirstToken => {}
+            Event::Finished(result) => {
+                panic!("Generowanie zakończyło się przed pierwszym tokenem: {result:?}")
+            }
+            _ => panic!("Nieoczekiwane zdarzenie generowania"),
+        }
+        assert!(
+            !worker.is_finished(),
+            "generowanie zakończyło się przed sygnałem anulowania"
+        );
+        let start = Instant::now();
+        cancellation.store(true, Ordering::SeqCst);
+        match rx
+            .recv_timeout(Duration::from_secs(180))
+            .expect("model nie zakończył anulowania")
+        {
+            Event::Finished(Ok(chunks)) => {
+                println!(
+                    "Od sygnału anulowania do końca funkcji: {:?}; fragmentów: {chunks}",
+                    start.elapsed()
+                );
+                assert!((1..128).contains(&chunks));
+            }
+            Event::Finished(Err(error)) => panic!("Błąd generowania: {error}"),
+            _ => panic!("Nieoczekiwane zdarzenie po anulowaniu"),
+        }
+        worker.join().unwrap();
     }
 }

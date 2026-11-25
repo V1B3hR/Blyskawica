@@ -6,7 +6,7 @@ use std::time::Duration;
 use tokio::time::sleep;
 
 use blyskawica_core::state_manager::{BlyskawicaEngine, StateCommand};
-use blyskawica_core::vector_index::SparkleVectorIndex;
+use blyskawica_core::vector_index::{IndexLease, SparkleVectorIndex};
 
 #[tokio::main]
 async fn main() {
@@ -55,33 +55,49 @@ async fn main() {
     let dimension = 128;
     let db_dir = std::env::temp_dir().join("Blyskawica_db");
     let file_basename = "sparkle_vectors";
+    let lease = Arc::new(
+        IndexLease::acquire(&std::env::temp_dir().join("sparkle-index.lock"))
+            .expect("Nie można zablokować pamięci"),
+    );
 
     println!("📊 [SETUP]: Próba wczytania zapisanego indeksu Sparkle HNSW...");
-    let index = match SparkleVectorIndex::load_hnsw(&db_dir, file_basename, dimension) {
-        Ok(idx) => {
-            println!("💾 [SETUP]: Pomyślnie wczytano indeks z pliku!");
-            Arc::new(idx)
-        }
-        Err(err) => {
-            println!(
-                "📊 [SETUP]: Brak indeksu lub błąd ({}), tworzenie nowego...",
-                err
-            );
-            let idx = Arc::new(SparkleVectorIndex::new(dimension, 1000));
-            // Dodanie przykładowych wektorów
-            println!("📊 [SETUP]: Dodawanie testowych osadzeń (embeddings)...");
-            for i in 0..5 {
-                let mut vec = vec![0.0f32; dimension];
-                vec[i] = 1.0;
-                let _ = idx.insert(i, &vec);
+    let index =
+        match SparkleVectorIndex::load_hnsw(&db_dir, file_basename, dimension, lease.clone()) {
+            Ok(idx) => {
+                println!("💾 [SETUP]: Pomyślnie wczytano indeks z pliku!");
+                Arc::new(idx)
             }
-            // Rejestrujemy wektor adwersarialny o ID 666 dla tarczy Wolf Teeth
-            let adv_id = 999;
-            let adv_vec = vec![0.9, 0.1, 0.0, 0.0];
-            let _ = idx.insert(adv_id, &adv_vec);
-            idx
-        }
-    };
+            Err(err) => {
+                if db_dir.exists()
+                    && std::fs::read_dir(&db_dir)
+                        .map(|mut entries| entries.next().is_some())
+                        .unwrap_or(true)
+                {
+                    panic!("Nie można odczytać istniejącej pamięci; pliki zachowano: {err}");
+                }
+                println!(
+                    "📊 [SETUP]: Brak indeksu lub błąd ({}), tworzenie nowego...",
+                    err
+                );
+                let idx = Arc::new(
+                    SparkleVectorIndex::new(dimension, 1000)
+                        .with_storage(&db_dir, lease.clone())
+                        .expect("Nie można powiązać pamięci"),
+                );
+                // Dodanie przykładowych wektorów
+                println!("📊 [SETUP]: Dodawanie testowych osadzeń (embeddings)...");
+                for i in 0..5 {
+                    let mut vec = vec![0.0f32; dimension];
+                    vec[i] = 1.0;
+                    let _ = idx.insert(i, &vec);
+                }
+                // Rejestrujemy wektor adwersarialny o ID 666 dla tarczy Wolf Teeth
+                let adv_id = 999;
+                let adv_vec = vec![0.9, 0.1, 0.0, 0.0];
+                let _ = idx.insert(adv_id, &adv_vec);
+                idx
+            }
+        };
 
     // 3. Konfiguracja silnika z 4-sekundowym czasem wygaszania (cooldown) do demonstracji
     let adv_id = 666;
@@ -104,7 +120,8 @@ async fn main() {
         adversarial_ids,
         semantic_threshold,
     )
-    .with_db(db_dir, file_basename.to_string());
+    .with_db(db_dir, file_basename.to_string())
+    .expect("Nie można odtworzyć kolejki");
     let tx = engine.get_sender();
 
     // 4. Uruchomienie silnika w osobnym asynchronicznym zadaniu tokio
