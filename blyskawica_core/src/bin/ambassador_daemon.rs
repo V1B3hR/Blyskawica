@@ -9,7 +9,7 @@ use tokio::sync::Mutex;
 use tokio::net::windows::named_pipe::ServerOptions;
 
 #[cfg(unix)]
-use tokio::net::{UnixListener, UnixStream};
+use tokio::net::UnixListener;
 
 use blyskawica_core::cognitive_shield::{CognitiveShield, CognitiveShieldVerdict};
 use blyskawica_core::neurochemistry::NeurochemicalState;

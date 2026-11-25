@@ -125,8 +125,15 @@ pub struct VadStateDef {
     pub linguistic_markers: Vec<String>,
 }
 
+impl Default for AegisPsycheRustEngine {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AegisPsycheRustEngine {
     /// Initializes the engine with embedded default rules and VAD definitions.
+    #[allow(clippy::vec_init_then_push)]
     pub fn new() -> Self {
         let mut vad_states = Vec::new();
 
@@ -270,22 +277,19 @@ impl AegisPsycheRustEngine {
     pub fn load_from_dir<P: AsRef<Path>>(dir: P) -> Self {
         let mut engine = Self::new();
         let vad_path = dir.as_ref().join("vad_emotion_matrix_24.json");
-        if vad_path.exists() {
-            if let Ok(content) = std::fs::read_to_string(vad_path) {
-                if let Ok(val) = serde_json::from_str::<serde_json::Value>(&content) {
-                    if let Some(states_arr) = val.get("states").and_then(|s| s.as_array()) {
-                        let mut parsed_states = Vec::new();
-                        for s in states_arr {
-                            if let Ok(state_def) = serde_json::from_value::<VadStateDef>(s.clone())
-                            {
-                                parsed_states.push(state_def);
-                            }
-                        }
-                        if !parsed_states.is_empty() {
-                            engine.vad_states = parsed_states;
-                        }
-                    }
+        if vad_path.exists()
+            && let Ok(content) = std::fs::read_to_string(vad_path)
+            && let Ok(val) = serde_json::from_str::<serde_json::Value>(&content)
+            && let Some(states_arr) = val.get("states").and_then(|s| s.as_array())
+        {
+            let mut parsed_states = Vec::new();
+            for s in states_arr {
+                if let Ok(state_def) = serde_json::from_value::<VadStateDef>(s.clone()) {
+                    parsed_states.push(state_def);
                 }
+            }
+            if !parsed_states.is_empty() {
+                engine.vad_states = parsed_states;
             }
         }
         engine

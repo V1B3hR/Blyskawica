@@ -1,13 +1,15 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Sparkle VIBE IDE",
+  "mainBinaryName": "sparkle_app",
   "version": "10.0.0",
   "identifier": "com.v1b3hr.sparkle-vibe-ide",
   "build": {
-    "frontendDist": "../src"
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
   },
   "app": {
-    "withGlobalTauri": true,
+    "withGlobalTauri": false,
     "windows": [
       {
         "title": "Sparkle VIBE IDE & Błyskawica V10",
@@ -35,7 +37,6 @@
     "windows": {
       "nsis": {
         "installerIcon": "icons/icon.ico",
-        "headerImage": "icons/icon.png",
         "installMode": "currentUser"
       }
     }

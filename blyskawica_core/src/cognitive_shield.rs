@@ -139,7 +139,7 @@ impl CognitiveShield {
             is_manipulative: true,
             manipulation_index: manip_index,
             dark_triad_index: dark_index,
-            deception_index: deception_index,
+            deception_index,
             active_brainwave_band: "GAMMA".to_string(),
             dominant_vector: dominant_vec,
             assertive_antidote: antidote,
@@ -253,9 +253,11 @@ mod tests {
         assert!(!shield.check_semantic(&borderline_query, &index, None));
 
         // Stressed/Anxious state increases threshold, making the shield more vigilant (flagging borderline queries)
-        let mut stressed_state = NeurochemicalState::default();
-        stressed_state.cortisol = 0.8; // cortisol > 0.5 increases threshold
-        stressed_state.gaba = 0.2; // gaba < 0.5 increases threshold
+        let stressed_state = NeurochemicalState {
+            cortisol: 0.8, // cortisol > 0.5 increases threshold
+            gaba: 0.2,     // gaba < 0.5 increases threshold
+            ..Default::default()
+        };
         assert!(shield.check_semantic(&borderline_query, &index, Some(&stressed_state)));
     }
 

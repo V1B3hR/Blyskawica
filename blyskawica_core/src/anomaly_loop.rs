@@ -1,3 +1,4 @@
+#[derive(Debug, Clone)]
 pub struct VirtualGround {
     pub ground_potential: f32,
 }
@@ -30,6 +31,7 @@ impl VirtualGround {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct GroundLoopIsolator {
     pub isolation_ratio: f32,
     pub ground: VirtualGround,
@@ -64,7 +66,7 @@ impl GroundLoopIsolator {
                 // Prąd błądzący: szum statyczny blisko wartości średniej
                 noise.push(val + hum * 0.1);
             } else {
-                noise.push(0.0);
+                noise.push(hum * 0.1);
             }
         }
 
@@ -84,11 +86,13 @@ impl GroundLoopIsolator {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct AnomalyQueueItem {
     pub id: usize,
     pub vector: Vec<f32>,
     pub metadata: String,
+    #[serde(default)]
+    pub queue_id: Option<String>,
 }
 
 pub struct AnomalyDetector {
@@ -126,6 +130,7 @@ impl AnomalyDetector {
                 id: vector_id,
                 vector: clean_vector.clone(),
                 metadata,
+                queue_id: None,
             });
         }
 

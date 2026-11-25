@@ -1,8 +1,7 @@
 // Aegis Sentinel, Security Posture & Anomaly Quarantine Module
 import { SparkleStore } from './store.js';
 import { updateRegimeBadge } from './neurochemistry.js';
-
-const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: async () => {} };
+import { invoke } from './tauri-bridge.js';
 
 let quarantinedAnomalies = [];
 let aegisBadge, hwTelemetryBadge, securitySlider;

@@ -2,31 +2,8 @@
 mod win32 {
     use std::ptr;
 
-    #[repr(C)]
-    #[derive(Clone, Copy, Debug)]
-    pub struct MIB_TCPROW {
-        pub state: u32,
-        pub local_addr: u32,
-        pub local_port: u32,
-        pub remote_addr: u32,
-        pub remote_port: u32,
-    }
-
-    #[repr(C)]
-    pub struct MIB_TCPTABLE {
-        pub num_entries: u32,
-        pub table: [MIB_TCPROW; 1],
-    }
-
-    #[link(name = "advapi32")]
-    unsafe extern "system" {
-        fn ImpersonateAnonymousToken(ThreadHandle: *mut std::ffi::c_void) -> i32;
-        fn RevertToSelf() -> i32;
-    }
-
     #[link(name = "kernel32")]
     unsafe extern "system" {
-        fn GetCurrentThread() -> *mut std::ffi::c_void;
         fn GetCurrentProcess() -> *mut std::ffi::c_void;
         fn CreateJobObjectW(
             lpJobAttributes: *mut std::ffi::c_void,
@@ -43,12 +20,6 @@ mod win32 {
             cbJobObjectInformationLength: u32,
         ) -> i32;
         fn CloseHandle(hObject: *mut std::ffi::c_void) -> i32;
-    }
-
-    #[link(name = "iphlpapi")]
-    unsafe extern "system" {
-        fn GetTcpTable(pTcpTable: *mut MIB_TCPTABLE, pdwSize: *mut u32, bOrder: i32) -> u32;
-        fn SetTcpEntry(pTcprow: *const MIB_TCPROW) -> u32;
     }
 
     #[repr(C)]
@@ -114,6 +85,7 @@ mod win32 {
         }
     }
 
+    #[allow(clippy::not_unsafe_ptr_arg_deref)]
     pub fn assign_process_to_job(
         job: *mut std::ffi::c_void,
         process: *mut std::ffi::c_void,
@@ -144,94 +116,6 @@ mod win32 {
         }
     }
 
-    pub fn drop_thread_privileges() -> Result<(), String> {
-        unsafe {
-            let thread_handle = GetCurrentThread();
-            let result = ImpersonateAnonymousToken(thread_handle);
-            if result != 0 {
-                Ok(())
-            } else {
-                let err = std::io::Error::last_os_error();
-                Err(format!(
-                    "Error calling ImpersonateAnonymousToken: {} (code {})",
-                    err,
-                    err.raw_os_error().unwrap_or(0)
-                ))
-            }
-        }
-    }
-
-    pub fn restore_thread_privileges() -> Result<(), String> {
-        unsafe {
-            let result = RevertToSelf();
-            if result != 0 {
-                Ok(())
-            } else {
-                let err = std::io::Error::last_os_error();
-                Err(format!(
-                    "Error calling RevertToSelf: {} (code {})",
-                    err,
-                    err.raw_os_error().unwrap_or(0)
-                ))
-            }
-        }
-    }
-
-    pub fn terminate_external_tcp_connections() -> Result<usize, String> {
-        unsafe {
-            let mut size: u32 = 0;
-            // 1. Get size needed
-            let _ = GetTcpTable(ptr::null_mut(), &mut size, 0);
-            if size == 0 {
-                return Ok(0);
-            }
-
-            // 2. Allocate buffer
-            let mut buffer = vec![0u8; size as usize];
-            let p_table = buffer.as_mut_ptr() as *mut MIB_TCPTABLE;
-
-            // 3. Retrieve actual table
-            let ret = GetTcpTable(p_table, &mut size, 0);
-            if ret != 0 {
-                return Err(format!("GetTcpTable failed with code {}", ret));
-            }
-
-            let table_ref = &*p_table;
-            let num_entries = table_ref.num_entries as usize;
-
-            // Pointer to table entries array
-            let table_ptr = &table_ref.table as *const MIB_TCPROW;
-            let mut closed_count = 0;
-
-            for i in 0..num_entries {
-                let row = *table_ptr.add(i);
-
-                // remote_addr = 0 means listening or not connected
-                if row.remote_addr == 0 {
-                    continue;
-                }
-
-                // Check if it is a loopback address (127.x.x.x)
-                let first_byte = row.remote_addr & 0xFF;
-                if first_byte == 127 {
-                    // Loopback connection - skip
-                    continue;
-                }
-
-                // state = 5 is MIB_TCP_STATE_ESTAB (Established)
-                // We want to terminate active connections by setting to state 12 (MIB_TCP_STATE_DELETE_TCB)
-                let mut delete_row = row;
-                delete_row.state = 12; // MIB_TCP_STATE_DELETE_TCB
-
-                let set_ret = SetTcpEntry(&delete_row);
-                if set_ret == 0 {
-                    closed_count += 1;
-                }
-            }
-
-            Ok(closed_count)
-        }
-    }
     #[repr(C)]
     #[allow(non_snake_case)]
     pub struct DATA_BLOB {
@@ -353,8 +237,7 @@ mod win32 {
 
 #[cfg(target_os = "windows")]
 pub use win32::{
-    assign_process_to_job, create_kill_on_close_job, create_sandboxed_job, drop_thread_privileges,
-    protect_secret, restore_thread_privileges, terminate_external_tcp_connections,
+    assign_process_to_job, create_kill_on_close_job, create_sandboxed_job, protect_secret,
     unprotect_secret,
 };
 
@@ -377,31 +260,23 @@ pub fn create_sandboxed_job() -> Result<usize, String> {
     Ok(0)
 }
 
-#[cfg(not(target_os = "windows"))]
-pub fn drop_thread_privileges() -> Result<(), String> {
-    println!("🛡️ [STUB]: Zrzucenie uprawnień wątku (dostępne tylko na Windows).");
-    Ok(())
-}
-
-#[cfg(not(target_os = "windows"))]
-pub fn restore_thread_privileges() -> Result<(), String> {
-    println!("🛡️ [STUB]: Przywrócenie uprawnień wątku (dostępne tylko na Windows).");
-    Ok(())
-}
-
-#[cfg(not(target_os = "windows"))]
-pub fn terminate_external_tcp_connections() -> Result<usize, String> {
-    println!("🛡️ [STUB]: Zrywanie połączeń sieciowych (dostępne tylko na Windows).");
-    Ok(0)
-}
-
 #[cfg(any(not(target_os = "windows"), test))]
 pub(crate) mod unix_vault {
     use sha2::{Digest, Sha256};
     use std::fs;
-    use std::path::PathBuf;
+    use std::path::{Path, PathBuf};
+    use std::sync::Mutex;
 
     const MAGIC: &[u8; 4] = b"BLY1";
+    static VAULT_KEY_LOCK: Mutex<()> = Mutex::new(());
+
+    #[cfg_attr(target_os = "windows", allow(dead_code))]
+    fn default_home_dir() -> Result<PathBuf, String> {
+        std::env::var_os("HOME").map(PathBuf::from).ok_or_else(|| {
+            "Brak zmiennej środowiskowej HOME: brak zaufanego katalogu użytkownika dla sejfu."
+                .to_string()
+        })
+    }
 
     fn hmac_sha256(key: &[u8], data: &[u8]) -> [u8; 32] {
         let mut k_pad = [0u8; 64];
@@ -432,12 +307,20 @@ pub(crate) mod unix_vault {
         outer.finalize().into()
     }
 
-    fn get_or_create_vault_master_key() -> Result<[u8; 32], String> {
-        let home = std::env::var_os("HOME").ok_or_else(|| {
-            "Brak zmiennej środowiskowej HOME: brak zaufanego katalogu użytkownika dla sejfu."
-                .to_string()
-        })?;
-        let config_dir = PathBuf::from(home).join(".config").join("blyskawica");
+    fn read_existing_key(key_file: &Path) -> Result<[u8; 32], String> {
+        let bytes = fs::read(key_file).map_err(|e| format!("Błąd odczytu klucza sejfu: {}", e))?;
+        if bytes.len() == 32 {
+            let mut key = [0u8; 32];
+            key.copy_from_slice(&bytes);
+            return Ok(key);
+        }
+        Err("Klucz sejfu ma nieprawidłową długość.".to_string())
+    }
+
+    fn get_or_create_vault_master_key_in_home(home: &Path) -> Result<[u8; 32], String> {
+        let _guard = VAULT_KEY_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+
+        let config_dir = home.join(".config").join("blyskawica");
         fs::create_dir_all(&config_dir)
             .map_err(|e| format!("Błąd tworzenia katalogu konfiguracyjnego sejfu: {}", e))?;
 
@@ -450,14 +333,7 @@ pub(crate) mod unix_vault {
         let key_file = config_dir.join(".vault_master.key");
 
         if key_file.exists() {
-            let bytes =
-                fs::read(&key_file).map_err(|e| format!("Błąd odczytu klucza sejfu: {}", e))?;
-            if bytes.len() == 32 {
-                let mut key = [0u8; 32];
-                key.copy_from_slice(&bytes);
-                return Ok(key);
-            }
-            return Err("Klucz sejfu ma nieprawidłową długość.".to_string());
+            return read_existing_key(&key_file);
         }
 
         let mut raw_key = [0u8; 32];
@@ -488,6 +364,7 @@ pub(crate) mod unix_vault {
                 .map_err(|e| format!("Błąd zapisu klucza do pliku tymczasowego: {}", e))?;
             file.flush()
                 .map_err(|e| format!("Błąd zapisu buforowanego klucza: {}", e))?;
+            let _ = file.sync_all();
         }
         #[cfg(not(unix))]
         {
@@ -495,28 +372,35 @@ pub(crate) mod unix_vault {
                 .map_err(|e| format!("Błąd zapisu klucza sejfu: {}", e))?;
         }
 
-        if let Err(rename_err) = fs::rename(&tmp_key_file, &key_file) {
-            let _ = fs::remove_file(&tmp_key_file);
-            if key_file.exists() {
-                if let Ok(bytes) = fs::read(&key_file) {
-                    if bytes.len() == 32 {
-                        let mut key = [0u8; 32];
-                        key.copy_from_slice(&bytes);
-                        return Ok(key);
-                    }
-                }
+        // Atomic non-clobbering link so concurrent processes cannot overwrite an existing master key.
+        match fs::hard_link(&tmp_key_file, &key_file) {
+            Ok(()) => {
+                let _ = fs::remove_file(&tmp_key_file);
+                Ok(raw_key)
             }
-            return Err(format!(
-                "Nie udało się zainicjalizować klucza sejfu: {}",
-                rename_err
-            ));
+            Err(link_err) => {
+                if link_err.kind() == std::io::ErrorKind::AlreadyExists || key_file.exists() {
+                    let _ = fs::remove_file(&tmp_key_file);
+                    return read_existing_key(&key_file);
+                }
+                // Fallback for filesystems without hard-link support.
+                if let Err(rename_err) = fs::rename(&tmp_key_file, &key_file) {
+                    let _ = fs::remove_file(&tmp_key_file);
+                    if key_file.exists() {
+                        return read_existing_key(&key_file);
+                    }
+                    return Err(format!(
+                        "Nie udało się zainicjalizować klucza sejfu: {} / {}",
+                        link_err, rename_err
+                    ));
+                }
+                Ok(raw_key)
+            }
         }
-
-        Ok(raw_key)
     }
 
-    fn derive_subkeys() -> Result<([u8; 32], [u8; 32]), String> {
-        let master = get_or_create_vault_master_key()?;
+    fn derive_subkeys_in_home(home: &Path) -> Result<([u8; 32], [u8; 32]), String> {
+        let master = get_or_create_vault_master_key_in_home(home)?;
         let mut machine_binding = Vec::new();
         if let Ok(id) = fs::read_to_string("/etc/machine-id") {
             machine_binding.extend_from_slice(id.trim().as_bytes());
@@ -550,8 +434,8 @@ pub(crate) mod unix_vault {
         }
     }
 
-    pub fn protect_secret(plaintext: &[u8]) -> Result<Vec<u8>, String> {
-        let (k_enc, k_mac) = derive_subkeys()?;
+    pub(crate) fn protect_secret_in_home(plaintext: &[u8], home: &Path) -> Result<Vec<u8>, String> {
+        let (k_enc, k_mac) = derive_subkeys_in_home(home)?;
 
         let mut nonce = [0u8; 16];
         rand::Rng::fill(&mut rand::thread_rng(), &mut nonce);
@@ -573,7 +457,10 @@ pub(crate) mod unix_vault {
         Ok(result)
     }
 
-    pub fn unprotect_secret(ciphertext: &[u8]) -> Result<Vec<u8>, String> {
+    pub(crate) fn unprotect_secret_in_home(
+        ciphertext: &[u8],
+        home: &Path,
+    ) -> Result<Vec<u8>, String> {
         if ciphertext.len() < 4 + 16 + 32 {
             return Err("Nieprawidłowy format zaszyfrowanego sekretu (zbyt krótki).".to_string());
         }
@@ -581,7 +468,7 @@ pub(crate) mod unix_vault {
             return Err("Nieprawidłowy nagłówek sejfu (nieznany format BLY).".to_string());
         }
 
-        let (k_enc, k_mac) = derive_subkeys()?;
+        let (k_enc, k_mac) = derive_subkeys_in_home(home)?;
 
         let mut nonce = [0u8; 16];
         nonce.copy_from_slice(&ciphertext[4..20]);
@@ -610,6 +497,18 @@ pub(crate) mod unix_vault {
         keystream_xor(&k_enc, &nonce, &mut plaintext);
         Ok(plaintext)
     }
+
+    #[cfg_attr(target_os = "windows", allow(dead_code))]
+    pub fn protect_secret(plaintext: &[u8]) -> Result<Vec<u8>, String> {
+        let home = default_home_dir()?;
+        protect_secret_in_home(plaintext, &home)
+    }
+
+    #[cfg_attr(target_os = "windows", allow(dead_code))]
+    pub fn unprotect_secret(ciphertext: &[u8]) -> Result<Vec<u8>, String> {
+        let home = default_home_dir()?;
+        unprotect_secret_in_home(ciphertext, &home)
+    }
 }
 
 #[cfg(not(target_os = "windows"))]
@@ -618,51 +517,6 @@ pub use unix_vault::{protect_secret, unprotect_secret};
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_privilege_flow() {
-        // Test drop privilege flow
-        let res = drop_thread_privileges();
-        assert!(
-            res.is_ok(),
-            "Zrzucenie uprawnień powinno się udać lub wywołać stub"
-        );
-
-        // Próba zapisu pliku powinna się nie udać na Windows w trybie Anonymous
-        #[cfg(target_os = "windows")]
-        {
-            let test_path = std::env::current_dir().unwrap().join("test_anon_write.txt");
-            let write_res = std::fs::write(&test_path, "test");
-            assert!(
-                write_res.is_err(),
-                "Zapis pliku w trybie Anonymous powinien zakończyć się błędem."
-            );
-        }
-
-        let restore_res = restore_thread_privileges();
-        assert!(
-            restore_res.is_ok(),
-            "Przywrócenie uprawnień powinno się udać lub wywołać stub"
-        );
-
-        // Po przywróceniu, zapis powinien zadziałać
-        #[cfg(target_os = "windows")]
-        {
-            let test_path = std::env::current_dir().unwrap().join("test_anon_write.txt");
-            let write_res = std::fs::write(&test_path, "test");
-            assert!(
-                write_res.is_ok(),
-                "Zapis pliku po przywróceniu uprawnień powinien zadziałać."
-            );
-            let _ = std::fs::remove_file(test_path);
-        }
-    }
-
-    #[test]
-    fn test_tcp_list() {
-        let res = terminate_external_tcp_connections();
-        assert!(res.is_ok());
-    }
 
     #[test]
     fn test_vault_protect_unprotect() {
@@ -707,46 +561,68 @@ mod tests {
         let unique = u64::from_le_bytes(unique_bytes);
         let temp_dir = std::env::temp_dir().join(format!("blyskawica_unix_vault_test_{unique}"));
         let _ = std::fs::create_dir_all(&temp_dir);
-        let orig_home = std::env::var_os("HOME");
-        unsafe {
-            std::env::set_var("HOME", &temp_dir);
-        }
 
-        // 1. Normal secret roundtrip
+        // 1. Normal secret roundtrip (isolated temp home, no process-wide HOME mutation)
         let secret = b"super_secret_cross_platform_payload_123";
-        let encrypted = unix_vault::protect_secret(secret).expect("protect should succeed");
+        let encrypted =
+            unix_vault::protect_secret_in_home(secret, &temp_dir).expect("protect should succeed");
         assert!(encrypted.len() >= 52);
         assert_eq!(&encrypted[..4], b"BLY1");
-        let decrypted = unix_vault::unprotect_secret(&encrypted).expect("unprotect should succeed");
+        let decrypted = unix_vault::unprotect_secret_in_home(&encrypted, &temp_dir)
+            .expect("unprotect should succeed");
         assert_eq!(decrypted, secret);
 
         // 2. Empty plaintext produces valid 52-byte envelope
-        let empty_enc = unix_vault::protect_secret(b"").expect("protect empty should succeed");
+        let empty_enc = unix_vault::protect_secret_in_home(b"", &temp_dir)
+            .expect("protect empty should succeed");
         assert_eq!(empty_enc.len(), 52);
-        let empty_dec =
-            unix_vault::unprotect_secret(&empty_enc).expect("unprotect empty should succeed");
+        let empty_dec = unix_vault::unprotect_secret_in_home(&empty_enc, &temp_dir)
+            .expect("unprotect empty should succeed");
         assert!(empty_dec.is_empty());
 
         // 3. Short / truncated ciphertext rejection
-        assert!(unix_vault::unprotect_secret(&[]).is_err());
-        assert!(unix_vault::unprotect_secret(b"BLY1").is_err());
-        assert!(unix_vault::unprotect_secret(&encrypted[..51]).is_err());
+        assert!(unix_vault::unprotect_secret_in_home(&[], &temp_dir).is_err());
+        assert!(unix_vault::unprotect_secret_in_home(b"BLY1", &temp_dir).is_err());
+        assert!(unix_vault::unprotect_secret_in_home(&encrypted[..51], &temp_dir).is_err());
 
         // 4. Tampering rejection
         let mut tampered = encrypted.clone();
         let len = tampered.len();
         tampered[len - 1] ^= 0x42;
-        assert!(unix_vault::unprotect_secret(&tampered).is_err());
+        assert!(unix_vault::unprotect_secret_in_home(&tampered, &temp_dir).is_err());
 
         // Clean up
         let _ = std::fs::remove_dir_all(&temp_dir);
-        unsafe {
-            if let Some(h) = orig_home {
-                std::env::set_var("HOME", h);
-            } else {
-                std::env::remove_var("HOME");
-            }
+    }
+
+    #[test]
+    fn test_unix_vault_concurrent_first_init() {
+        let mut unique_bytes = [0u8; 8];
+        rand::Rng::fill(&mut rand::thread_rng(), &mut unique_bytes);
+        let unique = u64::from_le_bytes(unique_bytes);
+        let temp_dir =
+            std::env::temp_dir().join(format!("blyskawica_unix_vault_concurrent_{unique}"));
+        let _ = std::fs::create_dir_all(&temp_dir);
+
+        let handles: Vec<_> = (0..8)
+            .map(|idx| {
+                let dir = temp_dir.clone();
+                std::thread::spawn(move || {
+                    let payload = format!("concurrent_secret_{idx}");
+                    let enc = unix_vault::protect_secret_in_home(payload.as_bytes(), &dir)
+                        .expect("concurrent protect should succeed");
+                    let dec = unix_vault::unprotect_secret_in_home(&enc, &dir)
+                        .expect("concurrent unprotect should succeed");
+                    assert_eq!(dec, payload.as_bytes());
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().expect("worker thread must not panic");
         }
+
+        let _ = std::fs::remove_dir_all(&temp_dir);
     }
 
     #[test]
