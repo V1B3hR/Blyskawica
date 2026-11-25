@@ -37,6 +37,29 @@ pub const MAX_GRAD_NORM: f32 = 1.0;
 pub const MAX_ADAPT_STRENGTH: f32 = 0.05;
 pub const DEFAULT_EWC_LAMBDA: f32 = 10.0;
 pub const SEAL_FORMAT_VERSION: u32 = 1;
+pub const DEFAULT_AUTO_SLEEP_MIN_ANOMALIES: usize = 4;
+pub const DEFAULT_AUTO_SLEEP_IDLE_SECS: u64 = 20;
+pub const DEFAULT_AUTO_SLEEP_COOLDOWN_SECS: u64 = 60;
+
+/// Polityka automatycznego wyzwalania asynchronicznego snu EWC w tle (V11.3 Auto-Sleep).
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AutoSleepPolicy {
+    pub enabled: bool,
+    pub min_anomalies: usize,
+    pub idle_delay_secs: u64,
+    pub min_cooldown_secs: u64,
+}
+
+impl Default for AutoSleepPolicy {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            min_anomalies: DEFAULT_AUTO_SLEEP_MIN_ANOMALIES,
+            idle_delay_secs: DEFAULT_AUTO_SLEEP_IDLE_SECS,
+            min_cooldown_secs: DEFAULT_AUTO_SLEEP_COOLDOWN_SECS,
+        }
+    }
+}
 
 /// Neurochemiczny profil snu mapujący stan neuroprzekaźników na parametry plastyczności.
 /// Zachowuje pełną zgodność formuł z `SleepProfile` w Pythonie.

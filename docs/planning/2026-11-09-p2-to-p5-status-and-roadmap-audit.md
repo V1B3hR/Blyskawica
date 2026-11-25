@@ -52,8 +52,9 @@ W planie z października 2026 zdefiniowano następujące priorytety P2:
 *   **Szczegółowy podział modułów V11:**
     1.  **V11.1 (WebGPU Spores)**: Dynamiczna plastyczność synaptyczna mikro-modeli brzegowych w przeglądarce/Tauri z adaptacją wag w locie (status: prototyp koncepcyjny).
     2.  **V11.2 (BCI & Diamond Yant)**: Pętla sprzężenia zwrotnego z falami mózgowymi Alpha (8–12 Hz) przez protokół LSL oraz rezonans cymatyczny Chladniego (status: specyfikacja matematyczna).
-    3.  **V11.3 (Asynchroniczny Sen i EWC)**: ✅ **Wdrożony pierwszy pionowy wycinek w Rust** (`blyskawica_core/src/ewc_sleep.rs`, integracja z `BlyskawicaEngine` w `state_manager.rs`, komendy Tauri `trigger_async_deep_sleep` (L2) / `get_ewc_sleep_status` (L1), pieczęć SHA-256/HMAC-SHA256, specyfikacja i model zagrożeń: `docs/technical/V11_3_ASYNC_EWC_SLEEP.md`).
-    4.  **V11.4 (Z3 SMT Formal Verification Gateway)**: Formalny solwer w logice pierwszego rzędu weryfikujący niesprzeczność akcji z 25 Prawami Netycznymi (status: zarys aksjomatów w `ai_ethics.py`).
+    3.  **V11.3 (Asynchroniczny Sen i EWC)**: ✅ **Wdrożony i zautomatyzowany w Rust** (`blyskawica_core/src/ewc_sleep.rs`, automatyczne wyzwalanie po bezczynności lub progu anomalii `AutoSleepPolicy` w `state_manager.rs`, komendy Tauri `trigger_async_deep_sleep` (L2) / `get_ewc_sleep_status` (L1), pieczęć SHA-256/HMAC-SHA256, specyfikacja: `docs/technical/V11_3_ASYNC_EWC_SLEEP.md`).
+    4.  **V11.4 (Formalna Bramka Etyczna 25 Praw Nethical)**: ✅ **Wdrożona w czystym Ruście** (`blyskawica_core/src/nethical_gateway.rs`, 10 sformalizowanych aksjomatów zmapowanych na 25 Praw, dowody SHA-256, komendy Tauri `verify_action_ethics` / `get_nethical_gateway_summary` z wymuszonym poziomem uprawnień backendu, specyfikacja: `docs/technical/V11_4_NETHICAL_FORMAL_GATEWAY.md`).
+*   **Rebranding produktu (2026-11-25):** ujednolicono nazwę produktu, UI, tożsamość kognitywną i instalatory na **Lightning** (`Lightning VIBE IDE`, v11.0.0) przy zachowaniu kompatybilności wstecznej ścieżek i wewnętrznych modułów.
 
 ---
 

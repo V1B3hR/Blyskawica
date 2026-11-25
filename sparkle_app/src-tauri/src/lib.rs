@@ -65,6 +65,7 @@ pub struct AppStateInner {
     aegis_psyche: blyskawica_core::aegis_psyche_onnx::AegisPsycheRustEngine,
     quantum_bridge: blyskawica_core::quantum_core::QuantumEntanglementBridge,
     last_ewc_sleep_report: Option<blyskawica_core::ewc_sleep::EwcSleepReport>,
+    nethical_gateway: blyskawica_core::nethical_gateway::NethicalFormalGateway,
 }
 
 pub struct AppState(pub Mutex<AppStateInner>);
@@ -2336,6 +2337,34 @@ fn get_ewc_sleep_status(state: State<'_, AppState>) -> Result<serde_json::Value,
     }))
 }
 
+#[tauri::command]
+fn verify_action_ethics(
+    action: blyskawica_core::nethical_gateway::ProposedAction,
+    state: State<'_, AppState>,
+) -> Result<blyskawica_core::nethical_gateway::VerificationProof, String> {
+    let mut inner = state
+        .0
+        .lock()
+        .map_err(|_| "Blokada aplikacji jest uszkodzona".to_string())?;
+    let neuro = inner.current_neurochemistry.clone();
+    let mut enforced_action = action;
+    // Zawsze wiążemy ewaluację z rzeczywistym poziomem uprawnień i trybem online runtime (fail-closed)
+    enforced_action.permission_level = inner.permission_level;
+    enforced_action.online_mode_enabled = inner.online_mode;
+    Ok(inner
+        .nethical_gateway
+        .evaluate_action(&enforced_action, Some(&neuro)))
+}
+
+#[tauri::command]
+fn get_nethical_gateway_summary(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
+    let inner = state
+        .0
+        .lock()
+        .map_err(|_| "Blokada aplikacji jest uszkodzona".to_string())?;
+    Ok(inner.nethical_gateway.stats_summary())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
@@ -2361,6 +2390,7 @@ pub fn run() {
             aegis_psyche: blyskawica_core::aegis_psyche_onnx::AegisPsycheRustEngine::new(),
             quantum_bridge: blyskawica_core::quantum_core::QuantumEntanglementBridge::new(),
             last_ewc_sleep_report: None,
+            nethical_gateway: blyskawica_core::nethical_gateway::NethicalFormalGateway::new(),
         })))
         .invoke_handler(tauri::generate_handler![
             start_engine,
@@ -2409,7 +2439,9 @@ pub fn run() {
             quantum_observe_collapse,
             quantum_get_cymatics_matrix,
             trigger_async_deep_sleep,
-            get_ewc_sleep_status
+            get_ewc_sleep_status,
+            verify_action_ethics,
+            get_nethical_gateway_summary
         ])
         .setup(|app| {
             let state = app.state::<AppState>();

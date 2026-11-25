@@ -123,12 +123,12 @@ export function initChatModule(addLogFn, refreshFilesFn) {
       SparkleStore.update("activeGuestModel", selectedText);
 
       if (addLogFn) addLogFn(`[Gość Kognitywny]: Zaproszono model '${selectedText}' do dualnej sesji.`);
-      appendChatMessage("System Sparkle", `Model '${selectedText}' dołączył do sesji kognitywnej. Możesz prowadzić z nim równoległą dyskusję w zakładce GUEST COLLABORATION.`, "system-msg");
+      appendChatMessage("System Lightning", `Model '${selectedText}' dołączył do sesji kognitywnej. Możesz prowadzić z nim równoległą dyskusję w zakładce GUEST COLLABORATION.`, "system-msg");
       
       if (guestChatStream) {
         guestChatStream.replaceChildren();
       }
-      appendGuestMessage("System Sparkle", `Połączono z kanałem kognitywnym: ${selectedText}. Czekam na pytania lub zadanie recenzji.`);
+      appendGuestMessage("System Lightning", `Połączono z kanałem kognitywnym: ${selectedText}. Czekam na pytania lub zadanie recenzji.`);
     });
   }
 
@@ -202,7 +202,7 @@ export function appendChatMessage(sender, text, customClass = "", persist = true
   chatMessages.scrollTop = chatMessages.scrollHeight;
 
   // Mini-strumień w zakładce Gościa
-  if (primaryChatStream && (sender === "Użytkownik" || sender.includes("Sparkle") || sender.includes("Błyskawica"))) {
+  if (primaryChatStream && (sender === "Użytkownik" || sender.includes("Lightning") || sender.includes("Sparkle") || sender.includes("Błyskawica"))) {
     const miniMsg = msgEl.cloneNode(true);
     primaryChatStream.appendChild(miniMsg);
     primaryChatStream.scrollTop = primaryChatStream.scrollHeight;
@@ -256,14 +256,14 @@ export async function startBlyskawicaEngine(addLogFn, refreshFilesFn) {
     
     SparkleStore.update("isEngineRunning", true);
     if (engineStatusIndicator) engineStatusIndicator.className = "status-indicator active";
-    if (engineStatusText) engineStatusText.textContent = "Sparkle: Rdzeń aktywny";
+    if (engineStatusText) engineStatusText.textContent = "Lightning: Rdzeń aktywny";
     
     if (chatInput) chatInput.disabled = false;
     if (btnSendMessage) btnSendMessage.disabled = false;
     const codeEditor = document.getElementById("code-editor");
     if (codeEditor) codeEditor.disabled = false;
     
-    appendChatMessage("System Sparkle", "Sparkle została wybudzona. Pamięć kognitywna i tarcza są gotowe do pracy.", "system-msg");
+    appendChatMessage("System Lightning", "Lightning została wybudzona. Pamięć kognitywna, automatyczny sen EWC i formalna bramka 25 Praw są gotowe do pracy.", "system-msg");
     
     if (refreshFilesFn) await refreshFilesFn();
   } catch (error) {
@@ -271,7 +271,7 @@ export async function startBlyskawicaEngine(addLogFn, refreshFilesFn) {
     if (btnStartEngine) btnStartEngine.disabled = false;
     if (engineStatusIndicator) engineStatusIndicator.className = "status-indicator idle";
     if (engineStatusText) engineStatusText.textContent = "Błąd inicjalizacji";
-    appendChatMessage("System Sparkle", `Nie udało się uruchomić rdzenia: ${error}`, "system-msg");
+    appendChatMessage("System Lightning", `Nie udało się uruchomić rdzenia: ${error}`, "system-msg");
   }
 }
 
@@ -315,7 +315,7 @@ export async function sendMessageText(text, addLogFn) {
     generatingMsgEl.className = "message blysk-msg generating";
     
     const strongHeader = document.createElement("strong");
-    strongHeader.textContent = "Sparkle: ";
+    strongHeader.textContent = "Lightning: ";
     
     const statusSpan = document.createElement("span");
     statusSpan.className = "thinking-status";
@@ -645,7 +645,7 @@ export async function exportSession(format = "md", customFilename = "", addLogFn
 
   const dateStr = new Date().toISOString().slice(0, 10);
   const timeStr = new Date().toTimeString().slice(0, 8).replace(/:/g, "-");
-  const baseName = customFilename ? customFilename.replace(/\.[^/.]+$/, "") : `Sparkle_Sesja_${dateStr}_${timeStr}`;
+  const baseName = customFilename ? customFilename.replace(/\.[^/.]+$/, "") : `Lightning_Sesja_${dateStr}_${timeStr}`;
 
   let content = "";
   let mimeType = "text/plain";
@@ -689,7 +689,7 @@ export async function exportSession(format = "md", customFilename = "", addLogFn
     history.forEach(m => {
       const msgDiv = doc.createElement("div");
       const isUser = m.sender === "Użytkownik" || m.sender.includes("Architekt");
-      const isBot = m.sender === "Sparkle" || m.sender.includes("Sparkle") || m.sender.includes("Błyskawica");
+      const isBot = m.sender === "Lightning" || m.sender.includes("Lightning") || m.sender.includes("Sparkle") || m.sender.includes("Błyskawica");
       msgDiv.className = `message ${isUser ? "user" : isBot ? "bot" : "system"}`;
 
       const s = doc.createElement("strong");
@@ -717,17 +717,17 @@ export async function exportSession(format = "md", customFilename = "", addLogFn
 
   if (format === "md") {
     mimeType = "text/markdown";
-    content = `# ⚡ SESJA KOGNITYWNA: SPARKLE & ARCHITEKT V1B3hR\n`;
+    content = `# ⚡ SESJA KOGNITYWNA: LIGHTNING & ARCHITEKT V1B3hR\n`;
     content += `**Data sesji:** ${new Date().toLocaleString()}\n`;
     content += `**Główny Architekt:** Andrzej Mątewski (V1B3hR / VIBER)\n`;
-    content += `**Głos kognitywny:** Sparkle\n`;
+    content += `**Głos kognitywny:** Lightning\n`;
     content += `**Fundament:** 25 Praw Nethical & Fizyka PINN\n`;
     content += `\n---\n\n`;
 
     history.forEach(m => {
       if (m.sender === "Użytkownik" || m.sender.includes("Architekt")) {
         content += `### 👤 ${m.sender} [${m.timestamp}]:\n${m.text}\n\n`;
-      } else if (m.sender.includes("Sparkle") || m.sender.includes("Błyskawica")) {
+      } else if (m.sender.includes("Lightning") || m.sender.includes("Sparkle") || m.sender.includes("Błyskawica")) {
         content += `### ⚡ ${m.sender} [${m.timestamp}]:\n${m.text}\n\n`;
       } else {
         content += `> ℹ️ **${m.sender}** [${m.timestamp}]: ${m.text}\n\n`;
@@ -737,8 +737,8 @@ export async function exportSession(format = "md", customFilename = "", addLogFn
     mimeType = "application/json";
     const exportData = {
       meta: {
-        session: "Blyskawica Sparkle V10",
-        cognitive_name: "Sparkle",
+        session: "Lightning V11",
+        cognitive_name: "Lightning",
         architect: "Andrzej Mątewski (V1B3hR)",
         export_date: new Date().toISOString(),
         neurochemistry: SparkleStore.state.neurochemistry
@@ -748,7 +748,7 @@ export async function exportSession(format = "md", customFilename = "", addLogFn
     content = JSON.stringify(exportData, null, 2);
   } else if (format === "html") {
     mimeType = "text/html";
-    content = `<!DOCTYPE html>\n<html lang="pl">\n<head>\n<meta charset="UTF-8">\n<title>Sesja: Sparkle & Architekt</title>\n`;
+    content = `<!DOCTYPE html>\n<html lang="pl">\n<head>\n<meta charset="UTF-8">\n<title>Sesja: Lightning & Architekt</title>\n`;
     content += `<style>
       body { font-family: system-ui, -apple-system, sans-serif; background: #0b1120; color: #e2e8f0; padding: 30px; line-height: 1.6; max-width: 900px; margin: auto; }
       h1 { color: #38bdf8; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; font-size: 20px; }
@@ -759,10 +759,10 @@ export async function exportSession(format = "md", customFilename = "", addLogFn
       .system { background: rgba(255,255,255,0.02); font-size: 12px; color: #94a3b8; text-align: center; }
       strong { color: #f8fafc; }
     </style>\n</head>\n<body>\n`;
-    content += `<h1>⚡ Sesja: Sparkle & Andrzej Mątewski (V1B3hR)</h1>\n`;
+    content += `<h1>⚡ Sesja: Lightning & Andrzej Mątewski (V1B3hR)</h1>\n`;
     content += `<div class="meta">Data sesji: ${new Date().toLocaleString()} | Etyka: 25 Praw Nethical | Silnik: Candle GGUF</div>\n`;
     history.forEach((message) => {
-      const cssClass = (message.sender === "Użytkownik" ? "user" : (message.sender.includes("Sparkle") || message.sender.includes("Błyskawica") ? "bot" : "system"));
+      const cssClass = (message.sender === "Użytkownik" ? "user" : (message.sender.includes("Lightning") || message.sender.includes("Sparkle") || message.sender.includes("Błyskawica") ? "bot" : "system"));
       const escapedSender = escapeHtml(message.sender);
       const escapedTimestamp = escapeHtml(message.timestamp);
       const escapedText = escapeHtml(message.text);

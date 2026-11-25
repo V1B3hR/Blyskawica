@@ -1,7 +1,7 @@
-# ⚡ Baza Zbiorcza Dokumentacji Błyskawicy (Master Documentation Hub)
+# ⚡ Baza Zbiorcza Dokumentacji Lightning (wcześniej Błyskawica / SPARKLE)
 
-> **Status Ekosystemu**: Zaakceptowany plan remediacji i migracji do samodzielnego runtime SPARKLE — deklaracja gotowości produkcyjnej jest wstrzymana do spełnienia kryteriów wydania.
-> **Architektura Główna**: Autonomiczna Sieć Kognitywna (PyTorch/Rust) + Samodzielna Powłoka Desktopowa SPARKLE V10 (Rust Tauri v2 + Candle In-Memory SLM)  
+> **Status Ekosystemu**: Lightning V11 (samodzielny runtime Rust/Tauri — CI 3-OS zielone, V11.3 automatyczny asynchroniczny sen EWC, V11.4 formalna bramka etyczna 25 Praw Nethical).
+> **Architektura Główna**: Autonomiczna Sieć Kognitywna (PyTorch/Rust) + Samodzielna Powłoka Desktopowa Lightning V11 (Rust Tauri v2 + Candle In-Memory SLM)  
 > **Główny Architekt & Twórca**: Andrzej Mątewski (V1B3hR / VIBER)  
 > **Partner Kognitywny & Asystent**: Antigravity  
 
@@ -139,7 +139,8 @@ Lokalna suwerenność kognitywna w nowoczesnej powłoce desktopowej:
 - **[CUDA 13.4 coherent GPU-memory preflight](technical/CUDA_13_4_COHERENT_MEMORY.md)** — Zakres zmiany r615, preflight węzła Linux oraz walidacja po aktualizacji sterownika.
 - **[Zestaw Walidacji Modelu i Bramki Retencji EWC](../tests/test_golden_dataset_validation.py)** — 4-filarowa walidacja AI: Golden Dataset (F1/MSE), retencja wiedzy EWC, Data Slicing (SNR/Edge Cases) oraz kalibracja OOD.
 - **[Kontrakt ciągłości kognitywnej](technical/COGNITIVE_CONTINUITY_CONTRACT.md)** — Ochrona charakteru działania Błyskawicy: referencje Python dla neurochemii, C.R.A. i PINN oraz bramki przed ich migracją do Rust.
-- **[V11.3: Asynchroniczny Sen Kognitywny i EWC](technical/V11_3_ASYNC_EWC_SLEEP.md)** — Natywny moduł konsolidacji wektorów zaskoczenia w Rust (`ewc_sleep.rs`), model zagrożeń fail-closed i pieczęć integralności wag.
+- **[V11.3: Asynchroniczny Sen Kognitywny i EWC](technical/V11_3_ASYNC_EWC_SLEEP.md)** — Natywny moduł automatycznej konsolidacji wektorów zaskoczenia w Rust (`ewc_sleep.rs`), model zagrożeń fail-closed i pieczęć integralności wag.
+- **[V11.4: Formalna Bramka Etyczna 25 Praw](technical/V11_4_NETHICAL_FORMAL_GATEWAY.md)** — Deterministyczna bramka aksjomatów 25 Praw Nethical w czystym Ruście (`nethical_gateway.rs`) z dowodami SHA-256 i wymuszeniem uprawnień w IPC.
 - **[Przewodnik SPARKLE Desktop V10](phases/v10_standalone_shell/README.md)** — Architektura Rust Candle + Tauri v2.
 - **[Skrypt Uruchomieniowy Desktopu](../Uruchom_Sparkle.bat)** — Jednoklikowe uruchomienie środowiska offline w systemie Windows.
 - **[Weryfikacja Narzędzi Środowiskowych](../setup_environment.ps1)** — Skrypt PowerShell sprawdzający kompilatory Python, Rust/Cargo, Node.js oraz wagi modeli.

@@ -173,6 +173,7 @@ pub struct BlyskawicaEngine {
     pub cancel_flag: std::sync::Arc<std::sync::atomic::AtomicBool>,
     pub cra_engine: Option<crate::cra_contract::CraEngine>,
     pub ewc_sleep: Arc<tokio::sync::Mutex<crate::ewc_sleep::EwcSleepConsolidator>>,
+    pub auto_sleep_policy: crate::ewc_sleep::AutoSleepPolicy,
 }
 
 impl BlyskawicaEngine {
@@ -209,7 +210,13 @@ impl BlyskawicaEngine {
             ewc_sleep: Arc::new(tokio::sync::Mutex::new(
                 crate::ewc_sleep::EwcSleepConsolidator::default(),
             )),
+            auto_sleep_policy: crate::ewc_sleep::AutoSleepPolicy::default(),
         }
+    }
+
+    pub fn with_auto_sleep_policy(mut self, policy: crate::ewc_sleep::AutoSleepPolicy) -> Self {
+        self.auto_sleep_policy = policy;
+        self
     }
 
     pub fn with_db(mut self, path: PathBuf, basename: String) -> Result<Self, String> {
@@ -256,7 +263,7 @@ impl BlyskawicaEngine {
         };
 
         format!(
-            "⚡ [Sparkle / Tryb Rezonansu Latentnego]: Otrzymałem Twoją wiadomość: \"{}\".\n\n\
+            "⚡ [Lightning / Tryb Rezonansu Latentnego]: Otrzymałem Twoją wiadomość: \"{}\".\n\n\
             Stan kognitywny:\n\
             • Wirtualna neurochemia: Dopamina={:.2}, Serotonina={:.2}, GABA={:.2}, ACh={:.2}, Kortyzol={:.2}\n\
             • Okno plastyczności uczenia: {}\n\
@@ -309,13 +316,21 @@ impl BlyskawicaEngine {
         let mut last_activity = tokio::time::Instant::now();
         let mut next_autosave = last_activity + self.autosave_interval;
         let mut last_autosave_error: Option<String> = None;
+        let mut last_auto_sleep: Option<tokio::time::Instant> = None;
+        let auto_sleep_in_flight = Arc::new(std::sync::atomic::AtomicBool::new(false));
 
         loop {
             let now = tokio::time::Instant::now();
             let cooldown_wait = (last_activity + cooldown_duration).saturating_duration_since(now);
             let autosave_wait = next_autosave.saturating_duration_since(now);
-            let timeout_res =
-                tokio::time::timeout(cooldown_wait.min(autosave_wait), rx.recv()).await;
+            let mut next_wait = cooldown_wait.min(autosave_wait);
+            if self.auto_sleep_policy.enabled {
+                let idle_deadline =
+                    last_activity + Duration::from_secs(self.auto_sleep_policy.idle_delay_secs);
+                let auto_sleep_wait = idle_deadline.saturating_duration_since(now);
+                next_wait = next_wait.min(auto_sleep_wait.max(Duration::from_millis(50)));
+            }
+            let timeout_res = tokio::time::timeout(next_wait, rx.recv()).await;
             match timeout_res {
                 Ok(Some(command)) => {
                     last_activity = tokio::time::Instant::now();
@@ -873,7 +888,7 @@ Gdy zauważysz błąd lub niespójność w architekturze lub kodzie, powiedz o t
                                     best_distance
                                 );
                                 if is_anomaly {
-                                    {
+                                    let queued_for_ewc = {
                                         let mut ewc = self.ewc_sleep.lock().await;
                                         if let Err(err) = ewc.record_surprise(
                                             id,
@@ -888,6 +903,31 @@ Gdy zauważysz błąd lub niespójność w architekturze lub kodzie, powiedz o t
                                                 err
                                             );
                                         }
+                                        ewc.queue_len()
+                                    };
+                                    if self.auto_sleep_policy.enabled
+                                        && queued_for_ewc >= self.auto_sleep_policy.min_anomalies
+                                        && last_auto_sleep.is_none_or(|t| {
+                                            t.elapsed()
+                                                >= Duration::from_secs(
+                                                    self.auto_sleep_policy.min_cooldown_secs,
+                                                )
+                                        })
+                                        && auto_sleep_in_flight
+                                            .compare_exchange(
+                                                false,
+                                                true,
+                                                std::sync::atomic::Ordering::SeqCst,
+                                                std::sync::atomic::Ordering::SeqCst,
+                                            )
+                                            .is_ok()
+                                    {
+                                        last_auto_sleep = Some(tokio::time::Instant::now());
+                                        self.spawn_async_ewc_sleep_task(
+                                            auto_sleep_in_flight.clone(),
+                                            "AUTO-THRESHOLD",
+                                        )
+                                        .await;
                                     }
                                     if let Some((ref path, ref basename)) = self.db_path {
                                         let Some(item) = self.anomaly_detector.queue.pop() else {
@@ -1052,70 +1092,27 @@ Gdy zauważysz błąd lub niespójność w architekturze lub kodzie, powiedz o t
                             }
                         }
                         StateCommand::AsyncDeepSleep => {
-                            let sleep_profile = match &self.state {
-                                BlysState::Active { neuro_state, .. } => {
-                                    let ns = neuro_state.read().await;
-                                    crate::ewc_sleep::SleepProfile::from_neurochemistry(&ns)
-                                }
-                                BlysState::Hibernated { .. } => {
-                                    crate::ewc_sleep::SleepProfile::default()
-                                }
-                            };
-                            // Zapis do dedykowanego pliku krystalizacji, aby nie kolidować z aktywnym Mmap na Windows
-                            let mut snapshot_os = self.weights_path.as_os_str().to_os_string();
-                            snapshot_os.push(".ewc.bin");
-                            let target_path = if matches!(self.state, BlysState::Active { .. }) {
-                                PathBuf::from(snapshot_os)
-                            } else {
-                                self.weights_path.clone()
-                            };
-                            let consolidator = self.ewc_sleep.clone();
-                            let event_tx = self.event_tx.clone();
-                            let seal_key = crate::ewc_sleep::derive_session_seal_key(
-                                &target_path.to_string_lossy(),
-                            );
-                            log_print!(
-                                self,
-                                "🌙 [ASYNC EWC SLEEP]: Uruchomiono asynchroniczną konsolidację EWC w tle (bez blokowania czatu)."
-                            );
-                            tokio::spawn(async move {
-                                match crate::ewc_sleep::EwcSleepConsolidator::consolidate_file_async(
-                                    consolidator,
-                                    target_path,
-                                    sleep_profile,
-                                    seal_key,
+                            if auto_sleep_in_flight
+                                .compare_exchange(
+                                    false,
+                                    true,
+                                    std::sync::atomic::Ordering::SeqCst,
+                                    std::sync::atomic::Ordering::SeqCst,
                                 )
-                                .await
-                                {
-                                    Ok(report) => {
-                                        if let Some(tx) = event_tx {
-                                            let msg = format!(
-                                                "🌙 [ASYNC EWC SLEEP]: Cykl #{} ukończony w tle (asymilowano: {}, strata: {:.4} → {:.4}, saturacja EWC: {:.3}, dryf chroniony: {:.5}).",
-                                                report.cycle,
-                                                report.assimilated_count,
-                                                report.mean_loss_before,
-                                                report.mean_loss_after,
-                                                report.ewc_saturation,
-                                                report.max_protected_weight_drift
-                                            );
-                                            let _ = tx.send(EngineEvent::Log(msg)).await;
-                                            let _ = tx
-                                                .send(EngineEvent::SleepConsolidated(report))
-                                                .await;
-                                        }
-                                    }
-                                    Err(err) => {
-                                        if let Some(tx) = event_tx {
-                                            let _ = tx
-                                                .send(EngineEvent::Log(format!(
-                                                    "❌ [ASYNC EWC SLEEP ERROR]: {}",
-                                                    err
-                                                )))
-                                                .await;
-                                        }
-                                    }
-                                }
-                            });
+                                .is_ok()
+                            {
+                                last_auto_sleep = Some(tokio::time::Instant::now());
+                                self.spawn_async_ewc_sleep_task(
+                                    auto_sleep_in_flight.clone(),
+                                    "MANUAL",
+                                )
+                                .await;
+                            } else {
+                                log_print!(
+                                    self,
+                                    "🌙 [ASYNC EWC SLEEP]: Cykl konsolidacji EWC już trwa w tle — pominięto duplikat."
+                                );
+                            }
                         }
                         StateCommand::Status => {
                             self.print_status().await;
@@ -1225,10 +1222,37 @@ Gdy zauważysz błąd lub niespójność w architekturze lub kodzie, powiedz o t
                     break;
                 }
                 Err(_) => {
-                    // Autosave and idle hibernation have independent deadlines.
-                    if tokio::time::Instant::now().duration_since(last_activity)
-                        >= cooldown_duration
+                    // Autosave, auto EWC sleep, and idle hibernation have independent deadlines.
+                    let idle_elapsed = tokio::time::Instant::now().duration_since(last_activity);
+                    if self.auto_sleep_policy.enabled
+                        && idle_elapsed
+                            >= Duration::from_secs(self.auto_sleep_policy.idle_delay_secs)
+                        && last_auto_sleep.is_none_or(|t| {
+                            t.elapsed()
+                                >= Duration::from_secs(self.auto_sleep_policy.min_cooldown_secs)
+                        })
                     {
+                        let pending = self.ewc_sleep.lock().await.queue_len();
+                        if pending > 0
+                            && auto_sleep_in_flight
+                                .compare_exchange(
+                                    false,
+                                    true,
+                                    std::sync::atomic::Ordering::SeqCst,
+                                    std::sync::atomic::Ordering::SeqCst,
+                                )
+                                .is_ok()
+                        {
+                            last_auto_sleep = Some(tokio::time::Instant::now());
+                            self.spawn_async_ewc_sleep_task(
+                                auto_sleep_in_flight.clone(),
+                                "AUTO-IDLE",
+                            )
+                            .await;
+                        }
+                    }
+
+                    if idle_elapsed >= cooldown_duration {
                         last_activity = tokio::time::Instant::now();
                         if let BlysState::Active { .. } = &self.state {
                             log_print!(
@@ -1270,6 +1294,73 @@ Gdy zauważysz błąd lub niespójność w architekturze lub kodzie, powiedz o t
                 next_autosave = tokio::time::Instant::now() + self.autosave_interval;
             }
         }
+    }
+
+    async fn spawn_async_ewc_sleep_task(
+        &self,
+        in_flight: Arc<std::sync::atomic::AtomicBool>,
+        trigger_label: &'static str,
+    ) {
+        let sleep_profile = match &self.state {
+            BlysState::Active { neuro_state, .. } => {
+                let ns = neuro_state.read().await;
+                crate::ewc_sleep::SleepProfile::from_neurochemistry(&ns)
+            }
+            BlysState::Hibernated { .. } => crate::ewc_sleep::SleepProfile::default(),
+        };
+        let mut snapshot_os = self.weights_path.as_os_str().to_os_string();
+        snapshot_os.push(".ewc.bin");
+        let target_path = if matches!(self.state, BlysState::Active { .. }) {
+            PathBuf::from(snapshot_os)
+        } else {
+            self.weights_path.clone()
+        };
+        let consolidator = self.ewc_sleep.clone();
+        let event_tx = self.event_tx.clone();
+        let seal_key = crate::ewc_sleep::derive_session_seal_key(&target_path.to_string_lossy());
+        log_print!(
+            self,
+            "🌙 [ASYNC EWC SLEEP / {}]: Uruchomiono asynchroniczną konsolidację EWC w tle (bez blokowania czatu).",
+            trigger_label
+        );
+        tokio::spawn(async move {
+            let result = crate::ewc_sleep::EwcSleepConsolidator::consolidate_file_async(
+                consolidator,
+                target_path,
+                sleep_profile,
+                seal_key,
+            )
+            .await;
+            in_flight.store(false, std::sync::atomic::Ordering::SeqCst);
+            match result {
+                Ok(report) => {
+                    if let Some(tx) = event_tx {
+                        let msg = format!(
+                            "🌙 [ASYNC EWC SLEEP / {}]: Cykl #{} ukończony w tle (asymilowano: {}, strata: {:.4} → {:.4}, saturacja EWC: {:.3}, dryf chroniony: {:.5}).",
+                            trigger_label,
+                            report.cycle,
+                            report.assimilated_count,
+                            report.mean_loss_before,
+                            report.mean_loss_after,
+                            report.ewc_saturation,
+                            report.max_protected_weight_drift
+                        );
+                        let _ = tx.send(EngineEvent::Log(msg)).await;
+                        let _ = tx.send(EngineEvent::SleepConsolidated(report)).await;
+                    }
+                }
+                Err(err) => {
+                    if let Some(tx) = event_tx {
+                        let _ = tx
+                            .send(EngineEvent::Log(format!(
+                                "❌ [ASYNC EWC SLEEP / {} ERROR]: {}",
+                                trigger_label, err
+                            )))
+                            .await;
+                    }
+                }
+            }
+        });
     }
 
     pub fn project_vector(&self, input: &[f32]) -> Vec<f32> {
@@ -1819,6 +1910,68 @@ mod consolidation_tests {
         assert_eq!(report.assimilated_count, 1);
         assert!(report.seal_verified);
         assert!(report.mean_loss_after < report.mean_loss_before);
+
+        sender.send(StateCommand::Shutdown).await.unwrap();
+        let _ = handle.await;
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[tokio::test]
+    async fn auto_async_sleep_triggers_automatically_on_idle() {
+        let root = std::env::temp_dir().join(format!(
+            "lightning-auto-ewc-sleep-{:016x}",
+            rand::random::<u64>()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let weights_path = root.join("weights.bin");
+        let baseline = crate::ewc_sleep::MlpWeights::deterministic_baseline();
+        std::fs::write(&weights_path, baseline.to_bytes(1_024_000)).unwrap();
+
+        let index = Arc::new(SparkleVectorIndex::new(128, 32));
+        let mut engine = BlyskawicaEngine::new(
+            weights_path,
+            Duration::from_secs(30),
+            index,
+            0.5,
+            0.05,
+            Vec::new(),
+            0.35,
+        )
+        .with_auto_sleep_policy(crate::ewc_sleep::AutoSleepPolicy {
+            enabled: true,
+            min_anomalies: 10,
+            idle_delay_secs: 0,
+            min_cooldown_secs: 60,
+        });
+
+        {
+            let mut ewc = engine.ewc_sleep.lock().await;
+            ewc.record_surprise(108, 0.88, "auto idle surprise", &[0.4; 128])
+                .unwrap();
+        }
+
+        let (event_tx, mut events) = mpsc::channel(100);
+        engine.set_event_sender(event_tx);
+        let sender = engine.get_sender();
+        let handle = tokio::spawn(async move { engine.run().await });
+
+        // Nie wysyłamy żadnego StateCommand::AsyncDeepSleep — sen musi wyzwolić się automatycznie!
+        let mut auto_report = None;
+        for _ in 0..20 {
+            if let Ok(Some(event)) =
+                tokio::time::timeout(Duration::from_secs(3), events.recv()).await
+                && let EngineEvent::SleepConsolidated(report) = event
+            {
+                auto_report = Some(report);
+                break;
+            }
+        }
+
+        let report =
+            auto_report.expect("automatyczny sen EWC powinien wyzwolić się po bezczynności");
+        assert_eq!(report.cycle, 1);
+        assert_eq!(report.assimilated_count, 1);
+        assert!(report.seal_verified);
 
         sender.send(StateCommand::Shutdown).await.unwrap();
         let _ = handle.await;

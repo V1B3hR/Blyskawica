@@ -148,7 +148,7 @@ function initOptionsModule() {
 
   const refreshConnectorRegistry = async () => {
     if (!isTauriRuntime()) {
-      renderConnectorRegistryMessage("Rejestr łączników jest dostępny w aplikacji desktopowej SPARKLE.");
+      renderConnectorRegistryMessage("Rejestr łączników jest dostępny w aplikacji desktopowej Lightning.");
       return;
     }
 
@@ -224,7 +224,7 @@ function initOptionsModule() {
 
   const refreshPermissionReport = async () => {
     if (!isTauriRuntime()) {
-      renderPermissionReportMessage("Raport uprawnień jest dostępny w aplikacji desktopowej SPARKLE.");
+      renderPermissionReportMessage("Raport uprawnień jest dostępny w aplikacji desktopowej Lightning.");
       return;
     }
 
@@ -260,7 +260,7 @@ function initOptionsModule() {
 
   const refreshDataInventory = async () => {
     if (!isTauriRuntime()) {
-      renderDataInventoryMessage("Inwentaryzacja danych jest dostępna w aplikacji desktopowej SPARKLE.");
+      renderDataInventoryMessage("Inwentaryzacja danych jest dostępna w aplikacji desktopowej Lightning.");
       return;
     }
     renderDataInventoryMessage("Odczytywanie metadanych lokalnych magazynów...");
@@ -445,12 +445,12 @@ async function pollEngineStatus() {
     if (status.running) {
       if (engineStatusIndicator) engineStatusIndicator.className = "status-indicator active";
       if (engineStatusText && !document.body.classList.contains("wolf-teeth-active")) {
-        engineStatusText.textContent = "Sparkle: Rdzeń aktywny";
+        engineStatusText.textContent = "Lightning: Rdzeń aktywny";
       }
     } else {
       if (engineStatusIndicator) engineStatusIndicator.className = "status-indicator idle";
       if (engineStatusText && !document.body.classList.contains("wolf-teeth-active")) {
-        engineStatusText.textContent = "Sparkle: Rdzeń uśpiony";
+        engineStatusText.textContent = "Lightning: Rdzeń uśpiony";
       }
     }
 
@@ -518,7 +518,7 @@ async function initStartupSequence(addLogFn, refreshFilesFn) {
 
 // Główny punkt wejścia DOM
 document.addEventListener("DOMContentLoaded", async () => {
-  addLog("[SPARKLE V10]: Start systemu...");
+  addLog("[LIGHTNING V11]: Start systemu...");
 
   // 1. Inicjalizacja modułów
   initNeurochemistryHUD();
@@ -542,5 +542,5 @@ document.addEventListener("DOMContentLoaded", async () => {
   setInterval(pollEngineStatus, 3000);
   pollEngineStatus();
 
-  addLog("⚡ [SPARKLE]: Środowisko kognitywne gotowe do współpracy.");
+  addLog("⚡ [LIGHTNING]: Środowisko kognitywne gotowe do współpracy.");
 });

@@ -11,6 +11,7 @@ pub mod immune_system;
 pub mod local_inference;
 pub mod microtubule_phonon;
 pub mod native_security;
+pub mod nethical_gateway;
 pub mod neurochemistry;
 pub mod neurochemistry_contract;
 pub mod quantum_core;

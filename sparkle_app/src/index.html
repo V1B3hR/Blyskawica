@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sparkle VIBE IDE & Błyskawica V10</title>
+  <title>Lightning VIBE IDE — Cognitive Engine V11</title>
   <link rel="stylesheet" href="styles.css">
   <script type="module" src="/main.js" defer></script>
 </head>
@@ -12,16 +12,16 @@
   <div id="startup-overlay" class="startup-overlay">
     <div class="startup-card">
       <span class="startup-logo">⚡</span>
-      <h2>INICJALIZACJA SPARKLE V10</h2>
+      <h2>INICJALIZACJA LIGHTNING V11</h2>
       <p class="startup-subtitle">Zogniskowana przestrzeń robocza AI do myślenia, kodowania i kolaboracji — zasilana żywym rdzeniem kognitywnym</p>
       <div class="startup-steps">
-        <div id="step-backend" class="step pending">Połączenie z natywną powłoką SPARKLE (Rust/Tauri)...</div>
+        <div id="step-backend" class="step pending">Połączenie z natywną powłoką Lightning (Rust/Tauri)...</div>
         <div id="step-model-engine" class="step pending">Weryfikacja natywnego silnika Candle / modeli GGUF...</div>
         <div id="step-engine" class="step pending">Wybudzanie rdzenia systemowego (Rust Core)...</div>
       </div>
       <div id="startup-warning" class="startup-warning hidden">
         <p>⚠️ Nie można połączyć się z podsystemem Tauri Core.</p>
-        <p class="warning-instruction">Upewnij się, że aplikacja SPARKLE została uruchomiona prawidłowo w środowisku desktopowym.</p>
+        <p class="warning-instruction">Upewnij się, że aplikacja Lightning została uruchomiona prawidłowo w środowisku desktopowym.</p>
         <button id="btn-retry-connection" class="control-btn accent">Spróbuj ponownie</button>
       </div>
     </div>
@@ -34,8 +34,8 @@
     <header class="app-header">
       <div class="logo-area">
         <span class="lightning-icon">⚡</span>
-        <h1>SPARKLE <span class="vibe-text">VIBE IDE</span></h1>
-        <span class="version-tag">V10.0</span>
+        <h1>LIGHTNING <span class="vibe-text">VIBE IDE</span></h1>
+        <span class="version-tag">V11.0</span>
       </div>
       <div class="status-area">
         <div id="quantum-coherence-badge" class="telemetry-badge" style="border-color: #38bdf8; color: #bae6fd;" title="Kwantowe Splątanie & Koherencja Fazowa">⚛️ Splątanie: 94%</div>
@@ -51,10 +51,10 @@
     <!-- Main Workspace Split Container -->
     <main class="split-container">
       
-      <!-- LEFT PANEL: Sparkle Chat & Neurochemistry -->
+      <!-- LEFT PANEL: Lightning Chat & Neurochemistry -->
       <section class="panel left-panel">
         <div class="panel-header">
-          <h2>SPARKLE COGNITIVE HUB</h2>
+          <h2>LIGHTNING COGNITIVE HUB</h2>
           <div class="panel-actions" style="display: flex; gap: 8px; align-items: center;">
             <button id="btn-quick-export" class="small-btn" title="Zachowaj rozmowę (Markdown / Tekst / JSON / PDF)">💾 ZAPISZ</button>
             <span class="neuro-pulse">Pulse: OK</span>
@@ -65,14 +65,14 @@
           <div id="chat-autosave-status" role="status" title="Rozmowy są zapisywane lokalnie w postaci jawnej i odtwarzane przy uruchomieniu. Usunięcie w danych R2." style="font-size: 11px; padding: 4px 10px;">Autozapis rozmów: inicjalizacja…</div>
           <div id="chat-messages" class="chat-messages">
             <div class="message system-msg">
-              <strong>System Sparkle:</strong> Zogniskowana przestrzeń robocza AI do myślenia, kodowania i kolaboracji — zasilana żywym rdzeniem kognitywnym.
+              <strong>System Lightning:</strong> Zogniskowana przestrzeń robocza AI do myślenia, kodowania i kolaboracji — zasilana żywym rdzeniem kognitywnym.
             </div>
             <div class="message system-msg">
-              Witaj w kokpicie kognitywnym Sparkle V10. Uruchom rdzeń kognitywny, aby wybudzić silnik neurochemiczny i rozpocząć sesję.
+              Witaj w kokpicie kognitywnym Lightning V11. Uruchom rdzeń kognitywny, aby wybudzić silnik neurochemiczny i rozpocząć sesję.
             </div>
           </div>
           <div class="chat-input-area">
-            <input type="text" id="chat-input" placeholder="Napisz do Sparkle..." disabled>
+            <input type="text" id="chat-input" placeholder="Napisz do Lightning..." disabled>
             <button id="btn-send-message" disabled>WYŚLIJ</button>
             <button id="btn-cancel-generation" class="btn-cancel" style="display: none;" title="Zatrzymaj generowanie (Esc)">STOP</button>
           </div>
@@ -223,7 +223,7 @@
             
             <div class="split-chat-view">
               <div class="split-pane pane-primary">
-                <h4>Główna rozmowa (Sparkle)</h4>
+                <h4>Główna rozmowa (Lightning)</h4>
                 <div id="primary-chat-stream" class="chat-messages-mini">
                   <div class="message system-msg">Brak wiadomości.</div>
                 </div>
@@ -236,7 +236,7 @@
                 <div class="guest-input-area" style="display: flex; gap: 8px; margin-top: 10px;">
                   <input type="text" id="guest-chat-input" placeholder="Zadaj pytanie gościowi..." style="flex: 1; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 6px; padding: 8px 12px; color: #fff; font-size: 12px;">
                   <button id="btn-guest-send" class="control-btn small">WYŚLIJ</button>
-                  <button id="btn-dual-consult" class="control-btn accent small" title="Poproś gościa o recenzję / kontrargument do odpowiedzi Sparkle">⚡ RECENZJA</button>
+                  <button id="btn-dual-consult" class="control-btn accent small" title="Poproś gościa o recenzję / kontrargument do odpowiedzi Lightning">⚡ RECENZJA</button>
                 </div>
               </div>
             </div>
@@ -250,7 +250,7 @@
                 <div style="display: flex; gap: 12px; font-size: 11px; flex-wrap: wrap;">
                   <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;">
                     <input type="radio" name="dispatch-target" value="sparkle" id="dispatch-target-sparkle">
-                    <span>⚡ Tylko Sparkle</span>
+                    <span>⚡ Tylko Lightning</span>
                   </label>
                   <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;">
                     <input type="radio" name="dispatch-target" value="guest" id="dispatch-target-guest" checked>
@@ -421,7 +421,7 @@
             <input type="checkbox" id="chk-enable-tts">
             <div>
               <div style="font-size: 12px; font-weight: 600; color: var(--text-primary);">Włącz syntezator mowy (Web Speech TTS)</div>
-              <div style="font-size: 11px; color: var(--text-muted);">Domyślnie wyłączony (głos wyciszony). Odpowiedzi Sparkle są wyświetlane w oknie dialogu.</div>
+              <div style="font-size: 11px; color: var(--text-muted);">Domyślnie wyłączony (głos wyciszony). Odpowiedzi Lightning są wyświetlane w oknie dialogu.</div>
             </div>
           </label>
         </div>
@@ -432,7 +432,7 @@
             <span>💾</span> ZACHOWAJ ROZMOWĘ JAKO... (EKSPORT SESJI)
           </h4>
           <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 8px;">
-            Wybierz format eksportu historii dialogu i kodu ze Sparkle.
+            Wybierz format eksportu historii dialogu i kodu z Lightning.
           </p>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-bottom: 12px;">
             <label class="format-card" style="display: flex; align-items: center; gap: 8px; padding: 10px; background: rgba(0, 210, 255, 0.07); border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 6px; cursor: pointer;">
@@ -472,7 +472,7 @@
             </label>
           </div>
           <div style="display: flex; gap: 8px;">
-            <input type="text" id="export-filename" placeholder="Sparkle_Rozmowa.md" style="flex: 1; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 6px; padding: 8px 12px; color: #fff; font-size: 12px;">
+            <input type="text" id="export-filename" placeholder="Lightning_Rozmowa.md" style="flex: 1; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 6px; padding: 8px 12px; color: #fff; font-size: 12px;">
             <button id="btn-do-export-session" class="control-btn accent small" style="white-space: nowrap;">💾 ZAPISZ SESJĘ</button>
           </div>
         </div>
@@ -533,7 +533,7 @@
         <!-- Section 7: Cognitive Identity -->
         <div style="padding: 10px 14px; background: rgba(0, 210, 255, 0.04); border-radius: 8px; border: 1px solid rgba(0, 210, 255, 0.15); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
           <div style="font-size: 11px; color: var(--text-secondary);">
-            Głos Kognitywny: <strong style="color: #38bdf8;">Sparkle</strong> | Architekt: <strong style="color: #fff;">Andrzej Mątewski (V1B3hR)</strong>
+            Głos Kognitywny: <strong style="color: #38bdf8;">Lightning</strong> | Architekt: <strong style="color: #fff;">Andrzej Mątewski (V1B3hR)</strong>
           </div>
           <button id="btn-save-options-close" class="control-btn accent small">ZAMKNIJ OPCJE</button>
         </div>

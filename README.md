@@ -1,4 +1,4 @@
-# Adaptive Neural Network & Błyskawica / SPARKLE V10
+# Adaptive Neural Network & Lightning V11
 
 [![CI](https://github.com/V1B3hR/adaptiveneuralnetwork/workflows/CI%20-%20Train,%20Test,%20Coverage%20&%20Artifacts/badge.svg)](https://github.com/V1B3hR/adaptiveneuralnetwork/actions)
 ![Runtime status](https://img.shields.io/badge/runtime-standalone%20rust%20ready-brightgreen)
@@ -7,9 +7,9 @@
 ![Python](https://img.shields.io/badge/python-3.12%20%7C%203.13%20%7C%203.14-blue)
 ![Rust Tauri](https://img.shields.io/badge/desktop-Tauri%20v2%20%2B%20Rust%20Candle-orange)
 
-> **SPARKLE / Błyskawica V10**: Zogniskowana przestrzeń robocza AI do myślenia, kodowania i kolaboracji. Samodzielny runtime Rust (RNT-01..03, SEC-01..04) jest wdrożony, w 100% offline, z 53 testami jednostkowymi rdzenia i czystymi bramkami jakościowymi.
+> **Lightning V11** *(wcześniej Błyskawica / SPARKLE)*: Zogniskowana przestrzeń robocza AI do myślenia, kodowania i kolaboracji. Samodzielny runtime Rust (RNT-01..03, SEC-01..04, V11.3 automatyczny asynchroniczny sen EWC, V11.4 formalna bramka etyczna 25 Praw Nethical) działa w 100% offline na Windows, Linux i macOS.
 >
-> A biologically inspired adaptive neural network framework with vectorized phase dynamics, paired with a Rust/Tauri desktop shell. See the active [runtime contract](docs/technical/SPARKLE_RUNTIME_CONTRACT.md) and [remediation plan](docs/planning/2026-10-development-plan.md) for current product status.
+> A biologically inspired adaptive neural network framework with vectorized phase dynamics, paired with the native Rust/Tauri **Lightning** desktop shell. See the active [runtime contract](docs/technical/SPARKLE_RUNTIME_CONTRACT.md) and [remediation plan](docs/planning/2026-10-development-plan.md) for current product status.
 
 ---
 
