@@ -17,7 +17,9 @@ import time
 import tracemalloc
 import unittest
 from pathlib import Path
-from typing import Any
+
+import torch
+import torch.nn as nn
 
 # Windows UTF-8 console output fix
 if hasattr(sys.stdout, "reconfigure"):
@@ -25,18 +27,18 @@ if hasattr(sys.stdout, "reconfigure"):
 if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
-import torch
-import torch.nn as nn
-
 # Moduły kognitywne i neurochemiczne
-from adaptiveneuralnetwork.cognitive_tools.neuro_regulator import AutonomousNeuroRegulator
-from adaptiveneuralnetwork.cognitive_tools.memory_guard import MemoryGuard
-from adaptiveneuralnetwork.central_nervous_system.intelligence.consolidation import ConsolidationEngine, SleepProfile
+from adaptiveneuralnetwork.central_nervous_system.alive_node import AliveLoopNode, SocialSignal
+from adaptiveneuralnetwork.central_nervous_system.intelligence.consolidation import (
+    ConsolidationEngine,
+    SleepProfile,
+)
 from adaptiveneuralnetwork.central_nervous_system.time_series_tracker import TimeSeriesTracker
+from adaptiveneuralnetwork.cognitive_tools.memory_guard import MemoryGuard
+from adaptiveneuralnetwork.cognitive_tools.neuro_regulator import AutonomousNeuroRegulator
 
 # Moduły immunologiczne i tarcza Wolf Teeth
 from adaptiveneuralnetwork.immune_system.wolf_teeth import WolfTeethDefenseEngine
-from adaptiveneuralnetwork.central_nervous_system.alive_node import AliveLoopNode, SocialSignal
 
 
 class TestStandaloneReadinessSuite(unittest.TestCase):

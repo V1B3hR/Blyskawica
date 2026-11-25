@@ -3,6 +3,8 @@
 ## Stan
 **ZAAKCEPTOWANE**
 
+> **Częściowo zastąpione przez [ADR 0002](0002-standalone-rust-runtime.md):** Tauri pozostaje jedyną powłoką użytkownika, natomiast Python/FastAPI nie jest już obowiązkowym procesem w tle produktu.
+
 ## Kontekst
 Projekt Błyskawica posiadał wcześniej dwie równoległe ścieżki aplikacyjne (frontendy):
 1.  **Ścieżka A**: Python FastAPI serwujący pliki HTML/CSS/JS wyświetlane w przeglądarce (np. Microsoft Edge w trybie app).

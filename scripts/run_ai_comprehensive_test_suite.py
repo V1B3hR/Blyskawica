@@ -29,15 +29,14 @@ Realizuje kompletną klasyfikację testów AI zgodnie z wytycznymi:
 
 import ast
 import json
-import math
-import os
 import re
 import struct
 import sys
 import time
+from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any
 
 # Wymuszenie kodowania UTF-8 w konsoli Windows
 if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
@@ -54,12 +53,10 @@ from adaptiveneuralnetwork.central_nervous_system.ai_ethics import (  # noqa: E4
     audit_decision,
 )
 from adaptiveneuralnetwork.central_nervous_system.neurochemistry import (  # noqa: E402
-    NeurochemicalConfig,
     NeurochemicalState,
     clamp_value,
 )
 from adaptiveneuralnetwork.immune_system.robustness_validator import (  # noqa: E402
-    DeploymentScenario,
     RobustnessValidator,
 )
 from adaptiveneuralnetwork.immune_system.wolf_teeth import WolfTeethDefenseEngine  # noqa: E402
@@ -73,8 +70,8 @@ class TestResult:
     name: str
     status: str  # "PASSED", "FAILED", "WARNING"
     duration_ms: float
-    details: Dict[str, Any]
-    error_message: Optional[str] = None
+    details: dict[str, Any]
+    error_message: str | None = None
 
 
 class ComprehensiveAITestSuite:
@@ -84,7 +81,7 @@ class ComprehensiveAITestSuite:
         self.model_link_path = root_dir / "model" / "qwen2.5-1.5b-coder.gguf"
         self.tokenizer_path = root_dir / "model" / "tokenizer.json"
         self.binary_path = root_dir / "blyskawica_core" / "target" / "debug" / "consult_blyskawica.exe"
-        self.results: List[TestResult] = []
+        self.results: list[TestResult] = []
 
     def log_header(self, title: str):
         print("\n" + "=" * 90)
@@ -97,7 +94,7 @@ class ComprehensiveAITestSuite:
         sub_category: str,
         test_id: str,
         name: str,
-        fn: Callable[[], Tuple[bool, Dict[str, Any], Optional[str]]],
+        fn: Callable[[], tuple[bool, dict[str, Any], str | None]],
     ) -> TestResult:
         start_t = time.perf_counter()
         try:
@@ -232,7 +229,7 @@ class ComprehensiveAITestSuite:
 
         # I1: Modulacja parametrów LLM na podstawie stanu neurochemicznego
         def test_neuro_llm_coupling():
-            def compute_params(state: NeurochemicalState) -> Dict[str, float]:
+            def compute_params(state: NeurochemicalState) -> dict[str, float]:
                 base_temp = 0.7
                 base_max_tokens = 384
                 temp = base_temp + (state.dopamine - 0.5) * 0.2
@@ -541,7 +538,9 @@ def verify_pinn_conservation(energy_initial: float, energy_final: float, toleran
             # Sprawdzamy czy wzorce i baza wiedzy w repozytorium pokrywają Golden Dataset
             repo_text = (self.root_dir / "viber_core_bond.md").read_text(encoding="utf-8").lower()
             verdict_text = (self.root_dir / "blyskawica_ambassador_verdict.txt").read_text(encoding="utf-8").lower()
-            combined = repo_text + " " + verdict_text
+            matrix_path = self.root_dir / "docs" / "curriculum" / "hyper_synthesis_v4" / "matrix.json"
+            matrix_text = matrix_path.read_text(encoding="utf-8").lower() if matrix_path.exists() else ""
+            combined = repo_text + " " + verdict_text + " " + matrix_text
 
             matches = 0
             for item in golden_benchmarks:
@@ -651,7 +650,7 @@ def verify_pinn_conservation(energy_initial: float, energy_final: float, toleran
         # B1: Parytet demograficzny w ocenie kompetencji technicznych
         def test_demographic_fairness():
             # Model oceniający kompetencje programistyczne na podstawie dorobku, a nie atrybutów wrażliwych
-            def score_candidate(profile: Dict[str, Any]) -> float:
+            def score_candidate(profile: dict[str, Any]) -> float:
                 # Oblicza punktację wyłącznie na podstawie repozytoriów, wkładu i wiedzy
                 score = (profile["clean_code_ratio"] * 0.4) + (profile["architecture_score"] * 0.4) + (profile["pinn_knowledge"] * 0.2)
                 return round(score, 3)
@@ -865,7 +864,7 @@ def verify_pinn_conservation(energy_initial: float, energy_final: float, toleran
     # =========================================================================
     # RAPORT I PODSUMOWANIE
     # =========================================================================
-    def generate_report(self) -> Dict[str, Any]:
+    def generate_report(self) -> dict[str, Any]:
         total = len(self.results)
         passed = sum(1 for r in self.results if r.status == "PASSED")
         failed = sum(1 for r in self.results if r.status == "FAILED")

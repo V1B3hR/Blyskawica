@@ -13,14 +13,15 @@ ATLAS_FILE = os.path.join(str(BASE_DIR), "data", "neurotorium_brain_atlas.json")
 CHECKPOINT_FILE = os.path.join(str(BASE_DIR), "memory_checkpoint.json")
 
 class NeurotoriumAssimilator:
-    def __init__(self):
+    def __init__(self, checkpoint_path: str | None = None):
+        self.checkpoint_path = checkpoint_path or CHECKPOINT_FILE
         with open(ATLAS_FILE) as f:
             self.atlas = json.load(f)
         self.load_checkpoint()
 
     def load_checkpoint(self):
-        if os.path.exists(CHECKPOINT_FILE):
-            with open(CHECKPOINT_FILE) as f:
+        if os.path.exists(self.checkpoint_path):
+            with open(self.checkpoint_path) as f:
                 self.checkpoint = json.load(f)
         else:
             self.checkpoint = {"neurochemistry": {}}

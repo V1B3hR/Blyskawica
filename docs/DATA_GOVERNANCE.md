@@ -7,7 +7,7 @@ This policy establishes baseline governance standards for datasets ingested, cac
 - **Provenance Verification**: All datasets ingested via CLI or dynamic download (e.g. KaggleHub) must have a verified origin URL, author, and timestamp.
 - **License Compliance**: Datasets must possess a permissive open license (e.g. MIT, CC-BY, Apache 2.0). Proprietary or restricted datasets must be isolated from public model weights.
 - **PII & Privacy Policy**: No personally identifiable information (PII) or unanonymized biometric data may be stored in raw text or committed to checkpoints.
-- **Retention & Deletion**: Datasets stored in local cache (`~/.cache/adaptiveneuralnetwork/` or `data/`) must support purge on demand via `python train.py --purge-cache`.
+- **Retention & Deletion**: Dataset caches require an explicit, verified purge workflow before they can be claimed as user-controllable. The current source tree does not provide a verified `python train.py --purge-cache` command; do not rely on that command until it is implemented and tested. Desktop-runtime stores are classified separately in the [SPARKLE data model and retention contract](technical/DATA_MODEL_RETENTION_CONTRACT.md).
 
 ## 3. Dataset Registry & Risk Matrix
 

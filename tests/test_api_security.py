@@ -6,12 +6,14 @@ Checks token authentication, path boundaries, restricted folders, and CORS confi
 import os
 import sys
 import unittest
+from unittest.mock import AsyncMock, patch
 
 from fastapi.testclient import TestClient
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import blyskawica_app.backend.main as main
 from blyskawica_app.backend.main import STARTUP_TOKEN, app
 
 
@@ -19,6 +21,12 @@ class TestAPISecurity(unittest.TestCase):
     """Test API token security and path boundary validations"""
 
     def setUp(self):
+        self.consent_patch = patch(
+            "blyskawica_app.backend.main.ask_system_consent",
+            new_callable=AsyncMock,
+        )
+        self.mock_consent = self.consent_patch.start()
+        self.mock_consent.return_value = True
         self.client = TestClient(app)
         # Ensure clean state for each test
         self.client.post(
@@ -31,6 +39,7 @@ class TestAPISecurity(unittest.TestCase):
         )
 
     def tearDown(self):
+        self.mock_consent.return_value = True
         # Reset quarantine and level after each test
         self.client.post(
             "/api/quarantine/reset",
@@ -40,6 +49,7 @@ class TestAPISecurity(unittest.TestCase):
             "/api/permission_level?level=2",
             headers={"X-Blyskawica-Token": STARTUP_TOKEN}
         )
+        self.consent_patch.stop()
 
     def test_get_token(self):
         """Test that the auth token endpoint returns the correct token"""
@@ -87,6 +97,26 @@ class TestAPISecurity(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["permission_level"], 2)
+
+    def test_permission_escalation_requires_user_consent(self):
+        """An authenticated caller cannot silently raise the permission level."""
+        response = self.client.post(
+            "/api/permission_level?level=1",
+            headers={"X-Blyskawica-Token": STARTUP_TOKEN},
+        )
+        self.assertEqual(response.status_code, 200)
+
+        self.mock_consent.return_value = False
+        response = self.client.post(
+            "/api/permission_level?level=3",
+            headers={"X-Blyskawica-Token": STARTUP_TOKEN},
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertIn("zgody użytkownika", response.json()["message"])
+        status = self.client.get("/api/permission_level")
+        self.assertEqual(status.json()["permission_level"], 1)
+        self.mock_consent.assert_awaited_once()
 
     def test_vibe_code_unauthorized(self):
         """Test that code generation/writing fails without auth token"""
@@ -219,6 +249,18 @@ class TestAPISecurity(unittest.TestCase):
         self.assertEqual(reset_res.status_code, 200)
         status_res = self.client.get("/api/permission_level")
         self.assertFalse(status_res.json()["quarantine_active"])
+
+        # Regression test: Reset from L1 preserves L1 without privilege elevation
+        main.permission_level = 1
+        main.quarantine_active = True
+        reset_l1 = self.client.post(
+            "/api/quarantine/reset",
+            headers={"X-Blyskawica-Token": STARTUP_TOKEN, "X-Quarantine-Admin-Key": STARTUP_TOKEN}
+        )
+        self.assertEqual(reset_l1.status_code, 200)
+        self.assertEqual(reset_l1.json()["permission_level"], 1)
+        self.assertFalse(reset_l1.json()["quarantine_active"])
+        self.assertEqual(self.client.get("/api/permission_level").json()["permission_level"], 1)
 
     def test_file_content_security(self):
         """Test GET /api/ide/file_content requires auth and restricts system files (Issue 5)"""

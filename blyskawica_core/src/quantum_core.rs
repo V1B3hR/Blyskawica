@@ -6,10 +6,11 @@
 //! 4. 2D Diamond Yant Cymatics (Chladni Resonant Matrix Generator)
 //! 5. Digital Anticipation Cache (Pre-computed cognitive trajectory)
 
+use crate::microtubule_phonon::{MicrotubuleMetrics, MicrotubulePhononEngine};
+use crate::neurochemistry::NeurochemicalState;
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, RwLock};
 use std::time::{SystemTime, UNIX_EPOCH};
-use crate::neurochemistry::NeurochemicalState;
 
 /// 2D Cymatics Resonant Coordinates & Chladni Modal Parameters
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -43,7 +44,9 @@ impl CymaticsState {
             let x = -1.0 + 2.0 * (i as f32) / ((size - 1) as f32);
             for j in 0..size {
                 let y = -1.0 + 2.0 * (j as f32) / ((size - 1) as f32);
-                let val = (self.mode_n * pi * x).cos() * (self.mode_m * pi * y).cos() * self.alpha_coherence;
+                let val = (self.mode_n * pi * x).cos()
+                    * (self.mode_m * pi * y).cos()
+                    * self.alpha_coherence;
                 matrix.push(val);
             }
         }
@@ -75,6 +78,7 @@ pub struct QuantumState {
     pub collapsed_eigenstate: Option<String>,
     pub anticipation_hit_count: usize,
     pub last_teleported_event: String,
+    pub microtubule_metrics: Option<MicrotubuleMetrics>,
 }
 
 impl Default for QuantumState {
@@ -112,6 +116,7 @@ impl Default for QuantumState {
             collapsed_eigenstate: None,
             anticipation_hit_count: 42,
             last_teleported_event: "SYSTEM_INIT".to_string(),
+            microtubule_metrics: None,
         }
     }
 }
@@ -138,7 +143,7 @@ impl QuantumEntanglementBridge {
                 .as_secs();
             state.neuro_coherence = (state.neuro_coherence + delta_coherence).clamp(0.1, 1.0);
             state.last_teleported_event = format!("{}:{}", source_module, event_type);
-            
+
             // Dynamiczne sprzężenie z cymatyką Chladniego (Harmonic Bridge)
             state.cymatics.mode_n = (2.0 + (state.neuro_coherence * 3.0)).round();
             state.cymatics.mode_m = (3.0 + (state.neuro_coherence * 2.0)).round();
@@ -147,9 +152,34 @@ impl QuantumEntanglementBridge {
         }
     }
 
+    /// Updates microtubule quantum coherence and syncs with global quantum state.
+    pub fn update_microtubule_coherence(
+        &self,
+        engine: &MicrotubulePhononEngine,
+        neuro: &NeurochemicalState,
+    ) -> MicrotubuleMetrics {
+        let metrics = engine.simulate_from_neurochemistry(neuro);
+        if let Ok(mut state) = self.state.write() {
+            state.microtubule_metrics = Some(metrics.clone());
+            // Sync overall neuro coherence with quantum microtubule survival time
+            let norm_coherence = (metrics.coherence_time_ps / 1000.0).clamp(0.1, 1.0);
+            state.neuro_coherence =
+                (state.neuro_coherence * 0.7 + norm_coherence * 0.3).clamp(0.1, 1.0);
+            state.last_teleported_event = format!(
+                "MICROTUBULE:COHERENCE_PS:{:.1}:ORCH_OR:{}",
+                metrics.coherence_time_ps, metrics.is_orch_or_capable
+            );
+        }
+        metrics
+    }
+
     /// Quantum Tunneling Optimization across Cost Barriers
     /// Applies stochastic transverse field perturbation to escape local minima in model weights.
-    pub fn execute_quantum_tunneling(&self, weights: &mut [f32], barrier_potential: f32) -> (f32, usize) {
+    pub fn execute_quantum_tunneling(
+        &self,
+        weights: &mut [f32],
+        barrier_potential: f32,
+    ) -> (f32, usize) {
         let mut state = self.state.write().unwrap();
         state.tunneling_field_intensity = barrier_potential;
 
@@ -182,14 +212,19 @@ impl QuantumEntanglementBridge {
 
         for (i, branch) in state.superposition_branches.iter_mut().enumerate() {
             let mut resonance = branch.probability_density;
-            if query_lower.contains("kod") || query_lower.contains("rust") || query_lower.contains("architektur") {
+            if query_lower.contains("kod")
+                || query_lower.contains("rust")
+                || query_lower.contains("architektur")
+            {
                 if branch.cognitive_domain == "Engineering" {
                     resonance *= 1.8;
                 }
-            } else if query_lower.contains("czujesz") || query_lower.contains("relacj") || query_lower.contains("błyskawic") {
-                if branch.cognitive_domain == "Relational" {
-                    resonance *= 1.8;
-                }
+            } else if (query_lower.contains("czujesz")
+                || query_lower.contains("relacj")
+                || query_lower.contains("błyskawic"))
+                && branch.cognitive_domain == "Relational"
+            {
+                resonance *= 1.8;
             }
             if resonance > highest_prob {
                 highest_prob = resonance;
@@ -208,16 +243,25 @@ impl QuantumEntanglementBridge {
         state.anticipation_hit_count += 1;
 
         if neuro.dopamine > 0.8 {
-            format!("ANTYCIPACJA KWANTOWA: Wykryto wysoką dynamikę dopaminergiczną. System przygotował wektory eksploracji dla: '{}'", prompt)
+            format!(
+                "ANTYCIPACJA KWANTOWA: Wykryto wysoką dynamikę dopaminergiczną. System przygotował wektory eksploracji dla: '{}'",
+                prompt
+            )
         } else if neuro.serotonin > 0.8 {
-            format!("ANTYCIPACJA KWANTOWA: Koherencja fazowa stabilna. Przygotowano ścieżkę konsolidacji semantycznej.")
+            "ANTYCIPACJA KWANTOWA: Koherencja fazowa stabilna. Przygotowano ścieżkę konsolidacji semantycznej.".to_string()
         } else {
-            format!("ANTYCIPACJA KWANTOWA: Stan równowagi homeostatycznej.")
+            "ANTYCIPACJA KWANTOWA: Stan równowagi homeostatycznej.".to_string()
         }
     }
 
     pub fn get_snapshot(&self) -> QuantumState {
         self.state.read().unwrap().clone()
+    }
+}
+
+impl Default for QuantumEntanglementBridge {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -254,6 +298,30 @@ mod tests {
 
         assert_eq!(branch.id, "PSI_ARCHITECTURAL_MASTERY");
         let snap = bridge.get_snapshot();
-        assert_eq!(snap.collapsed_eigenstate.as_deref(), Some("PSI_ARCHITECTURAL_MASTERY"));
+        assert_eq!(
+            snap.collapsed_eigenstate.as_deref(),
+            Some("PSI_ARCHITECTURAL_MASTERY")
+        );
+    }
+
+    #[test]
+    fn test_microtubule_quantum_bridge_sync() {
+        let bridge = QuantumEntanglementBridge::new();
+        let engine = MicrotubulePhononEngine::new();
+        let neuro = NeurochemicalState {
+            acetylcholine: 0.95,
+            gaba: 0.90,
+            ..Default::default()
+        };
+
+        let metrics = bridge.update_microtubule_coherence(&engine, &neuro);
+        assert!(metrics.coherence_time_ps > 10.0);
+
+        let snap = bridge.get_snapshot();
+        assert!(snap.microtubule_metrics.is_some());
+        assert!(
+            snap.last_teleported_event
+                .starts_with("MICROTUBULE:COHERENCE_PS:")
+        );
     }
 }

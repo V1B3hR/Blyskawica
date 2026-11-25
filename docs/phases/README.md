@@ -24,7 +24,7 @@ graph TD
 
     subgraph "Hyper-Synthesis & Standalone Desktop (Phase 9 & V10)"
         P8 --> P9["Phase 9: Hyper-Synthesis Assimilation v4.0\n(GR Geodesic, EBM Climate, Lava Compiler, KEGG)"]
-        P9 --> V10["Phase V10: SPARKLE Desktop Shell\n(Full Standalone Offline Rust Candle Inference)"]
+        P9 --> V10["Phase V10: SPARKLE Desktop Shell\n(Historical Rust/Tauri phase; remediation active)"]
     end
 ```
 
@@ -44,7 +44,7 @@ graph TD
 | **Phase 7** | Deep Cognition | PINN thermal engine, cymatics, neurochemistry, CRA engine | ✅ Complete | [Phase 7 Guide](phase7_deep_cognition/README.md) |
 | **Phase 8** | Security & Governance | Wolf Teeth immune shield, single-shell Tauri ADR, Nethical | ✅ Complete | [Phase 8 Guide](phase8_hardening_security/README.md) |
 | **Phase 9** | Hyper-Synthesis v4.0 | 625-node matrix, GR solver, EBM climate, Lava compiler, KEGG | ✅ Complete | [Phase 9 Guide](phase9_hyper_synthesis/README.md) |
-| **Phase V10**| SPARKLE Desktop Shell | Rust Candle offline LLM, Tauri v2 shell, sovereign vault | ✅ Complete | [Phase V10 Guide](v10_standalone_shell/README.md) |
+| **Phase V10**| SPARKLE Desktop Shell | Historical Rust/Tauri phase; standalone-runtime remediation and release gates remain active | 🧭 Remediation active | [Phase V10 Guide](v10_standalone_shell/README.md) |
 
 ---
 
@@ -57,8 +57,8 @@ graph TD
 
 ### Cognitive & Physical Fidelity
 - **Multi-Disciplinary Synthesis**: 625 nodes covering 25 scientific domains in Hyper-Synthesis v4.0.
-- **100% Offline Autonomy**: Full standalone offline operation with local KEGG biochemical pathways, numerical GR geodesic solver (Boyer-Lindquist coordinates), stochastic EBM climate model, and Lava neuromorphic compiler emulation.
-- **Zero-Latency Local Inference**: In-memory SLM inference using Rust Candle inside the Tauri desktop shell (`sparkle_app.exe`), eliminating external API or proxy overhead.
+- **Offline release status**: Not yet verified. The active remediation plan defines the required offline start, network-isolation, consent, and native-platform evidence.
+- **Local inference path**: Rust/Candle inference exists in the Tauri shell; latency, quality, and complete offline-product claims remain unverified until release gates pass.
 
 ---
 

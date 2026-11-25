@@ -1,18 +1,20 @@
 # Phase V10 — SPARKLE Desktop Shell (Full Standalone Offline AI)
 
-## Status: ✅ COMPLETE & PRODUCTION READY
+## Status: Historyczny raport fazy V10
 
-Phase V10 brings the entire Błyskawica ecosystem into a unified, **Full Standalone Offline Desktop Environment** powered by Rust Tauri v2 and native Rust Candle language model inference.
+> Aktualny stan gotowości produktu, granica Rust/Python oraz kryteria offline/online są prowadzone w [kontrakcie samodzielnego runtime SPARKLE](../../technical/SPARKLE_RUNTIME_CONTRACT.md) i [zaakceptowanym planie rozwoju](../../planning/2026-10-development-plan.md).
+
+This document records the V10 target architecture and implementation milestone. It is not current release evidence: the active plan retains open P0/P1 work for IPC review, reproducible quality gates, portability, consented online connectors, and data governance.
 
 ---
 
 ## Executive Summary
 
-Phase V10 achieves true data sovereignty and zero-dependency local execution:
+The V10 milestone established the following intended capabilities:
 - **Native In-Memory SLM Inference**: Executes Small Language Models (e.g. Qwen 2.5 Coder 1.5B GGUF) directly inside the Rust Tauri core via the `candle` ML framework.
-- **Zero External API / Proxy Dependencies**: Completely removes runtime dependencies on Ollama, cloud endpoints, or external Python servers for conversational inference.
+- **Rust-first inference path**: Intended to remove required runtime dependencies on Ollama, cloud endpoints, or external Python servers for conversational inference.
 - **Rust Native Security & Sandboxing**: `blyskawica_core` provides hardware-level thread gating, rate throttling, and state management.
-- **Sovereign Local Vault**: All memories, cognitive time-series, and episodic vectors are persisted to local encrypted SQLite databases (`node_timeseries.db`).
+- **Local persistence direction**: Memory and time-series data are stored locally; encryption and retention claims remain subject to PRIV-01 validation.
 - **Premium Glassmorphic Shell**: High-performance, reactive desktop user interface (`sparkle_app/src/`).
 
 ---
@@ -79,11 +81,13 @@ graph TB
 
 ---
 
-## Verification & Metrics
+## Historical Verification Claims
 
-- ✅ **Offline Purity**: 100% functionality verified with network interfaces disabled.
-- ✅ **Token Throughput**: Fast token streaming with low CPU/RAM utilization.
-- ✅ **Single Executable**: Clean packaging without multi-process server orchestration.
+The following claims describe the phase report, not the current release state. Current verification is governed by the runtime contract and remediation plan:
+
+- Offline behavior still requires no-network and no-hidden-sidecar deployment tests.
+- Performance requires benchmark evidence on supported hardware.
+- Release packaging requires native installation tests on Windows 11, Linux, and macOS.
 
 ---
 

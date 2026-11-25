@@ -45,11 +45,7 @@ impl RustUIBoundingBox {
     pub fn iou(&self, other: &Self) -> f32 {
         let inter = self.intersection(other);
         let union = self.area() + other.area() - inter;
-        if union > 0.0 {
-            inter / union
-        } else {
-            0.0
-        }
+        if union > 0.0 { inter / union } else { 0.0 }
     }
 }
 
@@ -85,17 +81,28 @@ impl RustVisualGroundingValidator {
             }
 
             // Viewport clipping check
-            if elem.xmin < 0.0 || elem.ymin < 0.0 || elem.xmax > self.window_width || elem.ymax > self.window_height {
+            if elem.xmin < 0.0
+                || elem.ymin < 0.0
+                || elem.xmax > self.window_width
+                || elem.ymax > self.window_height
+            {
                 let clipped = (0.0f32).max(-elem.xmin)
                     + (0.0f32).max(-elem.ymin)
                     + (0.0f32).max(elem.xmax - self.window_width)
                     + (0.0f32).max(elem.ymax - self.window_height);
 
                 anomalies.push(RustSpatialAnomaly {
-                    severity: if clipped > 10.0 { "CRITICAL".to_string() } else { "WARNING".to_string() },
+                    severity: if clipped > 10.0 {
+                        "CRITICAL".to_string()
+                    } else {
+                        "WARNING".to_string()
+                    },
                     anomaly_type: "VIEWPORT_CLIPPING_ANOMALY".to_string(),
                     element_id: elem.element_id.clone(),
-                    message: format!("Element {} poza oknem ({:.1}px poza zakresem)", elem.element_id, clipped),
+                    message: format!(
+                        "Element {} poza oknem ({:.1}px poza zakresem)",
+                        elem.element_id, clipped
+                    ),
                 });
             }
         }
@@ -105,7 +112,11 @@ impl RustVisualGroundingValidator {
             for j in (i + 1)..elements.len() {
                 let e1 = &elements[i];
                 let e2 = &elements[j];
-                if e1.is_visible && e2.is_visible && e1.z_index == e2.z_index && e1.element_type != "CONTAINER" {
+                if e1.is_visible
+                    && e2.is_visible
+                    && e1.z_index == e2.z_index
+                    && e1.element_type != "CONTAINER"
+                {
                     let iou = e1.iou(e2);
                     if iou > 0.25 {
                         anomalies.push(RustSpatialAnomaly {

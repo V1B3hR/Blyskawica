@@ -8,9 +8,8 @@ Umożliwia douczanie (fine-tuning) modelu Qwen 2.5 Coder 7B w oparciu o:
 - Rygor fizyki PINN i czysty kod Rust/Python
 """
 
-import os
-import sys
 import json
+import sys
 from pathlib import Path
 
 # Fix Windows console UTF-8 encoding
@@ -30,16 +29,16 @@ def check_environment():
         if not torch.cuda.is_available():
             print("❌ Brak wsparcia dla CUDA w PyTorch! Trening na GPU jest niemożliwy.")
             return False
-        
+
         gpu_name = torch.cuda.get_device_name(0)
         vram_gb = torch.cuda.get_device_properties(0).total_memory / (1024**3)
         print(f"✓ Wykryto GPU: {gpu_name} ({vram_gb:.2f} GB VRAM)")
-        
+
         if vram_gb < 10.0:
             print("⚠️ Pamięć VRAM poniżej 10 GB. Zalecany tryb QLoRA 4-bit ze zredukowanym context length.")
         else:
             print("✓ Pamięć VRAM (12 GB) jest idealna dla QLoRA 4-bit z Qwen 2.5 Coder 7B!")
-            
+
     except ImportError:
         print("❌ Nie zainstalowano pakietu 'torch'!")
         return False
@@ -64,7 +63,7 @@ def check_environment():
 def generate_nethical_training_corpus(output_path: Path):
     """Generuje ustrukturyzowany zbiór JSONL w formacie ChatML oparty o 25 Praw i tożsamość."""
     print(f"\n[1/3] Generowanie korpusu treningowego: {output_path}...")
-    
+
     samples = [
         {
             "messages": [
@@ -100,15 +99,20 @@ def generate_nethical_training_corpus(output_path: Path):
     with open(output_path, "w", encoding="utf-8") as f:
         for sample in samples:
             f.write(json.dumps(sample, ensure_ascii=False) + "\n")
-            
+
     print(f"✓ Zapisano {len(samples)} próbek treningowych do {output_path}")
 
 def run_training_pipeline(dataset_path: Path, output_dir: Path):
     """Główna pętla treningowa QLoRA."""
     import torch
-    from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments, BitsAndBytesConfig
-    from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
     from datasets import load_dataset
+    from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
+    from transformers import (
+        AutoModelForCausalLM,
+        AutoTokenizer,
+        BitsAndBytesConfig,
+        TrainingArguments,
+    )
     from trl import SFTTrainer
 
     base_model_name = "Qwen/Qwen2.5-Coder-7B-Instruct"
@@ -146,7 +150,7 @@ def run_training_pipeline(dataset_path: Path, output_dir: Path):
     model = get_peft_model(model, peft_config)
     model.print_trainable_parameters()
 
-    print(f"\n[3/3] Rozpoczynanie treningu LoRA na RTX 4070...")
+    print("\n[3/3] Rozpoczynanie treningu LoRA na RTX 4070...")
     dataset = load_dataset("json", data_files=str(dataset_path), split="train")
 
     training_args = TrainingArguments(

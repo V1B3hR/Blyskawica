@@ -10,10 +10,10 @@ jobs:
   test-and-audit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: "pip"
@@ -21,12 +21,15 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install ruff pytest pip-audit
+          pip install ruff pytest pip-audit httpx2
           pip install -e .
 
       - name: Code Formatting & Linting (Ruff)
         run: |
-          ruff check .
+          ruff check . --no-fix
+
+      - name: Block tracked runtime artifacts
+        run: python scripts/check_tracked_runtime_artifacts.py
 
       - name: Dependency Vulnerability Audit
         run: |
@@ -35,3 +38,107 @@ jobs:
       - name: Run Test Suite
         run: |
           pytest -v tests/ --ignore=tests/legacy
+
+  rust-core:
+    name: Rust core (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Verify Rust toolchain
+        run: rustc --version
+
+      - name: Verify core Rust formatting
+        run: cargo fmt --check --manifest-path blyskawica_core/Cargo.toml
+
+      - name: Run core tests
+        run: cargo test --locked --manifest-path blyskawica_core/Cargo.toml
+
+  rust-security-audit:
+    name: Rust Security Audit (cargo-audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install cargo-audit
+        uses: taiki-e/install-action@cargo-audit
+
+      - name: Audit blyskawica_core/Cargo.lock
+        run: |
+          # Upstream transitive exceptions in candle-core (zip 1.1.4; Błyskawica loads GGUF/local weights, not untrusted ZIP archives)
+          cargo audit --file blyskawica_core/Cargo.lock \
+            --ignore RUSTSEC-2026-0367 \
+            --ignore RUSTSEC-2026-0368 \
+            --ignore RUSTSEC-2026-0369 \
+            --ignore RUSTSEC-2026-0429 \
+            --ignore RUSTSEC-2026-0545 \
+            --ignore RUSTSEC-2026-0548
+
+      - name: Audit sparkle_app/src-tauri/Cargo.lock
+        run: |
+          # Upstream transitive exceptions in candle-core (zip 1.1.4) and tauri/gtk-rs (glib 0.18.5, quick-xml 0.39.4)
+          cargo audit --file sparkle_app/src-tauri/Cargo.lock \
+            --ignore RUSTSEC-2024-0429 \
+            --ignore RUSTSEC-2026-0194 \
+            --ignore RUSTSEC-2026-0195 \
+            --ignore RUSTSEC-2026-0367 \
+            --ignore RUSTSEC-2026-0368 \
+            --ignore RUSTSEC-2026-0369 \
+            --ignore RUSTSEC-2026-0429 \
+            --ignore RUSTSEC-2026-0545 \
+            --ignore RUSTSEC-2026-0548
+
+  sparkle-tauri:
+    name: SPARKLE Tauri (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Linux Tauri dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes \
+            build-essential \
+            libgtk-3-dev \
+            libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+
+      - name: Verify Tauri Rust formatting
+        run: cargo fmt --check --manifest-path sparkle_app/src-tauri/Cargo.toml
+
+      - name: Verify frontend syntax (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          Get-ChildItem -LiteralPath sparkle_app/src -Recurse -File -Filter '*.js' | ForEach-Object {
+            node --check $_.FullName
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+
+      - name: Verify frontend syntax (Unix)
+        if: matrix.os != 'windows-latest'
+        run: |
+          for file in $(find sparkle_app/src -type f -name '*.js'); do
+            node --check "$file" || exit 1
+          done
+
+      - name: Build frontend bundle
+        working-directory: sparkle_app
+        run: |
+          npm ci
+          npm run build
+
+      - name: Run frontend regression tests
+        run: node --test sparkle_app/tests/frontend-security.test.mjs sparkle_app/tests/chat-cancellation.test.mjs sparkle_app/tests/chat-context.test.mjs sparkle_app/tests/chat-persistence.test.mjs sparkle_app/tests/chat-restore.test.mjs
+
+      - name: Build and test Tauri runtime
+        run: cargo test --locked --manifest-path sparkle_app/src-tauri/Cargo.toml

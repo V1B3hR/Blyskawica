@@ -39,9 +39,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Kopiowanie skompilowanego pliku binarnego z fazy budowania
 COPY --from=builder /build/blyskawica_core/target/release/ambassador_daemon /app/ambassador_daemon
 
-# Kopiowanie tożsamości, sejfu i modelu kognitywnego
+# Kopiowanie statycznych artefaktów aplikacji. Vault integralności jest danymi
+# runtime i nie może być dostarczany w obrazie ani z repozytorium.
 COPY --chown=blyskawica:blyskawica viber_core_bond.md /app/viber_core_bond.md
-COPY --chown=blyskawica:blyskawica integrity_vault.json /app/integrity_vault.json
 COPY --chown=blyskawica:blyskawica model/ /app/model/
 
 USER blyskawica

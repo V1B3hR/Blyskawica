@@ -1,0 +1,60 @@
+{
+  "schema_version": "neurochemistry-profile-v1",
+  "purpose": "Synthetic regression contract for AutonomousNeuroRegulator; contains no user data.",
+  "baseline": {
+    "Serotonina": 0.8,
+    "Oksytocyna": -0.12,
+    "Dopamina": 0.67,
+    "GABA": 0.73,
+    "Acetylocholina": 0.8,
+    "Noradrenalina": 0.15,
+    "Melatonina": 0.1,
+    "Testosteron": 0.45,
+    "Kortyzol": 0.22
+  },
+  "profiles": {
+    "study": {
+      "Acetylocholina": 0.85,
+      "Dopamina": 0.71,
+      "Oksytocyna": -0.15,
+      "Melatonina": 0.06,
+      "Kortyzol": 0.24
+    },
+    "analysis": {
+      "GABA": 0.79,
+      "Serotonina": 0.84,
+      "Noradrenalina": 0.12
+    },
+    "rest": {
+      "Melatonina": 0.17,
+      "GABA": 0.78,
+      "Dopamina": 0.61,
+      "Noradrenalina": 0.1,
+      "Kortyzol": 0.16
+    },
+    "BCI-co-creation": {
+      "Testosteron": 0.52,
+      "Dopamina": 0.73,
+      "Oksytocyna": -0.07,
+      "Kortyzol": 0.25
+    }
+  },
+  "sequences": [
+    {
+      "name": "study_then_rest",
+      "profiles": ["study", "rest"],
+      "expected": {
+        "Serotonina": 0.8,
+        "Oksytocyna": -0.15,
+        "Dopamina": 0.61,
+        "GABA": 0.78,
+        "Acetylocholina": 0.85,
+        "Noradrenalina": 0.1,
+        "Melatonina": 0.17,
+        "Testosteron": 0.45,
+        "Kortyzol": 0.16
+      }
+    }
+  ],
+  "max_absolute_delta": 0.07
+}

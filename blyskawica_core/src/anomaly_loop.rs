@@ -1,4 +1,4 @@
-
+#[derive(Debug, Clone)]
 pub struct VirtualGround {
     pub ground_potential: f32,
 }
@@ -11,7 +11,9 @@ impl Default for VirtualGround {
 
 impl VirtualGround {
     pub fn new() -> Self {
-        Self { ground_potential: 0.0 }
+        Self {
+            ground_potential: 0.0,
+        }
     }
 
     /// Odprowadza szum poznawczy do wirtualnej ziemi.
@@ -22,13 +24,14 @@ impl VirtualGround {
         // Obliczamy energię (średnią kwadratową szumu)
         let sum_sq: f32 = noise.iter().map(|&x| x * x).sum();
         let energy = sum_sq / (noise.len() as f32);
-        
+
         // Zmniejszamy potencjał asynchronicznie, rozpraszając energię do zera
         self.ground_potential = 0.99 * self.ground_potential + 0.01 * energy;
         self.ground_potential
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct GroundLoopIsolator {
     pub isolation_ratio: f32,
     pub ground: VirtualGround,
@@ -63,7 +66,7 @@ impl GroundLoopIsolator {
                 // Prąd błądzący: szum statyczny blisko wartości średniej
                 noise.push(val + hum * 0.1);
             } else {
-                noise.push(0.0);
+                noise.push(hum * 0.1);
             }
         }
 
@@ -83,11 +86,13 @@ impl GroundLoopIsolator {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct AnomalyQueueItem {
     pub id: usize,
     pub vector: Vec<f32>,
     pub metadata: String,
+    #[serde(default)]
+    pub queue_id: Option<String>,
 }
 
 pub struct AnomalyDetector {
@@ -125,6 +130,7 @@ impl AnomalyDetector {
                 id: vector_id,
                 vector: clean_vector.clone(),
                 metadata,
+                queue_id: None,
             });
         }
 

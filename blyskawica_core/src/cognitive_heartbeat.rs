@@ -1,6 +1,6 @@
+use crate::neurochemistry::NeurochemicalState;
 use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
-use crate::neurochemistry::NeurochemicalState;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IntentSeed {
@@ -90,7 +90,7 @@ impl CognitiveHeartbeat {
         self.pulse_count += 1;
 
         // Wpływ dopaminy (eksploracja) i serotoniny (konsolidacja) na dojrzewanie
-        let growth_delta = (neuro.dopamine * 0.02 + neuro.serotonin * 0.03) as f32;
+        let growth_delta = neuro.dopamine * 0.02 + neuro.serotonin * 0.03;
 
         let mut newly_ripened = None;
 
@@ -118,11 +118,7 @@ impl CognitiveHeartbeat {
     }
 
     pub fn get_tree_state(&self) -> CognitiveTreeState {
-        let ripe_count = self
-            .branches
-            .iter()
-            .filter(|b| b.ripeness >= 0.90)
-            .count();
+        let ripe_count = self.branches.iter().filter(|b| b.ripeness >= 0.90).count();
 
         CognitiveTreeState {
             active_roots_count: self.seeds.len(),
@@ -130,6 +126,12 @@ impl CognitiveHeartbeat {
             ripe_fruits_count: ripe_count,
             vegetative_pulse_rate_hz: 10.0,
         }
+    }
+}
+
+impl Default for CognitiveHeartbeat {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

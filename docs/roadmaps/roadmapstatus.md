@@ -1,6 +1,8 @@
 # Adaptive Neural Network & Błyskawica — Roadmap Audit & Status Report
 
-_Last verified & updated: 2026-09-13 (Post-Phase V10 Audit)_
+_Historical snapshot: 2026-09-13 (Post-Phase V10 Audit)_
+
+> **Superseded for current release decisions.** This report predates the accepted [2026-10 remediation plan](../planning/2026-10-development-plan.md). V10 history is retained below, but P0/P1 work remains open and this file must not be used as evidence of current production readiness, complete offline operation, or a transition to V11.
 
 This audit document verifies the implementation, testing, and documentation status of all development jobs, cognitive architectures, and infrastructural milestones across the repository.  
 Every item is verified against active code in the workspace and marked as **Completed**, **In Progress**, or **Planned for V11**.

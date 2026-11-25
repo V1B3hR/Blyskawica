@@ -187,9 +187,8 @@ class AutonomousVehicleGovernor:
                 restrictions["min_gap_seconds"] = 4.0
             restrictions["max_speed"] = 100
 
-        elif action == VehicleAction.OVERTAKE:
-            if context.road_condition != "dry":
-                restrictions["prohibited"] = True
+        elif action == VehicleAction.OVERTAKE and context.road_condition != "dry":
+            restrictions["prohibited"] = True
 
         return restrictions
 

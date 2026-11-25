@@ -1,8 +1,7 @@
 // Aegis Sentinel, Security Posture & Anomaly Quarantine Module
 import { SparkleStore } from './store.js';
 import { updateRegimeBadge } from './neurochemistry.js';
-
-const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: async () => {} };
+import { invoke } from './tauri-bridge.js';
 
 let quarantinedAnomalies = [];
 let aegisBadge, hwTelemetryBadge, securitySlider;
@@ -14,7 +13,7 @@ export function initAegisModule(addLogFn) {
 
   if (securitySlider) {
     securitySlider.value = SparkleStore.state.permissionLevel;
-    securitySlider.addEventListener("input", async (e) => {
+    securitySlider.addEventListener("change", async (e) => {
       const level = parseInt(e.target.value, 10);
       try {
         const res = await invoke("set_permission_level", { level });
@@ -129,5 +128,9 @@ export async function scanLocalModels(addLogFn) {
     if (scanRes && scanRes.models && addLogFn) {
       addLogFn(`🔍 [Wykrywanie Modeli]: Znaleziono ${scanRes.count} lokalnych modeli w systemie.`);
     }
-  } catch (e) {}
+  } catch (e) {
+    if (addLogFn) {
+      addLogFn(`⚠️ [Wykrywanie Modeli]: ${e}`);
+    }
+  }
 }
