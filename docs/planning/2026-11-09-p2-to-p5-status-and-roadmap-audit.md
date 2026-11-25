@@ -48,11 +48,11 @@ W planie z października 2026 zdefiniowano następujące priorytety P2:
     *   Lokalna telemetria odporna na wycieki danych (zero-telemetry w trybie offline, lokalne ring-buffery błędów).
 
 ### B. V11: Moduły Next-Gen Kognitywne (`ROADMAP_V11_NEXTGEN.md`)
-*   **Stan:** ⏸️ **Intencjonalnie wstrzymane (GATED)** do momentu stabilizacji wydania V10.
+*   **Stan:** 🟡 **Etap B rozpoczęty (2026-11-25)** po zamknięciu Etapu A V10 (zielone CI 3-OS, `cargo-audit`, instalatory Windows NSIS/MSI).
 *   **Szczegółowy podział modułów V11:**
     1.  **V11.1 (WebGPU Spores)**: Dynamiczna plastyczność synaptyczna mikro-modeli brzegowych w przeglądarce/Tauri z adaptacją wag w locie (status: prototyp koncepcyjny).
     2.  **V11.2 (BCI & Diamond Yant)**: Pętla sprzężenia zwrotnego z falami mózgowymi Alpha (8–12 Hz) przez protokół LSL oraz rezonans cymatyczny Chladniego (status: specyfikacja matematyczna).
-    3.  **V11.3 (Asynchroniczny Sen i EWC)**: Ciągła regularyzacja Elastic Weight Consolidation asymilująca wektory anomalii z dnia (status: zaimplementowany prototyp w Pythonie `sleep_loop.py`, oczekuje na port do Rust Candle).
+    3.  **V11.3 (Asynchroniczny Sen i EWC)**: ✅ **Wdrożony pierwszy pionowy wycinek w Rust** (`blyskawica_core/src/ewc_sleep.rs`, integracja z `BlyskawicaEngine` w `state_manager.rs`, komendy Tauri `trigger_async_deep_sleep` (L2) / `get_ewc_sleep_status` (L1), pieczęć SHA-256/HMAC-SHA256, specyfikacja i model zagrożeń: `docs/technical/V11_3_ASYNC_EWC_SLEEP.md`).
     4.  **V11.4 (Z3 SMT Formal Verification Gateway)**: Formalny solwer w logice pierwszego rzędu weryfikujący niesprzeczność akcji z 25 Prawami Netycznymi (status: zarys aksjomatów w `ai_ethics.py`).
 
 ---

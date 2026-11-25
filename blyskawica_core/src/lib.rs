@@ -6,6 +6,7 @@ pub mod cognitive_llm;
 pub mod cognitive_shield;
 pub mod cra_contract;
 pub mod embedder;
+pub mod ewc_sleep;
 pub mod immune_system;
 pub mod local_inference;
 pub mod microtubule_phonon;

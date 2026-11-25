@@ -64,6 +64,7 @@ pub struct AppStateInner {
     current_neurochemistry: blyskawica_core::neurochemistry::NeurochemicalState,
     aegis_psyche: blyskawica_core::aegis_psyche_onnx::AegisPsycheRustEngine,
     quantum_bridge: blyskawica_core::quantum_core::QuantumEntanglementBridge,
+    last_ewc_sleep_report: Option<blyskawica_core::ewc_sleep::EwcSleepReport>,
 }
 
 pub struct AppState(pub Mutex<AppStateInner>);
@@ -851,6 +852,13 @@ async fn start_engine(app_handle: AppHandle, state: State<'_, AppState>) -> Resu
             if let blyskawica_core::state_manager::EngineEvent::Neurochemistry(ref ns) = event {
                 if let Ok(mut inner) = app_handle_clone.state::<AppState>().0.lock() {
                     inner.current_neurochemistry = ns.clone();
+                };
+            } else if let blyskawica_core::state_manager::EngineEvent::SleepConsolidated(
+                ref report,
+            ) = event
+            {
+                if let Ok(mut inner) = app_handle_clone.state::<AppState>().0.lock() {
+                    inner.last_ewc_sleep_report = Some(report.clone());
                 };
             }
             let _ = app_handle_clone.emit("engine-event", event);
@@ -2290,6 +2298,43 @@ fn quantum_get_cymatics_matrix(
     Ok(inner.quantum_bridge.get_snapshot().cymatics)
 }
 
+fn dispatch_async_deep_sleep(
+    permission_level: u8,
+    tx: Option<&mpsc::Sender<StateCommand>>,
+) -> Result<String, String> {
+    require_permission_level(
+        permission_level,
+        2,
+        "uruchomienia asynchronicznego snu EWC (zapis skonsolidowanych wag)",
+    )?;
+    let tx = tx.ok_or_else(|| "Silnik nie jest uruchomiony.".to_string())?;
+    tx.try_send(StateCommand::AsyncDeepSleep)
+        .map_err(|_| "Kolejka komend silnika jest zajęta — spróbuj ponownie za chwilę.".into())?;
+    Ok("Zlecono asynchroniczny cykl snu EWC w tle.".to_string())
+}
+
+#[tauri::command]
+fn trigger_async_deep_sleep(state: State<'_, AppState>) -> Result<String, String> {
+    let inner = state
+        .0
+        .lock()
+        .map_err(|_| "Blokada aplikacji jest uszkodzona".to_string())?;
+    dispatch_async_deep_sleep(inner.permission_level, inner.tx.as_ref())
+}
+
+#[tauri::command]
+fn get_ewc_sleep_status(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
+    let inner = state
+        .0
+        .lock()
+        .map_err(|_| "Blokada aplikacji jest uszkodzona".to_string())?;
+    Ok(serde_json::json!({
+        "engine_running": inner.tx.is_some(),
+        "permission_level": inner.permission_level,
+        "last_report": inner.last_ewc_sleep_report,
+    }))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
@@ -2314,6 +2359,7 @@ pub fn run() {
             current_neurochemistry: blyskawica_core::neurochemistry::NeurochemicalState::default(),
             aegis_psyche: blyskawica_core::aegis_psyche_onnx::AegisPsycheRustEngine::new(),
             quantum_bridge: blyskawica_core::quantum_core::QuantumEntanglementBridge::new(),
+            last_ewc_sleep_report: None,
         })))
         .invoke_handler(tauri::generate_handler![
             start_engine,
@@ -2360,7 +2406,9 @@ pub fn run() {
             quantum_get_state,
             quantum_trigger_tunneling,
             quantum_observe_collapse,
-            quantum_get_cymatics_matrix
+            quantum_get_cymatics_matrix,
+            trigger_async_deep_sleep,
+            get_ewc_sleep_status
         ])
         .setup(|app| {
             let state = app.state::<AppState>();
@@ -3093,5 +3141,24 @@ mod tests {
             .find(|c| c["id"] == "cognitive_guest")
             .unwrap();
         assert_eq!(guest_entry["consented"], false);
+    }
+
+    #[test]
+    fn async_deep_sleep_trigger_requires_workspace_permission_and_dispatches() {
+        let (tx, mut rx) = tokio::sync::mpsc::channel(2);
+        // L1 Sandbox must be denied fail-closed
+        assert!(super::dispatch_async_deep_sleep(1, Some(&tx)).is_err());
+        assert!(rx.try_recv().is_err());
+
+        // L2 without running engine fails cleanly
+        assert!(super::dispatch_async_deep_sleep(2, None).is_err());
+
+        // L2 with active engine dispatches StateCommand::AsyncDeepSleep
+        super::dispatch_async_deep_sleep(2, Some(&tx))
+            .expect("L2 workspace level should dispatch AsyncDeepSleep");
+        assert!(matches!(
+            rx.try_recv().unwrap(),
+            blyskawica_core::state_manager::StateCommand::AsyncDeepSleep
+        ));
     }
 }

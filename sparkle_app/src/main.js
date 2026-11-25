@@ -33,6 +33,11 @@ async function initEventListeners() {
         updateNeurochemistryUI(payload.Neurochemistry);
       } else if (payload.AnomalyQueued) {
         addAnomaly(payload.AnomalyQueued, addLog);
+      } else if (payload.SleepConsolidated) {
+        const rep = payload.SleepConsolidated;
+        addLog(
+          `🌙 [EWC Sen #${rep.cycle}]: asymilowano=${rep.assimilated_count}, strata=${Number(rep.mean_loss_before).toFixed(4)}→${Number(rep.mean_loss_after).toFixed(4)}, saturacja=${Number(rep.ewc_saturation).toFixed(3)}, pieczęć=${rep.seal_verified ? "OK" : "BŁĄD"}`,
+        );
       } else if (payload.Token !== undefined) {
         handleIncomingToken(payload.Token);
       } else if (payload.ResponseFinished !== undefined) {

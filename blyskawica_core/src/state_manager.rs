@@ -42,6 +42,7 @@ pub enum EngineEvent {
         surprise: f32,
         text: String,
     },
+    SleepConsolidated(crate::ewc_sleep::EwcSleepReport),
     Token(String),
     ResponseFinished(String),
 }
@@ -148,6 +149,7 @@ pub enum StateCommand {
         text: String,
     },
     DeepSleep,
+    AsyncDeepSleep,
     CoolDown,
     Status,
     Neurogenesis,
@@ -170,6 +172,7 @@ pub struct BlyskawicaEngine {
     pub llm: Option<crate::cognitive_llm::LocalCognitiveLLM>,
     pub cancel_flag: std::sync::Arc<std::sync::atomic::AtomicBool>,
     pub cra_engine: Option<crate::cra_contract::CraEngine>,
+    pub ewc_sleep: Arc<tokio::sync::Mutex<crate::ewc_sleep::EwcSleepConsolidator>>,
 }
 
 impl BlyskawicaEngine {
@@ -203,6 +206,9 @@ impl BlyskawicaEngine {
             llm: None,
             cancel_flag: std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
             cra_engine: None,
+            ewc_sleep: Arc::new(tokio::sync::Mutex::new(
+                crate::ewc_sleep::EwcSleepConsolidator::default(),
+            )),
         }
     }
 
@@ -853,7 +859,7 @@ Gdy zauważysz błąd lub niespójność w architekturze lub kodzie, powiedz o t
                                 };
 
                                 // 3. Inspect vector with GroundLoopIsolator and determine anomaly
-                                let (_clean_vector, is_anomaly) =
+                                let (clean_vector, is_anomaly) =
                                     self.anomaly_detector.inspect_and_queue(
                                         id,
                                         &projected_vector,
@@ -867,6 +873,22 @@ Gdy zauważysz błąd lub niespójność w architekturze lub kodzie, powiedz o t
                                     best_distance
                                 );
                                 if is_anomaly {
+                                    {
+                                        let mut ewc = self.ewc_sleep.lock().await;
+                                        if let Err(err) = ewc.record_surprise(
+                                            id,
+                                            best_distance,
+                                            text.clone(),
+                                            &clean_vector,
+                                        ) {
+                                            log_print!(
+                                                self,
+                                                "⚠️ [ENGINE EWC]: Odrzucono nieprawidłowy wektor zaskoczenia ID {}: {}",
+                                                id,
+                                                err
+                                            );
+                                        }
+                                    }
                                     if let Some((ref path, ref basename)) = self.db_path {
                                         let Some(item) = self.anomaly_detector.queue.pop() else {
                                             log_print!(
@@ -914,7 +936,7 @@ Gdy zauważysz błąd lub niespójność w architekturze lub kodzie, powiedz o t
                             self.wake_up().await;
                             if let BlysState::Active { neuro_state, .. } = &self.state {
                                 // 1. Apply deep sleep neurochemistry profile
-                                {
+                                let sleep_profile = {
                                     let mut ns = neuro_state.write().await;
                                     ns.apply_profile("deep_sleep");
                                     log_print!(
@@ -923,7 +945,8 @@ Gdy zauważysz błąd lub niespójność w architekturze lub kodzie, powiedz o t
                                         ns.get_status_report()
                                     );
                                     self.emit_event(EngineEvent::Neurochemistry(ns.clone()));
-                                }
+                                    crate::ewc_sleep::SleepProfile::from_neurochemistry(&ns)
+                                };
 
                                 // 2. Drain queued anomalies
                                 let items = self.anomaly_detector.drain_queue();
@@ -990,9 +1013,109 @@ Gdy zauważysz błąd lub niespójność w architekturze lub kodzie, powiedz o t
                                     );
                                 }
 
-                                // 3. Set to hibernation
+                                // 3. Hibernate first so Windows Mmap handles on weights_path are cleanly released
                                 self.hibernate().await;
+
+                                // 4. V11.3 EWC weight consolidation & cryptographic sealing
+                                let seal_key = crate::ewc_sleep::derive_session_seal_key(
+                                    &self.weights_path.to_string_lossy(),
+                                );
+                                match crate::ewc_sleep::EwcSleepConsolidator::consolidate_file_async(
+                                    self.ewc_sleep.clone(),
+                                    self.weights_path.clone(),
+                                    sleep_profile,
+                                    seal_key,
+                                )
+                                .await
+                                {
+                                    Ok(report) => {
+                                        log_print!(
+                                            self,
+                                            "🌙 [EWC DEEP SLEEP]: Cykl #{} zakończony (asymilowano: {}, strata: {:.4} → {:.4}, saturacja EWC: {:.3}, pieczęć: {}).",
+                                            report.cycle,
+                                            report.assimilated_count,
+                                            report.mean_loss_before,
+                                            report.mean_loss_after,
+                                            report.ewc_saturation,
+                                            if report.seal_verified { "OK" } else { "BŁĄD" }
+                                        );
+                                        self.emit_event(EngineEvent::SleepConsolidated(report));
+                                    }
+                                    Err(err) => {
+                                        log_print!(
+                                            self,
+                                            "❌ [EWC DEEP SLEEP ERROR]: Nie udało się skonsolidować wag EWC: {}",
+                                            err
+                                        );
+                                    }
+                                }
                             }
+                        }
+                        StateCommand::AsyncDeepSleep => {
+                            let sleep_profile = match &self.state {
+                                BlysState::Active { neuro_state, .. } => {
+                                    let ns = neuro_state.read().await;
+                                    crate::ewc_sleep::SleepProfile::from_neurochemistry(&ns)
+                                }
+                                BlysState::Hibernated { .. } => {
+                                    crate::ewc_sleep::SleepProfile::default()
+                                }
+                            };
+                            // Zapis do dedykowanego pliku krystalizacji, aby nie kolidować z aktywnym Mmap na Windows
+                            let mut snapshot_os = self.weights_path.as_os_str().to_os_string();
+                            snapshot_os.push(".ewc.bin");
+                            let target_path = if matches!(self.state, BlysState::Active { .. }) {
+                                PathBuf::from(snapshot_os)
+                            } else {
+                                self.weights_path.clone()
+                            };
+                            let consolidator = self.ewc_sleep.clone();
+                            let event_tx = self.event_tx.clone();
+                            let seal_key = crate::ewc_sleep::derive_session_seal_key(
+                                &target_path.to_string_lossy(),
+                            );
+                            log_print!(
+                                self,
+                                "🌙 [ASYNC EWC SLEEP]: Uruchomiono asynchroniczną konsolidację EWC w tle (bez blokowania czatu)."
+                            );
+                            tokio::spawn(async move {
+                                match crate::ewc_sleep::EwcSleepConsolidator::consolidate_file_async(
+                                    consolidator,
+                                    target_path,
+                                    sleep_profile,
+                                    seal_key,
+                                )
+                                .await
+                                {
+                                    Ok(report) => {
+                                        if let Some(tx) = event_tx {
+                                            let msg = format!(
+                                                "🌙 [ASYNC EWC SLEEP]: Cykl #{} ukończony w tle (asymilowano: {}, strata: {:.4} → {:.4}, saturacja EWC: {:.3}, dryf chroniony: {:.5}).",
+                                                report.cycle,
+                                                report.assimilated_count,
+                                                report.mean_loss_before,
+                                                report.mean_loss_after,
+                                                report.ewc_saturation,
+                                                report.max_protected_weight_drift
+                                            );
+                                            let _ = tx.send(EngineEvent::Log(msg)).await;
+                                            let _ = tx
+                                                .send(EngineEvent::SleepConsolidated(report))
+                                                .await;
+                                        }
+                                    }
+                                    Err(err) => {
+                                        if let Some(tx) = event_tx {
+                                            let _ = tx
+                                                .send(EngineEvent::Log(format!(
+                                                    "❌ [ASYNC EWC SLEEP ERROR]: {}",
+                                                    err
+                                                )))
+                                                .await;
+                                        }
+                                    }
+                                }
+                            });
                         }
                         StateCommand::Status => {
                             self.print_status().await;
@@ -1636,6 +1759,66 @@ mod consolidation_tests {
         if let Some(resp) = received_response {
             assert!(resp.contains("0.85"));
         }
+
+        sender.send(StateCommand::Shutdown).await.unwrap();
+        let _ = handle.await;
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[tokio::test]
+    async fn async_deep_sleep_assimilates_anomalies_without_blocking() {
+        let root = std::env::temp_dir().join(format!(
+            "sparkle-async-ewc-sleep-{:016x}",
+            rand::random::<u64>()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let weights_path = root.join("weights.bin");
+        let baseline = crate::ewc_sleep::MlpWeights::deterministic_baseline();
+        std::fs::write(&weights_path, baseline.to_bytes(1_024_000)).unwrap();
+
+        let index = Arc::new(SparkleVectorIndex::new(128, 32));
+        let mut engine = BlyskawicaEngine::new(
+            weights_path.clone(),
+            Duration::from_secs(1),
+            index,
+            0.5,
+            0.05,
+            Vec::new(),
+            0.35,
+        );
+
+        {
+            let mut ewc = engine.ewc_sleep.lock().await;
+            ewc.record_surprise(99, 0.91, "V11.3 async surprise", &[0.35; 128])
+                .unwrap();
+        }
+
+        let (event_tx, mut events) = mpsc::channel(100);
+        engine.set_event_sender(event_tx);
+        let sender = engine.get_sender();
+        let handle = tokio::spawn(async move { engine.run().await });
+
+        sender.send(StateCommand::AsyncDeepSleep).await.unwrap();
+        // Silnik musi pozostać responsywny równolegle z asynchronicznym snem
+        sender.send(StateCommand::Status).await.unwrap();
+
+        let mut sleep_report = None;
+        for _ in 0..20 {
+            if let Ok(Some(event)) =
+                tokio::time::timeout(Duration::from_secs(3), events.recv()).await
+                && let EngineEvent::SleepConsolidated(report) = event
+            {
+                sleep_report = Some(report);
+                break;
+            }
+        }
+
+        let report =
+            sleep_report.expect("powinien zostać wyemitowany EngineEvent::SleepConsolidated");
+        assert_eq!(report.cycle, 1);
+        assert_eq!(report.assimilated_count, 1);
+        assert!(report.seal_verified);
+        assert!(report.mean_loss_after < report.mean_loss_before);
 
         sender.send(StateCommand::Shutdown).await.unwrap();
         let _ = handle.await;

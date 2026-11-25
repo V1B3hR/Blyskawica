@@ -139,6 +139,7 @@ Lokalna suwerenność kognitywna w nowoczesnej powłoce desktopowej:
 - **[CUDA 13.4 coherent GPU-memory preflight](technical/CUDA_13_4_COHERENT_MEMORY.md)** — Zakres zmiany r615, preflight węzła Linux oraz walidacja po aktualizacji sterownika.
 - **[Zestaw Walidacji Modelu i Bramki Retencji EWC](../tests/test_golden_dataset_validation.py)** — 4-filarowa walidacja AI: Golden Dataset (F1/MSE), retencja wiedzy EWC, Data Slicing (SNR/Edge Cases) oraz kalibracja OOD.
 - **[Kontrakt ciągłości kognitywnej](technical/COGNITIVE_CONTINUITY_CONTRACT.md)** — Ochrona charakteru działania Błyskawicy: referencje Python dla neurochemii, C.R.A. i PINN oraz bramki przed ich migracją do Rust.
+- **[V11.3: Asynchroniczny Sen Kognitywny i EWC](technical/V11_3_ASYNC_EWC_SLEEP.md)** — Natywny moduł konsolidacji wektorów zaskoczenia w Rust (`ewc_sleep.rs`), model zagrożeń fail-closed i pieczęć integralności wag.
 - **[Przewodnik SPARKLE Desktop V10](phases/v10_standalone_shell/README.md)** — Architektura Rust Candle + Tauri v2.
 - **[Skrypt Uruchomieniowy Desktopu](../Uruchom_Sparkle.bat)** — Jednoklikowe uruchomienie środowiska offline w systemie Windows.
 - **[Weryfikacja Narzędzi Środowiskowych](../setup_environment.ps1)** — Skrypt PowerShell sprawdzający kompilatory Python, Rust/Cargo, Node.js oraz wagi modeli.
