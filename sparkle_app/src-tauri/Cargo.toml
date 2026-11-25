@@ -5,6 +5,7 @@ description = "A Tauri App"
 authors = ["you"]
 edition = "2021"
 default-run = "sparkle_app"
+autobins = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -23,9 +24,9 @@ ui-smoke-isolation = []
 name = "sparkle_app"
 path = "src/main.rs"
 
-[[bin]]
+[[example]]
 name = "sparkle_ui_smoke"
-path = "src/bin/ui_smoke.rs"
+path = "examples/ui_smoke.rs"
 required-features = ["ui-smoke-isolation"]
 
 [build-dependencies]
