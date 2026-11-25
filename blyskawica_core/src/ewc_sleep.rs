@@ -546,7 +546,25 @@ impl EwcSleepConsolidator {
         }
         let mean_loss_before = loss_before_sum / (batch.len() as f32);
 
-        // Kroki gradientowe EWC (3 epoki mikro-konsolidacji na paczce)
+        // 1. Delikatny GABA-modulowany pruning (downscaling) wyłącznie na uśpionych, niechronionych wagach
+        //    przed epokami replay, aby nie zniweczyć świeżej adaptacji i nie naruszyć wag o wysokim Fisherze.
+        let fisher_max = self.fisher_diag.iter().copied().fold(0.0f32, f32::max);
+        let protected_cutoff = (fisher_max * 0.1).max(1e-6);
+        let prune_amp = profile.pruning_threshold() * 0.01;
+        let mut pruned_weights = 0usize;
+
+        for i in 0..TOTAL_PARAMS {
+            if self.fisher_diag[i] < protected_cutoff
+                && weights.params[i].abs() > 0.0
+                && weights.params[i].abs() < prune_amp
+            {
+                weights.params[i] *= 0.9;
+                pruned_weights += 1;
+            }
+        }
+
+        // 2. Bezwarunkowo stabilne kroki proksymalne EWC (implicit Euler na karze kwadratowej):
+        //    theta_{t+1} = theta* + ((theta_t - theta*) - eta * g_task) / (1 + eta * lambda * F_i)
         let depth = profile.consolidation_depth().max(0.1);
         let gate = profile.plasticity_gate().max(0.25);
 
@@ -554,19 +572,10 @@ impl EwcSleepConsolidator {
             for item in &batch {
                 let adapt_strength =
                     (item.surprise * depth * gate * 0.05).clamp(1e-4, MAX_ADAPT_STRENGTH);
-                let (_, mut grad) = weights.mse_loss_and_grad(&item.vector, &item.vector)?;
+                let (_, task_grad) = weights.mse_loss_and_grad(&item.vector, &item.vector)?;
 
-                // Dodanie pochodnej kary EWC: lambda * F_i * (theta_i - theta*_i)
-                let mut sq_norm = 0.0f64;
-                for i in 0..TOTAL_PARAMS {
-                    let ewc_grad = self.ewc_lambda
-                        * self.fisher_diag[i]
-                        * (weights.params[i] - self.anchor_weights[i]);
-                    grad[i] += ewc_grad;
-                    sq_norm += (grad[i] as f64) * (grad[i] as f64);
-                }
-
-                // Przycinanie normy L2 gradientu (ochrona przed wybuchem gradientów)
+                // Przycinanie normy L2 gradientu zadania (ochrona przed wybuchem gradientów)
+                let sq_norm: f64 = task_grad.iter().map(|&g| (g as f64) * (g as f64)).sum();
                 let norm = sq_norm.sqrt() as f32;
                 let clip_scale = if norm > MAX_GRAD_NORM && norm.is_finite() {
                     MAX_GRAD_NORM / norm
@@ -575,7 +584,12 @@ impl EwcSleepConsolidator {
                 };
 
                 for i in 0..TOTAL_PARAMS {
-                    let updated = weights.params[i] - adapt_strength * grad[i] * clip_scale;
+                    let g_task = task_grad[i] * clip_scale;
+                    let anchor = self.anchor_weights[i];
+                    let stiffness = adapt_strength * self.ewc_lambda * self.fisher_diag[i];
+                    let updated = anchor
+                        + ((weights.params[i] - anchor) - adapt_strength * g_task)
+                            / (1.0 + stiffness);
                     if !updated.is_finite() {
                         weights.params = rollback_snapshot;
                         self.surprise_queue = batch;
@@ -586,22 +600,6 @@ impl EwcSleepConsolidator {
                     }
                     weights.params[i] = updated;
                 }
-            }
-        }
-
-        // Delikatny GABA-modulowany pruning wyłącznie na niechronionych wagach (niskie F_i)
-        let fisher_max = self.fisher_diag.iter().copied().fold(0.0f32, f32::max);
-        let protected_cutoff = (fisher_max * 0.1).max(1e-6);
-        let prune_amp = profile.pruning_threshold() * 0.05; // konserwatywny próg wygaszania małych wag
-        let mut pruned_weights = 0usize;
-
-        for i in 0..TOTAL_PARAMS {
-            if self.fisher_diag[i] < protected_cutoff
-                && weights.params[i].abs() > 0.0
-                && weights.params[i].abs() < prune_amp
-            {
-                weights.params[i] *= 0.9;
-                pruned_weights += 1;
             }
         }
 

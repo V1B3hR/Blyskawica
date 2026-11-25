@@ -2308,8 +2308,9 @@ fn dispatch_async_deep_sleep(
         "uruchomienia asynchronicznego snu EWC (zapis skonsolidowanych wag)",
     )?;
     let tx = tx.ok_or_else(|| "Silnik nie jest uruchomiony.".to_string())?;
-    tx.try_send(StateCommand::AsyncDeepSleep)
-        .map_err(|_| "Kolejka komend silnika jest zajęta — spróbuj ponownie za chwilę.".into())?;
+    tx.try_send(StateCommand::AsyncDeepSleep).map_err(|_| {
+        "Kolejka komend silnika jest zajęta — spróbuj ponownie za chwilę.".to_string()
+    })?;
     Ok("Zlecono asynchroniczny cykl snu EWC w tle.".to_string())
 }
 
