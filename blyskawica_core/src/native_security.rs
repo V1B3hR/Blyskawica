@@ -268,13 +268,16 @@ mod win32 {
     }
 
     pub fn protect_secret(plaintext: &[u8]) -> Result<Vec<u8>, String> {
-        if plaintext.is_empty() {
-            return Ok(Vec::new());
-        }
+        let mut dummy = 0u8;
+        let pb_data = if plaintext.is_empty() {
+            &mut dummy as *mut u8
+        } else {
+            plaintext.as_ptr() as *mut u8
+        };
         unsafe {
             let in_blob = DATA_BLOB {
                 cbData: plaintext.len() as u32,
-                pbData: plaintext.as_ptr() as *mut u8,
+                pbData: pb_data,
             };
             let mut out_blob = DATA_BLOB {
                 cbData: 0,
@@ -309,7 +312,7 @@ mod win32 {
 
     pub fn unprotect_secret(ciphertext: &[u8]) -> Result<Vec<u8>, String> {
         if ciphertext.is_empty() {
-            return Ok(Vec::new());
+            return Err("Nieprawidłowy format zaszyfrowanego sekretu (pusty bufor).".to_string());
         }
         unsafe {
             let in_blob = DATA_BLOB {
@@ -392,15 +395,225 @@ pub fn terminate_external_tcp_connections() -> Result<usize, String> {
     Ok(0)
 }
 
-#[cfg(not(target_os = "windows"))]
-pub fn protect_secret(_plaintext: &[u8]) -> Result<Vec<u8>, String> {
-    Err("Platform keychain protection is only supported on Windows (DPAPI). Plaintext storage is prohibited.".to_string())
+#[cfg(any(not(target_os = "windows"), test))]
+pub(crate) mod unix_vault {
+    use sha2::{Digest, Sha256};
+    use std::fs;
+    use std::path::PathBuf;
+
+    const MAGIC: &[u8; 4] = b"BLY1";
+
+    fn hmac_sha256(key: &[u8], data: &[u8]) -> [u8; 32] {
+        let mut k_pad = [0u8; 64];
+        if key.len() > 64 {
+            let mut hasher = Sha256::new();
+            hasher.update(key);
+            let h = hasher.finalize();
+            k_pad[..32].copy_from_slice(&h);
+        } else {
+            k_pad[..key.len()].copy_from_slice(key);
+        }
+
+        let mut ipad = [0x36u8; 64];
+        let mut opad = [0x5cu8; 64];
+        for i in 0..64 {
+            ipad[i] ^= k_pad[i];
+            opad[i] ^= k_pad[i];
+        }
+
+        let mut inner = Sha256::new();
+        inner.update(ipad);
+        inner.update(data);
+        let inner_hash = inner.finalize();
+
+        let mut outer = Sha256::new();
+        outer.update(opad);
+        outer.update(inner_hash);
+        outer.finalize().into()
+    }
+
+    fn get_or_create_vault_master_key() -> Result<[u8; 32], String> {
+        let home = std::env::var_os("HOME").ok_or_else(|| {
+            "Brak zmiennej środowiskowej HOME: brak zaufanego katalogu użytkownika dla sejfu."
+                .to_string()
+        })?;
+        let config_dir = PathBuf::from(home).join(".config").join("blyskawica");
+        fs::create_dir_all(&config_dir)
+            .map_err(|e| format!("Błąd tworzenia katalogu konfiguracyjnego sejfu: {}", e))?;
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let _ = fs::set_permissions(&config_dir, fs::Permissions::from_mode(0o700));
+        }
+
+        let key_file = config_dir.join(".vault_master.key");
+
+        if key_file.exists() {
+            let bytes =
+                fs::read(&key_file).map_err(|e| format!("Błąd odczytu klucza sejfu: {}", e))?;
+            if bytes.len() == 32 {
+                let mut key = [0u8; 32];
+                key.copy_from_slice(&bytes);
+                return Ok(key);
+            }
+            return Err("Klucz sejfu ma nieprawidłową długość.".to_string());
+        }
+
+        let mut raw_key = [0u8; 32];
+        rand::Rng::fill(&mut rand::thread_rng(), &mut raw_key);
+
+        let pid = std::process::id();
+        let mut unique_bytes = [0u8; 8];
+        rand::Rng::fill(&mut rand::thread_rng(), &mut unique_bytes);
+        let unique = u64::from_le_bytes(unique_bytes);
+        let tmp_key_file = config_dir.join(format!(".vault_master.tmp.{pid}.{unique}"));
+
+        #[cfg(unix)]
+        {
+            use std::io::Write;
+            use std::os::unix::fs::OpenOptionsExt;
+            let mut file = fs::OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .mode(0o600)
+                .open(&tmp_key_file)
+                .map_err(|e| {
+                    format!(
+                        "Błąd bezpiecznego tworzenia pliku tymczasowego klucza: {}",
+                        e
+                    )
+                })?;
+            file.write_all(&raw_key)
+                .map_err(|e| format!("Błąd zapisu klucza do pliku tymczasowego: {}", e))?;
+            file.flush()
+                .map_err(|e| format!("Błąd zapisu buforowanego klucza: {}", e))?;
+        }
+        #[cfg(not(unix))]
+        {
+            fs::write(&tmp_key_file, raw_key)
+                .map_err(|e| format!("Błąd zapisu klucza sejfu: {}", e))?;
+        }
+
+        if let Err(rename_err) = fs::rename(&tmp_key_file, &key_file) {
+            let _ = fs::remove_file(&tmp_key_file);
+            if key_file.exists() {
+                if let Ok(bytes) = fs::read(&key_file) {
+                    if bytes.len() == 32 {
+                        let mut key = [0u8; 32];
+                        key.copy_from_slice(&bytes);
+                        return Ok(key);
+                    }
+                }
+            }
+            return Err(format!(
+                "Nie udało się zainicjalizować klucza sejfu: {}",
+                rename_err
+            ));
+        }
+
+        Ok(raw_key)
+    }
+
+    fn derive_subkeys() -> Result<([u8; 32], [u8; 32]), String> {
+        let master = get_or_create_vault_master_key()?;
+        let mut machine_binding = Vec::new();
+        if let Ok(id) = fs::read_to_string("/etc/machine-id") {
+            machine_binding.extend_from_slice(id.trim().as_bytes());
+        } else if let Ok(id) = fs::read_to_string("/var/lib/dbus/machine-id") {
+            machine_binding.extend_from_slice(id.trim().as_bytes());
+        }
+        if let Ok(user) = std::env::var("USER") {
+            machine_binding.extend_from_slice(user.as_bytes());
+        }
+
+        let mut enc_ctx = b"BLY_VAULT_ENC_V1_".to_vec();
+        enc_ctx.extend_from_slice(&machine_binding);
+        let k_enc = hmac_sha256(&master, &enc_ctx);
+
+        let mut mac_ctx = b"BLY_VAULT_MAC_V1_".to_vec();
+        mac_ctx.extend_from_slice(&machine_binding);
+        let k_mac = hmac_sha256(&master, &mac_ctx);
+
+        Ok((k_enc, k_mac))
+    }
+
+    fn keystream_xor(k_enc: &[u8; 32], nonce: &[u8; 16], data: &mut [u8]) {
+        for (i, chunk) in data.chunks_mut(32).enumerate() {
+            let mut counter_buf = [0u8; 24];
+            counter_buf[..16].copy_from_slice(nonce);
+            counter_buf[16..24].copy_from_slice(&(i as u64).to_le_bytes());
+            let stream_block = hmac_sha256(k_enc, &counter_buf);
+            for (byte, s) in chunk.iter_mut().zip(stream_block.iter()) {
+                *byte ^= *s;
+            }
+        }
+    }
+
+    pub fn protect_secret(plaintext: &[u8]) -> Result<Vec<u8>, String> {
+        let (k_enc, k_mac) = derive_subkeys()?;
+
+        let mut nonce = [0u8; 16];
+        rand::Rng::fill(&mut rand::thread_rng(), &mut nonce);
+
+        let mut ciphertext = plaintext.to_vec();
+        keystream_xor(&k_enc, &nonce, &mut ciphertext);
+
+        let mut mac_input = Vec::with_capacity(4 + 16 + ciphertext.len());
+        mac_input.extend_from_slice(MAGIC);
+        mac_input.extend_from_slice(&nonce);
+        mac_input.extend_from_slice(&ciphertext);
+        let tag = hmac_sha256(&k_mac, &mac_input);
+
+        let mut result = Vec::with_capacity(4 + 16 + 32 + ciphertext.len());
+        result.extend_from_slice(MAGIC);
+        result.extend_from_slice(&nonce);
+        result.extend_from_slice(&tag);
+        result.extend_from_slice(&ciphertext);
+        Ok(result)
+    }
+
+    pub fn unprotect_secret(ciphertext: &[u8]) -> Result<Vec<u8>, String> {
+        if ciphertext.len() < 4 + 16 + 32 {
+            return Err("Nieprawidłowy format zaszyfrowanego sekretu (zbyt krótki).".to_string());
+        }
+        if &ciphertext[..4] != MAGIC {
+            return Err("Nieprawidłowy nagłówek sejfu (nieznany format BLY).".to_string());
+        }
+
+        let (k_enc, k_mac) = derive_subkeys()?;
+
+        let mut nonce = [0u8; 16];
+        nonce.copy_from_slice(&ciphertext[4..20]);
+
+        let expected_tag = &ciphertext[20..52];
+        let encrypted_body = &ciphertext[52..];
+
+        let mut mac_input = Vec::with_capacity(4 + 16 + encrypted_body.len());
+        mac_input.extend_from_slice(MAGIC);
+        mac_input.extend_from_slice(&nonce);
+        mac_input.extend_from_slice(encrypted_body);
+        let computed_tag = hmac_sha256(&k_mac, &mac_input);
+
+        let mut diff = 0u8;
+        for (a, b) in expected_tag.iter().zip(computed_tag.iter()) {
+            diff |= *a ^ *b;
+        }
+        if diff != 0 {
+            return Err(
+                "Błąd weryfikacji HMAC: naruszona integralność sejfu lub nieprawidłowy klucz."
+                    .to_string(),
+            );
+        }
+
+        let mut plaintext = encrypted_body.to_vec();
+        keystream_xor(&k_enc, &nonce, &mut plaintext);
+        Ok(plaintext)
+    }
 }
 
 #[cfg(not(target_os = "windows"))]
-pub fn unprotect_secret(_ciphertext: &[u8]) -> Result<Vec<u8>, String> {
-    Err("Platform keychain protection is only supported on Windows (DPAPI). Plaintext storage is prohibited.".to_string())
-}
+pub use unix_vault::{protect_secret, unprotect_secret};
 
 #[cfg(test)]
 mod tests {
@@ -452,18 +665,87 @@ mod tests {
     }
 
     #[test]
-    fn test_dpapi_protect_unprotect() {
-        #[cfg(target_os = "windows")]
-        {
-            let secret = b"blyskawica_vault_test_secret_12345";
-            let encrypted = protect_secret(secret).expect("DPAPI protect should succeed");
-            assert_ne!(encrypted, secret, "Ciphertext should differ from plaintext");
+    fn test_vault_protect_unprotect() {
+        let secret = b"blyskawica_vault_test_secret_12345";
+        let encrypted = protect_secret(secret).expect("Vault protect should succeed");
+        assert_ne!(encrypted, secret, "Ciphertext should differ from plaintext");
 
-            let decrypted = unprotect_secret(&encrypted).expect("DPAPI unprotect should succeed");
-            assert_eq!(
-                decrypted, secret,
-                "Decrypted secret must match original plaintext"
-            );
+        let decrypted = unprotect_secret(&encrypted).expect("Vault unprotect should succeed");
+        assert_eq!(
+            decrypted, secret,
+            "Decrypted secret must match original plaintext"
+        );
+
+        let mut tampered = encrypted.clone();
+        let last = tampered.len() - 1;
+        tampered[last] ^= 0x01;
+        assert!(
+            unprotect_secret(&tampered).is_err(),
+            "Tampered vault payload must fail decryption/validation"
+        );
+
+        // Test empty plaintext roundtrip
+        let empty_enc = protect_secret(b"").expect("Empty payload protection should succeed");
+        let empty_dec =
+            unprotect_secret(&empty_enc).expect("Empty payload unprotection should succeed");
+        assert!(
+            empty_dec.is_empty(),
+            "Decrypted empty payload must be empty"
+        );
+
+        // Test raw empty ciphertext rejection
+        assert!(
+            unprotect_secret(&[]).is_err(),
+            "Raw empty ciphertext must fail validation"
+        );
+    }
+
+    #[test]
+    fn test_unix_vault_envelope_and_validation() {
+        let mut unique_bytes = [0u8; 8];
+        rand::Rng::fill(&mut rand::thread_rng(), &mut unique_bytes);
+        let unique = u64::from_le_bytes(unique_bytes);
+        let temp_dir = std::env::temp_dir().join(format!("blyskawica_unix_vault_test_{unique}"));
+        let _ = std::fs::create_dir_all(&temp_dir);
+        let orig_home = std::env::var_os("HOME");
+        unsafe {
+            std::env::set_var("HOME", &temp_dir);
+        }
+
+        // 1. Normal secret roundtrip
+        let secret = b"super_secret_cross_platform_payload_123";
+        let encrypted = unix_vault::protect_secret(secret).expect("protect should succeed");
+        assert!(encrypted.len() >= 52);
+        assert_eq!(&encrypted[..4], b"BLY1");
+        let decrypted = unix_vault::unprotect_secret(&encrypted).expect("unprotect should succeed");
+        assert_eq!(decrypted, secret);
+
+        // 2. Empty plaintext produces valid 52-byte envelope
+        let empty_enc = unix_vault::protect_secret(b"").expect("protect empty should succeed");
+        assert_eq!(empty_enc.len(), 52);
+        let empty_dec =
+            unix_vault::unprotect_secret(&empty_enc).expect("unprotect empty should succeed");
+        assert!(empty_dec.is_empty());
+
+        // 3. Short / truncated ciphertext rejection
+        assert!(unix_vault::unprotect_secret(&[]).is_err());
+        assert!(unix_vault::unprotect_secret(b"BLY1").is_err());
+        assert!(unix_vault::unprotect_secret(&encrypted[..51]).is_err());
+
+        // 4. Tampering rejection
+        let mut tampered = encrypted.clone();
+        let len = tampered.len();
+        tampered[len - 1] ^= 0x42;
+        assert!(unix_vault::unprotect_secret(&tampered).is_err());
+
+        // Clean up
+        let _ = std::fs::remove_dir_all(&temp_dir);
+        unsafe {
+            if let Some(h) = orig_home {
+                std::env::set_var("HOME", h);
+            } else {
+                std::env::remove_var("HOME");
+            }
         }
     }
 
