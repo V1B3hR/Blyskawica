@@ -31,6 +31,11 @@ jobs:
       - name: Block tracked runtime artifacts
         run: python scripts/check_tracked_runtime_artifacts.py
 
+      - name: Verify the Nethical dependency lock
+        run: >-
+          python -m pip install --dry-run --ignore-installed --require-hashes
+          --only-binary=:all: -r extensions/nethical/requirements-hashed.txt
+
       - name: Dependency Vulnerability Audit
         run: |
           pip-audit
